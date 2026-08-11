@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: sgi_curime_postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: sgi_user
+      POSTGRES_PASSWORD: sgi_password
+      POSTGRES_DB: sgi_curime
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - sgi_curime_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  sgi_curime_postgres_data:
