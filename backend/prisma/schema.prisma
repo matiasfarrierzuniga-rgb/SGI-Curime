@@ -1,0 +1,124 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum AffiliateStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+}
+
+model User {
+  id             Int        @id @default(autoincrement())
+  fullName       String
+  identification String     @unique
+  email          String     @unique
+  phone          String?
+  address        String?
+  passwordHash   String
+  status         UserStatus @default(ACTIVE)
+
+  failedLoginAttempts Int       @default(0)
+  lockedAt            DateTime?
+  lastLoginAt         DateTime?
+
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserRequest {
+  id             Int           @id @default(autoincrement())
+  fullName       String
+  identification String
+  email          String
+  phone          String?
+  address        String?
+  reason         String
+  status         RequestStatus @default(PENDING)
+
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedById    Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([identification])
+  @@index([email])
+  @@index([status])
+}
+
+model Affiliate {
+  id              Int             @id @default(autoincrement())
+  fullName        String
+  identification  String          @unique
+  birthDate       DateTime
+  gender          String?
+  phone           String?
+  email           String?
+  address         String
+  occupation      String?
+  workplace       String?
+  affiliateType   String?
+  affiliationDate DateTime        @default(now())
+  status          AffiliateStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AffiliateRequest {
+  id                Int           @id @default(autoincrement())
+  fullName          String
+  identification    String
+  birthDate         DateTime
+  gender            String?
+  phone             String?
+  email             String?
+  address           String
+  occupation        String?
+  workplace         String?
+  affiliationReason String
+  status            RequestStatus @default(PENDING)
+
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedById    Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([identification])
+  @@index([status])
+}
