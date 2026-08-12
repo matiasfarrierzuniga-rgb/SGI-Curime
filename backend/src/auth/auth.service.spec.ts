@@ -65,15 +65,18 @@ describe('AuthService', () => {
     ['an unknown email', null],
     ['an inactive user', { ...user, status: 'INACTIVE' }],
     ['a locked user', { ...user, lockedAt: new Date() }],
-  ])('rejects %s with the generic credentials response', async (_, foundUser) => {
-    prisma.user.findUnique.mockResolvedValue(foundUser);
+  ])(
+    'rejects %s with the generic credentials response',
+    async (_, foundUser) => {
+      prisma.user.findUnique.mockResolvedValue(foundUser);
 
-    await expect(
-      service.login({ email: user.email, password: 'invalid-password' }),
-    ).rejects.toEqual(new UnauthorizedException('Invalid credentials'));
+      await expect(
+        service.login({ email: user.email, password: 'invalid-password' }),
+      ).rejects.toEqual(new UnauthorizedException('Invalid credentials'));
 
-    expect(bcrypt.compare).not.toHaveBeenCalled();
-  });
+      expect(bcrypt.compare).not.toHaveBeenCalled();
+    },
+  );
 
   it('rejects an incorrect password with the generic credentials response', async () => {
     prisma.user.findUnique.mockResolvedValue(user);
@@ -82,5 +85,15 @@ describe('AuthService', () => {
     await expect(
       service.login({ email: user.email, password: 'invalid-password' }),
     ).rejects.toEqual(new UnauthorizedException('Invalid credentials'));
+  });
+
+  it('rejects an active user without a password hash', async () => {
+    prisma.user.findUnique.mockResolvedValue({ ...user, passwordHash: null });
+
+    await expect(
+      service.login({ email: user.email, password: 'valid-password' }),
+    ).rejects.toEqual(new UnauthorizedException('Invalid credentials'));
+
+    expect(bcrypt.compare).not.toHaveBeenCalled();
   });
 });

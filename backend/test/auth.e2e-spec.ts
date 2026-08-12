@@ -61,7 +61,9 @@ describe('AuthController (e2e)', () => {
           );
         }
 
-        return Promise.resolve(where.id === currentUser?.id ? currentUser : null);
+        return Promise.resolve(
+          where.id === currentUser?.id ? currentUser : null,
+        );
       },
     );
     prismaMock.user.update.mockResolvedValue(currentUser);
@@ -118,6 +120,17 @@ describe('AuthController (e2e)', () => {
     currentUser = { ...currentUser!, status: 'INACTIVE' };
 
     await login().expect(401);
+  });
+
+  it('rejects an invalid activation password before accessing a token', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/activate-account')
+      .send({
+        token: 'some-token',
+        password: 'weak',
+        passwordConfirmation: 'weak',
+      })
+      .expect(400);
   });
 
   it('returns the authenticated user for a valid JWT', async () => {

@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { AccountActivationService } from './account-activation.service';
 
 @Module({
   imports: [
@@ -19,7 +20,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         const expiresIn = process.env.JWT_EXPIRES_IN;
 
         if (!secret) {
-          throw new Error('JWT_SECRET must be configured to enable authentication.');
+          throw new Error(
+            'JWT_SECRET must be configured to enable authentication.',
+          );
         }
 
         if (!expiresIn) {
@@ -38,6 +41,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
+  providers: [
+    AuthService,
+    AccountActivationService,
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
+  exports: [AccountActivationService],
 })
 export class AuthModule {}

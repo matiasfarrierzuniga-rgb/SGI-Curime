@@ -22,7 +22,12 @@ export class AuthService {
       include: { role: true },
     });
 
-    if (!user || user.status !== 'ACTIVE' || user.lockedAt) {
+    if (
+      !user ||
+      user.status !== 'ACTIVE' ||
+      user.lockedAt ||
+      !user.passwordHash
+    ) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
