@@ -5,13 +5,22 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import {
+  AccountLockoutPolicy,
+  getAccountLockoutPolicy,
+  isTemporaryLockActive,
+} from './account-lockout.policy';
 
 @Injectable()
 export class AuthService {
+  private readonly lockoutPolicy: AccountLockoutPolicy;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) {
+    this.lockoutPolicy = getAccountLockoutPolicy();
+  }
 
   async login(loginDto: LoginDto): Promise<{
     accessToken: string;
@@ -22,13 +31,21 @@ export class AuthService {
       include: { role: true },
     });
 
+    if (!user || user.status !== 'ACTIVE' || !user.passwordHash) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
     if (
-      !user ||
-      user.status !== 'ACTIVE' ||
-      user.lockedAt ||
-      !user.passwordHash
+      isTemporaryLockActive(user.lockedAt, this.lockoutPolicy.lockoutMinutes)
     ) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.lockedAt) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedAt: null },
+      });
     }
 
     const passwordMatches = await bcrypt.compare(
@@ -37,6 +54,7 @@ export class AuthService {
     );
 
     if (!passwordMatches) {
+      await this.recordFailedLogin(user.id);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -49,7 +67,11 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() },
+      data: {
+        failedLoginAttempts: 0,
+        lockedAt: null,
+        lastLoginAt: new Date(),
+      },
     });
 
     return {
@@ -62,5 +84,22 @@ export class AuthService {
         role: user.role.name,
       },
     };
+  }
+
+  private async recordFailedLogin(userId: number): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: { failedLoginAttempts: { increment: 1 } },
+        select: { failedLoginAttempts: true },
+      });
+
+      if (updated.failedLoginAttempts >= this.lockoutPolicy.maxLoginAttempts) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { lockedAt: new Date() },
+        });
+      }
+    });
   }
 }

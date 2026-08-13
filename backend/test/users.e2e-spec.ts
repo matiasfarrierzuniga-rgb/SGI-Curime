@@ -9,6 +9,8 @@ import { UsersService } from '../src/users/users.service';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
+process.env.MAX_LOGIN_ATTEMPTS = '3';
+process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
 
 describe('UsersController (e2e)', () => {
   let app: INestApplication<App>;
@@ -22,6 +24,7 @@ describe('UsersController (e2e)', () => {
     changeRole: jest.fn(),
     activate: jest.fn(),
     deactivate: jest.fn(),
+    unlock: jest.fn(),
   };
   const prisma = {
     user: {
@@ -55,6 +58,11 @@ describe('UsersController (e2e)', () => {
     service.deactivate.mockImplementation(() => {
       status = 'INACTIVE';
       return Promise.resolve({ id: 1, status });
+    });
+    service.unlock.mockResolvedValue({
+      id: 2,
+      lockedAt: null,
+      isTemporarilyLocked: false,
     });
 
     const module = await Test.createTestingModule({ imports: [UsersModule] })
@@ -155,6 +163,20 @@ describe('UsersController (e2e)', () => {
       .set('Authorization', await authorization())
       .expect(200);
     expect(service.activate).toHaveBeenCalledWith(2);
+  });
+
+  it('allows only an administrator to unlock an account', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/2/unlock')
+      .set('Authorization', await authorization())
+      .expect(200);
+    expect(service.unlock).toHaveBeenCalledWith(2);
+
+    role = 'Tesorero';
+    await request(app.getHttpServer())
+      .patch('/users/2/unlock')
+      .set('Authorization', await authorization())
+      .expect(403);
   });
 
   it('invalidates a previously issued JWT after deactivation', async () => {

@@ -8,6 +8,11 @@ import { Prisma, UserStatus } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  getAccountLockoutPolicy,
+  isTemporaryLockActive,
+  lockoutCutoff,
+} from '../auth/account-lockout.policy';
 
 const ADMIN_ROLE = 'Administrador';
 
@@ -35,26 +40,42 @@ const userSelect = {
 
 type SafeUser = Prisma.UserGetPayload<{ select: typeof userSelect }>;
 
-function sanitizeUser(user: SafeUser) {
+function sanitizeUser(user: SafeUser, lockoutMinutes: number) {
+  const isTemporarilyLocked = isTemporaryLockActive(
+    user.lockedAt,
+    lockoutMinutes,
+  );
+  const isAdministrativelyBlocked = user.status === UserStatus.BLOCKED;
   return {
     ...user,
-    isBlocked: user.status === UserStatus.BLOCKED || user.lockedAt !== null,
+    isBlocked: isAdministrativelyBlocked || isTemporarilyLocked,
+    isTemporarilyLocked,
+    isAdministrativelyBlocked,
   };
 }
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly lockoutMinutes: number;
+
+  constructor(private readonly prisma: PrismaService) {
+    this.lockoutMinutes = getAccountLockoutPolicy().lockoutMinutes;
+  }
 
   async findAll(query: QueryUsersDto) {
+    const cutoff = lockoutCutoff(this.lockoutMinutes);
     const blockedCondition: Prisma.UserWhereInput | undefined =
       query.blocked === true
-        ? { OR: [{ status: UserStatus.BLOCKED }, { lockedAt: { not: null } }] }
+        ? {
+            OR: [{ status: UserStatus.BLOCKED }, { lockedAt: { gt: cutoff } }],
+          }
         : query.blocked === false
           ? {
               AND: [
                 { status: { not: UserStatus.BLOCKED } },
-                { lockedAt: null },
+                {
+                  OR: [{ lockedAt: null }, { lockedAt: { lte: cutoff } }],
+                },
               ],
             }
           : undefined;
@@ -85,7 +106,7 @@ export class UsersService {
     ]);
 
     return {
-      data: users.map(sanitizeUser),
+      data: users.map((user) => sanitizeUser(user, this.lockoutMinutes)),
       total,
       page: query.page,
       limit: query.limit,
@@ -98,7 +119,7 @@ export class UsersService {
       select: userSelect,
     });
     if (!user) throw new NotFoundException('User not found');
-    return sanitizeUser(user);
+    return sanitizeUser(user, this.lockoutMinutes);
   }
 
   async update(id: number, dto: UpdateUserDto) {
@@ -120,7 +141,7 @@ export class UsersService {
         data: dto,
         select: userSelect,
       });
-      return sanitizeUser(user);
+      return sanitizeUser(user, this.lockoutMinutes);
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
         throw new ConflictException('Email is already registered');
@@ -160,7 +181,7 @@ export class UsersService {
           data: { roleId },
           select: userSelect,
         });
-        return sanitizeUser(updated);
+        return sanitizeUser(updated, this.lockoutMinutes);
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -175,6 +196,9 @@ export class UsersService {
     if (!user.passwordHash) {
       throw new ConflictException('Account activation has not been completed');
     }
+    if (user.status === UserStatus.BLOCKED) {
+      throw new ConflictException('User is administratively blocked');
+    }
     if (user.status === UserStatus.ACTIVE) {
       throw new ConflictException('User is already active');
     }
@@ -183,7 +207,7 @@ export class UsersService {
       data: { status: UserStatus.ACTIVE },
       select: userSelect,
     });
-    return sanitizeUser(updated);
+    return sanitizeUser(updated, this.lockoutMinutes);
   }
 
   async deactivate(id: number) {
@@ -208,10 +232,31 @@ export class UsersService {
           data: { status: UserStatus.INACTIVE },
           select: userSelect,
         });
-        return sanitizeUser(updated);
+        return sanitizeUser(updated, this.lockoutMinutes);
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+  }
+
+  async unlock(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, status: true, lockedAt: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.status === UserStatus.BLOCKED) {
+      throw new ConflictException('User is administratively blocked');
+    }
+    if (!isTemporaryLockActive(user.lockedAt, this.lockoutMinutes)) {
+      throw new ConflictException('User is not temporarily locked');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { failedLoginAttempts: 0, lockedAt: null },
+      select: userSelect,
+    });
+    return sanitizeUser(updated, this.lockoutMinutes);
   }
 
   private async requireUser(id: number) {
