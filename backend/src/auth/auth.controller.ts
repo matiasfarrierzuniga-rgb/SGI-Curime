@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -17,6 +18,10 @@ import { AccountActivationService } from './account-activation.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { PasswordRecoveryService } from './password-recovery.service';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
@@ -25,6 +30,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly accountActivationService: AccountActivationService,
+    private readonly passwordRecoveryService: PasswordRecoveryService,
   ) {}
 
   @Post('login')
@@ -37,6 +43,27 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   activateAccount(@Body() dto: ActivateAccountDto) {
     return this.accountActivationService.activate(dto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.passwordRecoveryService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.passwordRecoveryService.resetPassword(dto);
+  }
+
+  @Patch('change-password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.passwordRecoveryService.changePassword(request.user.id, dto);
   }
 
   @Get('me')

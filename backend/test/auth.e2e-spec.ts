@@ -7,11 +7,14 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AuthModule } from '../src/auth/auth.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { PasswordResetTokenDeliveryService } from '../src/auth/password-reset-token-delivery.service';
+import { createHash } from 'crypto';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
 process.env.MAX_LOGIN_ATTEMPTS = '3';
 process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
+process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES = '30';
 
 type TestUser = {
   id: number;
@@ -29,11 +32,27 @@ describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
   let jwtService: JwtService;
   let currentUser: TestUser | undefined;
+  let resetTokenRecord:
+    | {
+        id: number;
+        userId: number;
+        tokenHash: string;
+        expiresAt: Date;
+        usedAt: Date | null;
+        user: TestUser;
+      }
+    | undefined;
+  let deliveredToken: string | undefined;
 
   const prismaMock = {
     user: {
       findUnique: jest.fn(),
       update: jest.fn(),
+    },
+    passwordResetToken: {
+      findUnique: jest.fn(),
+      updateMany: jest.fn(),
+      create: jest.fn(),
     },
     $transaction: jest.fn(),
   };
@@ -57,6 +76,8 @@ describe('AuthController (e2e)', () => {
       failedLoginAttempts: 0,
       role: { name: 'Administrador' },
     };
+    resetTokenRecord = undefined;
+    deliveredToken = undefined;
 
     prismaMock.user.findUnique.mockImplementation(
       ({ where }: { where: { email?: string; id?: number } }) => {
@@ -84,6 +105,44 @@ describe('AuthController (e2e)', () => {
         return Promise.resolve(currentUser);
       },
     );
+    prismaMock.passwordResetToken.findUnique.mockImplementation(
+      ({ where }: { where: { tokenHash: string } }) =>
+        Promise.resolve(
+          where.tokenHash === resetTokenRecord?.tokenHash
+            ? resetTokenRecord
+            : null,
+        ),
+    );
+    prismaMock.passwordResetToken.updateMany.mockImplementation(
+      ({ where, data }: { where: { id?: number }; data: { usedAt: Date } }) => {
+        if (
+          where.id &&
+          resetTokenRecord?.id === where.id &&
+          !resetTokenRecord.usedAt
+        ) {
+          resetTokenRecord.usedAt = data.usedAt;
+          return Promise.resolve({ count: 1 });
+        }
+        if (!where.id && resetTokenRecord)
+          resetTokenRecord.usedAt = data.usedAt;
+        return Promise.resolve({ count: where.id ? 0 : 1 });
+      },
+    );
+    prismaMock.passwordResetToken.create.mockImplementation(
+      ({
+        data,
+      }: {
+        data: { userId: number; tokenHash: string; expiresAt: Date };
+      }) => {
+        resetTokenRecord = {
+          id: 1,
+          ...data,
+          usedAt: null,
+          user: currentUser!,
+        };
+        return Promise.resolve(resetTokenRecord);
+      },
+    );
     prismaMock.$transaction.mockImplementation(
       (callback: (tx: typeof prismaMock) => unknown) => callback(prismaMock),
     );
@@ -93,6 +152,13 @@ describe('AuthController (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(prismaMock)
+      .overrideProvider(PasswordResetTokenDeliveryService)
+      .useValue({
+        deliver: ({ token }: { token: string }) => {
+          deliveredToken = token;
+          return Promise.resolve();
+        },
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -154,6 +220,108 @@ describe('AuthController (e2e)', () => {
     currentUser = { ...currentUser!, status: 'INACTIVE' };
 
     await login().expect(401);
+  });
+
+  it('returns indistinguishable forgot-password responses and stores only a token hash', async () => {
+    const existing = await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: ' ADMIN@CURIME.TEST ' })
+      .expect(200);
+    expect(resetTokenRecord?.tokenHash).toBe(
+      createHash('sha256').update(deliveredToken!).digest('hex'),
+    );
+    expect(resetTokenRecord?.tokenHash).not.toBe(deliveredToken);
+
+    const missing = await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'missing@curime.test' })
+      .expect(200);
+    expect(missing.body).toEqual(existing.body);
+
+    await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'not-an-email' })
+      .expect(400);
+  });
+
+  it('validates password policy and confirmation for reset and change', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({
+        token: 'some-token',
+        password: 'weak',
+        passwordConfirmation: 'different',
+      })
+      .expect(400);
+
+    const { body } = await login().expect(200);
+    await request(app.getHttpServer())
+      .patch('/auth/change-password')
+      .set('Authorization', `Bearer ${body.accessToken}`)
+      .send({
+        currentPassword: 'valid-password',
+        newPassword: 'weak',
+        newPasswordConfirmation: 'weak',
+      })
+      .expect(400);
+  });
+
+  it('rejects invalid and reused reset tokens, then logs in only with the reset password', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({
+        token: 'invalid-token',
+        password: 'NewSecurePass1',
+        passwordConfirmation: 'NewSecurePass1',
+      })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: currentUser!.email })
+      .expect(200);
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({
+        token: deliveredToken,
+        password: 'NewSecurePass1',
+        passwordConfirmation: 'NewSecurePass1',
+      })
+      .expect(200);
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({
+        token: deliveredToken,
+        password: 'AnotherPass1',
+        passwordConfirmation: 'AnotherPass1',
+      })
+      .expect(409);
+    await login(currentUser!.email, 'valid-password').expect(401);
+    await login(currentUser!.email, 'NewSecurePass1').expect(200);
+  });
+
+  it('requires JWT to change password and accepts the authenticated user only', async () => {
+    await request(app.getHttpServer())
+      .patch('/auth/change-password')
+      .send({
+        currentPassword: 'valid-password',
+        newPassword: 'NewSecurePass1',
+        newPasswordConfirmation: 'NewSecurePass1',
+      })
+      .expect(401);
+
+    const { body } = await login().expect(200);
+    await request(app.getHttpServer())
+      .patch('/auth/change-password')
+      .set('Authorization', `Bearer ${body.accessToken}`)
+      .send({
+        currentPassword: 'valid-password',
+        newPassword: 'NewSecurePass1',
+        newPasswordConfirmation: 'NewSecurePass1',
+      })
+      .expect(200);
+    await login(currentUser!.email, 'valid-password').expect(401);
+    await login(currentUser!.email, 'NewSecurePass1').expect(200);
   });
 
   it('rejects an invalid activation password before accessing a token', async () => {
