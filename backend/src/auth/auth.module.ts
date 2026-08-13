@@ -9,6 +9,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AccountActivationService } from './account-activation.service';
+import { PasswordRecoveryService } from './password-recovery.service';
+import { PasswordResetTokenDeliveryService } from './password-reset-token-delivery.service';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { AccountActivationService } from './account-activation.service';
   providers: [
     AuthService,
     AccountActivationService,
+    PasswordRecoveryService,
+    PasswordResetTokenDeliveryService,
     JwtStrategy,
     JwtAuthGuard,
     RolesGuard,
