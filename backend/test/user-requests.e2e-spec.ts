@@ -13,6 +13,8 @@ import { UserRequestsService } from '../src/user-requests/user-requests.service'
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
+process.env.MAX_LOGIN_ATTEMPTS = '3';
+process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
 
 describe('UserRequestsController (e2e)', () => {
   let app: INestApplication<App>;

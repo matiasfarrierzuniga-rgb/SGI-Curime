@@ -54,4 +54,9 @@ export class UsersController {
   deactivate(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.deactivate(id);
   }
+
+  @Patch(':id/unlock')
+  unlock(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.unlock(id);
+  }
 }

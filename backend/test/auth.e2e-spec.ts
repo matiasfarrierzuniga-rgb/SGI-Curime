@@ -10,6 +10,8 @@ import { PrismaService } from '../src/prisma/prisma.service';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
+process.env.MAX_LOGIN_ATTEMPTS = '3';
+process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
 
 type TestUser = {
   id: number;
@@ -19,6 +21,7 @@ type TestUser = {
   passwordHash: string;
   status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
   lockedAt: Date | null;
+  failedLoginAttempts: number;
   role: { name: string };
 };
 
@@ -32,6 +35,7 @@ describe('AuthController (e2e)', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    $transaction: jest.fn(),
   };
 
   function login(email = 'admin@curime.test', password = 'valid-password') {
@@ -50,6 +54,7 @@ describe('AuthController (e2e)', () => {
       passwordHash,
       status: 'ACTIVE',
       lockedAt: null,
+      failedLoginAttempts: 0,
       role: { name: 'Administrador' },
     };
 
@@ -66,7 +71,22 @@ describe('AuthController (e2e)', () => {
         );
       },
     );
-    prismaMock.user.update.mockResolvedValue(currentUser);
+    prismaMock.user.update.mockImplementation(
+      ({ data }: { data: Record<string, unknown> }) => {
+        if (!currentUser) return Promise.resolve(null);
+        if (typeof data.failedLoginAttempts === 'object') {
+          currentUser.failedLoginAttempts += 1;
+          return Promise.resolve({
+            failedLoginAttempts: currentUser.failedLoginAttempts,
+          });
+        }
+        currentUser = { ...currentUser, ...data } as TestUser;
+        return Promise.resolve(currentUser);
+      },
+    );
+    prismaMock.$transaction.mockImplementation(
+      (callback: (tx: typeof prismaMock) => unknown) => callback(prismaMock),
+    );
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AuthModule],
@@ -108,6 +128,20 @@ describe('AuthController (e2e)', () => {
 
   it('rejects an incorrect password', async () => {
     await login('admin@curime.test', 'incorrect-password').expect(401);
+    expect(currentUser?.failedLoginAttempts).toBe(1);
+  });
+
+  it('locks after repeated failures, rejects the correct password, and resets after expiry', async () => {
+    await login('admin@curime.test', 'wrong-1').expect(401);
+    await login('admin@curime.test', 'wrong-2').expect(401);
+    await login('admin@curime.test', 'wrong-3').expect(401);
+    expect(currentUser?.lockedAt).toBeInstanceOf(Date);
+
+    await login().expect(401);
+    currentUser!.lockedAt = new Date(Date.now() - 16 * 60_000);
+    await login().expect(200);
+    expect(currentUser?.failedLoginAttempts).toBe(0);
+    expect(currentUser?.lockedAt).toBeNull();
   });
 
   it('rejects an unknown email with the same generic response', async () => {

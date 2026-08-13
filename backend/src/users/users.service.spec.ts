@@ -3,6 +3,9 @@ import { UserStatus } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from './users.service';
 
+process.env.MAX_LOGIN_ATTEMPTS = '3';
+process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
+
 const safeUser = {
   id: 2,
   fullName: 'Persona Usuaria',
@@ -143,6 +146,49 @@ describe('UsersService', () => {
     await expect(service.activate(99)).rejects.toBeInstanceOf(
       NotFoundException,
     );
+
+    prisma.user.findUnique.mockResolvedValueOnce({
+      id: 2,
+      passwordHash: 'hash',
+      status: UserStatus.BLOCKED,
+    });
+    await expect(service.activate(2)).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('manually unlocks only a current temporary lock', async () => {
+    prisma.user.findUnique.mockResolvedValueOnce({
+      id: 2,
+      status: UserStatus.ACTIVE,
+      lockedAt: new Date(),
+    });
+    await service.unlock(2);
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 2 },
+        data: { failedLoginAttempts: 0, lockedAt: null },
+      }),
+    );
+  });
+
+  it('rejects unlock for a user without a current temporary lock', async () => {
+    prisma.user.findUnique.mockResolvedValueOnce({
+      id: 2,
+      status: UserStatus.ACTIVE,
+      lockedAt: null,
+    });
+    await expect(service.unlock(2)).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('rejects unlock for an unknown or administratively blocked user', async () => {
+    prisma.user.findUnique.mockResolvedValueOnce(null);
+    await expect(service.unlock(99)).rejects.toBeInstanceOf(NotFoundException);
+
+    prisma.user.findUnique.mockResolvedValueOnce({
+      id: 2,
+      status: UserStatus.BLOCKED,
+      lockedAt: new Date(),
+    });
+    await expect(service.unlock(2)).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('deactivates a regular user', async () => {
