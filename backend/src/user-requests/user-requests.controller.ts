@@ -30,8 +30,8 @@ export class UserRequestsController {
   constructor(private readonly service: UserRequestsService) {}
 
   @Post()
-  create(@Body() dto: CreateUserRequestDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateUserRequestDto, @Req() request: Request) {
+    return this.service.create(dto, this.context(request));
   }
 
   @Get()
@@ -56,7 +56,7 @@ export class UserRequestsController {
     @Body() dto: RejectUserRequestDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.service.reject(id, dto.rejectionReason, request.user.id);
+    return this.service.reject(id, dto.rejectionReason, request.user.id, this.context(request));
   }
 
   @Patch(':id/approve')
@@ -67,6 +67,7 @@ export class UserRequestsController {
     @Body() dto: ApproveUserRequestDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.service.approve(id, dto, request.user.id);
+    return this.service.approve(id, dto, request.user.id, this.context(request));
   }
+  private context(request: Request) { return { ipAddress: request.ip, userAgent: request.get('user-agent') }; }
 }

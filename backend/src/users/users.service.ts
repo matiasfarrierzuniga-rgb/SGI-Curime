@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Optional,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, UserStatus } from '../../generated/prisma/client';
@@ -13,6 +14,8 @@ import {
   isTemporaryLockActive,
   lockoutCutoff,
 } from '../auth/account-lockout.policy';
+import { AuditAction } from '../audit/audit-actions';
+import { AuditContext, AuditService } from '../audit/audit.service';
 
 const ADMIN_ROLE = 'Administrador';
 
@@ -58,7 +61,7 @@ function sanitizeUser(user: SafeUser, lockoutMinutes: number) {
 export class UsersService {
   private readonly lockoutMinutes: number;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(private readonly prisma: PrismaService, @Optional() private readonly audit?: AuditService) {
     this.lockoutMinutes = getAccountLockoutPolicy().lockoutMinutes;
   }
 
@@ -122,7 +125,7 @@ export class UsersService {
     return sanitizeUser(user, this.lockoutMinutes);
   }
 
-  async update(id: number, dto: UpdateUserDto) {
+  async update(id: number, dto: UpdateUserDto, actorId?: number, context: AuditContext = {}) {
     if (Object.keys(dto).length === 0) {
       throw new BadRequestException('At least one editable field is required');
     }
@@ -141,6 +144,7 @@ export class UsersService {
         data: dto,
         select: userSelect,
       });
+      await this.audit?.log({ userId: actorId, action: AuditAction.USER_UPDATED, module: 'USERS', entityType: 'User', entityId: id, details: { changedFields: Object.keys(dto) }, ...context });
       return sanitizeUser(user, this.lockoutMinutes);
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
@@ -150,14 +154,16 @@ export class UsersService {
     }
   }
 
-  async changeRole(id: number, roleId: number) {
-    return this.prisma.$transaction(
+  async changeRole(id: number, roleId: number, actorId?: number, context: AuditContext = {}) {
+    let previousRoleId: number | undefined;
+    const result = await this.prisma.$transaction(
       async (tx) => {
         const [user, role] = await Promise.all([
           tx.user.findUnique({
             where: { id },
             select: {
               id: true,
+              roleId: true,
               status: true,
               role: { select: { name: true } },
             },
@@ -167,6 +173,7 @@ export class UsersService {
         if (!user) throw new NotFoundException('User not found');
         if (!role) throw new NotFoundException('Role not found');
         if (!role.isActive) throw new ConflictException('Role is inactive');
+        previousRoleId = user.roleId;
 
         if (
           user.status === UserStatus.ACTIVE &&
@@ -185,9 +192,11 @@ export class UsersService {
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+    await this.audit?.log({ userId: actorId, action: AuditAction.USER_ROLE_CHANGED, module: 'USERS', entityType: 'User', entityId: id, details: { previousRoleId, newRoleId: roleId }, ...context });
+    return result;
   }
 
-  async activate(id: number) {
+  async activate(id: number, actorId?: number, context: AuditContext = {}) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: { id: true, passwordHash: true, status: true },
@@ -207,11 +216,12 @@ export class UsersService {
       data: { status: UserStatus.ACTIVE },
       select: userSelect,
     });
+    await this.audit?.log({ userId: actorId, action: AuditAction.USER_ACTIVATED, module: 'USERS', entityType: 'User', entityId: id, ...context });
     return sanitizeUser(updated, this.lockoutMinutes);
   }
 
-  async deactivate(id: number) {
-    return this.prisma.$transaction(
+  async deactivate(id: number, actorId?: number, context: AuditContext = {}) {
+    const result = await this.prisma.$transaction(
       async (tx) => {
         const user = await tx.user.findUnique({
           where: { id },
@@ -236,9 +246,11 @@ export class UsersService {
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+    await this.audit?.log({ userId: actorId, action: AuditAction.USER_DEACTIVATED, module: 'USERS', entityType: 'User', entityId: id, ...context });
+    return result;
   }
 
-  async unlock(id: number) {
+  async unlock(id: number, actorId?: number, context: AuditContext = {}) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: { id: true, status: true, lockedAt: true },
@@ -256,6 +268,7 @@ export class UsersService {
       data: { failedLoginAttempts: 0, lockedAt: null },
       select: userSelect,
     });
+    await this.audit?.log({ userId: actorId, action: AuditAction.ACCOUNT_UNLOCKED, module: 'USERS', entityType: 'User', entityId: id, ...context });
     return sanitizeUser(updated, this.lockoutMinutes);
   }
 

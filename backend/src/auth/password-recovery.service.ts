@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -11,6 +12,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { PasswordResetTokenDeliveryService } from './password-reset-token-delivery.service';
+import { AuditAction } from '../audit/audit-actions';
+import { AuditContext, AuditService } from '../audit/audit.service';
 
 const GENERIC_RESPONSE =
   'If the email is registered, password reset instructions will be sent.';
@@ -37,6 +40,7 @@ export class PasswordRecoveryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly delivery: PasswordResetTokenDeliveryService,
+    @Optional() private readonly audit?: AuditService,
   ) {}
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
@@ -69,7 +73,7 @@ export class PasswordRecoveryService {
     return { message: GENERIC_RESPONSE };
   }
 
-  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+  async resetPassword(dto: ResetPasswordDto, context: AuditContext = {}): Promise<{ message: string }> {
     if (dto.password !== dto.passwordConfirmation) {
       throw new BadRequestException('Passwords do not match');
     }
@@ -100,12 +104,14 @@ export class PasswordRecoveryService {
         data: { passwordHash, failedLoginAttempts: 0, lockedAt: null },
       });
     });
+    await this.audit?.log({ userId: resetToken.userId, action: AuditAction.PASSWORD_RESET, module: 'AUTH', entityType: 'User', entityId: resetToken.userId, ...context });
     return { message: 'Password reset successfully' };
   }
 
   async changePassword(
     userId: number,
     dto: ChangePasswordDto,
+    context: AuditContext = {},
   ): Promise<{ message: string }> {
     if (dto.newPassword !== dto.newPasswordConfirmation) {
       throw new BadRequestException('Passwords do not match');
@@ -133,6 +139,7 @@ export class PasswordRecoveryService {
         lockedAt: null,
       },
     });
+    await this.audit?.log({ userId, action: AuditAction.PASSWORD_CHANGED, module: 'AUTH', entityType: 'User', entityId: userId, ...context });
     return { message: 'Password changed successfully' };
   }
 }

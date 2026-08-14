@@ -130,7 +130,7 @@ describe('UsersController (e2e)', () => {
     expect(service.update).toHaveBeenCalledWith(2, {
       fullName: 'Nombre Nuevo',
       email: 'new@example.com',
-    });
+    }, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
 
     await request(app.getHttpServer())
       .patch('/users/2')
@@ -163,7 +163,7 @@ describe('UsersController (e2e)', () => {
       .patch('/users/2/activate')
       .set('Authorization', await authorization())
       .expect(200);
-    expect(service.activate).toHaveBeenCalledWith(2);
+    expect(service.activate).toHaveBeenCalledWith(2, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
   });
 
   it('allows only an administrator to unlock an account', async () => {
@@ -171,7 +171,7 @@ describe('UsersController (e2e)', () => {
       .patch('/users/2/unlock')
       .set('Authorization', await authorization())
       .expect(200);
-    expect(service.unlock).toHaveBeenCalledWith(2);
+    expect(service.unlock).toHaveBeenCalledWith(2, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
 
     role = 'Tesorero';
     await request(app.getHttpServer())
