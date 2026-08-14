@@ -35,14 +35,14 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  login(@Body() loginDto: LoginDto, @Req() request: Request) {
+    return this.authService.login(loginDto, this.context(request));
   }
 
   @Post('activate-account')
   @HttpCode(HttpStatus.OK)
-  activateAccount(@Body() dto: ActivateAccountDto) {
-    return this.accountActivationService.activate(dto);
+  activateAccount(@Body() dto: ActivateAccountDto, @Req() request: Request) {
+    return this.accountActivationService.activate(dto, this.context(request));
   }
 
   @Post('forgot-password')
@@ -53,8 +53,8 @@ export class AuthController {
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.passwordRecoveryService.resetPassword(dto);
+  resetPassword(@Body() dto: ResetPasswordDto, @Req() request: Request) {
+    return this.passwordRecoveryService.resetPassword(dto, this.context(request));
   }
 
   @Patch('change-password')
@@ -63,7 +63,7 @@ export class AuthController {
     @Req() request: AuthenticatedRequest,
     @Body() dto: ChangePasswordDto,
   ) {
-    return this.passwordRecoveryService.changePassword(request.user.id, dto);
+    return this.passwordRecoveryService.changePassword(request.user.id, dto, this.context(request));
   }
 
   @Get('me')
@@ -78,4 +78,5 @@ export class AuthController {
   adminTest() {
     return { message: 'Administrator access granted.' };
   }
+  private context(request: Request) { return { ipAddress: request.ip, userAgent: request.get('user-agent') }; }
 }

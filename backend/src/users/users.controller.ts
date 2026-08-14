@@ -6,8 +6,11 @@ import {
   ParseIntPipe,
   Patch,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -33,30 +36,31 @@ export class UsersController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto, @Req() req: Request & { user: AuthenticatedUser }) {
+    return this.usersService.update(id, dto, req.user.id, this.context(req));
   }
 
   @Patch(':id/role')
   changeRole(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: ChangeRoleDto,
+    @Body() dto: ChangeRoleDto, @Req() req: Request & { user: AuthenticatedUser },
   ) {
-    return this.usersService.changeRole(id, dto.roleId);
+    return this.usersService.changeRole(id, dto.roleId, req.user.id, this.context(req));
   }
 
   @Patch(':id/activate')
-  activate(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.activate(id);
+  activate(@Param('id', ParseIntPipe) id: number, @Req() req: Request & { user: AuthenticatedUser }) {
+    return this.usersService.activate(id, req.user.id, this.context(req));
   }
 
   @Patch(':id/deactivate')
-  deactivate(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.deactivate(id);
+  deactivate(@Param('id', ParseIntPipe) id: number, @Req() req: Request & { user: AuthenticatedUser }) {
+    return this.usersService.deactivate(id, req.user.id, this.context(req));
   }
 
   @Patch(':id/unlock')
-  unlock(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.unlock(id);
+  unlock(@Param('id', ParseIntPipe) id: number, @Req() req: Request & { user: AuthenticatedUser }) {
+    return this.usersService.unlock(id, req.user.id, this.context(req));
   }
+  private context(req: Request) { return { ipAddress: req.ip, userAgent: req.get('user-agent') }; }
 }

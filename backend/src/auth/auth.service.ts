@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Optional, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,6 +10,8 @@ import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
 } from './account-lockout.policy';
+import { AuditAction } from '../audit/audit-actions';
+import { AuditContext, AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AuthService {
@@ -18,11 +20,12 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    @Optional() private readonly audit?: AuditService,
   ) {
     this.lockoutPolicy = getAccountLockoutPolicy();
   }
 
-  async login(loginDto: LoginDto): Promise<{
+  async login(loginDto: LoginDto, context: AuditContext = {}): Promise<{
     accessToken: string;
     user: AuthenticatedUser;
   }> {
@@ -32,12 +35,14 @@ export class AuthService {
     });
 
     if (!user || user.status !== 'ACTIVE' || !user.passwordHash) {
+      await this.audit?.log({ action: AuditAction.LOGIN_FAILED, module: 'AUTH', ...context });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     if (
       isTemporaryLockActive(user.lockedAt, this.lockoutPolicy.lockoutMinutes)
     ) {
+      await this.audit?.log({ userId: user.id, action: AuditAction.LOGIN_FAILED, module: 'AUTH', ...context });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -54,7 +59,9 @@ export class AuthService {
     );
 
     if (!passwordMatches) {
-      await this.recordFailedLogin(user.id);
+      const locked = await this.recordFailedLogin(user.id);
+      await this.audit?.log({ userId: user.id, action: AuditAction.LOGIN_FAILED, module: 'AUTH', ...context });
+      if (locked) await this.audit?.log({ userId: user.id, action: AuditAction.ACCOUNT_LOCKED, module: 'AUTH', entityType: 'User', entityId: user.id, ...context });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -73,6 +80,7 @@ export class AuthService {
         lastLoginAt: new Date(),
       },
     });
+    await this.audit?.log({ userId: user.id, action: AuditAction.LOGIN_SUCCESS, module: 'AUTH', entityType: 'User', entityId: user.id, ...context });
 
     return {
       accessToken,
@@ -86,8 +94,8 @@ export class AuthService {
     };
   }
 
-  private async recordFailedLogin(userId: number): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
+  private async recordFailedLogin(userId: number): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
       const updated = await tx.user.update({
         where: { id: userId },
         data: { failedLoginAttempts: { increment: 1 } },
@@ -99,7 +107,9 @@ export class AuthService {
           where: { id: userId },
           data: { lockedAt: new Date() },
         });
+        return true;
       }
+      return false;
     });
   }
 }

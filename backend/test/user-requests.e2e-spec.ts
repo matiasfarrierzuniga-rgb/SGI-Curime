@@ -101,7 +101,7 @@ describe('UserRequestsController (e2e)', () => {
       expect.objectContaining({
         fullName: 'Persona Solicitante',
         email: 'persona@example.com',
-      }),
+      }), expect.objectContaining({ ipAddress: expect.any(String) }),
     );
   });
 
@@ -173,6 +173,6 @@ describe('UserRequestsController (e2e)', () => {
       .set('Authorization', await authorization())
       .send({ rejectionReason: 'No cumple requisitos' })
       .expect(200);
-    expect(service.reject).toHaveBeenCalledWith(10, 'No cumple requisitos', 1);
+    expect(service.reject).toHaveBeenCalledWith(10, 'No cumple requisitos', 1, expect.objectContaining({ ipAddress: expect.any(String) }));
   });
 });

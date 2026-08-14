@@ -2,17 +2,20 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivateAccountDto } from './dto/activate-account.dto';
+import { AuditAction } from '../audit/audit-actions';
+import { AuditContext, AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AccountActivationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, @Optional() private readonly audit?: AuditService) {}
 
-  async activate(dto: ActivateAccountDto): Promise<{ message: string }> {
+  async activate(dto: ActivateAccountDto, context: AuditContext = {}): Promise<{ message: string }> {
     if (dto.password !== dto.passwordConfirmation) {
       throw new BadRequestException('Passwords do not match');
     }
@@ -61,6 +64,7 @@ export class AccountActivationService {
         throw new ConflictException('Account cannot be activated');
       }
     });
+    await this.audit?.log({ userId: activationToken.userId, action: AuditAction.ACCOUNT_ACTIVATED, module: 'AUTH', entityType: 'User', entityId: activationToken.userId, ...context });
 
     return { message: 'Account activated successfully' };
   }
