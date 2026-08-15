@@ -1,0 +1,6 @@
+import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
+type Kind = 'success' | 'error' | 'warning' | 'info'; type ToastItem = { id: number; message: string; kind: Kind }
+const ToastContext = createContext<{ notify: (message: string, kind?: Kind) => void } | undefined>(undefined)
+export function ToastProvider({ children }: { children: ReactNode }) { const [items, setItems] = useState<ToastItem[]>([]); const notify = useCallback((message: string, kind: Kind = 'info') => { const id = Date.now() + Math.random(); setItems(v => [...v, { id, message, kind }]); window.setTimeout(() => setItems(v => v.filter(x => x.id !== id)), 5000) }, []); return <ToastContext.Provider value={{ notify }}>{children}<div className="toast-region" aria-live="polite">{items.map(item => <div className={`toast ${item.kind}`} key={item.id} role={item.kind === 'error' ? 'alert' : 'status'}><span>{item.message}</span><button aria-label="Cerrar notificación" onClick={() => setItems(v => v.filter(x => x.id !== item.id))}>×</button></div>)}</div></ToastContext.Provider> }
+// oxlint-disable-next-line react/only-export-components -- hook is intentionally colocated with its provider
+export function useToast() { const value = useContext(ToastContext); if (!value) throw new Error('useToast debe usarse dentro de ToastProvider'); return value }
