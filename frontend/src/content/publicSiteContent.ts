@@ -11,7 +11,7 @@ export const site = {
 } as const
 
 export const moduleAvailability = {
-  affiliation: { enabled: false }, reservations: { enabled: false }, volunteering: { enabled: false },
+  affiliation: { enabled: true }, reservations: { enabled: false }, volunteering: { enabled: false },
   entrepreneurship: { enabled: false }, donations: { enabled: false }, userRegistration: { enabled: true },
 } as const
 
