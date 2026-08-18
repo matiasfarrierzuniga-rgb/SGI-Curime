@@ -13,6 +13,12 @@ import { AssembliesModule } from './assemblies/assemblies.module';
 import { AbsenceJustificationsModule } from './absence-justifications/absence-justifications.module';
 import { SanctionsModule } from './sanctions/sanctions.module';
 import { AdminReportsModule } from './admin-reports/admin-reports.module';
+import { InventoryCategoriesModule } from './inventory-categories/inventory-categories.module';
+import { InventoryItemsModule } from './inventory-items/inventory-items.module';
+import { InventoryMovementsModule } from './inventory-movements/inventory-movements.module';
+import { InventoryLoansModule } from './inventory-loans/inventory-loans.module';
+import { InventoryAlertsModule } from './inventory-alerts/inventory-alerts.module';
+import { InventoryReportsModule } from './inventory-reports/inventory-reports.module';
 
 @Module({
   imports: [
@@ -28,6 +34,12 @@ import { AdminReportsModule } from './admin-reports/admin-reports.module';
     AbsenceJustificationsModule,
     SanctionsModule,
     AdminReportsModule,
+    InventoryCategoriesModule,
+    InventoryItemsModule,
+    InventoryMovementsModule,
+    InventoryLoansModule,
+    InventoryAlertsModule,
+    InventoryReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
