@@ -14,6 +14,7 @@ import {
   UserRole,
   UserStatus as DomainUserStatus,
 } from '../domain/entities/user';
+import { EmailAlreadyRegisteredError } from '../domain/errors/email-already-registered.error';
 import {
   UserPage,
   UserQuery,
@@ -140,12 +141,22 @@ export class PrismaUsersRepository implements UsersRepository {
   }
 
   async updateProfile(id: number, data: UserUpdateData): Promise<User> {
-    const user = await this.db.user.update({
-      where: { id },
-      data,
-      select: userSelect,
-    });
-    return toUser(user);
+    try {
+      const user = await this.db.user.update({
+        where: { id },
+        data,
+        select: userSelect,
+      });
+      return toUser(user);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new EmailAlreadyRegisteredError();
+      }
+      throw error;
+    }
   }
 
   async updateStatus(id: number, status: DomainUserStatus): Promise<User> {
