@@ -2,48 +2,24 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  Optional,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
-import { Prisma, UserStatus } from '../../../../generated/prisma/client';
-import { PrismaService } from '../../../prisma/prisma.service';
-import { QueryUsersDto } from '../presentation/dto/query-users.dto';
-import { UpdateUserDto } from '../presentation/dto/update-user.dto';
+import { Prisma } from '../../../../generated/prisma/client';
 import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
-  lockoutCutoff,
 } from '../../../auth/account-lockout.policy';
 import { AuditAction } from '../../../audit/audit-actions';
 import { AuditContext, AuditService } from '../../../audit/audit.service';
+import { User, UserStatus } from '../domain/entities/user';
+import type { UsersRepository } from '../domain/repositories/users-repository';
+import { QueryUsersDto } from '../presentation/dto/query-users.dto';
+import { UpdateUserDto } from '../presentation/dto/update-user.dto';
 
 const ADMIN_ROLE = 'Administrador';
 
-const userSelect = {
-  id: true,
-  fullName: true,
-  identification: true,
-  email: true,
-  phone: true,
-  address: true,
-  status: true,
-  lockedAt: true,
-  roleId: true,
-  role: {
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      isActive: true,
-    },
-  },
-  createdAt: true,
-  updatedAt: true,
-} satisfies Prisma.UserSelect;
-
-type SafeUser = Prisma.UserGetPayload<{ select: typeof userSelect }>;
-
-function sanitizeUser(user: SafeUser, lockoutMinutes: number) {
+function sanitizeUser(user: User, lockoutMinutes: number) {
   const isTemporarilyLocked = isTemporaryLockActive(
     user.lockedAt,
     lockoutMinutes,
@@ -61,90 +37,65 @@ function sanitizeUser(user: SafeUser, lockoutMinutes: number) {
 export class UsersService {
   private readonly lockoutMinutes: number;
 
-  constructor(private readonly prisma: PrismaService, @Optional() private readonly audit?: AuditService) {
+  constructor(
+    private readonly repository: UsersRepository,
+    @Optional() private readonly audit?: AuditService,
+  ) {
     this.lockoutMinutes = getAccountLockoutPolicy().lockoutMinutes;
   }
 
   async findAll(query: QueryUsersDto) {
-    const cutoff = lockoutCutoff(this.lockoutMinutes);
-    const blockedCondition: Prisma.UserWhereInput | undefined =
-      query.blocked === true
-        ? {
-            OR: [{ status: UserStatus.BLOCKED }, { lockedAt: { gt: cutoff } }],
-          }
-        : query.blocked === false
-          ? {
-              AND: [
-                { status: { not: UserStatus.BLOCKED } },
-                {
-                  OR: [{ lockedAt: null }, { lockedAt: { lte: cutoff } }],
-                },
-              ],
-            }
-          : undefined;
-    const where: Prisma.UserWhereInput = {
-      fullName: query.name
-        ? { contains: query.name, mode: 'insensitive' }
-        : undefined,
-      email: query.email
-        ? { contains: query.email, mode: 'insensitive' }
-        : undefined,
-      identification: query.identification
-        ? { contains: query.identification, mode: 'insensitive' }
-        : undefined,
-      status: query.status,
+    const page = await this.repository.findPage({
+      name: query.name,
+      email: query.email,
+      identification: query.identification,
+      status: query.status as UserStatus | undefined,
       roleId: query.roleId,
-      AND: blockedCondition ? [blockedCondition] : undefined,
-    };
-    const skip = (query.page - 1) * query.limit;
-    const [users, total] = await this.prisma.$transaction([
-      this.prisma.user.findMany({
-        where,
-        select: userSelect,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: query.limit,
-      }),
-      this.prisma.user.count({ where }),
-    ]);
-
-    return {
-      data: users.map((user) => sanitizeUser(user, this.lockoutMinutes)),
-      total,
+      blocked: query.blocked,
       page: query.page,
       limit: query.limit,
+    });
+    return {
+      data: page.data.map((user) => sanitizeUser(user, this.lockoutMinutes)),
+      total: page.total,
+      page: page.page,
+      limit: page.limit,
     };
   }
 
   async findOne(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: userSelect,
-    });
+    const user = await this.repository.findById(id);
     if (!user) throw new NotFoundException('User not found');
     return sanitizeUser(user, this.lockoutMinutes);
   }
 
-  async update(id: number, dto: UpdateUserDto, actorId?: number, context: AuditContext = {}) {
+  async update(
+    id: number,
+    dto: UpdateUserDto,
+    actorId?: number,
+    context: AuditContext = {},
+  ) {
     if (Object.keys(dto).length === 0) {
       throw new BadRequestException('At least one editable field is required');
     }
-    await this.requireUser(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) throw new NotFoundException('User not found');
     if (dto.email) {
-      const duplicate = await this.prisma.user.findFirst({
-        where: { email: dto.email, id: { not: id } },
-        select: { id: true },
-      });
+      const duplicate = await this.repository.findByEmail(dto.email, id);
       if (duplicate) throw new ConflictException('Email is already registered');
     }
 
     try {
-      const user = await this.prisma.user.update({
-        where: { id },
-        data: dto,
-        select: userSelect,
+      const user = await this.repository.updateProfile(id, dto);
+      await this.audit?.log({
+        userId: actorId,
+        action: AuditAction.USER_UPDATED,
+        module: 'USERS',
+        entityType: 'User',
+        entityId: id,
+        details: { changedFields: Object.keys(dto) },
+        ...context,
       });
-      await this.audit?.log({ userId: actorId, action: AuditAction.USER_UPDATED, module: 'USERS', entityType: 'User', entityId: id, details: { changedFields: Object.keys(dto) }, ...context });
       return sanitizeUser(user, this.lockoutMinutes);
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
@@ -154,55 +105,50 @@ export class UsersService {
     }
   }
 
-  async changeRole(id: number, roleId: number, actorId?: number, context: AuditContext = {}) {
+  async changeRole(
+    id: number,
+    roleId: number,
+    actorId?: number,
+    context: AuditContext = {},
+  ) {
     let previousRoleId: number | undefined;
-    const result = await this.prisma.$transaction(
-      async (tx) => {
-        const [user, role] = await Promise.all([
-          tx.user.findUnique({
-            where: { id },
-            select: {
-              id: true,
-              roleId: true,
-              status: true,
-              role: { select: { name: true } },
-            },
-          }),
-          tx.role.findUnique({ where: { id: roleId } }),
-        ]);
-        if (!user) throw new NotFoundException('User not found');
-        if (!role) throw new NotFoundException('Role not found');
-        if (!role.isActive) throw new ConflictException('Role is inactive');
-        previousRoleId = user.roleId;
+    const result = await this.repository.withTransaction(async (tx) => {
+      const [user, role] = await Promise.all([
+        tx.findById(id),
+        tx.findRoleById(roleId),
+      ]);
+      if (!user) throw new NotFoundException('User not found');
+      if (!role) throw new NotFoundException('Role not found');
+      if (!role.isActive) throw new ConflictException('Role is inactive');
+      previousRoleId = user.roleId;
 
-        if (
-          user.status === UserStatus.ACTIVE &&
-          user.role.name === ADMIN_ROLE &&
-          role.name !== ADMIN_ROLE
-        ) {
-          await this.assertAnotherActiveAdministrator(tx, id);
-        }
+      if (
+        user.status === UserStatus.ACTIVE &&
+        user.role.name === ADMIN_ROLE &&
+        role.name !== ADMIN_ROLE
+      ) {
+        await this.assertAnotherActiveAdministrator(tx, id);
+      }
 
-        const updated = await tx.user.update({
-          where: { id },
-          data: { roleId },
-          select: userSelect,
-        });
-        return sanitizeUser(updated, this.lockoutMinutes);
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    );
-    await this.audit?.log({ userId: actorId, action: AuditAction.USER_ROLE_CHANGED, module: 'USERS', entityType: 'User', entityId: id, details: { previousRoleId, newRoleId: roleId }, ...context });
-    return result;
+      return tx.updateRole(id, roleId);
+    });
+    await this.audit?.log({
+      userId: actorId,
+      action: AuditAction.USER_ROLE_CHANGED,
+      module: 'USERS',
+      entityType: 'User',
+      entityId: id,
+      details: { previousRoleId, newRoleId: roleId },
+      ...context,
+    });
+    return sanitizeUser(result, this.lockoutMinutes);
   }
 
   async activate(id: number, actorId?: number, context: AuditContext = {}) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: { id: true, passwordHash: true, status: true },
-    });
+    const user = await this.repository.findById(id);
     if (!user) throw new NotFoundException('User not found');
-    if (!user.passwordHash) {
+    const passwordHash = await this.repository.getPasswordHash(id);
+    if (!passwordHash) {
       throw new ConflictException('Account activation has not been completed');
     }
     if (user.status === UserStatus.BLOCKED) {
@@ -211,50 +157,43 @@ export class UsersService {
     if (user.status === UserStatus.ACTIVE) {
       throw new ConflictException('User is already active');
     }
-    const updated = await this.prisma.user.update({
-      where: { id },
-      data: { status: UserStatus.ACTIVE },
-      select: userSelect,
+    const updated = await this.repository.updateStatus(id, UserStatus.ACTIVE);
+    await this.audit?.log({
+      userId: actorId,
+      action: AuditAction.USER_ACTIVATED,
+      module: 'USERS',
+      entityType: 'User',
+      entityId: id,
+      ...context,
     });
-    await this.audit?.log({ userId: actorId, action: AuditAction.USER_ACTIVATED, module: 'USERS', entityType: 'User', entityId: id, ...context });
     return sanitizeUser(updated, this.lockoutMinutes);
   }
 
   async deactivate(id: number, actorId?: number, context: AuditContext = {}) {
-    const result = await this.prisma.$transaction(
-      async (tx) => {
-        const user = await tx.user.findUnique({
-          where: { id },
-          select: { id: true, status: true, role: { select: { name: true } } },
-        });
-        if (!user) throw new NotFoundException('User not found');
-        if (user.status === UserStatus.INACTIVE) {
-          throw new ConflictException('User is already inactive');
-        }
-        if (
-          user.status === UserStatus.ACTIVE &&
-          user.role.name === ADMIN_ROLE
-        ) {
-          await this.assertAnotherActiveAdministrator(tx, id);
-        }
-        const updated = await tx.user.update({
-          where: { id },
-          data: { status: UserStatus.INACTIVE },
-          select: userSelect,
-        });
-        return sanitizeUser(updated, this.lockoutMinutes);
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    );
-    await this.audit?.log({ userId: actorId, action: AuditAction.USER_DEACTIVATED, module: 'USERS', entityType: 'User', entityId: id, ...context });
-    return result;
+    const result = await this.repository.withTransaction(async (tx) => {
+      const user = await tx.findById(id);
+      if (!user) throw new NotFoundException('User not found');
+      if (user.status === UserStatus.INACTIVE) {
+        throw new ConflictException('User is already inactive');
+      }
+      if (user.status === UserStatus.ACTIVE && user.role.name === ADMIN_ROLE) {
+        await this.assertAnotherActiveAdministrator(tx, id);
+      }
+      return tx.updateStatus(id, UserStatus.INACTIVE);
+    });
+    await this.audit?.log({
+      userId: actorId,
+      action: AuditAction.USER_DEACTIVATED,
+      module: 'USERS',
+      entityType: 'User',
+      entityId: id,
+      ...context,
+    });
+    return sanitizeUser(result, this.lockoutMinutes);
   }
 
   async unlock(id: number, actorId?: number, context: AuditContext = {}) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: { id: true, status: true, lockedAt: true },
-    });
+    const user = await this.repository.findById(id);
     if (!user) throw new NotFoundException('User not found');
     if (user.status === UserStatus.BLOCKED) {
       throw new ConflictException('User is administratively blocked');
@@ -263,35 +202,23 @@ export class UsersService {
       throw new ConflictException('User is not temporarily locked');
     }
 
-    const updated = await this.prisma.user.update({
-      where: { id },
-      data: { failedLoginAttempts: 0, lockedAt: null },
-      select: userSelect,
+    const updated = await this.repository.resetTemporaryLock(id);
+    await this.audit?.log({
+      userId: actorId,
+      action: AuditAction.ACCOUNT_UNLOCKED,
+      module: 'USERS',
+      entityType: 'User',
+      entityId: id,
+      ...context,
     });
-    await this.audit?.log({ userId: actorId, action: AuditAction.ACCOUNT_UNLOCKED, module: 'USERS', entityType: 'User', entityId: id, ...context });
     return sanitizeUser(updated, this.lockoutMinutes);
   }
 
-  private async requireUser(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-    if (!user) throw new NotFoundException('User not found');
-    return user;
-  }
-
   private async assertAnotherActiveAdministrator(
-    tx: Prisma.TransactionClient,
+    tx: UsersRepository,
     excludedUserId: number,
   ) {
-    const count = await tx.user.count({
-      where: {
-        id: { not: excludedUserId },
-        status: UserStatus.ACTIVE,
-        role: { name: ADMIN_ROLE },
-      },
-    });
+    const count = await tx.countActiveAdministrators(excludedUserId);
     if (count === 0) {
       throw new ConflictException(
         'The last active administrator cannot be deactivated or demoted',

@@ -1,12 +1,12 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { UserStatus } from '../../../../generated/prisma/client';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { UserStatus } from '../domain/entities/user';
+import type { UsersRepository } from '../domain/repositories/users-repository';
 import { UsersService } from './users.service';
 
 process.env.MAX_LOGIN_ATTEMPTS = '3';
 process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
 
-const safeUser = {
+const domainUser = {
   id: 2,
   fullName: 'Persona Usuaria',
   identification: '2-2222',
@@ -22,36 +22,47 @@ const safeUser = {
 };
 
 describe('UsersService', () => {
-  const prisma = {
-    user: {
-      findMany: jest.fn(),
-      count: jest.fn(),
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      update: jest.fn(),
-    },
-    role: { findUnique: jest.fn() },
-    $transaction: jest.fn(),
+  const repository = {
+    withTransaction: jest.fn(),
+    findPage: jest.fn(),
+    findById: jest.fn(),
+    findByEmail: jest.fn(),
+    findRoleById: jest.fn(),
+    getPasswordHash: jest.fn(),
+    updateProfile: jest.fn(),
+    updateStatus: jest.fn(),
+    updateRole: jest.fn(),
+    resetTemporaryLock: jest.fn(),
+    countActiveAdministrators: jest.fn(),
   };
   let service: UsersService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new UsersService(prisma as unknown as PrismaService);
-    prisma.$transaction.mockImplementation((argument: unknown) => {
-      if (Array.isArray(argument)) return Promise.all(argument);
-      return (argument as (tx: typeof prisma) => unknown)(prisma);
+    service = new UsersService(repository);
+    repository.withTransaction.mockImplementation(
+      (work: (tx: UsersRepository) => Promise<unknown>) => work(repository),
+    );
+    repository.findPage.mockResolvedValue({
+      data: [domainUser],
+      total: 1,
+      page: 1,
+      limit: 20,
     });
-    prisma.user.findMany.mockResolvedValue([safeUser]);
-    prisma.user.count.mockResolvedValue(1);
-    prisma.user.findUnique.mockResolvedValue(safeUser);
-    prisma.user.findFirst.mockResolvedValue(null);
-    prisma.user.update.mockResolvedValue(safeUser);
-    prisma.role.findUnique.mockResolvedValue({
+    repository.findById.mockResolvedValue(domainUser);
+    repository.findByEmail.mockResolvedValue(null);
+    repository.findRoleById.mockResolvedValue({
       id: 2,
       name: 'Tesorero',
+      description: null,
       isActive: true,
     });
+    repository.getPasswordHash.mockResolvedValue('hash');
+    repository.updateProfile.mockResolvedValue(domainUser);
+    repository.updateStatus.mockResolvedValue(domainUser);
+    repository.updateRole.mockResolvedValue(domainUser);
+    repository.resetTemporaryLock.mockResolvedValue(domainUser);
+    repository.countActiveAdministrators.mockResolvedValue(1);
   });
 
   it('lists with filters, pagination, and a safe select', async () => {
@@ -66,16 +77,11 @@ describe('UsersService', () => {
       limit: 5,
     });
 
-    expect(prisma.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ skip: 5, take: 5 }),
+    expect(repository.findPage).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 2, limit: 5 }),
     );
-    const query = prisma.user.findMany.mock.calls[0][0];
-    expect(query.where).toEqual(
-      expect.objectContaining({ status: UserStatus.ACTIVE, roleId: 2 }),
-    );
-    expect(query.select.passwordHash).toBeUndefined();
     expect(result).toEqual(
-      expect.objectContaining({ total: 1, page: 2, limit: 5 }),
+      expect.objectContaining({ total: 1, page: 1, limit: 20 }),
     );
     expect(result.data[0]).not.toHaveProperty('passwordHash');
   });
@@ -85,19 +91,19 @@ describe('UsersService', () => {
     expect(result).not.toHaveProperty('passwordHash');
     expect(result.role.name).toBe('Tesorero');
 
-    prisma.user.findUnique.mockResolvedValueOnce(null);
+    repository.findById.mockResolvedValueOnce(null);
     await expect(service.findOne(99)).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('updates allowed fields', async () => {
     await service.update(2, { fullName: 'Nombre Nuevo' });
-    expect(prisma.user.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { fullName: 'Nombre Nuevo' } }),
-    );
+    expect(repository.updateProfile).toHaveBeenCalledWith(2, {
+      fullName: 'Nombre Nuevo',
+    });
   });
 
   it('rejects a duplicated email', async () => {
-    prisma.user.findFirst.mockResolvedValueOnce({ id: 3 });
+    repository.findByEmail.mockResolvedValueOnce({ id: 3 });
     await expect(
       service.update(2, { email: 'duplicate@example.com' }),
     ).rejects.toBeInstanceOf(ConflictException);
@@ -105,18 +111,17 @@ describe('UsersService', () => {
 
   it('changes to an existing active role only', async () => {
     await service.changeRole(2, 2);
-    expect(prisma.user.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { roleId: 2 } }),
-    );
+    expect(repository.updateRole).toHaveBeenCalledWith(2, 2);
 
-    prisma.role.findUnique.mockResolvedValueOnce(null);
+    repository.findRoleById.mockResolvedValueOnce(null);
     await expect(service.changeRole(2, 999)).rejects.toBeInstanceOf(
       NotFoundException,
     );
 
-    prisma.role.findUnique.mockResolvedValueOnce({
+    repository.findRoleById.mockResolvedValueOnce({
       id: 3,
       name: 'Otro',
+      description: null,
       isActive: false,
     });
     await expect(service.changeRole(2, 3)).rejects.toBeInstanceOf(
@@ -125,66 +130,56 @@ describe('UsersService', () => {
   });
 
   it('activates only an existing account with a password', async () => {
-    prisma.user.findUnique.mockResolvedValueOnce({
-      id: 2,
-      passwordHash: 'hash',
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
       status: UserStatus.INACTIVE,
     });
+    repository.getPasswordHash.mockResolvedValueOnce('hash');
     await service.activate(2);
-    expect(prisma.user.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { status: UserStatus.ACTIVE } }),
-    );
+    expect(repository.updateStatus).toHaveBeenCalledWith(2, UserStatus.ACTIVE);
 
-    prisma.user.findUnique.mockResolvedValueOnce({
-      id: 2,
-      passwordHash: null,
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
       status: UserStatus.INACTIVE,
     });
+    repository.getPasswordHash.mockResolvedValueOnce(null);
     await expect(service.activate(2)).rejects.toBeInstanceOf(ConflictException);
 
-    prisma.user.findUnique.mockResolvedValueOnce(null);
+    repository.findById.mockResolvedValueOnce(null);
     await expect(service.activate(99)).rejects.toBeInstanceOf(
       NotFoundException,
     );
 
-    prisma.user.findUnique.mockResolvedValueOnce({
-      id: 2,
-      passwordHash: 'hash',
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
       status: UserStatus.BLOCKED,
     });
     await expect(service.activate(2)).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('manually unlocks only a current temporary lock', async () => {
-    prisma.user.findUnique.mockResolvedValueOnce({
-      id: 2,
-      status: UserStatus.ACTIVE,
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
       lockedAt: new Date(),
     });
     await service.unlock(2);
-    expect(prisma.user.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: 2 },
-        data: { failedLoginAttempts: 0, lockedAt: null },
-      }),
-    );
+    expect(repository.resetTemporaryLock).toHaveBeenCalledWith(2);
   });
 
   it('rejects unlock for a user without a current temporary lock', async () => {
-    prisma.user.findUnique.mockResolvedValueOnce({
-      id: 2,
-      status: UserStatus.ACTIVE,
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
       lockedAt: null,
     });
     await expect(service.unlock(2)).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('rejects unlock for an unknown or administratively blocked user', async () => {
-    prisma.user.findUnique.mockResolvedValueOnce(null);
+    repository.findById.mockResolvedValueOnce(null);
     await expect(service.unlock(99)).rejects.toBeInstanceOf(NotFoundException);
 
-    prisma.user.findUnique.mockResolvedValueOnce({
-      id: 2,
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
       status: UserStatus.BLOCKED,
       lockedAt: new Date(),
     });
@@ -193,21 +188,23 @@ describe('UsersService', () => {
 
   it('deactivates a regular user', async () => {
     await service.deactivate(2);
-    expect(prisma.user.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { status: UserStatus.INACTIVE } }),
+    expect(repository.updateStatus).toHaveBeenCalledWith(
+      2,
+      UserStatus.INACTIVE,
     );
   });
 
   it('does not deactivate the last active administrator', async () => {
-    prisma.user.findUnique.mockResolvedValueOnce({
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
       id: 1,
       status: UserStatus.ACTIVE,
-      role: { name: 'Administrador' },
+      role: { id: 1, name: 'Administrador', description: null, isActive: true },
     });
-    prisma.user.count.mockResolvedValueOnce(0);
+    repository.countActiveAdministrators.mockResolvedValueOnce(0);
     await expect(service.deactivate(1)).rejects.toBeInstanceOf(
       ConflictException,
     );
-    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(repository.updateStatus).not.toHaveBeenCalled();
   });
 });
