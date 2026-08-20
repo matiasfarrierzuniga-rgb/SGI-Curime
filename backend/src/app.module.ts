@@ -6,7 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UserRequestsModule } from './user-requests/user-requests.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuditModule } from './audit/audit.module';
-import { RolesModule } from './roles/roles.module';
+import { RolesModule } from './modules/roles/roles.module';
 import { AffiliateRequestsModule } from './affiliate-requests/affiliate-requests.module';
 import { AffiliatesModule } from './affiliates/affiliates.module';
 import { AssembliesModule } from './assemblies/assemblies.module';
