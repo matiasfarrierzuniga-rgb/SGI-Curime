@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../../audit/audit-actions';
 import { User } from '../../domain/entities/user';
 import { EmailAlreadyRegisteredError } from '../../domain/errors/email-already-registered.error';
@@ -8,13 +8,17 @@ import type {
   UserUpdateData,
   UsersRepository,
 } from '../../domain/repositories/users-repository';
-import type { AuditContext, AuditPort } from '../ports/audit.port';
+import {
+  AUDIT_PORT,
+  type AuditContext,
+  type AuditPort,
+} from '../ports/audit.port';
 
 @Injectable()
 export class UpdateUserUseCase {
   constructor(
     private readonly repository: UsersRepository,
-    @Optional() private readonly audit?: AuditPort,
+    @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {}
 
   async execute(

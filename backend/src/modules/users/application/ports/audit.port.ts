@@ -1,3 +1,5 @@
+export const AUDIT_PORT = Symbol('AUDIT_PORT');
+
 export interface AuditContext {
   ipAddress?: string;
   userAgent?: string;

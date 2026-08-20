@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
@@ -9,7 +9,11 @@ import { AccountBlockedError } from '../../domain/errors/account-blocked.error';
 import { AccountNotLockedError } from '../../domain/errors/account-not-locked.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
 import type { UsersRepository } from '../../domain/repositories/users-repository';
-import type { AuditContext, AuditPort } from '../ports/audit.port';
+import {
+  AUDIT_PORT,
+  type AuditContext,
+  type AuditPort,
+} from '../ports/audit.port';
 
 @Injectable()
 export class UnlockUserUseCase {
@@ -17,7 +21,7 @@ export class UnlockUserUseCase {
 
   constructor(
     private readonly repository: UsersRepository,
-    @Optional() private readonly audit?: AuditPort,
+    @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {
     this.lockoutMinutes = getAccountLockoutPolicy().lockoutMinutes;
   }

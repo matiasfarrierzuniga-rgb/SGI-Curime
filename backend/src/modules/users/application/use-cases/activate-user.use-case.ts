@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../../audit/audit-actions';
 import { User, UserStatus } from '../../domain/entities/user';
 import { AccountAlreadyActiveError } from '../../domain/errors/account-already-active.error';
@@ -6,13 +6,17 @@ import { AccountBlockedError } from '../../domain/errors/account-blocked.error';
 import { ActivationNotCompletedError } from '../../domain/errors/activation-not-completed.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
 import type { UsersRepository } from '../../domain/repositories/users-repository';
-import type { AuditContext, AuditPort } from '../ports/audit.port';
+import {
+  AUDIT_PORT,
+  type AuditContext,
+  type AuditPort,
+} from '../ports/audit.port';
 
 @Injectable()
 export class ActivateUserUseCase {
   constructor(
     private readonly repository: UsersRepository,
-    @Optional() private readonly audit?: AuditPort,
+    @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {}
 
   async execute(

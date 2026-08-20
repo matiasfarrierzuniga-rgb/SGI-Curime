@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../../audit/audit-actions';
 import { User, UserStatus } from '../../domain/entities/user';
 import { AccountAlreadyInactiveError } from '../../domain/errors/account-already-inactive.error';
@@ -8,13 +8,17 @@ import {
   requiresAdminContinuity,
 } from '../../domain/policies/administrator-continuity.policy';
 import type { UsersRepository } from '../../domain/repositories/users-repository';
-import type { AuditContext, AuditPort } from '../ports/audit.port';
+import {
+  AUDIT_PORT,
+  type AuditContext,
+  type AuditPort,
+} from '../ports/audit.port';
 
 @Injectable()
 export class DeactivateUserUseCase {
   constructor(
     private readonly repository: UsersRepository,
-    @Optional() private readonly audit?: AuditPort,
+    @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {}
 
   async execute(
