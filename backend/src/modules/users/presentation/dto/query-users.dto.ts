@@ -9,7 +9,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { UserStatus } from '../../../generated/prisma/enums';
+import { UserStatus } from '../../../../../generated/prisma/enums';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
