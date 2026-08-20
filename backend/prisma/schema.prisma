@@ -25,6 +25,30 @@ enum AffiliateStatus {
   INACTIVE
 }
 
+enum AssemblyStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  JUSTIFIED
+}
+
+enum JustificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SanctionStatus {
+  ACTIVE
+  RESOLVED
+  REVOKED
+}
+
 model Role {
   id          Int      @id @default(autoincrement())
   name        String   @unique
@@ -53,9 +77,15 @@ model User {
   roleId Int
   role   Role @relation(fields: [roleId], references: [id])
 
-  activationTokens    AccountActivationToken[]
-  passwordResetTokens PasswordResetToken[]
-  auditLogs           AuditLog[]
+  activationTokens          AccountActivationToken[]
+  passwordResetTokens       PasswordResetToken[]
+  auditLogs                 AuditLog[]
+  reviewedAffiliateRequests AffiliateRequest[]       @relation("AffiliateRequestReviewer")
+  reviewedJustifications    AbsenceJustification[]   @relation("JustificationReviewer")
+  createdSanctions          AffiliateSanction[]      @relation("SanctionCreator")
+  inventoryMovements        InventoryMovement[]
+  inventoryLoansCreated     InventoryLoan[]          @relation("LoanCreator")
+  inventoryLoansReceived    InventoryLoan[]          @relation("LoanReceiver")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -138,13 +168,18 @@ model Affiliate {
   birthDate       DateTime
   gender          String?
   phone           String?
-  email           String?
+  email           String?         @unique
   address         String
   occupation      String?
   workplace       String?
   affiliateType   String?
   affiliationDate DateTime        @default(now())
   status          AffiliateStatus @default(ACTIVE)
+
+  attendances    AssemblyAttendance[]
+  justifications AbsenceJustification[]
+  sanctions      AffiliateSanction[]
+  inventoryLoans InventoryLoan[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -167,10 +202,207 @@ model AffiliateRequest {
   rejectionReason String?
   reviewedAt      DateTime?
   reviewedById    Int?
+  reviewedBy      User?     @relation("AffiliateRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([identification])
+  @@index([email])
   @@index([status])
+  @@index([reviewedById])
+}
+
+model Assembly {
+  id          Int            @id @default(autoincrement())
+  title       String
+  type        String?
+  date        DateTime
+  place       String
+  description String?
+  status      AssemblyStatus @default(SCHEDULED)
+
+  attendances    AssemblyAttendance[]
+  justifications AbsenceJustification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([status])
+}
+
+model AssemblyAttendance {
+  id           Int              @id @default(autoincrement())
+  status       AttendanceStatus
+  registeredAt DateTime         @default(now())
+  observations String?
+
+  assemblyId  Int
+  assembly    Assembly  @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+  affiliateId Int
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([assemblyId, affiliateId])
+  @@index([assemblyId, status])
+  @@index([affiliateId])
+}
+
+model AbsenceJustification {
+  id              Int                 @id @default(autoincrement())
+  reason          String
+  status          JustificationStatus @default(PENDING)
+  rejectionReason String?
+  reviewedAt      DateTime?
+
+  assemblyId   Int
+  assembly     Assembly  @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+  affiliateId  Int
+  affiliate    Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  reviewedById Int?
+  reviewedBy   User?     @relation("JustificationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([assemblyId, affiliateId])
+  @@index([status])
+  @@index([reviewedById])
+}
+
+model AffiliateSanction {
+  id          Int            @id @default(autoincrement())
+  reason      String
+  description String?
+  date        DateTime       @default(now())
+  status      SanctionStatus @default(ACTIVE)
+
+  affiliateId Int
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  createdById Int
+  createdBy   User      @relation("SanctionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([affiliateId])
+  @@index([status])
+  @@index([date])
+  @@index([createdById])
+}
+
+enum InventoryItemStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InventoryItemCondition {
+  GOOD
+  DAMAGED
+  UNDER_REPAIR
+}
+
+enum InventoryMovementType {
+  ENTRY
+  EXIT
+  ADJUSTMENT
+}
+
+enum InventoryLoanStatus {
+  ACTIVE
+  RETURNED
+  CANCELLED
+}
+
+model InventoryCategory {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  isActive    Boolean @default(true)
+
+  items InventoryItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model InventoryItem {
+  id              Int                    @id @default(autoincrement())
+  code            String                 @unique
+  name            String
+  description     String?
+  currentQuantity Int                    @default(0)
+  minimumQuantity Int                    @default(0)
+  unit            String                 @default("unidad")
+  location        String?
+  status          InventoryItemStatus    @default(ACTIVE)
+  condition       InventoryItemCondition @default(GOOD)
+
+  categoryId Int
+  category   InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  movements InventoryMovement[]
+  loans     InventoryLoan[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([condition])
+}
+
+model InventoryMovement {
+  id        Int                   @id @default(autoincrement())
+  type      InventoryMovementType
+  quantity  Int
+  reason    String
+  reference String?
+  notes     String?
+
+  itemId      Int
+  item        InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  createdById Int?
+  createdBy   User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([itemId])
+  @@index([type])
+  @@index([createdById])
+  @@index([createdAt])
+}
+
+model InventoryLoan {
+  id                 Int                 @id @default(autoincrement())
+  quantity           Int
+  borrowerName       String
+  loanDate           DateTime            @default(now())
+  expectedReturnDate DateTime
+  returnedAt         DateTime?
+  status             InventoryLoanStatus @default(ACTIVE)
+  notes              String?
+
+  itemId              Int
+  item                InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  borrowerAffiliateId Int?
+  affiliate           Affiliate?    @relation(fields: [borrowerAffiliateId], references: [id], onDelete: SetNull)
+  createdById         Int?
+  createdBy           User?         @relation("LoanCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  receivedById        Int?
+  receivedBy          User?         @relation("LoanReceiver", fields: [receivedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemId])
+  @@index([status])
+  @@index([borrowerAffiliateId])
+  @@index([createdById])
+  @@index([expectedReturnDate])
 }
