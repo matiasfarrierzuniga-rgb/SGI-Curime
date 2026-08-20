@@ -1,12 +1,15 @@
-export interface AuditEvent {
+export interface AuditContext {
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export interface AuditEvent extends AuditContext {
   userId?: number;
   action: string;
   module: string;
   entityType?: string;
   entityId?: string | number;
   details?: unknown;
-  ipAddress?: string;
-  userAgent?: string;
 }
 
 export interface AuditPort {
