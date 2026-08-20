@@ -11,8 +11,10 @@ Frontend target: Vertical Slices by feature with small internal layers.
 ## Current Branch
 
 ```text
-docs/phase-0-baseline
+docs/sprint1-architecture-definition
 ```
+
+ETAPA 0 se completó en `docs/phase-0-baseline` (commit `49505bc`, pushed). La rama de trabajo para ETAPA 1 es `docs/sprint1-architecture-definition`, creada desde ese commit.
 
 Current working tree contains untracked opencode files only:
 
@@ -144,9 +146,9 @@ PRE-EXISTING RISK: backend npm audit reports 4 vulnerabilities.
 Architecture Definition should update/create only documentation first:
 
 ```text
-docs/architecture/backend-layer-rules.md
-docs/architecture/frontend-slice-rules.md
-docs/architecture/sprint-1-scope.md
+docs/architecture/backend-layer-rules.md   ✅ created
+docs/architecture/frontend-slice-rules.md  ✅ created
+docs/architecture/sprint-1-scope.md        ✅ updated
 ```
 
 Optional cleanup if team agrees:
@@ -158,15 +160,57 @@ docs/architecture/gap-analysis.md
 
 ## Stage 1 Expected Commits
 
-Suggested commits, if user approves committing:
+Committed so far:
 
 ```text
-docs(architecture): capture sprint one baseline
+docs(architecture): capture sprint one baseline  (49505bc)
+```
+
+Pending for this stage:
+
+```text
 docs(architecture): define backend layered rules
 docs(architecture): define frontend slice rules
 ```
 
 No code migration should start before architecture rules are agreed.
+
+## Stage 1 Validation
+
+ETAPA 1 is documentation-only. No backend or frontend code changed.
+
+| Check | Result |
+| --- | --- |
+| `git status --short --branch` | Clean except untracked opencode files. |
+| `git diff --check` | No whitespace errors. |
+| Backend/frontend build, lint, tests | Unchanged from baseline (no code touched). |
+
+## Stage 1 Definition of Done
+
+- [x] Backend layered rules documented (`backend-layer-rules.md`).
+- [x] Frontend slice rules documented (`frontend-slice-rules.md`).
+- [x] Sprint 1 scope updated with ETAPA 0 results and current branch.
+- [ ] Rules reviewed and approved by team.
+- [ ] Committed to `docs/sprint1-architecture-definition`.
+
+## Backlog Reference (plan section `#75`)
+
+Priority P0 for next stages:
+
+```text
+ARCH-03   Dependency rules defined                (this stage)
+BE-USR-01 Layered Users structure                 P0
+BE-USR-02 User domain model                       P0
+BE-USR-03 UserRepository contract                 P0
+BE-USR-04 PrismaUserRepository                    P0
+BE-USR-05..11 Users use cases                     P0
+BE-ROLE-01..03 Roles repository/use case          P0
+BE-AUTH-01..04 Auth structure/ports/Login         P0
+FE-ARCH-01 app/features/shared                    P0
+FE-AUTH-01 Auth slice                             P0
+FE-USER-01..03 Users slice                        P0
+TEST-01..04 Domain/Application/E2E/frontend tests P0
+```
 
 ## Stop Conditions
 
