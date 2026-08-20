@@ -1,7 +1,7 @@
 import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
-} from '../../../../auth/account-lockout.policy';
+} from '../../../../auth/domain/policies/account-lockout.policy';
 import { User, UserStatus } from '../../domain/entities/user';
 
 const lockoutMinutes = getAccountLockoutPolicy().lockoutMinutes;

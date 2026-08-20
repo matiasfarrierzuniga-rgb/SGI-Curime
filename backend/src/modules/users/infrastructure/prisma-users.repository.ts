@@ -7,7 +7,7 @@ import {
 import {
   getAccountLockoutPolicy,
   lockoutCutoff,
-} from '../../../auth/account-lockout.policy';
+} from '../../../auth/domain/policies/account-lockout.policy';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
   User,

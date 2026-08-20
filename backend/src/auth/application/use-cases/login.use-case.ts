@@ -1,0 +1,125 @@
+import {
+  Inject,
+  Injectable,
+  Optional,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AuditAction } from '../../../audit/audit-actions';
+import type { AuthenticatedUser } from '../../domain/entities/auth-user';
+import {
+  getAccountLockoutPolicy,
+  isTemporaryLockActive,
+} from '../../domain/policies/account-lockout.policy';
+import {
+  AUDIT_PORT,
+  type AuditContext,
+  type AuditPort,
+} from '../ports/audit.port';
+import type { AuthRepository } from '../ports/auth-repository.port';
+import type { PasswordHasher } from '../ports/password-hasher.port';
+import type { TokenService } from '../ports/token-service.port';
+
+export interface LoginResult {
+  accessToken: string;
+  user: AuthenticatedUser;
+}
+
+@Injectable()
+export class LoginUseCase {
+  private readonly lockoutPolicy = getAccountLockoutPolicy();
+
+  constructor(
+    private readonly repository: AuthRepository,
+    private readonly hasher: PasswordHasher,
+    private readonly tokens: TokenService,
+    @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
+  ) {}
+
+  async execute(
+    email: string,
+    password: string,
+    context: AuditContext = {},
+  ): Promise<LoginResult> {
+    const account = await this.repository.findCredentialsByEmail(email);
+
+    if (!account || account.status !== 'ACTIVE' || !account.passwordHash) {
+      await this.audit?.record({
+        action: AuditAction.LOGIN_FAILED,
+        module: 'AUTH',
+        ...context,
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (
+      isTemporaryLockActive(account.lockedAt, this.lockoutPolicy.lockoutMinutes)
+    ) {
+      await this.audit?.record({
+        userId: account.id,
+        action: AuditAction.LOGIN_FAILED,
+        module: 'AUTH',
+        ...context,
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (account.lockedAt) {
+      await this.repository.clearLockout(account.id);
+    }
+
+    const passwordMatches = await this.hasher.compare(
+      password,
+      account.passwordHash,
+    );
+
+    if (!passwordMatches) {
+      const locked = await this.repository.recordFailedLogin(
+        account.id,
+        this.lockoutPolicy.maxLoginAttempts,
+      );
+      await this.audit?.record({
+        userId: account.id,
+        action: AuditAction.LOGIN_FAILED,
+        module: 'AUTH',
+        ...context,
+      });
+      if (locked) {
+        await this.audit?.record({
+          userId: account.id,
+          action: AuditAction.ACCOUNT_LOCKED,
+          module: 'AUTH',
+          entityType: 'User',
+          entityId: account.id,
+          ...context,
+        });
+      }
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const accessToken = await this.tokens.sign({
+      sub: account.id,
+      email: account.email,
+      role: account.roleName,
+    });
+    await this.repository.recordLoginSuccess(account.id);
+    await this.audit?.record({
+      userId: account.id,
+      action: AuditAction.LOGIN_SUCCESS,
+      module: 'AUTH',
+      entityType: 'User',
+      entityId: account.id,
+      ...context,
+    });
+
+    return {
+      accessToken,
+      user: {
+        id: account.id,
+        fullName: account.fullName,
+        email: account.email,
+        status: account.status,
+        role: account.roleName,
+      },
+    };
+  }
+}

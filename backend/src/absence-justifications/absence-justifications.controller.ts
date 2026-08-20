@@ -11,10 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { Roles } from '../auth/presentation/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/presentation/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/presentation/guards/roles.guard';
+import type { AuthenticatedUser } from '../auth/domain/entities/auth-user';
 import { AbsenceJustificationsService } from './absence-justifications.service';
 import {
   CreateJustificationDto,

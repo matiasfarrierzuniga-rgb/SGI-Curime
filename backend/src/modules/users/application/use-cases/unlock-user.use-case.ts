@@ -2,7 +2,7 @@ import { Inject, Injectable, Optional } from '@nestjs/common';
 import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
-} from '../../../../auth/account-lockout.policy';
+} from '../../../../auth/domain/policies/account-lockout.policy';
 import { AuditAction } from '../../../../audit/audit-actions';
 import { User, UserStatus } from '../../domain/entities/user';
 import { AccountBlockedError } from '../../domain/errors/account-blocked.error';
