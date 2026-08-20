@@ -1,6 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { UserStatus } from '../../generated/prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { UserStatus } from '../../../../generated/prisma/client';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { UsersService } from './users.service';
 
 process.env.MAX_LOGIN_ATTEMPTS = '3';

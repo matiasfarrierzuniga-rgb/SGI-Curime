@@ -5,17 +5,17 @@ import {
   Optional,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, UserStatus } from '../../generated/prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { QueryUsersDto } from './dto/query-users.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Prisma, UserStatus } from '../../../../generated/prisma/client';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { QueryUsersDto } from '../presentation/dto/query-users.dto';
+import { UpdateUserDto } from '../presentation/dto/update-user.dto';
 import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
   lockoutCutoff,
-} from '../auth/account-lockout.policy';
-import { AuditAction } from '../audit/audit-actions';
-import { AuditContext, AuditService } from '../audit/audit.service';
+} from '../../../auth/account-lockout.policy';
+import { AuditAction } from '../../../audit/audit-actions';
+import { AuditContext, AuditService } from '../../../audit/audit.service';
 
 const ADMIN_ROLE = 'Administrador';
 
