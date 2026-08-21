@@ -4,6 +4,8 @@ import type {
   ResetToken,
 } from '../../domain/entities/auth-account';
 
+export const AUTH_REPOSITORY = Symbol('AUTH_REPOSITORY');
+
 export interface AuthTransaction {
   claimActivationToken(tokenId: number, now: Date): Promise<boolean>;
   activateUser(userId: number, passwordHash: string): Promise<boolean>;

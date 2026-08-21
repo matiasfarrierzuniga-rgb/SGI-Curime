@@ -12,12 +12,19 @@ import {
   type AuditContext,
   type AuditPort,
 } from '../ports/audit.port';
-import type { AuthRepository } from '../ports/auth-repository.port';
-import type { PasswordHasher } from '../ports/password-hasher.port';
+import {
+  AUTH_REPOSITORY,
+  type AuthRepository,
+} from '../ports/auth-repository.port';
+import {
+  PASSWORD_HASHER,
+  type PasswordHasher,
+} from '../ports/password-hasher.port';
 
 @Injectable()
 export class ChangePasswordUseCase {
   constructor(
+    @Inject(AUTH_REPOSITORY)
     private readonly repository: AuthRepository,
     private readonly hasher: PasswordHasher,
     @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,

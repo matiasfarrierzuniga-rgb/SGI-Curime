@@ -9,6 +9,10 @@ import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RequestPasswordResetUseCase } from './application/use-cases/request-password-reset.use-case';
 import { ResetPasswordUseCase } from './application/use-cases/reset-password.use-case';
 import { AUDIT_PORT } from './application/ports/audit.port';
+import { AUTH_REPOSITORY } from './application/ports/auth-repository.port';
+import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
+import { PASSWORD_RESET_DELIVERY_PORT } from './application/ports/password-reset-delivery.port';
+import { TOKEN_SERVICE } from './application/ports/token-service.port';
 import { AuditServiceAdapter } from './infrastructure/audit/audit-service.adapter';
 import { PrismaAuthRepository } from './infrastructure/persistence/prisma-auth.repository';
 import { PasswordResetTokenDeliveryService } from './infrastructure/password-reset-token-delivery.service';
@@ -51,11 +55,14 @@ import { JwtStrategy } from './presentation/strategies/jwt.strategy';
   ],
   controllers: [AuthController],
   providers: [
-    PrismaAuthRepository,
-    BcryptPasswordHasher,
-    JwtTokenService,
+    { provide: AUTH_REPOSITORY, useClass: PrismaAuthRepository },
+    { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
+    { provide: TOKEN_SERVICE, useClass: JwtTokenService },
     { provide: AUDIT_PORT, useClass: AuditServiceAdapter },
-    PasswordResetTokenDeliveryService,
+    {
+      provide: PASSWORD_RESET_DELIVERY_PORT,
+      useClass: PasswordResetTokenDeliveryService,
+    },
     LoginUseCase,
     ActivateAccountUseCase,
     RequestPasswordResetUseCase,

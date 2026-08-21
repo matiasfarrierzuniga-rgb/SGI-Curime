@@ -5,9 +5,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AuthModule } from '../src/auth/auth.module';
+import { AuthModule } from '../src/auth';
+import { PASSWORD_RESET_DELIVERY_PORT } from '../src/auth/application/ports/password-reset-delivery.port';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { PasswordResetTokenDeliveryService } from '../src/auth/password-reset-token-delivery.service';
 import { createHash } from 'crypto';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
@@ -152,7 +152,7 @@ describe('AuthController (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(prismaMock)
-      .overrideProvider(PasswordResetTokenDeliveryService)
+      .overrideProvider(PASSWORD_RESET_DELIVERY_PORT)
       .useValue({
         deliver: ({ token }: { token: string }) => {
           deliveredToken = token;

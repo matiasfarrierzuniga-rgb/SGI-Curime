@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuditAction } from '../../../audit/audit-actions';
+import { AuthApplicationError } from '../errors/auth.errors';
 import type { AuthenticatedUser } from '../../domain/entities/auth-user';
 import {
   getAccountLockoutPolicy,
@@ -15,9 +16,15 @@ import {
   type AuditContext,
   type AuditPort,
 } from '../ports/audit.port';
-import type { AuthRepository } from '../ports/auth-repository.port';
-import type { PasswordHasher } from '../ports/password-hasher.port';
-import type { TokenService } from '../ports/token-service.port';
+import {
+  AUTH_REPOSITORY,
+  type AuthRepository,
+} from '../ports/auth-repository.port';
+import {
+  PASSWORD_HASHER,
+  type PasswordHasher,
+} from '../ports/password-hasher.port';
+import { TOKEN_SERVICE, type TokenService } from '../ports/token-service.port';
 
 export interface LoginResult {
   accessToken: string;
@@ -29,8 +36,11 @@ export class LoginUseCase {
   private readonly lockoutPolicy = getAccountLockoutPolicy();
 
   constructor(
+    @Inject(AUTH_REPOSITORY)
     private readonly repository: AuthRepository,
+    @Inject(PASSWORD_HASHER)
     private readonly hasher: PasswordHasher,
+    @Inject(TOKEN_SERVICE)
     private readonly tokens: TokenService,
     @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {}

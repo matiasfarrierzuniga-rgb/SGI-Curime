@@ -1,7 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import type { AuthRepository } from '../../application/ports/auth-repository.port';
+import {
+  AUTH_REPOSITORY,
+  type AuthRepository,
+} from '../../application/ports/auth-repository.port';
 import type { AuthenticatedUser } from '../../domain/entities/auth-user';
 import {
   getAccountLockoutPolicy,
@@ -23,7 +26,9 @@ function getJwtSecret(): string {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly lockoutMinutes: number;
 
-  constructor(private readonly repository: AuthRepository) {
+  constructor(
+    @Inject(AUTH_REPOSITORY) private readonly repository: AuthRepository,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,

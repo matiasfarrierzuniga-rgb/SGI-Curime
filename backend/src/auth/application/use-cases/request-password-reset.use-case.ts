@@ -1,7 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
-import type { AuthRepository } from '../ports/auth-repository.port';
-import type { PasswordResetDeliveryPort } from '../ports/password-reset-delivery.port';
+import {
+  AUTH_REPOSITORY,
+  type AuthRepository,
+} from '../ports/auth-repository.port';
+import {
+  PASSWORD_RESET_DELIVERY_PORT,
+  type PasswordResetDeliveryPort,
+} from '../ports/password-reset-delivery.port';
 
 const GENERIC_RESPONSE =
   'If the email is registered, password reset instructions will be sent.';
@@ -26,7 +32,9 @@ export class RequestPasswordResetUseCase {
   private readonly ttlMinutes = getResetTtlMinutes();
 
   constructor(
+    @Inject(AUTH_REPOSITORY)
     private readonly repository: AuthRepository,
+    @Inject(PASSWORD_RESET_DELIVERY_PORT)
     private readonly delivery: PasswordResetDeliveryPort,
   ) {}
 
