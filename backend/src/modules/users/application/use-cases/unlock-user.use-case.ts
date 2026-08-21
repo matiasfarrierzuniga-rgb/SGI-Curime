@@ -2,13 +2,16 @@ import { Inject, Injectable, Optional } from '@nestjs/common';
 import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
-} from '../../../../auth/domain/policies/account-lockout.policy';
+} from '../../../../auth';
 import { AuditAction } from '../../../../audit/audit-actions';
 import { User, UserStatus } from '../../domain/entities/user';
 import { AccountBlockedError } from '../../domain/errors/account-blocked.error';
 import { AccountNotLockedError } from '../../domain/errors/account-not-locked.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
-import type { UsersRepository } from '../../domain/repositories/users-repository';
+import {
+  USERS_REPOSITORY,
+  type UsersRepository,
+} from '../../domain/repositories/users-repository';
 import {
   AUDIT_PORT,
   type AuditContext,
@@ -20,6 +23,7 @@ export class UnlockUserUseCase {
   private readonly lockoutMinutes: number;
 
   constructor(
+    @Inject(USERS_REPOSITORY)
     private readonly repository: UsersRepository,
     @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {

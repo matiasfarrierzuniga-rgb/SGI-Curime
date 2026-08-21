@@ -8,6 +8,7 @@ import { GetUserUseCase } from './application/use-cases/get-user.use-case';
 import { ListUsersUseCase } from './application/use-cases/list-users.use-case';
 import { UnlockUserUseCase } from './application/use-cases/unlock-user.use-case';
 import { UpdateUserUseCase } from './application/use-cases/update-user.use-case';
+import { USERS_REPOSITORY } from './domain/repositories/users-repository';
 import { AuditServiceAdapter } from './infrastructure/audit/audit-service.adapter';
 import { PrismaUsersRepository } from './infrastructure/prisma-users.repository';
 import { UsersController } from './presentation/controllers/users.controller';
@@ -16,7 +17,7 @@ import { UsersController } from './presentation/controllers/users.controller';
   imports: [AuthModule],
   controllers: [UsersController],
   providers: [
-    PrismaUsersRepository,
+    { provide: USERS_REPOSITORY, useClass: PrismaUsersRepository },
     { provide: AUDIT_PORT, useClass: AuditServiceAdapter },
     ListUsersUseCase,
     GetUserUseCase,

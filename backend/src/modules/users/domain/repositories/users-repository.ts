@@ -1,5 +1,7 @@
 import { User, UserRole, UserStatus } from '../entities/user';
 
+export const USERS_REPOSITORY = Symbol('USERS_REPOSITORY');
+
 export interface UserQuery {
   name?: string;
   email?: string;
