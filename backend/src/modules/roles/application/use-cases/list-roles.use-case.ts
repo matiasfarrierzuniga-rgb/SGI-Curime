@@ -1,10 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Role } from '../../domain/entities/role';
-import type { RolesRepository } from '../../domain/repositories/roles-repository';
+import {
+  ROLES_REPOSITORY,
+  type RolesRepository,
+} from '../../domain/repositories/roles-repository';
 
 @Injectable()
 export class ListRolesUseCase {
-  constructor(private readonly repository: RolesRepository) {}
+  constructor(
+    @Inject(ROLES_REPOSITORY)
+    private readonly repository: RolesRepository,
+  ) {}
 
   execute(): Promise<Role[]> {
     return this.repository.findActive();
