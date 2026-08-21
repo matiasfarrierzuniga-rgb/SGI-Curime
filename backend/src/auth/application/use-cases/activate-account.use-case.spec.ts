@@ -1,5 +1,5 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
 import { AuditAction } from '../../../audit/audit-actions';
+import { AuthApplicationError } from '../errors/auth.errors';
 import { ActivateAccountUseCase } from './activate-account.use-case';
 
 const activationToken = {
@@ -35,22 +35,25 @@ describe('ActivateAccountUseCase', () => {
     hasher.hash.mockResolvedValue('hashed-password');
   });
 
-  it('throws BadRequestException when passwords do not match', async () => {
+  it('throws an application error when passwords do not match', async () => {
     await expect(
       useCase.execute('token', 'Password1!', 'Other1!'),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toMatchObject({ code: 'PASSWORDS_DO_NOT_MATCH' });
     expect(repository.findActivationToken).not.toHaveBeenCalled();
   });
 
-  it('throws BadRequestException for an invalid token', async () => {
+  it('throws an application error for an invalid token', async () => {
     repository.findActivationToken.mockResolvedValueOnce(null);
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toThrow('Invalid activation token');
+    ).rejects.toMatchObject({
+      code: 'INVALID_ACTIVATION_TOKEN',
+      message: 'Invalid activation token',
+    } satisfies Partial<AuthApplicationError>);
   });
 
-  it('throws ConflictException when the token was already used', async () => {
+  it('throws an application error when the token was already used', async () => {
     repository.findActivationToken.mockResolvedValueOnce({
       ...activationToken,
       usedAt: new Date(),
@@ -58,10 +61,10 @@ describe('ActivateAccountUseCase', () => {
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).rejects.toMatchObject({ code: 'ACTIVATION_TOKEN_USED' });
   });
 
-  it('throws BadRequestException when the token has expired', async () => {
+  it('throws an application error when the token has expired', async () => {
     repository.findActivationToken.mockResolvedValueOnce({
       ...activationToken,
       expiresAt: new Date(Date.now() - 1000),
@@ -69,10 +72,10 @@ describe('ActivateAccountUseCase', () => {
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toThrow('Activation token has expired');
+    ).rejects.toMatchObject({ code: 'ACTIVATION_TOKEN_EXPIRED' });
   });
 
-  it('throws ConflictException when the account is not INACTIVE', async () => {
+  it('throws an application error when the account is not INACTIVE', async () => {
     repository.findActivationToken.mockResolvedValueOnce({
       ...activationToken,
       userStatus: 'ACTIVE',
@@ -80,24 +83,24 @@ describe('ActivateAccountUseCase', () => {
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toThrow('Account cannot be activated');
+    ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_ACTIVATED' });
   });
 
-  it('throws ConflictException when the claim fails in the transaction', async () => {
+  it('throws an application error when the claim fails in the transaction', async () => {
     tx.claimActivationToken.mockResolvedValueOnce(false);
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toThrow('Activation token is no longer valid');
+    ).rejects.toMatchObject({ code: 'ACTIVATION_TOKEN_NO_LONGER_VALID' });
     expect(tx.activateUser).not.toHaveBeenCalled();
   });
 
-  it('throws ConflictException when the user cannot be activated', async () => {
+  it('throws an application error when the user cannot be activated', async () => {
     tx.activateUser.mockResolvedValueOnce(false);
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toThrow('Account cannot be activated');
+    ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_ACTIVATED' });
   });
 
   it('hashes the password, activates the account and audits', async () => {

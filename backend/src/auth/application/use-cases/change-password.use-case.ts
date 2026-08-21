@@ -1,12 +1,6 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  Optional,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../audit/audit-actions';
+import { AuthApplicationError } from '../errors/auth.errors';
 import {
   AUDIT_PORT,
   type AuditContext,
@@ -26,6 +20,7 @@ export class ChangePasswordUseCase {
   constructor(
     @Inject(AUTH_REPOSITORY)
     private readonly repository: AuthRepository,
+    @Inject(PASSWORD_HASHER)
     private readonly hasher: PasswordHasher,
     @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {}
@@ -38,12 +33,12 @@ export class ChangePasswordUseCase {
     context: AuditContext = {},
   ): Promise<{ message: string }> {
     if (newPassword !== newPasswordConfirmation) {
-      throw new BadRequestException('Passwords do not match');
+      throw new AuthApplicationError('PASSWORDS_DO_NOT_MATCH', 'Passwords do not match');
     }
 
     const user = await this.repository.findCredentialsById(userId);
     if (!user?.passwordHash) {
-      throw new UnauthorizedException('Unauthorized');
+      throw new AuthApplicationError('UNAUTHORIZED', 'Unauthorized');
     }
 
     const currentMatches = await this.hasher.compare(
@@ -51,11 +46,17 @@ export class ChangePasswordUseCase {
       user.passwordHash,
     );
     if (!currentMatches) {
-      throw new UnauthorizedException('Current password is incorrect');
+      throw new AuthApplicationError(
+        'CURRENT_PASSWORD_INCORRECT',
+        'Current password is incorrect',
+      );
     }
 
     if (await this.hasher.compare(newPassword, user.passwordHash)) {
-      throw new ConflictException('New password must be different');
+      throw new AuthApplicationError(
+        'NEW_PASSWORD_MUST_DIFFER',
+        'New password must be different',
+      );
     }
 
     await this.repository.updatePassword(

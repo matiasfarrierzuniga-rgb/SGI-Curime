@@ -1,4 +1,3 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
 import { AuditAction } from '../../../audit/audit-actions';
 import { ResetPasswordUseCase } from './reset-password.use-case';
 
@@ -33,22 +32,22 @@ describe('ResetPasswordUseCase', () => {
     hasher.hash.mockResolvedValue('hashed-password');
   });
 
-  it('throws BadRequestException when passwords do not match', async () => {
+  it('throws an application error when passwords do not match', async () => {
     await expect(
       useCase.execute('token', 'Password1!', 'Other1!'),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toMatchObject({ code: 'PASSWORDS_DO_NOT_MATCH' });
     expect(repository.findResetToken).not.toHaveBeenCalled();
   });
 
-  it('throws BadRequestException for an invalid token', async () => {
+  it('throws an application error for an invalid token', async () => {
     repository.findResetToken.mockResolvedValueOnce(null);
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toThrow('Invalid reset token');
+    ).rejects.toMatchObject({ code: 'INVALID_RESET_TOKEN' });
   });
 
-  it('throws ConflictException when the token was already used', async () => {
+  it('throws an application error when the token was already used', async () => {
     repository.findResetToken.mockResolvedValueOnce({
       ...resetToken,
       usedAt: new Date(),
@@ -56,10 +55,10 @@ describe('ResetPasswordUseCase', () => {
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).rejects.toMatchObject({ code: 'RESET_TOKEN_USED' });
   });
 
-  it('throws BadRequestException when the token has expired', async () => {
+  it('throws an application error when the token has expired', async () => {
     repository.findResetToken.mockResolvedValueOnce({
       ...resetToken,
       expiresAt: new Date(Date.now() - 1000),
@@ -67,15 +66,15 @@ describe('ResetPasswordUseCase', () => {
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toThrow('Reset token has expired');
+    ).rejects.toMatchObject({ code: 'RESET_TOKEN_EXPIRED' });
   });
 
-  it('throws ConflictException when the claim fails in the transaction', async () => {
+  it('throws an application error when the claim fails in the transaction', async () => {
     tx.claimResetToken.mockResolvedValueOnce(false);
 
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
-    ).rejects.toThrow('Reset token is no longer valid');
+    ).rejects.toMatchObject({ code: 'RESET_TOKEN_NO_LONGER_VALID' });
     expect(tx.setUserPassword).not.toHaveBeenCalled();
   });
 

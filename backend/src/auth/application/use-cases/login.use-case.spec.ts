@@ -1,5 +1,5 @@
-import { UnauthorizedException } from '@nestjs/common';
 import { AuditAction } from '../../../audit/audit-actions';
+import { AuthApplicationError } from '../errors/auth.errors';
 import { LoginUseCase } from './login.use-case';
 
 const account = {
@@ -40,19 +40,22 @@ describe('LoginUseCase', () => {
     repository.recordFailedLogin.mockResolvedValue(false);
   });
 
-  it('throws UnauthorizedException for an unknown email', async () => {
+  it('throws an application error for an unknown email', async () => {
     repository.findCredentialsByEmail.mockResolvedValueOnce(null);
 
     await expect(
       useCase.execute('ghost@example.com', 'secret'),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({
+      code: 'INVALID_CREDENTIALS',
+      message: 'Invalid credentials',
+    } satisfies Partial<AuthApplicationError>);
     expect(audit.record).toHaveBeenCalledWith({
       action: AuditAction.LOGIN_FAILED,
       module: 'AUTH',
     });
   });
 
-  it('throws UnauthorizedException when the account is not ACTIVE', async () => {
+  it('throws an application error when the account is not ACTIVE', async () => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
       ...account,
       status: 'INACTIVE',
@@ -60,11 +63,11 @@ describe('LoginUseCase', () => {
 
     await expect(
       useCase.execute('admin@example.com', 'secret'),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
     expect(hasher.compare).not.toHaveBeenCalled();
   });
 
-  it('throws UnauthorizedException when the account has no password hash', async () => {
+  it('throws an application error when the account has no password hash', async () => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
       ...account,
       passwordHash: null,
@@ -72,10 +75,10 @@ describe('LoginUseCase', () => {
 
     await expect(
       useCase.execute('admin@example.com', 'secret'),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
   });
 
-  it('throws UnauthorizedException while a temporary lock is active', async () => {
+  it('throws an application error while a temporary lock is active', async () => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
       ...account,
       lockedAt: new Date(),
@@ -83,7 +86,7 @@ describe('LoginUseCase', () => {
 
     await expect(
       useCase.execute('admin@example.com', 'secret'),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
     expect(audit.record).toHaveBeenCalledWith({
       userId: 1,
       action: AuditAction.LOGIN_FAILED,
@@ -108,7 +111,7 @@ describe('LoginUseCase', () => {
 
     await expect(
       useCase.execute('admin@example.com', 'wrong'),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
     expect(repository.recordFailedLogin).toHaveBeenCalledWith(1, 5);
     expect(audit.record).toHaveBeenCalledWith({
       userId: 1,
@@ -123,7 +126,7 @@ describe('LoginUseCase', () => {
 
     await expect(
       useCase.execute('admin@example.com', 'wrong'),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
     expect(audit.record).toHaveBeenCalledWith({
       userId: 1,
       action: AuditAction.ACCOUNT_LOCKED,

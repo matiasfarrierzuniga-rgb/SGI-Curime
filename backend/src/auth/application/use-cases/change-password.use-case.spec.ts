@@ -1,4 +1,3 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
 import { AuditAction } from '../../../audit/audit-actions';
 import { ChangePasswordUseCase } from './change-password.use-case';
 
@@ -25,22 +24,22 @@ describe('ChangePasswordUseCase', () => {
     repository.updatePassword.mockResolvedValue(undefined);
   });
 
-  it('throws BadRequestException when new passwords do not match', async () => {
+  it('throws an application error when new passwords do not match', async () => {
     await expect(
       useCase.execute(1, 'current', 'NewPassword1!', 'Other1!'),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toMatchObject({ code: 'PASSWORDS_DO_NOT_MATCH' });
     expect(repository.findCredentialsById).not.toHaveBeenCalled();
   });
 
-  it('throws UnauthorizedException for an unknown account', async () => {
+  it('throws an application error for an unknown account', async () => {
     repository.findCredentialsById.mockResolvedValueOnce(null);
 
     await expect(
       useCase.execute(1, 'current', 'NewPassword1!', 'NewPassword1!'),
-    ).rejects.toThrow('Unauthorized');
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
-  it('throws UnauthorizedException when there is no password hash', async () => {
+  it('throws an application error when there is no password hash', async () => {
     repository.findCredentialsById.mockResolvedValueOnce({
       id: 1,
       passwordHash: null,
@@ -48,23 +47,23 @@ describe('ChangePasswordUseCase', () => {
 
     await expect(
       useCase.execute(1, 'current', 'NewPassword1!', 'NewPassword1!'),
-    ).rejects.toThrow('Unauthorized');
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
-  it('throws UnauthorizedException when the current password is wrong', async () => {
+  it('throws an application error when the current password is wrong', async () => {
     hasher.compare.mockResolvedValueOnce(false);
 
     await expect(
       useCase.execute(1, 'wrong', 'NewPassword1!', 'NewPassword1!'),
-    ).rejects.toThrow('Current password is incorrect');
+    ).rejects.toMatchObject({ code: 'CURRENT_PASSWORD_INCORRECT' });
   });
 
-  it('throws ConflictException when the new password is the same', async () => {
+  it('throws an application error when the new password is the same', async () => {
     hasher.compare.mockResolvedValueOnce(true).mockResolvedValueOnce(true);
 
     await expect(
       useCase.execute(1, 'current', 'current', 'current'),
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).rejects.toMatchObject({ code: 'NEW_PASSWORD_MUST_DIFFER' });
     expect(repository.updatePassword).not.toHaveBeenCalled();
   });
 

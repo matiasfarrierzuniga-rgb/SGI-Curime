@@ -1,12 +1,7 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  Optional,
-} from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { AuditAction } from '../../../audit/audit-actions';
+import { AuthApplicationError } from '../errors/auth.errors';
 import {
   AUDIT_PORT,
   type AuditContext,
@@ -42,20 +37,20 @@ export class ResetPasswordUseCase {
     context: AuditContext = {},
   ): Promise<{ message: string }> {
     if (password !== passwordConfirmation) {
-      throw new BadRequestException('Passwords do not match');
+      throw new AuthApplicationError('PASSWORDS_DO_NOT_MATCH', 'Passwords do not match');
     }
 
     const resetToken = await this.repository.findResetToken(hashToken(token));
 
     if (!resetToken) {
-      throw new BadRequestException('Invalid reset token');
+      throw new AuthApplicationError('INVALID_RESET_TOKEN', 'Invalid reset token');
     }
     if (resetToken.usedAt) {
-      throw new ConflictException('Reset token has already been used');
+      throw new AuthApplicationError('RESET_TOKEN_USED', 'Reset token has already been used');
     }
     const now = new Date();
     if (resetToken.expiresAt <= now) {
-      throw new BadRequestException('Reset token has expired');
+      throw new AuthApplicationError('RESET_TOKEN_EXPIRED', 'Reset token has expired');
     }
 
     const passwordHash = await this.hasher.hash(password);
@@ -63,7 +58,10 @@ export class ResetPasswordUseCase {
     await this.repository.withTransaction(async (tx) => {
       const claimed = await tx.claimResetToken(resetToken.id, now);
       if (!claimed) {
-        throw new ConflictException('Reset token is no longer valid');
+        throw new AuthApplicationError(
+          'RESET_TOKEN_NO_LONGER_VALID',
+          'Reset token is no longer valid',
+        );
       }
       await tx.setUserPassword(resetToken.userId, passwordHash);
     });
