@@ -6,9 +6,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { Roles } from '../auth/presentation/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/presentation/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/presentation/guards/roles.guard';
+import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
 import { AuditService } from './audit.service';
 import { QueryAuditLogsDto } from './dto/query-audit-logs.dto';
 
