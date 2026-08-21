@@ -1,7 +1,5 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { Roles } from '../auth/presentation/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/presentation/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/presentation/guards/roles.guard';
+import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
 import { QueryMovementsDto } from './dto/query-movements.dto';
 import { InventoryMovementsService } from './inventory-movements.service';
 

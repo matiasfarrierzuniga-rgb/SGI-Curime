@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../../auth/auth.module';
+import { AuthModule } from '../../auth';
 import { AUDIT_PORT } from './application/ports/audit.port';
 import { ActivateUserUseCase } from './application/use-cases/activate-user.use-case';
 import { ChangeUserRoleUseCase } from './application/use-cases/change-user-role.use-case';

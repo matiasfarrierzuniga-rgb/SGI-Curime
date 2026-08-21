@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../../auth/auth.module';
+import { AuthModule } from '../../auth';
 import { ListRolesUseCase } from './application/use-cases/list-roles.use-case';
 import { ROLES_REPOSITORY } from './domain/repositories/roles-repository';
 import { PrismaRolesRepository } from './infrastructure/prisma-roles.repository';

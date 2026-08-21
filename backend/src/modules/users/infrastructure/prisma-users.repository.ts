@@ -4,10 +4,7 @@ import {
   PrismaClient,
   UserStatus,
 } from '../../../../generated/prisma/client';
-import {
-  getAccountLockoutPolicy,
-  lockoutCutoff,
-} from '../../../auth/domain/policies/account-lockout.policy';
+import { getAccountLockoutPolicy, lockoutCutoff } from '../../../auth';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
   User,

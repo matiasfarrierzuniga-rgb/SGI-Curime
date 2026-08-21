@@ -11,10 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { Roles } from '../auth/presentation/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/presentation/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/presentation/guards/roles.guard';
-import type { AuthenticatedUser } from '../auth/domain/entities/auth-user';
+import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import type { AuthenticatedUser } from '../auth';
 import { CreateAffiliateRequestDto } from './dto/create-affiliate-request.dto';
 import { QueryAffiliateRequestsDto } from './dto/query-affiliate-requests.dto';
 import { RejectAffiliateRequestDto } from './dto/review-affiliate-request.dto';

@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth';
 import { AuditController } from './audit.controller';
 import { AuditService } from './audit.service';
 

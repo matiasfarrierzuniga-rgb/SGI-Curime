@@ -11,10 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { Roles } from '../auth/presentation/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/presentation/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/presentation/guards/roles.guard';
-import type { AuthenticatedUser } from '../auth/domain/entities/auth-user';
+import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import type { AuthenticatedUser } from '../auth';
 import { CreateInventoryCategoryDto } from './dto/create-inventory-category.dto';
 import { UpdateInventoryCategoryDto } from './dto/update-inventory-category.dto';
 import { QueryInventoryCategoriesDto } from './dto/query-inventory-categories.dto';

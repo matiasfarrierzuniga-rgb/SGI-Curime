@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth';
 import { AbsenceJustificationsController } from './absence-justifications.controller';
 import { AbsenceJustificationsService } from './absence-justifications.service';
 @Module({
