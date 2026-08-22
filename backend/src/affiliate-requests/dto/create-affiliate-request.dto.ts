@@ -1,19 +1,23 @@
 import { Transform, Type } from 'class-transformer';
+import { IdentificationType } from '../../../generated/prisma/client';
 import {
   IsDate,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxDate,
   MaxLength,
   MinLength,
+  Matches,
 } from 'class-validator';
-
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
-const lower = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim().toLowerCase() : value;
+import {
+  FULL_NAME_PATTERN,
+  IsIdentificationFor,
+  IsPhoneFor,
+} from '../../common/validation/identity-contact.validation';
+import { trim, trimLowercase } from '../../common/validation/normalizers';
 
 export class CreateAffiliateRequestDto {
   @Transform(trim)
@@ -21,11 +25,14 @@ export class CreateAffiliateRequestDto {
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(150)
+  @Matches(FULL_NAME_PATTERN)
   fullName: string;
+  @IsEnum(IdentificationType)
+  identificationType: IdentificationType;
   @Transform(trim)
   @IsString()
   @IsNotEmpty()
-  @MaxLength(50)
+  @IsIdentificationFor('identificationType')
   identification: string;
   @Type(() => Date) @IsDate() @MaxDate(new Date()) birthDate: Date;
   @Transform(trim)
@@ -36,11 +43,16 @@ export class CreateAffiliateRequestDto {
   gender?: string;
   @Transform(trim)
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(30)
-  phone?: string;
-  @Transform(lower) @IsOptional() @IsEmail() @MaxLength(254) email?: string;
+  @Matches(/^\+[1-9][0-9]{0,3}$/)
+  phoneCountryCode?: string;
+  @Transform(trim)
+  @IsPhoneFor('phoneCountryCode')
+  phoneNationalNumber?: string;
+  @Transform(trimLowercase)
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(254)
+  email?: string;
   @Transform(trim) @IsString() @IsNotEmpty() @MaxLength(300) address: string;
   @Transform(trim)
   @IsOptional()

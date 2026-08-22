@@ -18,7 +18,10 @@ const requestSelect = {
   id: true,
   fullName: true,
   identification: true,
+  identificationType: true,
   email: true,
+  phoneCountryCode: true,
+  phoneNationalNumber: true,
   phone: true,
   address: true,
   reason: true,
@@ -47,7 +50,13 @@ export class UserRequestsService {
       data: { ...dto, status: 'PENDING' },
       select: requestSelect,
     });
-    await this.audit?.log({ action: AuditAction.USER_REQUEST_CREATED, module: 'USER_REQUESTS', entityType: 'UserRequest', entityId: created.id, ...context });
+    await this.audit?.log({
+      action: AuditAction.USER_REQUEST_CREATED,
+      module: 'USER_REQUESTS',
+      entityType: 'UserRequest',
+      entityId: created.id,
+      ...context,
+    });
     return created;
   }
 
@@ -80,7 +89,12 @@ export class UserRequestsService {
     return userRequest;
   }
 
-  async reject(id: number, rejectionReason: string, reviewedById: number, context: AuditContext = {}) {
+  async reject(
+    id: number,
+    rejectionReason: string,
+    reviewedById: number,
+    context: AuditContext = {},
+  ) {
     await this.requirePending(id);
     const result = await this.prisma.userRequest.updateMany({
       where: { id, status: 'PENDING' },
@@ -95,11 +109,23 @@ export class UserRequestsService {
       throw new ConflictException('User request has already been resolved');
     }
     const rejected = await this.findOne(id);
-    await this.audit?.log({ userId: reviewedById, action: AuditAction.USER_REQUEST_REJECTED, module: 'USER_REQUESTS', entityType: 'UserRequest', entityId: id, ...context });
+    await this.audit?.log({
+      userId: reviewedById,
+      action: AuditAction.USER_REQUEST_REJECTED,
+      module: 'USER_REQUESTS',
+      entityType: 'UserRequest',
+      entityId: id,
+      ...context,
+    });
     return rejected;
   }
 
-  async approve(id: number, dto: ApproveUserRequestDto, reviewedById: number, context: AuditContext = {}) {
+  async approve(
+    id: number,
+    dto: ApproveUserRequestDto,
+    reviewedById: number,
+    context: AuditContext = {},
+  ) {
     const userRequest = await this.requirePending(id);
     await this.assertNoUserDuplicates(
       userRequest.email,
@@ -130,8 +156,10 @@ export class UserRequestsService {
         data: {
           fullName: userRequest.fullName,
           identification: userRequest.identification,
+          identificationType: userRequest.identificationType,
           email: userRequest.email,
-          phone: userRequest.phone,
+          phoneCountryCode: userRequest.phoneCountryCode,
+          phoneNationalNumber: userRequest.phoneNationalNumber,
           address: userRequest.address,
           passwordHash: null,
           status: 'INACTIVE',
@@ -141,7 +169,10 @@ export class UserRequestsService {
           id: true,
           fullName: true,
           identification: true,
+          identificationType: true,
           email: true,
+          phoneCountryCode: true,
+          phoneNationalNumber: true,
           phone: true,
           address: true,
           status: true,
@@ -170,8 +201,24 @@ export class UserRequestsService {
       token: generated.token,
       expiresAt: generated.expiresAt,
     });
-    await this.audit?.log({ userId: reviewedById, action: AuditAction.USER_CREATED, module: 'USERS', entityType: 'User', entityId: result.user.id, details: { roleId: role.id }, ...context });
-    await this.audit?.log({ userId: reviewedById, action: AuditAction.USER_REQUEST_APPROVED, module: 'USER_REQUESTS', entityType: 'UserRequest', entityId: id, details: { createdUserId: result.user.id }, ...context });
+    await this.audit?.log({
+      userId: reviewedById,
+      action: AuditAction.USER_CREATED,
+      module: 'USERS',
+      entityType: 'User',
+      entityId: result.user.id,
+      details: { roleId: role.id },
+      ...context,
+    });
+    await this.audit?.log({
+      userId: reviewedById,
+      action: AuditAction.USER_REQUEST_APPROVED,
+      module: 'USER_REQUESTS',
+      entityType: 'UserRequest',
+      entityId: id,
+      details: { createdUserId: result.user.id },
+      ...context,
+    });
     return result;
   }
 
@@ -188,7 +235,7 @@ export class UserRequestsService {
 
   private async assertNoUserDuplicates(email: string, identification: string) {
     const [byEmail, byIdentification] = await Promise.all([
-      this.prisma.user.findUnique({ where: { email }, select: { id: true } }),
+      this.prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } }, select: { id: true } }),
       this.prisma.user.findUnique({
         where: { identification },
         select: { id: true },
@@ -206,7 +253,7 @@ export class UserRequestsService {
   ) {
     const [byEmail, byIdentification] = await Promise.all([
       this.prisma.userRequest.findFirst({
-        where: { email, status: 'PENDING' },
+        where: { email: { equals: email, mode: 'insensitive' }, status: 'PENDING' },
         select: { id: true },
       }),
       this.prisma.userRequest.findFirst({

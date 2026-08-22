@@ -1,17 +1,393 @@
-import { Link, Navigate, useParams } from 'react-router-dom'
-import { moduleAvailability, news, services, site } from '../../content/publicSiteContent'
-import { publicContentService } from '../../services/publicContentService'
-import { Breadcrumbs, CTASection, EmptyContentState, EventCard, NewsCard, PublicPageHeader, SectionContainer, SectionHeader, Seo, ServiceCard, StatusBadge } from '../../components/public/PublicComponents'
-import { useAuth } from '../../auth/AuthContext'
+import { Link, Navigate, useParams } from "react-router-dom";
+import {
+  moduleAvailability,
+  news,
+  services,
+  site,
+} from "../../content/publicSiteContent";
+import { publicContentService } from "../../services/publicContentService";
+import {
+  Breadcrumbs,
+  CTASection,
+  EmptyContentState,
+  EventCard,
+  NewsCard,
+  PublicPageHeader,
+  SectionContainer,
+  SectionHeader,
+  Seo,
+  ServiceCard,
+  StatusBadge,
+} from "../../components/public/PublicComponents";
+import { useAuth } from "../../auth/AuthContext";
 
-export function HomePage() { const { isAuthenticated } = useAuth(); return <><Seo title="Inicio" description="Portal público de la Asociación de Desarrollo Integral de Curime." /><section className="hero"><div className="container-public hero-grid"><div><p className="eyebrow">Curime, Guanacaste, Costa Rica</p><h1>{site.name}</h1><p className="hero-copy">{site.slogan}</p><div className="actions"><Link className="button" to="/nosotros">Conocer la Asociación</Link><Link className="button button-ghost" to={isAuthenticated ? '/app' : '/login'}>{isAuthenticated ? 'Acceder al SGI' : 'Acceder al SGI'}</Link></div></div><div className="hero-art" aria-label="Espacio reservado para fotografía oficial futura"><span>Espacio para fotografía oficial</span></div></div></section><SectionContainer><SectionHeader eyebrow="Comunidad" title="Trabajando juntos por nuestra comunidad" text="La Asociación de Desarrollo Integral promueve la participación, el diálogo y la coordinación comunitaria para acompañar el desarrollo de Curime." /><div className="feature-grid"><article><h3>Participación</h3><p>Un punto de encuentro para informarse y sumarse a las iniciativas comunitarias.</p></article><article><h3>Información clara</h3><p>Canales digitales para compartir noticias, actividades y documentación pública.</p></article><article><h3>Futuro compartido</h3><p>Una plataforma preparada para crecer junto con las necesidades de la comunidad.</p></article></div></SectionContainer><SectionContainer className="surface-section"><SectionHeader title="Actualidad comunitaria" text="Próximamente encontrará aquí las comunicaciones oficiales de la ADI." /><div className="card-grid">{news.map(item => <NewsCard key={item.slug} item={item} />)}</div><Link className="text-link" to="/noticias">Ver todas las noticias</Link></SectionContainer><CTASection /></> }
-const pendingBlocks = ['Quiénes somos', 'Historia', 'Misión', 'Visión', 'Objetivos', 'Junta Directiva']
-export function AboutPage() { return <><Seo title="Nosotros" description="Información institucional de ADI Curime." /><PublicPageHeader title="Nosotros" intro="Conozca la Asociación de Desarrollo Integral de Curime." /><Breadcrumbs current="Nosotros" /><SectionContainer><div className="info-grid">{pendingBlocks.map(title => <article className="content-card" key={title}><h2>{title}</h2><p>{site.pending}</p></article>)}</div></SectionContainer><CTASection /></> }
-export function CommunityPage() { return <><Seo title="Comunidad" description="Espacio comunitario de Curime." /><PublicPageHeader title="Comunidad" intro="Un espacio para las iniciativas, actividades y proyectos de Curime." /><Breadcrumbs current="Comunidad" /><SectionContainer><div className="info-grid">{['Curime', 'Iniciativas comunitarias', 'Proyectos comunitarios', 'Actividades', 'Galería futura'].map(title => <article className="content-card" key={title}><h2>{title}</h2><p>{site.pending}</p></article>)}</div></SectionContainer></> }
-export function NewsPage() { return <><Seo title="Noticias" description="Noticias y comunicados de ADI Curime." /><PublicPageHeader title="Noticias" intro="Comunicados y novedades oficiales de la Asociación." /><Breadcrumbs current="Noticias" /><SectionContainer><div className="card-grid">{publicContentService.listNews().map(item => <NewsCard key={item.slug} item={item} />)}</div></SectionContainer></> }
-export function NewsDetailPage() { const { slug } = useParams(); const item = slug ? publicContentService.getNews(slug) : undefined; if (!item) return <Navigate to="/noticias" replace />; return <><Seo title={item.title} description={item.excerpt} /><Breadcrumbs current="Noticias" /><SectionContainer className="article"><p className="eyebrow">{item.category} · {item.date}</p><h1>{item.title}</h1><p className="lead">{item.excerpt}</p><p>{item.body}</p><Link to="/noticias">Volver a noticias</Link></SectionContainer></> }
-export function EventsPage() { return <><Seo title="Eventos" description="Agenda de actividades de ADI Curime." /><PublicPageHeader title="Eventos" intro="Consulte las actividades comunicadas oficialmente por la Asociación." /><Breadcrumbs current="Eventos" /><SectionContainer><div className="card-grid">{publicContentService.listEvents().map(item => <EventCard key={item.title} item={item} />)}</div></SectionContainer></> }
-export function ServicesPage() { return <><Seo title="Servicios" description="Servicios digitales de ADI Curime." /><PublicPageHeader title="Servicios" intro="Servicios que se habilitarán gradualmente dentro del SGI-Curime." /><Breadcrumbs current="Servicios" /><SectionContainer><div className="card-grid">{services.map(item => <ServiceCard key={item.key} service={item} />)}<article className="service-card"><StatusBadge status={moduleAvailability.userRegistration.enabled ? 'disponible' : 'próximamente'} /><h3>Solicitud de cuenta</h3><p>Solicite acceso para utilizar las funcionalidades disponibles del SGI.</p><Link to="/register">Solicitar cuenta</Link></article></div></SectionContainer></> }
-export function TransparencyPage() { const areas = ['Documentos públicos', 'Informes', 'Proyectos', 'Rendición de cuentas', 'Reportes administrativos', 'Reportes financieros autorizados', 'Información relacionada con DINADECO']; return <><Seo title="Transparencia" description="Información pública y transparencia de ADI Curime." /><PublicPageHeader title="Transparencia" intro="Un espacio preparado para publicar información institucional autorizada." /><Breadcrumbs current="Transparencia" /><SectionContainer><div className="info-grid">{areas.map(title => <EmptyContentState key={title} title={title} />)}</div></SectionContainer></> }
-export function ContactPage() { return <><Seo title="Contacto" description="Canales de contacto de ADI Curime." /><PublicPageHeader title="Contacto" intro="Estamos preparando más canales de atención para la comunidad." /><Breadcrumbs current="Contacto" /><SectionContainer><div className="contact-grid"><article className="content-card"><h2>Ubicación</h2><p>{site.location}</p><p className="muted">Mapa y dirección exacta pendientes de confirmación.</p></article><article className="content-card"><h2>Correo</h2><p><a href={`mailto:${site.email}`}>{site.email}</a></p></article><article className="content-card"><h2>Instagram</h2><p>{site.instagram}</p></article><article className="content-card"><h2>Teléfono y horario</h2><p>{site.pending}</p></article></div><div className="contact-note"><h2>Formulario de contacto</h2><p>El formulario estará disponible cuando se habilite un canal de atención institucional.</p></div></SectionContainer></> }
-export function AppHomePage() { const { user } = useAuth(); const admin = user?.role === 'Administrador'; const inventory = admin || user?.role === 'Gestor de Inventario'; return <><Seo title="Área interna" description="Entrada al área interna de SGI-Curime." /><section className="app-home"><p className="eyebrow">SGI-Curime</p><h1>Bienvenido</h1><p>Acceda a las funciones disponibles para su cuenta.</p><div className="card-grid"><Link className="app-link-card" to="/profile"><h2>Perfil</h2><p>Consulte y actualice su información personal.</p></Link>{admin && <><Link className="app-link-card" to="/admin/users"><h2>Usuarios</h2><p>Administración de usuarios.</p></Link><Link className="app-link-card" to="/admin/user-requests"><h2>Solicitudes</h2><p>Gestión de solicitudes de cuenta.</p></Link><Link className="app-link-card" to="/admin/audit-logs"><h2>Bitácora</h2><p>Consulta de actividad administrativa.</p></Link></>}{inventory && <><Link className="app-link-card" to="/inventory"><h2>Inventario</h2><p>Panel general del módulo de inventario.</p></Link><Link className="app-link-card" to="/inventory/items"><h2>Artículos</h2><p>Gestión de artículos y existencias.</p></Link><Link className="app-link-card" to="/inventory/loans"><h2>Préstamos</h2><p>Registro y seguimiento de préstamos.</p></Link></>}{services.slice(0, 3).map(item => <article className="app-link-card disabled-card" key={item.key}><StatusBadge status="próximamente" /><h2>{item.title}</h2><p>Módulo en desarrollo.</p></article>)}</div></section></> }
+export function HomePage() {
+  const { isAuthenticated } = useAuth();
+  return (
+    <>
+      <Seo
+        title="Inicio"
+        description="Portal público de la Asociación de Desarrollo Integral de Curime."
+      />
+      <section className="hero">
+        <div className="container-public hero-grid">
+          <div>
+            <p className="eyebrow">Curime, Guanacaste, Costa Rica</p>
+            <h1>{site.name}</h1>
+            <p className="hero-copy">{site.slogan}</p>
+            <div className="actions">
+              <Link className="button" to="/nosotros">
+                Conocer la Asociación
+              </Link>
+              <Link
+                className="button button-ghost"
+                to={isAuthenticated ? "/app" : "/login"}
+              >
+                {isAuthenticated ? "Acceder al SGI" : "Acceder al SGI"}
+              </Link>
+            </div>
+          </div>
+          <div
+            className="hero-art"
+            aria-label="Espacio reservado para fotografía oficial futura"
+          >
+            <span>Espacio para fotografía oficial</span>
+          </div>
+        </div>
+      </section>
+      <SectionContainer>
+        <SectionHeader
+          eyebrow="Comunidad"
+          title="Trabajando juntos por nuestra comunidad"
+          text="La Asociación de Desarrollo Integral promueve la participación, el diálogo y la coordinación comunitaria para acompañar el desarrollo de Curime."
+        />
+        <div className="feature-grid">
+          <article>
+            <h3>Participación</h3>
+            <p>
+              Un punto de encuentro para informarse y sumarse a las iniciativas
+              comunitarias.
+            </p>
+          </article>
+          <article>
+            <h3>Información clara</h3>
+            <p>
+              Canales digitales para compartir noticias, actividades y
+              documentación pública.
+            </p>
+          </article>
+          <article>
+            <h3>Futuro compartido</h3>
+            <p>
+              Una plataforma preparada para crecer junto con las necesidades de
+              la comunidad.
+            </p>
+          </article>
+        </div>
+      </SectionContainer>
+      <SectionContainer className="surface-section">
+        <SectionHeader
+          title="Actualidad comunitaria"
+          text="Próximamente encontrará aquí las comunicaciones oficiales de la ADI."
+        />
+        <div className="card-grid">
+          {news.map((item) => (
+            <NewsCard key={item.slug} item={item} />
+          ))}
+        </div>
+        <Link className="text-link" to="/noticias">
+          Ver todas las noticias
+        </Link>
+      </SectionContainer>
+      <CTASection />
+    </>
+  );
+}
+const pendingBlocks = [
+  "Quiénes somos",
+  "Historia",
+  "Misión",
+  "Visión",
+  "Objetivos",
+  "Junta Directiva",
+];
+export function AboutPage() {
+  return (
+    <>
+      <Seo
+        title="Nosotros"
+        description="Información institucional de ADI Curime."
+      />
+      <PublicPageHeader
+        title="Nosotros"
+        intro="Conozca la Asociación de Desarrollo Integral de Curime."
+      />
+      <Breadcrumbs current="Nosotros" />
+      <SectionContainer>
+        <div className="info-grid">
+          {pendingBlocks.map((title) => (
+            <article className="content-card" key={title}>
+              <h2>{title}</h2>
+              <p>{site.pending}</p>
+            </article>
+          ))}
+        </div>
+      </SectionContainer>
+      <CTASection />
+    </>
+  );
+}
+export function CommunityPage() {
+  return (
+    <>
+      <Seo title="Comunidad" description="Espacio comunitario de Curime." />
+      <PublicPageHeader
+        title="Comunidad"
+        intro="Un espacio para las iniciativas, actividades y proyectos de Curime."
+      />
+      <Breadcrumbs current="Comunidad" />
+      <SectionContainer>
+        <div className="info-grid">
+          {[
+            "Curime",
+            "Iniciativas comunitarias",
+            "Proyectos comunitarios",
+            "Actividades",
+            "Galería futura",
+          ].map((title) => (
+            <article className="content-card" key={title}>
+              <h2>{title}</h2>
+              <p>{site.pending}</p>
+            </article>
+          ))}
+        </div>
+      </SectionContainer>
+    </>
+  );
+}
+export function NewsPage() {
+  return (
+    <>
+      <Seo
+        title="Noticias"
+        description="Noticias y comunicados de ADI Curime."
+      />
+      <PublicPageHeader
+        title="Noticias"
+        intro="Comunicados y novedades oficiales de la Asociación."
+      />
+      <Breadcrumbs current="Noticias" />
+      <SectionContainer>
+        <div className="card-grid">
+          {publicContentService.listNews().map((item) => (
+            <NewsCard key={item.slug} item={item} />
+          ))}
+        </div>
+      </SectionContainer>
+    </>
+  );
+}
+export function NewsDetailPage() {
+  const { slug } = useParams();
+  const item = slug ? publicContentService.getNews(slug) : undefined;
+  if (!item) return <Navigate to="/noticias" replace />;
+  return (
+    <>
+      <Seo title={item.title} description={item.excerpt} />
+      <Breadcrumbs current="Noticias" />
+      <SectionContainer className="article">
+        <p className="eyebrow">
+          {item.category} · {item.date}
+        </p>
+        <h1>{item.title}</h1>
+        <p className="lead">{item.excerpt}</p>
+        <p>{item.body}</p>
+        <Link to="/noticias">Volver a noticias</Link>
+      </SectionContainer>
+    </>
+  );
+}
+export function EventsPage() {
+  return (
+    <>
+      <Seo title="Eventos" description="Agenda de actividades de ADI Curime." />
+      <PublicPageHeader
+        title="Eventos"
+        intro="Consulte las actividades comunicadas oficialmente por la Asociación."
+      />
+      <Breadcrumbs current="Eventos" />
+      <SectionContainer>
+        <div className="card-grid">
+          {publicContentService.listEvents().map((item) => (
+            <EventCard key={item.title} item={item} />
+          ))}
+        </div>
+      </SectionContainer>
+    </>
+  );
+}
+export function ServicesPage() {
+  return (
+    <>
+      <Seo title="Servicios" description="Servicios digitales de ADI Curime." />
+      <PublicPageHeader
+        title="Servicios"
+        intro="Servicios que se habilitarán gradualmente dentro del SGI-Curime."
+      />
+      <Breadcrumbs current="Servicios" />
+      <SectionContainer>
+        <div className="card-grid">
+          {services.map((item) => (
+            <ServiceCard key={item.key} service={item} />
+          ))}
+          <article className="service-card">
+            <StatusBadge
+              status={
+                moduleAvailability.userRegistration.enabled
+                  ? "disponible"
+                  : "próximamente"
+              }
+            />
+            <h3>Solicitud de cuenta</h3>
+            <p>
+              Solicite acceso para utilizar las funcionalidades disponibles del
+              SGI.
+            </p>
+            <Link to="/register">Solicitar cuenta</Link>
+          </article>
+        </div>
+      </SectionContainer>
+    </>
+  );
+}
+export function TransparencyPage() {
+  const areas = [
+    "Documentos públicos",
+    "Informes",
+    "Proyectos",
+    "Rendición de cuentas",
+    "Reportes administrativos",
+    "Reportes financieros autorizados",
+    "Información relacionada con DINADECO",
+  ];
+  return (
+    <>
+      <Seo
+        title="Transparencia"
+        description="Información pública y transparencia de ADI Curime."
+      />
+      <PublicPageHeader
+        title="Transparencia"
+        intro="Un espacio preparado para publicar información institucional autorizada."
+      />
+      <Breadcrumbs current="Transparencia" />
+      <SectionContainer>
+        <div className="info-grid">
+          {areas.map((title) => (
+            <EmptyContentState key={title} title={title} />
+          ))}
+        </div>
+      </SectionContainer>
+    </>
+  );
+}
+export function ContactPage() {
+  return (
+    <>
+      <Seo title="Contacto" description="Canales de contacto de ADI Curime." />
+      <PublicPageHeader
+        title="Contacto"
+        intro="Canales de contacto confirmados de la Asociación."
+      />
+      <Breadcrumbs current="Contacto" />
+      <SectionContainer>
+        <div className="contact-grid">
+          <article className="content-card">
+            <h2>Correo</h2>
+            <p>
+              <a href={`mailto:${site.email}`}>{site.email}</a>
+            </p>
+          </article>
+          <article className="content-card">
+            <h2>Instagram</h2>
+            <p>{site.instagram}</p>
+          </article>
+          <article className="content-card">
+            <h2>Teléfono y WhatsApp</h2>
+            <p>{site.phone ?? "Pendiente de confirmación institucional."}</p>
+            {site.whatsapp && <p>{site.whatsapp}</p>}
+          </article>
+        </div>
+        <div className="contact-note">
+          <h2>Otros canales autorizados</h2>
+          <p>
+            Se publicarán únicamente personas y canales confirmados por la Asociación.
+          </p>
+        </div>
+      </SectionContainer>
+    </>
+  );
+}
+export function AppHomePage() {
+  const { user } = useAuth();
+  const admin = user?.role === "Administrador";
+  const inventory = admin || user?.role === "Gestor de Inventario";
+  return (
+    <>
+      <Seo
+        title="Área interna"
+        description="Entrada al área interna de SGI-Curime."
+      />
+      <section className="app-home">
+        <p className="eyebrow">SGI-Curime</p>
+        <h1>Bienvenido</h1>
+        <p>Acceda a las funciones disponibles para su cuenta.</p>
+        <div className="card-grid">
+          <Link className="app-link-card" to="/profile">
+            <h2>Perfil</h2>
+            <p>Consulte y actualice su información personal.</p>
+          </Link>
+          {admin && (
+            <>
+              <Link className="app-link-card" to="/admin/users">
+                <h2>Usuarios</h2>
+                <p>Administración de usuarios.</p>
+              </Link>
+              <Link className="app-link-card" to="/admin/user-requests">
+                <h2>Solicitudes</h2>
+                <p>Gestión de solicitudes de cuenta.</p>
+              </Link>
+              <Link className="app-link-card" to="/admin/audit-logs">
+                <h2>Bitácora</h2>
+                <p>Consulta de actividad administrativa.</p>
+              </Link>
+            </>
+          )}
+          {inventory && (
+            <>
+              <Link className="app-link-card" to="/inventory">
+                <h2>Inventario</h2>
+                <p>Panel general del módulo de inventario.</p>
+              </Link>
+              <Link className="app-link-card" to="/inventory/items">
+                <h2>Artículos</h2>
+                <p>Gestión de artículos y existencias.</p>
+              </Link>
+              <Link className="app-link-card" to="/inventory/loans">
+                <h2>Préstamos</h2>
+                <p>Registro y seguimiento de préstamos.</p>
+              </Link>
+            </>
+          )}
+          {services.slice(0, 3).map((item) => (
+            <article className="app-link-card disabled-card" key={item.key}>
+              <StatusBadge status="próximamente" />
+              <h2>{item.title}</h2>
+              <p>Módulo en desarrollo.</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}

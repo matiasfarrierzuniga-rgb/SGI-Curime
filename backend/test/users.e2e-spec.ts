@@ -4,8 +4,14 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { UsersModule } from '../src/users/users.module';
-import { UsersService } from '../src/users/users.service';
+import { UsersModule } from '../src/modules/users/users.module';
+import { ListUsersUseCase } from '../src/modules/users/application/use-cases/list-users.use-case';
+import { GetUserUseCase } from '../src/modules/users/application/use-cases/get-user.use-case';
+import { UpdateUserUseCase } from '../src/modules/users/application/use-cases/update-user.use-case';
+import { ChangeUserRoleUseCase } from '../src/modules/users/application/use-cases/change-user-role.use-case';
+import { ActivateUserUseCase } from '../src/modules/users/application/use-cases/activate-user.use-case';
+import { DeactivateUserUseCase } from '../src/modules/users/application/use-cases/deactivate-user.use-case';
+import { UnlockUserUseCase } from '../src/modules/users/application/use-cases/unlock-user.use-case';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -18,15 +24,14 @@ describe('UsersController (e2e)', () => {
   let jwt: JwtService;
   let role = 'Administrador';
   let status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE';
-  const service = {
-    findAll: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-    changeRole: jest.fn(),
-    activate: jest.fn(),
-    deactivate: jest.fn(),
-    unlock: jest.fn(),
-  };
+  const listUsers = { execute: jest.fn() };
+  const getUser = { execute: jest.fn() };
+  const updateUser = { execute: jest.fn() };
+  const changeUserRole = { execute: jest.fn() };
+  const activateUser = { execute: jest.fn() };
+  const deactivateUser = { execute: jest.fn() };
+  const unlockUser = { execute: jest.fn() };
+  const user = { id: 2, fullName: 'Usuario', identification: '123456789', identificationType: 'NATIONAL', email: 'user@example.com', phoneCountryCode: null, phoneNationalNumber: null, phone: null, address: null, status: 'ACTIVE', lockedAt: null, roleId: 2, role: { id: 2, name: 'Tesorero', description: null, isActive: true }, createdAt: new Date(), updatedAt: new Date() };
   const prisma = {
     user: {
       findUnique: jest.fn(() =>
@@ -46,31 +51,32 @@ describe('UsersController (e2e)', () => {
     jest.clearAllMocks();
     role = 'Administrador';
     status = 'ACTIVE';
-    service.findAll.mockResolvedValue({
+    listUsers.execute.mockResolvedValue({
       data: [],
       total: 0,
       page: 1,
       limit: 20,
     });
-    service.findOne.mockResolvedValue({ id: 2, email: 'user@example.com' });
-    service.update.mockResolvedValue({ id: 2, fullName: 'Nombre Nuevo' });
-    service.changeRole.mockResolvedValue({ id: 2, roleId: 2 });
-    service.activate.mockResolvedValue({ id: 2, status: 'ACTIVE' });
-    service.deactivate.mockImplementation(() => {
+    getUser.execute.mockResolvedValue(user);
+    updateUser.execute.mockResolvedValue({ ...user, fullName: 'Nombre Nuevo' });
+    changeUserRole.execute.mockResolvedValue(user);
+    activateUser.execute.mockResolvedValue(user);
+    deactivateUser.execute.mockImplementation(() => {
       status = 'INACTIVE';
-      return Promise.resolve({ id: 1, status });
+      return Promise.resolve({ ...user, id: 1, status });
     });
-    service.unlock.mockResolvedValue({
-      id: 2,
-      lockedAt: null,
-      isTemporarilyLocked: false,
-    });
+    unlockUser.execute.mockResolvedValue(user);
 
     const module = await Test.createTestingModule({ imports: [UsersModule] })
       .overrideProvider(PrismaService)
       .useValue(prisma)
-      .overrideProvider(UsersService)
-      .useValue(service)
+      .overrideProvider(ListUsersUseCase).useValue(listUsers)
+      .overrideProvider(GetUserUseCase).useValue(getUser)
+      .overrideProvider(UpdateUserUseCase).useValue(updateUser)
+      .overrideProvider(ChangeUserRoleUseCase).useValue(changeUserRole)
+      .overrideProvider(ActivateUserUseCase).useValue(activateUser)
+      .overrideProvider(DeactivateUserUseCase).useValue(deactivateUser)
+      .overrideProvider(UnlockUserUseCase).useValue(unlockUser)
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(
@@ -105,7 +111,7 @@ describe('UsersController (e2e)', () => {
       )
       .set('Authorization', await authorization())
       .expect(200);
-    expect(service.findAll).toHaveBeenCalledWith(
+    expect(listUsers.execute).toHaveBeenCalledWith(
       expect.objectContaining({ page: 2, limit: 5, blocked: false, roleId: 2 }),
     );
   });
@@ -127,7 +133,7 @@ describe('UsersController (e2e)', () => {
       .set('Authorization', await authorization())
       .send({ fullName: ' Nombre Nuevo ', email: 'NEW@EXAMPLE.COM' })
       .expect(200);
-    expect(service.update).toHaveBeenCalledWith(2, {
+    expect(updateUser.execute).toHaveBeenCalledWith(2, {
       fullName: 'Nombre Nuevo',
       email: 'new@example.com',
     }, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
@@ -163,7 +169,7 @@ describe('UsersController (e2e)', () => {
       .patch('/users/2/activate')
       .set('Authorization', await authorization())
       .expect(200);
-    expect(service.activate).toHaveBeenCalledWith(2, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
+    expect(activateUser.execute).toHaveBeenCalledWith(2, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
   });
 
   it('allows only an administrator to unlock an account', async () => {
@@ -171,7 +177,7 @@ describe('UsersController (e2e)', () => {
       .patch('/users/2/unlock')
       .set('Authorization', await authorization())
       .expect(200);
-    expect(service.unlock).toHaveBeenCalledWith(2, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
+    expect(unlockUser.execute).toHaveBeenCalledWith(2, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
 
     role = 'Tesorero';
     await request(app.getHttpServer())

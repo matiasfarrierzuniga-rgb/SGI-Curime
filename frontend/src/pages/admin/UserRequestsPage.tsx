@@ -1,7 +1,278 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Pagination } from '../../components/Pagination'; import { Modal } from '../../components/Modal'; import { ConfirmDialog } from '../../components/ConfirmDialog'; import { userRequestsService } from '../../services/userRequestsService'; import { rolesService } from '../../services/rolesService'; import type { RequestStatus, UserRequest } from '../../types/userRequests'; import type { RoleOption } from '../../types/users'; import { getErrorMessage } from '../../utils/errors'; import { useToast } from '../../components/Toast'
-const limit = 10
-export function UserRequestsPage() { const { notify } = useToast(); const [items, setItems] = useState<UserRequest[]>([]); const [roles, setRoles] = useState<RoleOption[]>([]); const [roleId, setRoleId] = useState(''); const [reason, setReason] = useState(''); const [total, setTotal] = useState(0); const [page, setPage] = useState(1); const [status, setStatus] = useState<RequestStatus | ''>(''); const [selected, setSelected] = useState<UserRequest | null>(null); const [action, setAction] = useState<'approve' | 'reject' | 'rejectConfirm' | null>(null); const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState('')
- const load = useCallback(async () => { setLoading(true); setError(''); try { const r = await userRequestsService.list({ page, limit, status: status || undefined }); setItems(r.data); setTotal(r.total) } catch (e) { setError(getErrorMessage(e)) } finally { setLoading(false) } }, [page, status]); useEffect(() => { void load() }, [load]); useEffect(() => { rolesService.listActive().then(setRoles).catch(e => setError(getErrorMessage(e, 'No fue posible cargar los roles.'))) }, [])
- const run = async () => { if (!selected || !action || (action === 'approve' && !roleId) || (action === 'reject' && !reason.trim())) return; setBusy(true); try { if (action === 'approve') await userRequestsService.approve(selected.id, Number(roleId)); else await userRequestsService.reject(selected.id, reason.trim()); notify(action === 'approve' ? 'Solicitud aprobada.' : 'Solicitud rechazada.', 'success'); setAction(null); setSelected(null); setRoleId(''); setReason(''); await load() } catch (e) { notify(getErrorMessage(e), 'error') } finally { setBusy(false) } }
- return <section><h1>Solicitudes de registro</h1><div className="filters card"><label>Estado<select value={status} onChange={e => { setPage(1); setStatus(e.target.value as RequestStatus | '') }}><option value="">Todos</option><option value="PENDING">Pendiente</option><option value="APPROVED">Aprobada</option><option value="REJECTED">Rechazada</option></select></label></div>{error && <p className="message error" role="alert">{error}</p>}{loading ? <p aria-live="polite">Cargando solicitudes…</p> : items.length === 0 ? <p className="card">No hay solicitudes para mostrar.</p> : <><div className="table-wrap" tabIndex={0} aria-label="Tabla de solicitudes, desplazable horizontalmente"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Fecha</th><th><span className="sr-only">Acciones</span></th></tr></thead><tbody>{items.map(item => <tr key={item.id}><td>{item.fullName}</td><td>{item.email}</td><td><span className="badge">{item.status}</span></td><td>{new Date(item.createdAt).toLocaleDateString()}</td><td><button onClick={() => { setSelected(item); setRoleId(''); setReason('') }}>Ver detalle</button></td></tr>)}</tbody></table></div><Pagination page={page} total={total} limit={limit} onChange={setPage} /></>}{selected && !action && <Modal title={`Solicitud de ${selected.fullName}`} onClose={() => setSelected(null)}><dl className="detail-grid"><div><dt>Identificación</dt><dd>{selected.identification}</dd></div><div><dt>Teléfono</dt><dd>{selected.phone || '—'}</dd></div><div><dt>Dirección</dt><dd>{selected.address || '—'}</dd></div><div><dt>Motivo</dt><dd>{selected.reason}</dd></div>{selected.rejectionReason && <div><dt>Rechazo</dt><dd>{selected.rejectionReason}</dd></div>}</dl>{selected.status === 'PENDING' && <div className="actions"><button className="primary" onClick={() => setAction('approve')}>Aprobar</button><button className="danger" onClick={() => setAction('reject')}>Rechazar</button></div>}</Modal>}{action === 'approve' && <Modal title="Aprobar solicitud" onClose={() => setAction(null)} busy={busy}><p>Selecciona el rol que tendrá la nueva cuenta y confirma la aprobación.</p><label>Rol<select value={roleId} onChange={e => setRoleId(e.target.value)}><option value="">Seleccione un rol</option>{roles.map(r => <option value={r.id} key={r.id}>{r.name}</option>)}</select></label><div className="actions"><button onClick={() => setAction(null)} disabled={busy}>Cancelar</button><button className="primary" disabled={!roleId || busy} onClick={() => void run()}>{busy ? 'Aprobando…' : 'Aprobar solicitud'}</button></div></Modal>}{action === 'reject' && <Modal title="Rechazar solicitud" onClose={() => setAction(null)}><label>Motivo del rechazo<textarea required maxLength={500} value={reason} onChange={e => setReason(e.target.value)} /></label><p className="muted">El motivo es obligatorio.</p><div className="actions"><button onClick={() => setAction(null)}>Cancelar</button><button className="danger" disabled={!reason.trim()} onClick={() => setAction('rejectConfirm')}>Continuar</button></div></Modal>}{action === 'rejectConfirm' && <ConfirmDialog title="Confirmar rechazo" message="¿Confirmas el rechazo de esta solicitud con el motivo indicado?" confirmLabel="Rechazar solicitud" danger busy={busy} onClose={() => setAction('reject')} onConfirm={() => void run()} />}</section> }
+import { useCallback, useEffect, useState } from "react";
+import { Pagination } from "../../components/Pagination";
+import { Modal } from "../../components/Modal";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { userRequestsService } from "../../services/userRequestsService";
+import { rolesService } from "../../services/rolesService";
+import type { RequestStatus, UserRequest } from "../../types/userRequests";
+import type { RoleOption } from "../../types/users";
+import { getErrorMessage } from "../../utils/errors";
+import { useToast } from "../../components/Toast";
+const limit = 10;
+export function UserRequestsPage() {
+  const { notify } = useToast();
+  const [items, setItems] = useState<UserRequest[]>([]);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
+  const [roleId, setRoleId] = useState("");
+  const [reason, setReason] = useState("");
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState<RequestStatus | "">("");
+  const [selected, setSelected] = useState<UserRequest | null>(null);
+  const [action, setAction] = useState<
+    "approve" | "reject" | "rejectConfirm" | null
+  >(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const r = await userRequestsService.list({
+        page,
+        limit,
+        status: status || undefined,
+      });
+      setItems(r.data);
+      setTotal(r.total);
+    } catch (e) {
+      setError(getErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [page, status]);
+  useEffect(() => {
+    void load();
+  }, [load]);
+  useEffect(() => {
+    rolesService
+      .listActive()
+      .then(setRoles)
+      .catch((e) =>
+        setError(getErrorMessage(e, "No fue posible cargar los roles.")),
+      );
+  }, []);
+  const run = async () => {
+    if (
+      !selected ||
+      !action ||
+      (action === "approve" && !roleId) ||
+      (action === "reject" && !reason.trim())
+    )
+      return;
+    setBusy(true);
+    try {
+      if (action === "approve")
+        await userRequestsService.approve(selected.id, Number(roleId));
+      else await userRequestsService.reject(selected.id, reason.trim());
+      notify(
+        action === "approve" ? "Solicitud aprobada." : "Solicitud rechazada.",
+        "success",
+      );
+      setAction(null);
+      setSelected(null);
+      setRoleId("");
+      setReason("");
+      await load();
+    } catch (e) {
+      notify(getErrorMessage(e), "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section>
+      <h1>Solicitudes de registro</h1>
+      <div className="filters card">
+        <label>
+          Estado
+          <select
+            value={status}
+            onChange={(e) => {
+              setPage(1);
+              setStatus(e.target.value as RequestStatus | "");
+            }}
+          >
+            <option value="">Todos</option>
+            <option value="PENDING">Pendiente</option>
+            <option value="APPROVED">Aprobada</option>
+            <option value="REJECTED">Rechazada</option>
+          </select>
+        </label>
+      </div>
+      {error && (
+        <p className="message error" role="alert">
+          {error}
+        </p>
+      )}
+      {loading ? (
+        <p aria-live="polite">Cargando solicitudes…</p>
+      ) : items.length === 0 ? (
+        <p className="card">No hay solicitudes para mostrar.</p>
+      ) : (
+        <>
+          <div
+            className="table-wrap"
+            tabIndex={0}
+            aria-label="Tabla de solicitudes, desplazable horizontalmente"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>Estado</th>
+                  <th>Fecha</th>
+                  <th>
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>{item.fullName}</td>
+                    <td>{item.email}</td>
+                    <td>
+                      <span className="badge">{item.status}</span>
+                    </td>
+                    <td>{new Date(item.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      <button
+                        onClick={() => {
+                          setSelected(item);
+                          setRoleId("");
+                          setReason("");
+                        }}
+                      >
+                        Ver detalle
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            page={page}
+            total={total}
+            limit={limit}
+            onChange={setPage}
+          />
+        </>
+      )}
+      {selected && !action && (
+        <Modal
+          title={`Solicitud de ${selected.fullName}`}
+          onClose={() => setSelected(null)}
+        >
+          <dl className="detail-grid">
+            <div>
+              <dt>Identificación</dt>
+              <dd>{selected.identificationType === "DIMEX" ? "DIMEX" : "Nacional"}: {selected.identification}</dd>
+            </div>
+            <div>
+              <dt>Teléfono</dt>
+              <dd>{selected.phoneCountryCode && selected.phoneNationalNumber ? `${selected.phoneCountryCode} ${selected.phoneNationalNumber}` : selected.phone || "—"}</dd>
+            </div>
+            <div>
+              <dt>Dirección</dt>
+              <dd>{selected.address || "—"}</dd>
+            </div>
+            <div>
+              <dt>Motivo</dt>
+              <dd>{selected.reason}</dd>
+            </div>
+            {selected.rejectionReason && (
+              <div>
+                <dt>Rechazo</dt>
+                <dd>{selected.rejectionReason}</dd>
+              </div>
+            )}
+          </dl>
+          {selected.status === "PENDING" && (
+            <div className="actions">
+              <button className="primary" onClick={() => setAction("approve")}>
+                Aprobar
+              </button>
+              <button className="danger" onClick={() => setAction("reject")}>
+                Rechazar
+              </button>
+            </div>
+          )}
+        </Modal>
+      )}
+      {action === "approve" && (
+        <Modal
+          title="Aprobar solicitud"
+          onClose={() => setAction(null)}
+          busy={busy}
+        >
+          <p>
+            Selecciona el rol que tendrá la nueva cuenta y confirma la
+            aprobación.
+          </p>
+          <label>
+            Rol
+            <select value={roleId} onChange={(e) => setRoleId(e.target.value)}>
+              <option value="">Seleccione un rol</option>
+              {roles.map((r) => (
+                <option value={r.id} key={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="actions">
+            <button onClick={() => setAction(null)} disabled={busy}>
+              Cancelar
+            </button>
+            <button
+              className="primary"
+              disabled={!roleId || busy}
+              onClick={() => void run()}
+            >
+              {busy ? "Aprobando…" : "Aprobar solicitud"}
+            </button>
+          </div>
+        </Modal>
+      )}
+      {action === "reject" && (
+        <Modal title="Rechazar solicitud" onClose={() => setAction(null)}>
+          <label>
+            Motivo del rechazo
+            <textarea
+              required
+              maxLength={500}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </label>
+          <p className="muted">El motivo es obligatorio.</p>
+          <div className="actions">
+            <button onClick={() => setAction(null)}>Cancelar</button>
+            <button
+              className="danger"
+              disabled={!reason.trim()}
+              onClick={() => setAction("rejectConfirm")}
+            >
+              Continuar
+            </button>
+          </div>
+        </Modal>
+      )}
+      {action === "rejectConfirm" && (
+        <ConfirmDialog
+          title="Confirmar rechazo"
+          message="¿Confirmas el rechazo de esta solicitud con el motivo indicado?"
+          confirmLabel="Rechazar solicitud"
+          danger
+          busy={busy}
+          onClose={() => setAction("reject")}
+          onConfirm={() => void run()}
+        />
+      )}
+    </section>
+  );
+}

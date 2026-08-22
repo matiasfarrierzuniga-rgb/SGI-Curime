@@ -15,8 +15,11 @@ const select = {
   id: true,
   fullName: true,
   identification: true,
+  identificationType: true,
   birthDate: true,
   gender: true,
+  phoneCountryCode: true,
+  phoneNationalNumber: true,
   phone: true,
   email: true,
   address: true,
@@ -106,9 +109,11 @@ export class AffiliateRequestsService {
         data: {
           fullName: request.fullName,
           identification: request.identification,
+          identificationType: request.identificationType,
           birthDate: request.birthDate,
           gender: request.gender,
-          phone: request.phone,
+          phoneCountryCode: request.phoneCountryCode,
+          phoneNationalNumber: request.phoneNationalNumber,
           email: request.email,
           address: request.address,
           occupation: request.occupation,
@@ -189,7 +194,7 @@ export class AffiliateRequestsService {
     const duplicate = await this.prisma.affiliateRequest.findFirst({
       where: {
         status: 'PENDING',
-        OR: [{ identification }, ...(email ? [{ email }] : [])],
+        OR: [{ identification }, ...(email ? [{ email: { equals: email, mode: 'insensitive' as const } }] : [])],
       },
       select: { id: true },
     });
@@ -201,7 +206,7 @@ export class AffiliateRequestsService {
     email?: string | null,
   ) {
     const duplicate = await this.prisma.affiliate.findFirst({
-      where: { OR: [{ identification }, ...(email ? [{ email }] : [])] },
+      where: { OR: [{ identification }, ...(email ? [{ email: { equals: email, mode: 'insensitive' as const } }] : [])] },
       select: { id: true },
     });
     if (duplicate)

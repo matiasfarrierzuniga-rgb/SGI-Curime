@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -30,6 +31,7 @@ export class UserRequestsController {
   constructor(private readonly service: UserRequestsService) {}
 
   @Post()
+  @UseGuards(ThrottlerGuard)
   create(@Body() dto: CreateUserRequestDto, @Req() request: Request) {
     return this.service.create(dto, this.context(request));
   }

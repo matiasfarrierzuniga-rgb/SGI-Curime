@@ -7,8 +7,11 @@ import { toUserResponse } from './user-response.mapper';
 const domainUser = {
   id: 2,
   fullName: 'Persona Usuaria',
-  identification: '2-2222',
+  identification: '222222222',
+  identificationType: 'NATIONAL' as const,
   email: 'persona@example.com',
+  phoneCountryCode: null,
+  phoneNationalNumber: null,
   phone: null,
   address: null,
   status: UserStatus.ACTIVE,
