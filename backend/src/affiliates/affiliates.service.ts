@@ -1,9 +1,14 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
+import {
+  isValidIdentification,
+  isValidPhone,
+} from '../common/validation/identity-contact.validation';
 import { AffiliateStatus, Prisma } from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
@@ -14,8 +19,11 @@ const select = {
   id: true,
   fullName: true,
   identification: true,
+  identificationType: true,
   birthDate: true,
   gender: true,
+  phoneCountryCode: true,
+  phoneNationalNumber: true,
   phone: true,
   email: true,
   address: true,
@@ -74,7 +82,30 @@ export class AffiliatesService {
     actorId: number,
     context: AuditContext = {},
   ) {
-    await this.findOne(id);
+    const current = await this.findOne(id);
+    if (
+      dto.identification !== undefined ||
+      dto.identificationType !== undefined
+    ) {
+      const type = dto.identificationType ?? current.identificationType;
+      const value = dto.identification ?? current.identification;
+      if (!type || !isValidIdentification(type, value)) {
+        throw new BadRequestException(
+          'La identificación no corresponde con el tipo seleccionado',
+        );
+      }
+    }
+    if (
+      dto.phoneCountryCode !== undefined ||
+      dto.phoneNationalNumber !== undefined
+    ) {
+      const code =
+        dto.phoneCountryCode ?? current.phoneCountryCode ?? undefined;
+      const number =
+        dto.phoneNationalNumber ?? current.phoneNationalNumber ?? undefined;
+      if (!isValidPhone(code, number))
+        throw new BadRequestException('El teléfono no es válido');
+    }
     if (dto.identification || dto.email) {
       const duplicate = await this.prisma.affiliate.findFirst({
         where: {

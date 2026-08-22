@@ -9,7 +9,8 @@ import { RolesController } from './presentation/controllers/roles.controller';
   imports: [AuthModule],
   controllers: [RolesController],
   providers: [
-    { provide: ROLES_REPOSITORY, useClass: PrismaRolesRepository },
+    PrismaRolesRepository,
+    { provide: ROLES_REPOSITORY, useExisting: PrismaRolesRepository },
     ListRolesUseCase,
   ],
 })

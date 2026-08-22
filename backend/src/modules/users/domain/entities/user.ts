@@ -15,7 +15,10 @@ export interface User {
   id: number;
   fullName: string;
   identification: string;
+  identificationType: 'NATIONAL' | 'DIMEX' | null;
   email: string;
+  phoneCountryCode: string | null;
+  phoneNationalNumber: string | null;
   phone: string | null;
   address: string | null;
   status: UserStatus;

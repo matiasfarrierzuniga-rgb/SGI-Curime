@@ -28,16 +28,34 @@ describe('UsersController (e2e)', () => {
   const activateUser = { execute: jest.fn() };
   const deactivateUser = { execute: jest.fn() };
   const unlockUser = { execute: jest.fn() };
+  const user = {
+    id: 2,
+    fullName: 'Usuario',
+    identification: '123456789',
+    identificationType: 'NATIONAL',
+    email: 'user@example.com',
+    phoneCountryCode: null,
+    phoneNationalNumber: null,
+    phone: null,
+    address: null,
+    status: 'ACTIVE' as const,
+    lockedAt: null,
+    roleId: 2,
+    role: { id: 2, name: 'Tesorero', description: null, isActive: true },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
   const prisma = {
     user: {
       findUnique: jest.fn(() =>
         Promise.resolve({
+          ...user,
           id: 1,
           fullName: 'Admin',
           email: 'admin@example.com',
           status,
           lockedAt: null,
-          role: { name: role },
+          role: { ...user.role, name: role },
         }),
       ),
     },
@@ -53,38 +71,15 @@ describe('UsersController (e2e)', () => {
       page: 1,
       limit: 20,
     });
-    getUser.execute.mockResolvedValue({
-      id: 2,
-      email: 'user@example.com',
-      status: 'ACTIVE',
-      lockedAt: null,
-    });
-    updateUser.execute.mockResolvedValue({
-      id: 2,
-      fullName: 'Nombre Nuevo',
-      status: 'ACTIVE',
-      lockedAt: null,
-    });
-    changeUserRole.execute.mockResolvedValue({
-      id: 2,
-      roleId: 2,
-      status: 'ACTIVE',
-      lockedAt: null,
-    });
-    activateUser.execute.mockResolvedValue({
-      id: 2,
-      status: 'ACTIVE',
-      lockedAt: null,
-    });
+    getUser.execute.mockResolvedValue(user);
+    updateUser.execute.mockResolvedValue({ ...user, fullName: 'Nombre Nuevo' });
+    changeUserRole.execute.mockResolvedValue(user);
+    activateUser.execute.mockResolvedValue(user);
     deactivateUser.execute.mockImplementation(() => {
       status = 'INACTIVE';
-      return Promise.resolve({ id: 1, status, lockedAt: null });
+      return Promise.resolve({ ...user, id: 1, status });
     });
-    unlockUser.execute.mockResolvedValue({
-      id: 2,
-      lockedAt: null,
-      isTemporarilyLocked: false,
-    });
+    unlockUser.execute.mockResolvedValue(user);
 
     const module = await Test.createTestingModule({ imports: [UsersModule] })
       .overrideProvider(PrismaService)

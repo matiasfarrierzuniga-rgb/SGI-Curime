@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   INestApplication,
   NotFoundException,
   ValidationPipe,
@@ -17,6 +18,8 @@ process.env.JWT_EXPIRES_IN = '1h';
 process.env.MAX_LOGIN_ATTEMPTS = '3';
 process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
 process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES = '30';
+process.env.PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS = '60';
+process.env.PUBLIC_REQUEST_RATE_LIMIT_MAX = '3';
 
 describe('UserRequestsController (e2e)', () => {
   let app: INestApplication<App>;
@@ -95,7 +98,8 @@ describe('UserRequestsController (e2e)', () => {
       .post('/user-requests')
       .send({
         fullName: '  Persona Solicitante  ',
-        identification: ' 1-2345 ',
+        identificationType: 'NATIONAL',
+        identification: '123456789',
         email: ' PERSONA@EXAMPLE.COM ',
         reason: '  Necesito acceso  ',
       })
@@ -104,23 +108,69 @@ describe('UserRequestsController (e2e)', () => {
       expect.objectContaining({
         fullName: 'Persona Solicitante',
         email: 'persona@example.com',
-      }), expect.objectContaining({ ipAddress: expect.any(String) }),
+      }),
+      expect.objectContaining({ ipAddress: expect.any(String) }),
     );
+  });
+
+  it('accepts a valid DIMEX request', async () => {
+    await request(app.getHttpServer()).post('/user-requests').send({
+      fullName: 'Persona DIMEX', identificationType: 'DIMEX',
+      identification: '123456789012', email: 'dimex@example.com', reason: 'Necesito acceso',
+    }).expect(201);
+  });
+
+  it.each([
+    { identificationType: 'NATIONAL', identification: '12345678', email: 'ok@example.com' },
+    { identificationType: 'NATIONAL', identification: '123456789', email: 'invalid' },
+    { identificationType: 'NATIONAL', identification: '123456789', email: 'ok@example.com', phoneCountryCode: '+506', phoneNationalNumber: '123' },
+  ])('rejects invalid critical fields', async (fields) => {
+    await request(app.getHttpServer()).post('/user-requests').send({ fullName: 'Persona Válida', reason: 'Necesito acceso', ...fields }).expect(400);
+  });
+
+  it('returns 409 for a duplicate', async () => {
+    service.create.mockRejectedValueOnce(new ConflictException('No se puede procesar la solicitud'));
+    await request(app.getHttpServer()).post('/user-requests').send({ fullName: 'Persona Válida', identificationType: 'NATIONAL', identification: '123456789', email: 'duplicate@example.com', reason: 'Necesito acceso' }).expect(409);
+  });
+
+  it('returns 429 after the configured public request limit', async () => {
+    const body = { fullName: 'Persona Válida', identificationType: 'NATIONAL', identification: '123456789', email: 'rate@example.com', reason: 'Necesito acceso' };
+    await request(app.getHttpServer()).post('/user-requests').send(body).expect(201);
+    await request(app.getHttpServer()).post('/user-requests').send(body).expect(201);
+    await request(app.getHttpServer()).post('/user-requests').send(body).expect(201);
+    await request(app.getHttpServer()).post('/user-requests').send(body).expect(429);
+  });
+
+  it('does not throttle authenticated listing with the public policy', async () => {
+    const token = await authorization();
+    await request(app.getHttpServer()).get('/user-requests').set('Authorization', token).expect(200);
+    await request(app.getHttpServer()).get('/user-requests').set('Authorization', token).expect(200);
+    await request(app.getHttpServer()).get('/user-requests').set('Authorization', token).expect(200);
   });
 
   it.each([
     [
       {
         fullName: 'Persona',
+        identificationType: 'NATIONAL',
         identification: '1',
         email: 'invalid',
         reason: 'Razón',
       },
     ],
-    [{ fullName: ' ', identification: '1', email: 'a@b.com', reason: 'Razón' }],
+    [
+      {
+        fullName: ' ',
+        identificationType: 'NATIONAL',
+        identification: '1',
+        email: 'a@b.com',
+        reason: 'Razón',
+      },
+    ],
     [
       {
         fullName: 'Persona',
+        identificationType: 'NATIONAL',
         identification: '1',
         email: 'a@b.com',
         reason: ' ',
@@ -176,6 +226,11 @@ describe('UserRequestsController (e2e)', () => {
       .set('Authorization', await authorization())
       .send({ rejectionReason: 'No cumple requisitos' })
       .expect(200);
-    expect(service.reject).toHaveBeenCalledWith(10, 'No cumple requisitos', 1, expect.objectContaining({ ipAddress: expect.any(String) }));
+    expect(service.reject).toHaveBeenCalledWith(
+      10,
+      'No cumple requisitos',
+      1,
+      expect.objectContaining({ ipAddress: expect.any(String) }),
+    );
   });
 });

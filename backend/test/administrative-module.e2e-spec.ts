@@ -1,4 +1,4 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ConflictException, INestApplication, ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -13,6 +13,8 @@ process.env.JWT_EXPIRES_IN = '1h';
 process.env.MAX_LOGIN_ATTEMPTS = '3';
 process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
 process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES = '30';
+process.env.PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS = '60';
+process.env.PUBLIC_REQUEST_RATE_LIMIT_MAX = '3';
 
 describe('Administrative affiliate requests (e2e)', () => {
   let app: INestApplication<App>;
@@ -86,7 +88,8 @@ describe('Administrative affiliate requests (e2e)', () => {
       .post('/affiliate-requests')
       .send({
         fullName: '  Persona Afiliada  ',
-        identification: ' 1-2345-6789 ',
+        identificationType: 'NATIONAL',
+        identification: '123456789',
         birthDate: '1990-01-01',
         email: ' PERSONA@EXAMPLE.COM ',
         address: ' Curime ',
@@ -100,6 +103,26 @@ describe('Administrative affiliate requests (e2e)', () => {
       }),
       expect.objectContaining({ ipAddress: expect.any(String) }),
     );
+  });
+
+  it('accepts DIMEX and rejects malformed identity/contact data', async () => {
+    const base = { fullName: 'Persona Afiliada', birthDate: '1990-01-01', address: 'Curime', affiliationReason: 'Participar' };
+    await request(app.getHttpServer()).post('/affiliate-requests').send({ ...base, identificationType: 'DIMEX', identification: '123456789012' }).expect(201);
+    await request(app.getHttpServer()).post('/affiliate-requests').send({ ...base, identificationType: 'NATIONAL', identification: '1-2345-6789' }).expect(400);
+    await request(app.getHttpServer()).post('/affiliate-requests').send({ ...base, identificationType: 'NATIONAL', identification: '123456789', phoneCountryCode: '+506', phoneNationalNumber: '123' }).expect(400);
+  });
+
+  it('returns 409 for a duplicate affiliate request', async () => {
+    service.create.mockRejectedValueOnce(new ConflictException('No se puede procesar la solicitud'));
+    await request(app.getHttpServer()).post('/affiliate-requests').send({ fullName: 'Persona Afiliada', birthDate: '1990-01-01', address: 'Curime', affiliationReason: 'Participar', identificationType: 'NATIONAL', identification: '123456789' }).expect(409);
+  });
+
+  it('returns 429 after the affiliate public request limit', async () => {
+    const body = { fullName: 'Persona Afiliada', birthDate: '1990-01-01', address: 'Curime', affiliationReason: 'Participar', identificationType: 'NATIONAL', identification: '123456789' };
+    await request(app.getHttpServer()).post('/affiliate-requests').send(body).expect(201);
+    await request(app.getHttpServer()).post('/affiliate-requests').send(body).expect(201);
+    await request(app.getHttpServer()).post('/affiliate-requests').send(body).expect(201);
+    await request(app.getHttpServer()).post('/affiliate-requests').send(body).expect(429);
   });
 
   it('requires JWT for administrative review', async () => {

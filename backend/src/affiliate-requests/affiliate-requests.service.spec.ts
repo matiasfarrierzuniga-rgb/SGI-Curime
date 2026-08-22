@@ -5,10 +5,12 @@ describe('AffiliateRequestsService', () => {
   const pending = {
     id: 10,
     fullName: 'Persona Afiliada',
-    identification: '1-2345-6789',
+    identificationType: 'NATIONAL' as const,
+    identification: '123456789',
     birthDate: new Date('1990-01-01'),
     gender: null,
-    phone: null,
+    phoneCountryCode: null,
+    phoneNationalNumber: null,
     email: 'affiliate@example.com',
     address: 'Curime',
     occupation: null,
@@ -63,6 +65,7 @@ describe('AffiliateRequestsService', () => {
   it('creates only a pending request', async () => {
     await service.create({
       fullName: pending.fullName,
+      identificationType: pending.identificationType,
       identification: pending.identification,
       birthDate: pending.birthDate,
       email: pending.email,
@@ -82,6 +85,7 @@ describe('AffiliateRequestsService', () => {
     await expect(
       service.create({
         fullName: pending.fullName,
+        identificationType: pending.identificationType,
         identification: pending.identification,
         birthDate: pending.birthDate,
         email: pending.email,
@@ -89,6 +93,19 @@ describe('AffiliateRequestsService', () => {
         affiliationReason: pending.affiliationReason,
       }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('rejects a pending duplicate by identification or email', async () => {
+    prisma.affiliateRequest.findFirst.mockResolvedValue({ id: 3 });
+    await expect(service.create({
+      fullName: pending.fullName,
+      identificationType: pending.identificationType,
+      identification: pending.identification,
+      birthDate: pending.birthDate,
+      email: pending.email,
+      address: pending.address,
+      affiliationReason: pending.affiliationReason,
+    })).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('approves atomically and creates an Affiliate, not a User', async () => {

@@ -23,7 +23,8 @@ export interface UserPage {
 export interface UserUpdateData {
   fullName?: string;
   email?: string;
-  phone?: string;
+  phoneCountryCode?: string;
+  phoneNationalNumber?: string;
   address?: string;
 }
 
@@ -31,7 +32,10 @@ export interface UsersRepository {
   withTransaction<T>(work: (repo: UsersRepository) => Promise<T>): Promise<T>;
   findPage(query: UserQuery): Promise<UserPage>;
   findById(id: number): Promise<User | null>;
-  findByEmail(email: string, excludeId?: number): Promise<{ id: number } | null>;
+  findByEmail(
+    email: string,
+    excludeId?: number,
+  ): Promise<{ id: number } | null>;
   findRoleById(id: number): Promise<UserRole | null>;
   getPasswordHash(id: number): Promise<string | null>;
   updateProfile(id: number, data: UserUpdateData): Promise<User>;

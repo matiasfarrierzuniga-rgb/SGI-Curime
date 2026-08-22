@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../../auth';
+import { AuditModule } from '../../audit/audit.module';
 import { AUDIT_PORT } from './application/ports/audit.port';
 import { ActivateUserUseCase } from './application/use-cases/activate-user.use-case';
 import { ChangeUserRoleUseCase } from './application/use-cases/change-user-role.use-case';
@@ -14,10 +15,11 @@ import { PrismaUsersRepository } from './infrastructure/prisma-users.repository'
 import { UsersController } from './presentation/controllers/users.controller';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AuditModule],
   controllers: [UsersController],
   providers: [
-    { provide: USERS_REPOSITORY, useClass: PrismaUsersRepository },
+    PrismaUsersRepository,
+    { provide: USERS_REPOSITORY, useExisting: PrismaUsersRepository },
     { provide: AUDIT_PORT, useClass: AuditServiceAdapter },
     ListUsersUseCase,
     GetUserUseCase,
