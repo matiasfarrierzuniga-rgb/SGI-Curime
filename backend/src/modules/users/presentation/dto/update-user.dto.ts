@@ -6,10 +6,13 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  Matches,
 } from 'class-validator';
-
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
+import {
+  FULL_NAME_PATTERN,
+  IsPhoneFor,
+} from '../../../../common/validation/identity-contact.validation';
+import { trim, trimLowercase } from '../../../../common/validation/normalizers';
 
 export class UpdateUserDto {
   @Transform(trim)
@@ -18,11 +21,10 @@ export class UpdateUserDto {
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(150)
+  @Matches(FULL_NAME_PATTERN)
   fullName?: string;
 
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @Transform(trimLowercase)
   @IsOptional()
   @IsEmail()
   @MaxLength(254)
@@ -30,10 +32,12 @@ export class UpdateUserDto {
 
   @Transform(trim)
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(30)
-  phone?: string;
+  @Matches(/^\+[1-9][0-9]{0,3}$/)
+  phoneCountryCode?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsPhoneFor('phoneCountryCode')
+  phoneNationalNumber?: string;
 
   @Transform(trim)
   @IsOptional()

@@ -1,0 +1,32 @@
+import { useRef, useState, type FormEvent } from 'react'
+import { affiliateRequestsService } from '../../services/affiliateRequestsService'
+import { getErrorMessage } from '../../utils/errors'
+import { digitsOnly, emailError, fullNameError, identificationError, identificationMaxLength, normalizeEmail, normalizeText, phoneError, phoneNationalMaxLength, type IdentificationType } from '../../utils/formValidation'
+import { Breadcrumbs, PublicPageHeader, SectionContainer, Seo } from '../../components/public/PublicComponents'
+
+const blank = { fullName: '', identificationType: 'NATIONAL' as IdentificationType, identification: '', birthDate: '', gender: '', phoneCountryCode: '+506', phoneNationalNumber: '', email: '', address: '', occupation: '', workplace: '', affiliationReason: '' }
+
+export function AffiliationPage() {
+  const [form, setForm] = useState(blank); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [success, setSuccess] = useState(false); const [errors, setErrors] = useState<Record<string, string>>({}); const submitting = useRef(false)
+  function validate() {
+    const next = { fullName: fullNameError(form.fullName), identification: identificationError(form.identificationType, form.identification), phoneNationalNumber: phoneError(form.phoneCountryCode, form.phoneNationalNumber), email: form.email ? emailError(form.email) : '' }
+    setErrors(next); return !Object.values(next).some(Boolean)
+  }
+  async function submit(e: FormEvent) {
+    e.preventDefault(); if (submitting.current || !validate()) return
+    submitting.current = true; setBusy(true); setError('')
+    try {
+      await affiliateRequestsService.create({ fullName: normalizeText(form.fullName), identificationType: form.identificationType, identification: form.identification, birthDate: new Date(`${form.birthDate}T12:00:00`).toISOString(), address: normalizeText(form.address), affiliationReason: normalizeText(form.affiliationReason), ...(normalizeText(form.gender) ? { gender: normalizeText(form.gender) } : {}), ...(form.phoneNationalNumber ? { phoneCountryCode: form.phoneCountryCode, phoneNationalNumber: form.phoneNationalNumber } : {}), ...(normalizeText(form.email) ? { email: normalizeEmail(form.email) } : {}), ...(normalizeText(form.occupation) ? { occupation: normalizeText(form.occupation) } : {}), ...(normalizeText(form.workplace) ? { workplace: normalizeText(form.workplace) } : {}) })
+      setSuccess(true); setForm(blank)
+    } catch (caught) { setError(getErrorMessage(caught, 'No fue posible enviar la solicitud.')) }
+    finally { submitting.current = false; setBusy(false) }
+  }
+  const set = (field: keyof typeof blank, value: string) => setForm({ ...form, [field]: value })
+  return <><Seo title="Solicitud de afiliación" description="Solicite su afiliación a la ADI Curime."/><PublicPageHeader title="Solicitud de afiliación" intro="Complete sus datos para que la Asociación revise su solicitud."/><Breadcrumbs current="Afiliación"/><SectionContainer><div className="public-form card">{success && <p className="message success" role="status">Solicitud enviada correctamente. La ADI revisará la información.</p>}{error && <p className="message error" role="alert">{error}</p>}<form className="form-grid" onSubmit={submit} noValidate>
+    <label>Nombre completo<input required minLength={2} maxLength={150} autoComplete="name" value={form.fullName} onChange={e => set('fullName', e.target.value)} onBlur={validate}/>{errors.fullName && <span className="field-error" role="alert">{errors.fullName}</span>}</label>
+    <label>Tipo de identificación<select value={form.identificationType} onChange={e => setForm({ ...form, identificationType: e.target.value as IdentificationType, identification: '' })}><option value="NATIONAL">Nacional</option><option value="DIMEX">DIMEX</option></select></label>
+    <label>Número de identificación<input type="text" inputMode="numeric" required maxLength={identificationMaxLength(form.identificationType)} value={form.identification} onChange={e => set('identification', digitsOnly(e.target.value, identificationMaxLength(form.identificationType)))} onBlur={validate}/>{errors.identification && <span className="field-error" role="alert">{errors.identification}</span>}</label>
+    <label>Fecha de nacimiento<input required type="date" max={new Date().toISOString().slice(0, 10)} value={form.birthDate} onChange={e => set('birthDate', e.target.value)}/></label><label>Género (opcional)<input maxLength={30} value={form.gender} onChange={e => set('gender', e.target.value)}/></label>
+    <label>Código país<input maxLength={5} autoComplete="tel-country-code" value={form.phoneCountryCode} onChange={e => set('phoneCountryCode', e.target.value)}/></label><label>Número (opcional)<input type="text" inputMode="numeric" autoComplete="tel-national" maxLength={phoneNationalMaxLength(form.phoneCountryCode)} value={form.phoneNationalNumber} onChange={e => set('phoneNationalNumber', digitsOnly(e.target.value, phoneNationalMaxLength(form.phoneCountryCode)))} onBlur={validate}/>{errors.phoneNationalNumber && <span className="field-error" role="alert">{errors.phoneNationalNumber}</span>}</label>
+    <label>Correo (opcional)<input type="email" inputMode="email" autoComplete="email" maxLength={254} value={form.email} onChange={e => set('email', e.target.value)} onBlur={validate}/>{errors.email && <span className="field-error" role="alert">{errors.email}</span>}</label><label>Dirección<input required maxLength={300} autoComplete="street-address" value={form.address} onChange={e => set('address', e.target.value)}/></label><label>Ocupación (opcional)<input maxLength={100} value={form.occupation} onChange={e => set('occupation', e.target.value)}/></label><label>Lugar de trabajo (opcional)<input maxLength={150} value={form.workplace} onChange={e => set('workplace', e.target.value)}/></label><label>Motivo para afiliarse<textarea required minLength={3} maxLength={1000} value={form.affiliationReason} onChange={e => set('affiliationReason', e.target.value)}/></label><button className="primary" disabled={busy}>{busy ? 'Enviando…' : 'Enviar solicitud'}</button></form></div></SectionContainer></>
+}

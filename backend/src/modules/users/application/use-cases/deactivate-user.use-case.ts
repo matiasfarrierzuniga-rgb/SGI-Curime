@@ -8,6 +8,7 @@ import {
   requiresAdminContinuity,
 } from '../../domain/policies/administrator-continuity.policy';
 import type { UsersRepository } from '../../domain/repositories/users-repository';
+import { USERS_REPOSITORY } from '../../domain/repositories/users-repository';
 import {
   AUDIT_PORT,
   type AuditContext,
@@ -17,7 +18,7 @@ import {
 @Injectable()
 export class DeactivateUserUseCase {
   constructor(
-    private readonly repository: UsersRepository,
+    @Inject(USERS_REPOSITORY) private readonly repository: UsersRepository,
     @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {}
 

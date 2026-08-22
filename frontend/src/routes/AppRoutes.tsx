@@ -21,6 +21,7 @@ import { InventoryReportsPage } from '../pages/inventory/InventoryReportsPage'
 import { ForbiddenPage } from '../pages/ForbiddenPage'
 import { PublicLayout } from '../layouts/PublicLayout'
 import { AboutPage, AppHomePage, CommunityPage, ContactPage, EventsPage, HomePage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '../pages/public/PublicPages'
+import { AffiliationPage } from '../pages/public/AffiliationPage'
 const INVENTORY_ROLES = ['Administrador', 'Gestor de Inventario']
 export function AppRoutes() {
   return (
@@ -35,6 +36,7 @@ export function AppRoutes() {
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/transparencia" element={<TransparencyPage />} />
         <Route path="/contacto" element={<ContactPage />} />
+        <Route path="/afiliacion" element={<AffiliationPage />} />
       </Route>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />

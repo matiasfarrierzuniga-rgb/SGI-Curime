@@ -25,6 +25,11 @@ enum AffiliateStatus {
   INACTIVE
 }
 
+enum IdentificationType {
+  NATIONAL
+  DIMEX
+}
+
 enum AssemblyStatus {
   SCHEDULED
   COMPLETED
@@ -61,14 +66,17 @@ model Role {
 }
 
 model User {
-  id             Int        @id @default(autoincrement())
-  fullName       String
-  identification String     @unique
-  email          String     @unique
-  phone          String?
-  address        String?
-  passwordHash   String?
-  status         UserStatus @default(ACTIVE)
+  id                  Int                 @id @default(autoincrement())
+  fullName            String
+  identification      String              @unique
+  identificationType  IdentificationType?
+  email               String              @unique
+  phone               String?
+  phoneCountryCode    String?
+  phoneNationalNumber String?
+  address             String?
+  passwordHash        String?
+  status              UserStatus          @default(ACTIVE)
 
   failedLoginAttempts Int       @default(0)
   lockedAt            DateTime?
@@ -140,14 +148,17 @@ model AccountActivationToken {
 }
 
 model UserRequest {
-  id             Int           @id @default(autoincrement())
-  fullName       String
-  identification String
-  email          String
-  phone          String?
-  address        String?
-  reason         String
-  status         RequestStatus @default(PENDING)
+  id                  Int                 @id @default(autoincrement())
+  fullName            String
+  identification      String
+  identificationType  IdentificationType?
+  email               String
+  phone               String?
+  phoneCountryCode    String?
+  phoneNationalNumber String?
+  address             String?
+  reason              String
+  status              RequestStatus       @default(PENDING)
 
   rejectionReason String?
   reviewedAt      DateTime?
@@ -162,19 +173,22 @@ model UserRequest {
 }
 
 model Affiliate {
-  id              Int             @id @default(autoincrement())
-  fullName        String
-  identification  String          @unique
-  birthDate       DateTime
-  gender          String?
-  phone           String?
-  email           String?         @unique
-  address         String
-  occupation      String?
-  workplace       String?
-  affiliateType   String?
-  affiliationDate DateTime        @default(now())
-  status          AffiliateStatus @default(ACTIVE)
+  id                  Int                 @id @default(autoincrement())
+  fullName            String
+  identification      String              @unique
+  identificationType  IdentificationType?
+  birthDate           DateTime
+  gender              String?
+  phone               String?
+  phoneCountryCode    String?
+  phoneNationalNumber String?
+  email               String?             @unique
+  address             String
+  occupation          String?
+  workplace           String?
+  affiliateType       String?
+  affiliationDate     DateTime            @default(now())
+  status              AffiliateStatus     @default(ACTIVE)
 
   attendances    AssemblyAttendance[]
   justifications AbsenceJustification[]
@@ -186,18 +200,21 @@ model Affiliate {
 }
 
 model AffiliateRequest {
-  id                Int           @id @default(autoincrement())
-  fullName          String
-  identification    String
-  birthDate         DateTime
-  gender            String?
-  phone             String?
-  email             String?
-  address           String
-  occupation        String?
-  workplace         String?
-  affiliationReason String
-  status            RequestStatus @default(PENDING)
+  id                  Int                 @id @default(autoincrement())
+  fullName            String
+  identification      String
+  identificationType  IdentificationType?
+  birthDate           DateTime
+  gender              String?
+  phone               String?
+  phoneCountryCode    String?
+  phoneNationalNumber String?
+  email               String?
+  address             String
+  occupation          String?
+  workplace           String?
+  affiliationReason   String
+  status              RequestStatus       @default(PENDING)
 
   rejectionReason String?
   reviewedAt      DateTime?

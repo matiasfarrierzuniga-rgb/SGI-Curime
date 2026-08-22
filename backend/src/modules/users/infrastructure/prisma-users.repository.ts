@@ -28,7 +28,10 @@ const userSelect = {
   id: true,
   fullName: true,
   identification: true,
+  identificationType: true,
   email: true,
+  phoneCountryCode: true,
+  phoneNationalNumber: true,
   phone: true,
   address: true,
   status: true,
@@ -53,7 +56,10 @@ function toUser(user: SafeUser): User {
     id: user.id,
     fullName: user.fullName,
     identification: user.identification,
+    identificationType: user.identificationType,
     email: user.email,
+    phoneCountryCode: user.phoneCountryCode,
+    phoneNationalNumber: user.phoneNationalNumber,
     phone: user.phone,
     address: user.address,
     status: user.status as DomainUserStatus,
@@ -68,11 +74,10 @@ function toUser(user: SafeUser): User {
 @Injectable()
 export class PrismaUsersRepository implements UsersRepository {
   private readonly lockoutMinutes: number;
+  private db: PrismaClient | Prisma.TransactionClient;
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly db: PrismaClient | Prisma.TransactionClient = prisma,
-  ) {
+  constructor(private readonly prisma: PrismaService) {
+    this.db = prisma;
     this.lockoutMinutes = getAccountLockoutPolicy().lockoutMinutes;
   }
 
@@ -80,7 +85,11 @@ export class PrismaUsersRepository implements UsersRepository {
     work: (repo: UsersRepository) => Promise<T>,
   ): Promise<T> {
     return this.prisma.$transaction(
-      async (tx) => work(new PrismaUsersRepository(this.prisma, tx)),
+      async (tx) => {
+        const repository = new PrismaUsersRepository(this.prisma);
+        repository.db = tx;
+        return work(repository);
+      },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
   }

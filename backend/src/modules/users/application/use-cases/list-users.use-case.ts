@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { USERS_REPOSITORY } from '../../domain/repositories/users-repository';
 import type {
   UserPage,
   UserQuery,
@@ -7,7 +8,7 @@ import type {
 
 @Injectable()
 export class ListUsersUseCase {
-  constructor(private readonly repository: UsersRepository) {}
+  constructor(@Inject(USERS_REPOSITORY) private readonly repository: UsersRepository) {}
 
   execute(query: UserQuery): Promise<UserPage> {
     return this.repository.findPage(query);

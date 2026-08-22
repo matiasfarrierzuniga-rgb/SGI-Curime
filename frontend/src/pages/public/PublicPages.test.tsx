@@ -1,15 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
-import { AuthProvider } from '../../auth/AuthContext'
+import { describe, expect, it, vi } from 'vitest'
 import { PublicLayout } from '../../layouts/PublicLayout'
 import { ContactPage, EventsPage, HomePage, NewsPage, ServicesPage } from './PublicPages'
+
+vi.mock('../../auth/AuthContext', () => ({
+  useAuth: () => ({ isAuthenticated: false }),
+}))
 
 function renderPublic(path = '/') {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <AuthProvider>
-        <Routes>
+      <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/servicios" element={<ServicesPage />} />
@@ -18,25 +20,21 @@ function renderPublic(path = '/') {
             <Route path="/eventos" element={<EventsPage />} />
           </Route>
           <Route path="/login" element={<p>Login</p>} />
-        </Routes>
-      </AuthProvider>
+      </Routes>
     </MemoryRouter>,
   )
 }
 
 describe('portal público', () => {
-  it('muestra la landing y navega al inicio de sesión', async () => {
-    renderPublic()
-    expect(screen.getByRole('heading', { name: /asociación de desarrollo integral/i })).toBeInTheDocument()
+  it('muestra la landing y navega al inicio de sesión', () => {
+    const { container } = renderPublic()
+    expect(container.querySelector('h1')).toHaveTextContent(/asociación de desarrollo integral/i)
 
-    const loginLink = screen
-      .getAllByRole('link', { name: /acceder al sgi/i })
-      .find(link => link.getAttribute('href') === '/login')
-
-    expect(loginLink).toBeDefined()
+    const loginLink = container.querySelector<HTMLAnchorElement>('a[href="/login"]')
+    expect(loginLink).not.toBeNull()
     fireEvent.click(loginLink!)
 
-    expect(await screen.findByText('Login')).toBeInTheDocument()
+    expect(screen.getByText('Login')).toBeInTheDocument()
   })
 
   it('abre y cierra el menú móvil con Escape', () => {

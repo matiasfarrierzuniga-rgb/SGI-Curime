@@ -6,9 +6,11 @@ describe('UserRequestsService', () => {
   const pending = {
     id: 10,
     fullName: 'Persona Solicitante',
-    identification: '1-2345-6789',
+    identificationType: 'NATIONAL' as const,
+    identification: '123456789',
     email: 'persona@example.com',
-    phone: null,
+    phoneCountryCode: null,
+    phoneNationalNumber: null,
     address: null,
     reason: 'Necesito acceso',
     status: 'PENDING',
@@ -27,7 +29,7 @@ describe('UserRequestsService', () => {
     accountActivationToken: { create: jest.fn() },
   };
   const prisma = {
-    user: { findUnique: jest.fn() },
+    user: { findFirst: jest.fn(), findUnique: jest.fn() },
     userRequest: {
       create: jest.fn(),
       findFirst: jest.fn(),
@@ -59,6 +61,7 @@ describe('UserRequestsService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    prisma.user.findFirst.mockResolvedValue(null);
     prisma.user.findUnique.mockResolvedValue(null);
     prisma.userRequest.findFirst.mockResolvedValue(null);
     prisma.userRequest.findUnique.mockResolvedValue(pending);
@@ -84,6 +87,7 @@ describe('UserRequestsService', () => {
   it('creates a pending request without creating a user', async () => {
     await service.create({
       fullName: pending.fullName,
+      identificationType: pending.identificationType,
       identification: pending.identification,
       email: pending.email,
       reason: pending.reason,
@@ -100,12 +104,12 @@ describe('UserRequestsService', () => {
     ['email', { id: 1 }, null],
     ['identification', null, { id: 1 }],
   ])('rejects an existing user by %s', async (_, emailUser, idUser) => {
-    prisma.user.findUnique
-      .mockResolvedValueOnce(emailUser)
-      .mockResolvedValueOnce(idUser);
+    prisma.user.findFirst.mockResolvedValueOnce(emailUser);
+    prisma.user.findUnique.mockResolvedValueOnce(idUser);
     await expect(
       service.create({
         fullName: pending.fullName,
+        identificationType: pending.identificationType,
         identification: pending.identification,
         email: pending.email,
         reason: pending.reason,
@@ -123,6 +127,7 @@ describe('UserRequestsService', () => {
     await expect(
       service.create({
         fullName: pending.fullName,
+        identificationType: pending.identificationType,
         identification: pending.identification,
         email: pending.email,
         reason: pending.reason,

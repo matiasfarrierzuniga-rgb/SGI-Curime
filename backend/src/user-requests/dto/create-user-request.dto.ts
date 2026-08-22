@@ -1,17 +1,21 @@
 import { Transform } from 'class-transformer';
+import { IdentificationType } from '../../../generated/prisma/client';
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
-
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
-const trimLower = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim().toLowerCase() : value;
+import {
+  IsIdentificationFor,
+  IsPhoneFor,
+  FULL_NAME_PATTERN,
+} from '../../common/validation/identity-contact.validation';
+import { trim, trimLowercase } from '../../common/validation/normalizers';
 
 export class CreateUserRequestDto {
   @Transform(trim)
@@ -19,25 +23,34 @@ export class CreateUserRequestDto {
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(150)
+  @Matches(FULL_NAME_PATTERN, {
+    message:
+      'El nombre completo debe contener letras y solo puede usar espacios, apóstrofes o guiones.',
+  })
   fullName: string;
+
+  @IsEnum(IdentificationType)
+  identificationType: IdentificationType;
 
   @Transform(trim)
   @IsString()
   @IsNotEmpty()
-  @MaxLength(50)
+  @IsIdentificationFor('identificationType')
   identification: string;
 
-  @Transform(trimLower)
+  @Transform(trimLowercase)
   @IsEmail()
   @MaxLength(254)
   email: string;
 
   @Transform(trim)
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(30)
-  phone?: string;
+  @Matches(/^\+[1-9][0-9]{0,3}$/)
+  phoneCountryCode?: string;
+
+  @Transform(trim)
+  @IsPhoneFor('phoneCountryCode')
+  phoneNationalNumber?: string;
 
   @Transform(trim)
   @IsOptional()

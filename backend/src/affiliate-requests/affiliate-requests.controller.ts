@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -23,7 +24,7 @@ type AuthRequest = Request & { user: AuthenticatedUser };
 @Controller('affiliate-requests')
 export class AffiliateRequestsController {
   constructor(private readonly service: AffiliateRequestsService) {}
-  @Post() create(@Body() dto: CreateAffiliateRequestDto, @Req() req: Request) {
+  @Post() @UseGuards(ThrottlerGuard) create(@Body() dto: CreateAffiliateRequestDto, @Req() req: Request) {
     return this.service.create(dto, this.context(req));
   }
   @Get() @Roles('Administrador') @UseGuards(JwtAuthGuard, RolesGuard) findAll(
