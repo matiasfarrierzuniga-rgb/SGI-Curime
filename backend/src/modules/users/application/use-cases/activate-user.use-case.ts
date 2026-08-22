@@ -5,8 +5,10 @@ import { AccountAlreadyActiveError } from '../../domain/errors/account-already-a
 import { AccountBlockedError } from '../../domain/errors/account-blocked.error';
 import { ActivationNotCompletedError } from '../../domain/errors/activation-not-completed.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
-import type { UsersRepository } from '../../domain/repositories/users-repository';
-import { USERS_REPOSITORY } from '../../domain/repositories/users-repository';
+import {
+  USERS_REPOSITORY,
+  type UsersRepository,
+} from '../../domain/repositories/users-repository';
 import {
   AUDIT_PORT,
   type AuditContext,
@@ -16,7 +18,8 @@ import {
 @Injectable()
 export class ActivateUserUseCase {
   constructor(
-    @Inject(USERS_REPOSITORY) private readonly repository: UsersRepository,
+    @Inject(USERS_REPOSITORY)
+    private readonly repository: UsersRepository,
     @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {}
 

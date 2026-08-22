@@ -1,7 +1,5 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
 import { AdminReportsService } from './admin-reports.service';
 import { AttendanceReportQueryDto } from './dto/report-query.dto';
 @Controller('admin-reports')

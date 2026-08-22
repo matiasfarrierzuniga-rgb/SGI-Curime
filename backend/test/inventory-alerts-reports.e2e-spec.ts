@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { InventoryAlertsModule } from '../src/inventory-alerts/inventory-alerts.module';
 import { InventoryAlertsService } from '../src/inventory-alerts/inventory-alerts.service';
@@ -68,6 +69,8 @@ describe('InventoryAlerts and InventoryReports (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
+      .overrideProvider(AUDIT_PORT)
+      .useValue({ record: jest.fn(() => Promise.resolve()) })
       .overrideProvider(InventoryAlertsService)
       .useValue(alertsService)
       .overrideProvider(InventoryReportsService)

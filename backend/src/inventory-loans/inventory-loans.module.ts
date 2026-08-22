@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth';
 import { InventoryLoansController } from './inventory-loans.controller';
 import { InventoryLoansService } from './inventory-loans.service';
 

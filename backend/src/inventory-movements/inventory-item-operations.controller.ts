@@ -10,10 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import type { AuthenticatedUser } from '../auth';
 import { CreateAdjustmentDto } from './dto/create-adjustment.dto';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { CreateExitDto } from './dto/create-exit.dto';

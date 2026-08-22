@@ -11,10 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import type { AuthenticatedUser } from '../auth';
 import { CreateLoanDto } from './dto/create-loan.dto';
 import { ReturnLoanDto } from './dto/return-loan.dto';
 import { QueryLoansDto } from './dto/query-loans.dto';
@@ -53,7 +51,10 @@ export class InventoryLoansController {
   }
 
   @Patch(':id/cancel')
-  cancel(@Param('id', ParseIntPipe) id: number, @Req() req: AuthenticatedRequest) {
+  cancel(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.loansService.cancel(id, req.user.id, this.context(req));
   }
 

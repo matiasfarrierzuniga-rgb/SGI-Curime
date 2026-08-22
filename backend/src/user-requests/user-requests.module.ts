@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth';
 import { PublicRequestRateLimitModule } from '../common/rate-limit/public-request-rate-limit.module';
 import { ActivationTokenDeliveryService } from './activation-token-delivery.service';
 import { ActivationTokenService } from './activation-token.service';

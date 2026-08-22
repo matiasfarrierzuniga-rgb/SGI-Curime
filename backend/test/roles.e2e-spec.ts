@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import { RolesModule } from '../src/modules/roles/roles.module';
 import { ListRolesUseCase } from '../src/modules/roles/application/use-cases/list-roles.use-case';
 
@@ -17,7 +18,7 @@ describe('RolesController (e2e)', () => {
   let app: INestApplication<App>;
   let jwt: JwtService;
   let role = 'Administrador';
-  const roles = { execute: jest.fn() };
+  const listRoles = { execute: jest.fn() };
   const prisma = {
     user: {
       findUnique: jest.fn(() => Promise.resolve({
@@ -33,10 +34,11 @@ describe('RolesController (e2e)', () => {
   beforeEach(async () => {
     role = 'Administrador';
     jest.clearAllMocks();
-    roles.execute.mockResolvedValue([{ id: 1, name: 'Administrador' }]);
+    listRoles.execute.mockResolvedValue([{ id: 1, name: 'Administrador' }]);
     const module = await Test.createTestingModule({ imports: [RolesModule] })
       .overrideProvider(PrismaService).useValue(prisma)
-      .overrideProvider(ListRolesUseCase).useValue(roles)
+      .overrideProvider(AUDIT_PORT).useValue({ record: jest.fn(() => Promise.resolve()) })
+      .overrideProvider(ListRolesUseCase).useValue(listRoles)
       .compile();
     app = module.createNestApplication();
     jwt = module.get(JwtService);
@@ -59,6 +61,6 @@ describe('RolesController (e2e)', () => {
       .set('Authorization', await auth())
       .expect(200)
       .expect([{ id: 1, name: 'Administrador' }]);
-    expect(roles.execute).toHaveBeenCalledTimes(1);
+    expect(listRoles.execute).toHaveBeenCalledTimes(1);
   });
 });

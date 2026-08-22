@@ -1,23 +1,20 @@
+import './helpers/configure-auth-env';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
+import { AUDIT_PORT as USERS_AUDIT_PORT } from '../src/modules/users/application/ports/audit.port';
 import { UsersModule } from '../src/modules/users/users.module';
-import { ListUsersUseCase } from '../src/modules/users/application/use-cases/list-users.use-case';
-import { GetUserUseCase } from '../src/modules/users/application/use-cases/get-user.use-case';
-import { UpdateUserUseCase } from '../src/modules/users/application/use-cases/update-user.use-case';
-import { ChangeUserRoleUseCase } from '../src/modules/users/application/use-cases/change-user-role.use-case';
 import { ActivateUserUseCase } from '../src/modules/users/application/use-cases/activate-user.use-case';
+import { ChangeUserRoleUseCase } from '../src/modules/users/application/use-cases/change-user-role.use-case';
 import { DeactivateUserUseCase } from '../src/modules/users/application/use-cases/deactivate-user.use-case';
+import { GetUserUseCase } from '../src/modules/users/application/use-cases/get-user.use-case';
+import { ListUsersUseCase } from '../src/modules/users/application/use-cases/list-users.use-case';
 import { UnlockUserUseCase } from '../src/modules/users/application/use-cases/unlock-user.use-case';
-
-process.env.JWT_SECRET = 'test-jwt-secret';
-process.env.JWT_EXPIRES_IN = '1h';
-process.env.MAX_LOGIN_ATTEMPTS = '3';
-process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
-process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES = '30';
+import { UpdateUserUseCase } from '../src/modules/users/application/use-cases/update-user.use-case';
 
 describe('UsersController (e2e)', () => {
   let app: INestApplication<App>;
@@ -31,17 +28,34 @@ describe('UsersController (e2e)', () => {
   const activateUser = { execute: jest.fn() };
   const deactivateUser = { execute: jest.fn() };
   const unlockUser = { execute: jest.fn() };
-  const user = { id: 2, fullName: 'Usuario', identification: '123456789', identificationType: 'NATIONAL', email: 'user@example.com', phoneCountryCode: null, phoneNationalNumber: null, phone: null, address: null, status: 'ACTIVE', lockedAt: null, roleId: 2, role: { id: 2, name: 'Tesorero', description: null, isActive: true }, createdAt: new Date(), updatedAt: new Date() };
+  const user = {
+    id: 2,
+    fullName: 'Usuario',
+    identification: '123456789',
+    identificationType: 'NATIONAL',
+    email: 'user@example.com',
+    phoneCountryCode: null,
+    phoneNationalNumber: null,
+    phone: null,
+    address: null,
+    status: 'ACTIVE' as const,
+    lockedAt: null,
+    roleId: 2,
+    role: { id: 2, name: 'Tesorero', description: null, isActive: true },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
   const prisma = {
     user: {
       findUnique: jest.fn(() =>
         Promise.resolve({
+          ...user,
           id: 1,
           fullName: 'Admin',
           email: 'admin@example.com',
           status,
           lockedAt: null,
-          role: { name: role },
+          role: { ...user.role, name: role },
         }),
       ),
     },
@@ -70,13 +84,24 @@ describe('UsersController (e2e)', () => {
     const module = await Test.createTestingModule({ imports: [UsersModule] })
       .overrideProvider(PrismaService)
       .useValue(prisma)
-      .overrideProvider(ListUsersUseCase).useValue(listUsers)
-      .overrideProvider(GetUserUseCase).useValue(getUser)
-      .overrideProvider(UpdateUserUseCase).useValue(updateUser)
-      .overrideProvider(ChangeUserRoleUseCase).useValue(changeUserRole)
-      .overrideProvider(ActivateUserUseCase).useValue(activateUser)
-      .overrideProvider(DeactivateUserUseCase).useValue(deactivateUser)
-      .overrideProvider(UnlockUserUseCase).useValue(unlockUser)
+      .overrideProvider(AUDIT_PORT)
+      .useValue({ record: jest.fn(() => Promise.resolve()) })
+      .overrideProvider(USERS_AUDIT_PORT)
+      .useValue({ record: jest.fn(() => Promise.resolve()) })
+      .overrideProvider(ListUsersUseCase)
+      .useValue(listUsers)
+      .overrideProvider(GetUserUseCase)
+      .useValue(getUser)
+      .overrideProvider(UpdateUserUseCase)
+      .useValue(updateUser)
+      .overrideProvider(ChangeUserRoleUseCase)
+      .useValue(changeUserRole)
+      .overrideProvider(ActivateUserUseCase)
+      .useValue(activateUser)
+      .overrideProvider(DeactivateUserUseCase)
+      .useValue(deactivateUser)
+      .overrideProvider(UnlockUserUseCase)
+      .useValue(unlockUser)
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(

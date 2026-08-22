@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth';
 import { InventoryCategoriesController } from './inventory-categories.controller';
 import { InventoryCategoriesService } from './inventory-categories.service';
 

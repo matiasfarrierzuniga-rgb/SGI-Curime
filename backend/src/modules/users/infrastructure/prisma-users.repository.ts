@@ -1,13 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import {
   Prisma,
   PrismaClient,
   UserStatus,
 } from '../../../../generated/prisma/client';
-import {
-  getAccountLockoutPolicy,
-  lockoutCutoff,
-} from '../../../auth/account-lockout.policy';
+import { getAccountLockoutPolicy, lockoutCutoff } from '../../../auth';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
   User,
@@ -74,10 +71,11 @@ function toUser(user: SafeUser): User {
 @Injectable()
 export class PrismaUsersRepository implements UsersRepository {
   private readonly lockoutMinutes: number;
-  private db: PrismaClient | Prisma.TransactionClient;
-
-  constructor(private readonly prisma: PrismaService) {
-    this.db = prisma;
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional()
+    private readonly db: PrismaClient | Prisma.TransactionClient = prisma,
+  ) {
     this.lockoutMinutes = getAccountLockoutPolicy().lockoutMinutes;
   }
 
@@ -86,9 +84,7 @@ export class PrismaUsersRepository implements UsersRepository {
   ): Promise<T> {
     return this.prisma.$transaction(
       async (tx) => {
-        const repository = new PrismaUsersRepository(this.prisma);
-        repository.db = tx;
-        return work(repository);
+        return work(new PrismaUsersRepository(this.prisma, tx));
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );

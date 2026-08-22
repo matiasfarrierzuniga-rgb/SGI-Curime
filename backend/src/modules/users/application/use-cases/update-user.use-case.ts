@@ -6,11 +6,11 @@ import { EmailAlreadyRegisteredError } from '../../domain/errors/email-already-r
 import { EmptyUpdateError } from '../../domain/errors/empty-update.error';
 import { InvalidPhoneError } from '../../domain/errors/invalid-phone.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
-import type {
-  UserUpdateData,
-  UsersRepository,
+import {
+  USERS_REPOSITORY,
+  type UserUpdateData,
+  type UsersRepository,
 } from '../../domain/repositories/users-repository';
-import { USERS_REPOSITORY } from '../../domain/repositories/users-repository';
 import {
   AUDIT_PORT,
   type AuditContext,
@@ -20,7 +20,8 @@ import {
 @Injectable()
 export class UpdateUserUseCase {
   constructor(
-    @Inject(USERS_REPOSITORY) private readonly repository: UsersRepository,
+    @Inject(USERS_REPOSITORY)
+    private readonly repository: UsersRepository,
     @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {}
 
