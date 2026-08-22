@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import {
   Prisma,
   PrismaClient,
@@ -68,6 +68,7 @@ export class PrismaUsersRepository implements UsersRepository {
 
   constructor(
     private readonly prisma: PrismaService,
+    @Optional()
     private readonly db: PrismaClient | Prisma.TransactionClient = prisma,
   ) {
     this.lockoutMinutes = getAccountLockoutPolicy().lockoutMinutes;

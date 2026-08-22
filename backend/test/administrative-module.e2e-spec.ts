@@ -5,6 +5,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AffiliateRequestsModule } from '../src/affiliate-requests/affiliate-requests.module';
 import { AffiliateRequestsService } from '../src/affiliate-requests/affiliate-requests.service';
+import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import { PrismaService } from '../src/prisma/prisma.service';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
@@ -58,6 +59,8 @@ describe('Administrative affiliate requests (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
+      .overrideProvider(AUDIT_PORT)
+      .useValue({ record: jest.fn(() => Promise.resolve()) })
       .overrideProvider(AffiliateRequestsService)
       .useValue(service)
       .compile();

@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AuthModule } from '../src/auth';
+import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import { PASSWORD_RESET_DELIVERY_PORT } from '../src/auth/application/ports/password-reset-delivery.port';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createHash } from 'crypto';
@@ -152,6 +153,8 @@ describe('AuthController (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(prismaMock)
+      .overrideProvider(AUDIT_PORT)
+      .useValue({ record: jest.fn(() => Promise.resolve()) })
       .overrideProvider(PASSWORD_RESET_DELIVERY_PORT)
       .useValue({
         deliver: ({ token }: { token: string }) => {

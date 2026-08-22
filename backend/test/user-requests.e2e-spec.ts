@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { UserRequestsModule } from '../src/user-requests/user-requests.module';
 import { UserRequestsService } from '../src/user-requests/user-requests.service';
@@ -61,6 +62,8 @@ describe('UserRequestsController (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
+      .overrideProvider(AUDIT_PORT)
+      .useValue({ record: jest.fn(() => Promise.resolve()) })
       .overrideProvider(UserRequestsService)
       .useValue(service)
       .compile();
