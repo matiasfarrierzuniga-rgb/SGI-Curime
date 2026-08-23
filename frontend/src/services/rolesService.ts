@@ -1,5 +1,5 @@
 import { httpClient } from '@/shared/api/httpClient'
-import type { RoleOption } from '../types/users'
+import type { RoleOption } from '@/features/users'
 
 export const rolesService = {
   async listActive() {

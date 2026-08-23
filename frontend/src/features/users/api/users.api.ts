@@ -1,6 +1,6 @@
 import { httpClient } from '@/shared/api/httpClient'
-import type { PaginatedResponse } from '../types/api'
-import type { User, UserQuery, UserUpdate } from '../types/users'
+import type { PaginatedResponse } from '@/types/api'
+import type { User, UserQuery, UserUpdate } from '../model/users.types'
 export const usersService = {
   async list(params: UserQuery) { return (await httpClient.get<PaginatedResponse<User>>('/users', { params })).data },
   async get(id: number) { return (await httpClient.get<User>(`/users/${id}`)).data },

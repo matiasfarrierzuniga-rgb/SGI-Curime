@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '@/shared/ui/Toast'
-import { usersService } from '../../services/usersService'
+import { usersService } from '../api/users.api'
 import { UsersPage } from './UsersPage'
 
-vi.mock('../../services/usersService', () => ({
+vi.mock('../api/users.api', () => ({
   usersService: {
     list: vi.fn(),
     get: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('../../services/usersService', () => ({
   },
 }))
 
-vi.mock('../../services/rolesService', () => ({
+vi.mock('@/services/rolesService', () => ({
   rolesService: {
     listActive: vi.fn().mockResolvedValue([
       { id: 1, name: 'Usuario' },

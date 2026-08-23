@@ -5,7 +5,7 @@ import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { userRequestsService } from "../../services/userRequestsService";
 import { rolesService } from "../../services/rolesService";
 import type { RequestStatus, UserRequest } from "../../types/userRequests";
-import type { RoleOption } from "../../types/users";
+import type { RoleOption } from "@/features/users";
 import { getErrorMessage } from "@/shared/lib/errors";
 import { useToast } from "@/shared/ui/Toast";
 const limit = 10;
