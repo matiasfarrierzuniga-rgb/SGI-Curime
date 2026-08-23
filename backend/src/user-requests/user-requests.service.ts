@@ -235,7 +235,10 @@ export class UserRequestsService {
 
   private async assertNoUserDuplicates(email: string, identification: string) {
     const [byEmail, byIdentification] = await Promise.all([
-      this.prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } }, select: { id: true } }),
+      this.prisma.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
+        select: { id: true },
+      }),
       this.prisma.user.findUnique({
         where: { identification },
         select: { id: true },
@@ -253,7 +256,10 @@ export class UserRequestsService {
   ) {
     const [byEmail, byIdentification] = await Promise.all([
       this.prisma.userRequest.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' }, status: 'PENDING' },
+        where: {
+          email: { equals: email, mode: 'insensitive' },
+          status: 'PENDING',
+        },
         select: { id: true },
       }),
       this.prisma.userRequest.findFirst({

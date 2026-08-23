@@ -271,11 +271,7 @@ export class InventoryLoansService {
     return withOverdue(updated);
   }
 
-  async cancel(
-    id: number,
-    actorId?: number,
-    context: AuditContext = {},
-  ) {
+  async cancel(id: number, actorId?: number, context: AuditContext = {}) {
     const updated = await this.prisma.$transaction(async (tx) => {
       const loan = await tx.inventoryLoan.findUnique({
         where: { id },

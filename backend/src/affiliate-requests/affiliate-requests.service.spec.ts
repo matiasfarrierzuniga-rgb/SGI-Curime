@@ -97,15 +97,17 @@ describe('AffiliateRequestsService', () => {
 
   it('rejects a pending duplicate by identification or email', async () => {
     prisma.affiliateRequest.findFirst.mockResolvedValue({ id: 3 });
-    await expect(service.create({
-      fullName: pending.fullName,
-      identificationType: pending.identificationType,
-      identification: pending.identification,
-      birthDate: pending.birthDate,
-      email: pending.email,
-      address: pending.address,
-      affiliationReason: pending.affiliationReason,
-    })).rejects.toBeInstanceOf(ConflictException);
+    await expect(
+      service.create({
+        fullName: pending.fullName,
+        identificationType: pending.identificationType,
+        identification: pending.identification,
+        birthDate: pending.birthDate,
+        email: pending.email,
+        address: pending.address,
+        affiliationReason: pending.affiliationReason,
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('approves atomically and creates an Affiliate, not a User', async () => {

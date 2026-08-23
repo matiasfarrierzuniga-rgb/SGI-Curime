@@ -21,13 +21,15 @@ describe('RolesController (e2e)', () => {
   const listRoles = { execute: jest.fn() };
   const prisma = {
     user: {
-      findUnique: jest.fn(() => Promise.resolve({
-        id: 1,
-        fullName: 'Admin',
-        email: 'admin@example.com',
-        status: 'ACTIVE',
-        role: { name: role },
-      })),
+      findUnique: jest.fn(() =>
+        Promise.resolve({
+          id: 1,
+          fullName: 'Admin',
+          email: 'admin@example.com',
+          status: 'ACTIVE',
+          role: { name: role },
+        }),
+      ),
     },
   };
 
@@ -36,9 +38,12 @@ describe('RolesController (e2e)', () => {
     jest.clearAllMocks();
     listRoles.execute.mockResolvedValue([{ id: 1, name: 'Administrador' }]);
     const module = await Test.createTestingModule({ imports: [RolesModule] })
-      .overrideProvider(PrismaService).useValue(prisma)
-      .overrideProvider(AUDIT_PORT).useValue({ record: jest.fn(() => Promise.resolve()) })
-      .overrideProvider(ListRolesUseCase).useValue(listRoles)
+      .overrideProvider(PrismaService)
+      .useValue(prisma)
+      .overrideProvider(AUDIT_PORT)
+      .useValue({ record: jest.fn(() => Promise.resolve()) })
+      .overrideProvider(ListRolesUseCase)
+      .useValue(listRoles)
       .compile();
     app = module.createNestApplication();
     jwt = module.get(JwtService);
@@ -46,13 +51,18 @@ describe('RolesController (e2e)', () => {
   });
 
   afterEach(() => app?.close());
-  const auth = async () => `Bearer ${await jwt.signAsync({ sub: 1, email: 'admin@example.com', role })}`;
+  const auth = async () =>
+    `Bearer ${await jwt.signAsync({ sub: 1, email: 'admin@example.com', role })}`;
 
-  it('requires JWT', () => request(app.getHttpServer()).get('/roles').expect(401));
+  it('requires JWT', () =>
+    request(app.getHttpServer()).get('/roles').expect(401));
 
   it('forbids non-administrators', async () => {
     role = 'Tesorero';
-    await request(app.getHttpServer()).get('/roles').set('Authorization', await auth()).expect(403);
+    await request(app.getHttpServer())
+      .get('/roles')
+      .set('Authorization', await auth())
+      .expect(403);
   });
 
   it('returns the active safe role catalog to administrators', async () => {

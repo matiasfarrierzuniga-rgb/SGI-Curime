@@ -10,11 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import {
-  JwtAuthGuard,
-  Roles,
-  RolesGuard,
-} from '../../../../auth';
+import { JwtAuthGuard, Roles, RolesGuard } from '../../../../auth';
 import type { AuthenticatedUser } from '../../../../auth';
 import { UserStatus } from '../../domain/entities/user';
 import type { UserQuery } from '../../domain/repositories/users-repository';

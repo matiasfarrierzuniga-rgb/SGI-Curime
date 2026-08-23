@@ -1,4 +1,8 @@
-import { ConflictException, INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  ConflictException,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -195,9 +199,7 @@ describe('InventoryLoansController (e2e)', () => {
 
   it('routes a return and rejects a double return at the service layer', async () => {
     service.return.mockRejectedValueOnce(
-      new ConflictException(
-        'Loan is already returned',
-      ),
+      new ConflictException('Loan is already returned'),
     );
     await request(app.getHttpServer())
       .patch('/inventory/loans/5/return')

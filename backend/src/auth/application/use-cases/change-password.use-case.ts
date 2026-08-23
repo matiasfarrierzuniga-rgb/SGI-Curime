@@ -33,7 +33,10 @@ export class ChangePasswordUseCase {
     context: AuditContext = {},
   ): Promise<{ message: string }> {
     if (newPassword !== newPasswordConfirmation) {
-      throw new AuthApplicationError('PASSWORDS_DO_NOT_MATCH', 'Passwords do not match');
+      throw new AuthApplicationError(
+        'PASSWORDS_DO_NOT_MATCH',
+        'Passwords do not match',
+      );
     }
 
     const user = await this.repository.findCredentialsById(userId);

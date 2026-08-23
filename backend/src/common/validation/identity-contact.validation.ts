@@ -11,7 +11,7 @@ export const DIMEX_IDENTIFICATION_PATTERN = /^[0-9]{12}$/;
 export const COUNTRY_CODE_PATTERN = /^\+[1-9][0-9]{0,3}$/;
 export const NATIONAL_NUMBER_PATTERN = /^[0-9]+$/;
 export const FULL_NAME_PATTERN =
-  /^(?=.*\p{L})[\p{L}\p{M}]+(?:[ '\-][\p{L}\p{M}]+)*$/u;
+  /^(?=.*\p{L})[\p{L}\p{M}]+(?:[ '-][\p{L}\p{M}]+)*$/u;
 
 export function isValidIdentification(
   type: SupportedIdentificationType,

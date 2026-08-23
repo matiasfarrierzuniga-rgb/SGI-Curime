@@ -43,7 +43,11 @@ describe('AuthController error boundary', () => {
     );
 
     await expectHttpError(
-      () => controller.login({ email: 'user@example.com', password: 'bad' }, request),
+      () =>
+        controller.login(
+          { email: 'user@example.com', password: 'bad' },
+          request,
+        ),
       401,
       'Invalid credentials',
     );

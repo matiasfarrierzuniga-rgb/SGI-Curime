@@ -114,38 +114,103 @@ describe('UserRequestsController (e2e)', () => {
   });
 
   it('accepts a valid DIMEX request', async () => {
-    await request(app.getHttpServer()).post('/user-requests').send({
-      fullName: 'Persona DIMEX', identificationType: 'DIMEX',
-      identification: '123456789012', email: 'dimex@example.com', reason: 'Necesito acceso',
-    }).expect(201);
+    await request(app.getHttpServer())
+      .post('/user-requests')
+      .send({
+        fullName: 'Persona DIMEX',
+        identificationType: 'DIMEX',
+        identification: '123456789012',
+        email: 'dimex@example.com',
+        reason: 'Necesito acceso',
+      })
+      .expect(201);
   });
 
   it.each([
-    { identificationType: 'NATIONAL', identification: '12345678', email: 'ok@example.com' },
-    { identificationType: 'NATIONAL', identification: '123456789', email: 'invalid' },
-    { identificationType: 'NATIONAL', identification: '123456789', email: 'ok@example.com', phoneCountryCode: '+506', phoneNationalNumber: '123' },
+    {
+      identificationType: 'NATIONAL',
+      identification: '12345678',
+      email: 'ok@example.com',
+    },
+    {
+      identificationType: 'NATIONAL',
+      identification: '123456789',
+      email: 'invalid',
+    },
+    {
+      identificationType: 'NATIONAL',
+      identification: '123456789',
+      email: 'ok@example.com',
+      phoneCountryCode: '+506',
+      phoneNationalNumber: '123',
+    },
   ])('rejects invalid critical fields', async (fields) => {
-    await request(app.getHttpServer()).post('/user-requests').send({ fullName: 'Persona Válida', reason: 'Necesito acceso', ...fields }).expect(400);
+    await request(app.getHttpServer())
+      .post('/user-requests')
+      .send({
+        fullName: 'Persona Válida',
+        reason: 'Necesito acceso',
+        ...fields,
+      })
+      .expect(400);
   });
 
   it('returns 409 for a duplicate', async () => {
-    service.create.mockRejectedValueOnce(new ConflictException('No se puede procesar la solicitud'));
-    await request(app.getHttpServer()).post('/user-requests').send({ fullName: 'Persona Válida', identificationType: 'NATIONAL', identification: '123456789', email: 'duplicate@example.com', reason: 'Necesito acceso' }).expect(409);
+    service.create.mockRejectedValueOnce(
+      new ConflictException('No se puede procesar la solicitud'),
+    );
+    await request(app.getHttpServer())
+      .post('/user-requests')
+      .send({
+        fullName: 'Persona Válida',
+        identificationType: 'NATIONAL',
+        identification: '123456789',
+        email: 'duplicate@example.com',
+        reason: 'Necesito acceso',
+      })
+      .expect(409);
   });
 
   it('returns 429 after the configured public request limit', async () => {
-    const body = { fullName: 'Persona Válida', identificationType: 'NATIONAL', identification: '123456789', email: 'rate@example.com', reason: 'Necesito acceso' };
-    await request(app.getHttpServer()).post('/user-requests').send(body).expect(201);
-    await request(app.getHttpServer()).post('/user-requests').send(body).expect(201);
-    await request(app.getHttpServer()).post('/user-requests').send(body).expect(201);
-    await request(app.getHttpServer()).post('/user-requests').send(body).expect(429);
+    const body = {
+      fullName: 'Persona Válida',
+      identificationType: 'NATIONAL',
+      identification: '123456789',
+      email: 'rate@example.com',
+      reason: 'Necesito acceso',
+    };
+    await request(app.getHttpServer())
+      .post('/user-requests')
+      .send(body)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post('/user-requests')
+      .send(body)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post('/user-requests')
+      .send(body)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post('/user-requests')
+      .send(body)
+      .expect(429);
   });
 
   it('does not throttle authenticated listing with the public policy', async () => {
     const token = await authorization();
-    await request(app.getHttpServer()).get('/user-requests').set('Authorization', token).expect(200);
-    await request(app.getHttpServer()).get('/user-requests').set('Authorization', token).expect(200);
-    await request(app.getHttpServer()).get('/user-requests').set('Authorization', token).expect(200);
+    await request(app.getHttpServer())
+      .get('/user-requests')
+      .set('Authorization', token)
+      .expect(200);
+    await request(app.getHttpServer())
+      .get('/user-requests')
+      .set('Authorization', token)
+      .expect(200);
+    await request(app.getHttpServer())
+      .get('/user-requests')
+      .set('Authorization', token)
+      .expect(200);
   });
 
   it.each([

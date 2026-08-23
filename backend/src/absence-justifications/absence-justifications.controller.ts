@@ -11,11 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import {
-  JwtAuthGuard,
-  Roles,
-  RolesGuard,
-} from '../auth';
+import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { AbsenceJustificationsService } from './absence-justifications.service';
 import {

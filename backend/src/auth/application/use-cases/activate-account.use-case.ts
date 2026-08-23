@@ -37,7 +37,10 @@ export class ActivateAccountUseCase {
     context: AuditContext = {},
   ): Promise<{ message: string }> {
     if (password !== passwordConfirmation) {
-      throw new AuthApplicationError('PASSWORDS_DO_NOT_MATCH', 'Passwords do not match');
+      throw new AuthApplicationError(
+        'PASSWORDS_DO_NOT_MATCH',
+        'Passwords do not match',
+      );
     }
 
     const activationToken = await this.repository.findActivationToken(
@@ -45,16 +48,28 @@ export class ActivateAccountUseCase {
     );
 
     if (!activationToken) {
-      throw new AuthApplicationError('INVALID_ACTIVATION_TOKEN', 'Invalid activation token');
+      throw new AuthApplicationError(
+        'INVALID_ACTIVATION_TOKEN',
+        'Invalid activation token',
+      );
     }
     if (activationToken.usedAt) {
-      throw new AuthApplicationError('ACTIVATION_TOKEN_USED', 'Activation token has already been used');
+      throw new AuthApplicationError(
+        'ACTIVATION_TOKEN_USED',
+        'Activation token has already been used',
+      );
     }
     if (activationToken.expiresAt <= new Date()) {
-      throw new AuthApplicationError('ACTIVATION_TOKEN_EXPIRED', 'Activation token has expired');
+      throw new AuthApplicationError(
+        'ACTIVATION_TOKEN_EXPIRED',
+        'Activation token has expired',
+      );
     }
     if (activationToken.userStatus !== 'INACTIVE') {
-      throw new AuthApplicationError('ACCOUNT_CANNOT_BE_ACTIVATED', 'Account cannot be activated');
+      throw new AuthApplicationError(
+        'ACCOUNT_CANNOT_BE_ACTIVATED',
+        'Account cannot be activated',
+      );
     }
 
     const passwordHash = await this.hasher.hash(password);
@@ -75,7 +90,10 @@ export class ActivateAccountUseCase {
         passwordHash,
       );
       if (!activated) {
-        throw new AuthApplicationError('ACCOUNT_CANNOT_BE_ACTIVATED', 'Account cannot be activated');
+        throw new AuthApplicationError(
+          'ACCOUNT_CANNOT_BE_ACTIVATED',
+          'Account cannot be activated',
+        );
       }
     });
 
