@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Pagination } from '../../components/Pagination'
+import { Pagination } from '@/shared/ui/Pagination'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import { inventoryReportsService } from '../../services/inventoryReportsService'
 import type {
@@ -12,7 +12,7 @@ import type {
   InventoryStockRow,
 } from '../../types/inventory'
 import { conditionLabels, itemStatusLabels, movementTypeLabels } from '../../types/inventory'
-import { getErrorMessage } from '../../utils/errors'
+import { getErrorMessage } from '@/shared/lib/errors'
 
 const stockLimit = 20
 

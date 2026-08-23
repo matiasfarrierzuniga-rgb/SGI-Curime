@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { inventoryReportsService } from '../../services/inventoryReportsService'
 import type { InventoryReportSummary } from '../../types/inventory'
-import { getErrorMessage } from '../../utils/errors'
+import { getErrorMessage } from '@/shared/lib/errors'
 
 const statLabel: Record<string, string> = {
   totalItems: 'Artículos',

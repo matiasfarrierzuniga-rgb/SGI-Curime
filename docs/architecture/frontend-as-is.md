@@ -1,8 +1,13 @@
 # Frontend AS-IS
 
+This document is the current frontend source of truth. The original horizontal
+inventory is retained below as historical baseline evidence; the repository has
+since received Foundation/Auth/Users/Roles consolidation in separate commits.
+Phase 0 documentation does not authorize additional production moves.
+
 ## Scope
 
-Baseline captured for Sprint 1 reference architecture work on branch `docs/phase-0-baseline`.
+Baseline verified on branch `docs/frontend-architecture-phase-0` at closure review.
 
 ## Stack
 
@@ -16,7 +21,7 @@ Baseline captured for Sprint 1 reference architecture work on branch `docs/phase
 
 ## Current Structure
 
-Frontend currently uses horizontal folders under `frontend/src/`:
+Historical pre-consolidation structure under `frontend/src/`:
 
 ```text
 frontend/src/
@@ -34,7 +39,19 @@ frontend/src/
 └── utils/
 ```
 
-No `frontend/src/app/`, `frontend/src/features/`, or `frontend/src/shared/` structure exists yet.
+Current source also contains committed boundaries:
+
+```text
+frontend/src/
+├── app/                 App, layouts, router
+├── features/
+│   ├── auth/            api, model, routing, ui, public index
+│   ├── users/           api, hooks, model, ui, public index
+│   └── roles/           api, model, public index
+└── shared/              api, config, lib, security, session, ui
+```
+
+Legacy roots remain transitional. No new empty feature layers are required.
 
 ## Current Dependency Shape
 
@@ -168,7 +185,22 @@ These are candidates for future `shared/ui` if they remain domain-neutral.
 
 ## Tests Available
 
-Frontend has 21 test files and 78 tests after current remote merge. Tests cover auth context/routes, login/profile/status pages, users page, admin pages, inventory pages, public pages, http client, and utilities.
+Frontend has 27 passing test files and 101 tests. Tests cover auth context/routes, login/profile/status pages, users page, admin pages, inventory pages, public pages, HTTP client, shared utilities, and boundary-facing components.
+
+## Architecture Baseline Gaps
+
+These IDs describe the pre-consolidation Phase 0 audit, not instructions to
+refactor in this change:
+
+| ID | Gap | Current status |
+| --- | --- | --- |
+| P0-01 | No physical `app/features/shared` boundaries. | Resolved by pre-existing Foundation commits. |
+| P0-02 | Auth distributed across horizontal folders. | Auth slice established; legacy consumers remain transitional. |
+| P0-03 | `UsersPage` concentrated responsibilities. | Users slice established; remaining complexity is follow-up work. |
+| P0-04 | Feature APIs lived in global `services/`. | Auth/Users/Roles APIs moved; other domains remain transitional. |
+| P0-05 | Feature types lived in global `types/`. | Reference slices own relevant models; other domains remain transitional. |
+| P0-06 | No consistent feature public APIs. | Auth/Users/Roles expose `index.ts`. |
+| P0-07 | Dependency rules were not automated. | `check:architecture` and conventions are committed. |
 
 ## Validation Results
 
@@ -177,7 +209,7 @@ Frontend has 21 test files and 78 tests after current remote merge. Tests cover 
 | `npm ci` | Passed. |
 | `npm run lint` | Passed. |
 | `npm run build` | Passed. |
-| `npm test -- --run` | Passed: 21 files, 78 tests. |
+| `npm test -- --run` | Passed: 27 files, 101 tests. |
 
 ## Pre-Existing Failures
 

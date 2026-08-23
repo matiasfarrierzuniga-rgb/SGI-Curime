@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { inventoryAlertsService } from '../../services/inventoryAlertsService'
 import type { InventoryAlerts, InventoryLoanAlert } from '../../types/inventory'
 import { conditionLabels } from '../../types/inventory'
-import { getErrorMessage } from '../../utils/errors'
+import { getErrorMessage } from '@/shared/lib/errors'
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString('es-CR')
 

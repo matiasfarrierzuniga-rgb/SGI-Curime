@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ToastProvider } from '../../components/Toast'
+import { ToastProvider } from '@/shared/ui/Toast'
 import { affiliatesService } from '../../services/affiliatesService'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryLoansService } from '../../services/inventoryLoansService'
 import { InventoryLoansPage } from './InventoryLoansPage'
 
-vi.mock('../../auth/AuthContext', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
 vi.mock('../../services/inventoryLoansService', () => ({
   inventoryLoansService: { list: vi.fn(), get: vi.fn(), create: vi.fn(), return: vi.fn(), cancel: vi.fn() },
 }))

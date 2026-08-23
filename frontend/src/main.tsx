@@ -1,16 +1,29 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
-import App from './App.tsx'
+import App from './app/App'
 import { BrowserRouter } from 'react-router-dom'
-import { AuthProvider } from './auth/AuthContext'
-import { ToastProvider } from './components/Toast'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { AuthProvider } from '@/features/auth'
+import { ToastProvider } from '@/shared/ui/Toast'
+import { ErrorBoundary } from '@/shared/ui/ErrorBoundary'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 30_000,
+    },
+  },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <ErrorBoundary><ToastProvider><AuthProvider><App /></AuthProvider></ToastProvider></ErrorBoundary>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ErrorBoundary><ToastProvider><AuthProvider><App /></AuthProvider></ToastProvider></ErrorBoundary>
+      </BrowserRouter>
+    </QueryClientProvider>
   </StrictMode>,
 )

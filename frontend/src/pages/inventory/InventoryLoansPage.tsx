@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Pagination } from '../../components/Pagination'
-import { Modal } from '../../components/Modal'
-import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { useToast } from '../../components/Toast'
-import { useAuth } from '../../auth/AuthContext'
+import { Pagination } from '@/shared/ui/Pagination'
+import { Modal } from '@/shared/ui/Modal'
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
+import { useToast } from '@/shared/ui/Toast'
+import { useAuth } from '@/features/auth'
 import { affiliatesService } from '../../services/affiliatesService'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryLoansService } from '../../services/inventoryLoansService'
 import type { AffiliateOption, InventoryItem, InventoryLoan, InventoryLoanStatus, InventoryLoanQuery } from '../../types/inventory'
 import { loanStatusLabels } from '../../types/inventory'
-import { getErrorMessage, isConflictWithMessage } from '../../utils/errors'
+import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
 
 const limit = 10
 

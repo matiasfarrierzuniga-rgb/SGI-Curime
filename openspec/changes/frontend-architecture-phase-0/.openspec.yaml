@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-08-22
+goal: Document current frontend and proposed modular vertical-slice evolution
+  without product refactoring

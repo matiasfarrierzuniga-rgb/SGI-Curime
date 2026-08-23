@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { affiliateRequestsService } from '../../services/affiliateRequestsService'
-import { getErrorMessage } from '../../utils/errors'
-import { digitsOnly, emailError, fullNameError, identificationError, identificationMaxLength, normalizeEmail, normalizeText, phoneError, phoneNationalMaxLength, type IdentificationType } from '../../utils/formValidation'
+import { getErrorMessage } from '@/shared/lib/errors'
+import { digitsOnly, emailError, fullNameError, identificationError, identificationMaxLength, normalizeEmail, normalizeText, phoneError, phoneNationalMaxLength, type IdentificationType } from '@/shared/lib/formValidation'
 import { Breadcrumbs, PublicPageHeader, SectionContainer, Seo } from '../../components/public/PublicComponents'
 
 const blank = { fullName: '', identificationType: 'NATIONAL' as IdentificationType, identification: '', birthDate: '', gender: '', phoneCountryCode: '+506', phoneNationalNumber: '', email: '', address: '', occupation: '', workplace: '', affiliationReason: '' }

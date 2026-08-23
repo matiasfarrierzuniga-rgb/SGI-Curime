@@ -1,4 +1,4 @@
-import { httpClient } from '../api/httpClient'
+import { httpClient } from '@/shared/api/httpClient'
 import type { InventoryMovementListResponse, InventoryMovementQuery } from '../types/inventory'
 
 export const inventoryMovementsService = {

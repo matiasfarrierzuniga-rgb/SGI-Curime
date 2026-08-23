@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Pagination } from '../../components/Pagination'
-import { Modal } from '../../components/Modal'
-import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { useToast } from '../../components/Toast'
+import { Pagination } from '@/shared/ui/Pagination'
+import { Modal } from '@/shared/ui/Modal'
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
+import { useToast } from '@/shared/ui/Toast'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import type {
@@ -13,7 +13,7 @@ import type {
   InventoryMovement,
 } from '../../types/inventory'
 import { conditionLabels, itemStatusLabels, movementTypeLabels } from '../../types/inventory'
-import { getErrorMessage, isConflictWithMessage } from '../../utils/errors'
+import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
 
 const limit = 10
 

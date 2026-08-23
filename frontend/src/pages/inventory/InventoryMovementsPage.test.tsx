@@ -2,13 +2,13 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryMovementsService } from '../../services/inventoryMovementsService'
-import { usersService } from '../../services/usersService'
+import { usersService } from '@/features/users'
 import { InventoryMovementsPage } from './InventoryMovementsPage'
 
-vi.mock('../../auth/AuthContext', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
 vi.mock('../../services/inventoryItemsService', () => ({ inventoryItemsService: { list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), activate: vi.fn(), deactivate: vi.fn(), entry: vi.fn(), exit: vi.fn(), adjustment: vi.fn(), itemMovements: vi.fn() } }))
 vi.mock('../../services/inventoryMovementsService', () => ({ inventoryMovementsService: { list: vi.fn() } }))
-vi.mock('../../services/usersService', () => ({ usersService: { list: vi.fn(), get: vi.fn(), update: vi.fn(), changeRole: vi.fn(), activate: vi.fn(), deactivate: vi.fn(), unlock: vi.fn() } }))
+vi.mock('@/features/users', () => ({ usersService: { list: vi.fn(), get: vi.fn(), update: vi.fn(), changeRole: vi.fn(), activate: vi.fn(), deactivate: vi.fn(), unlock: vi.fn() } }))
 
 const itemRef = { id: 1, code: 'HER-001', name: 'Martillo', unit: 'unidad' }
 const movement = {

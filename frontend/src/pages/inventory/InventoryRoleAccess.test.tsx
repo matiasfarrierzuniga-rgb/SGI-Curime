@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AppRoutes } from '../../routes/AppRoutes'
+import { AppRoutes } from '@/app/router/AppRoutes'
 
 const state = vi.hoisted(() => ({
   value: {
@@ -14,7 +15,10 @@ const state = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('../../auth/AuthContext', () => ({ useAuth: () => state.value }))
+vi.mock('@/features/auth/model/AuthContext', () => ({
+  useAuth: () => state.value,
+  AuthProvider: ({ children }: { children: ReactNode }) => children,
+}))
 
 vi.mock('../../services/inventoryReportsService', () => ({
   inventoryReportsService: {

@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "check:architecture": "node scripts/check-architecture.mjs src",
+    "verify": "npm run lint && npm run check:architecture && npm run test -- --run && npm run build",
     "preview": "vite preview",
     "test": "vitest"
   },
