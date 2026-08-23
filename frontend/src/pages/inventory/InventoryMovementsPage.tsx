@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Pagination } from '../../components/Pagination'
+import { Pagination } from '@/shared/ui/Pagination'
 import { useAuth } from '../../auth/AuthContext'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryMovementsService } from '../../services/inventoryMovementsService'
 import { usersService } from '../../services/usersService'
 import type { InventoryItem, InventoryMovement, InventoryMovementType, InventoryMovementQuery } from '../../types/inventory'
 import { movementTypeLabels } from '../../types/inventory'
-import { getErrorMessage } from '../../utils/errors'
+import { getErrorMessage } from '@/shared/lib/errors'
 
 const limit = 20
 

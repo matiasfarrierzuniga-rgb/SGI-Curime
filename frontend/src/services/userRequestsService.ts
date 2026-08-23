@@ -1,4 +1,4 @@
-import { httpClient } from '../api/httpClient'
+import { httpClient } from '@/shared/api/httpClient'
 import type { PaginatedResponse } from '../types/api'
 import type { CreateUserRequest, UserRequest, UserRequestQuery } from '../types/userRequests'
 export const userRequestsService = {

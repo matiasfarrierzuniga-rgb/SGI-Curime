@@ -1,4 +1,4 @@
-import { httpClient } from '../api/httpClient'
+import { httpClient } from '@/shared/api/httpClient'
 import type { AffiliateListResponse, AffiliateOption, AffiliateQuery } from '../types/inventory'
 
 export const affiliatesService = {

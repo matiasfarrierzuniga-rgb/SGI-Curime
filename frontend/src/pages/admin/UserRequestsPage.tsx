@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pagination } from "../../components/Pagination";
-import { Modal } from "../../components/Modal";
-import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Pagination } from "@/shared/ui/Pagination";
+import { Modal } from "@/shared/ui/Modal";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { userRequestsService } from "../../services/userRequestsService";
 import { rolesService } from "../../services/rolesService";
 import type { RequestStatus, UserRequest } from "../../types/userRequests";
 import type { RoleOption } from "../../types/users";
-import { getErrorMessage } from "../../utils/errors";
-import { useToast } from "../../components/Toast";
+import { getErrorMessage } from "@/shared/lib/errors";
+import { useToast } from "@/shared/ui/Toast";
 const limit = 10;
 export function UserRequestsPage() {
   const { notify } = useToast();

@@ -1,4 +1,4 @@
-import type { AuthenticatedUser } from '../types/auth'
+import type { AuthenticatedUser } from '@/types/auth'
 
 const KEY = 'sgi-curime-session'
 export interface StoredSession { token: string; user: AuthenticatedUser }

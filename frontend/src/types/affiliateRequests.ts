@@ -1,5 +1,5 @@
 import type { PaginatedResponse } from './api'
-import type { IdentificationType } from '../utils/formValidation'
+import type { IdentificationType } from '@/shared/lib/formValidation'
 
 export type AffiliateRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export interface AffiliateRequest {

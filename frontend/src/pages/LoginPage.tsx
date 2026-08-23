@@ -1,6 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { StatusMessage } from '../components/StatusMessage'
+import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { useAuth } from '../auth/AuthContext'
 
 export function LoginPage() {

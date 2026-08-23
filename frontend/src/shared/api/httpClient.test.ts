@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { httpClient } from './httpClient'
-import { sessionStorageService } from '../utils/sessionStorage'
+import { sessionStorageService } from '@/shared/session/sessionStorage'
 
 describe('httpClient unauthorized response', () => {
   it('clears the session and emits auth:unauthorized on 401', async () => {

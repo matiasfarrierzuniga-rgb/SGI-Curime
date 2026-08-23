@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { AuthProvider, useAuth } from './AuthContext'
 import { authService } from '../services/authService'
-import { sessionStorageService } from '../utils/sessionStorage'
+import { sessionStorageService } from '@/shared/session/sessionStorage'
 
 vi.mock('../services/authService', () => ({ authService: { me: vi.fn(), login: vi.fn() } }))
 const user = { id: 1, fullName: 'Ana', email: 'ana@curime.cr', role: 'Usuario', status: 'ACTIVE' } as any

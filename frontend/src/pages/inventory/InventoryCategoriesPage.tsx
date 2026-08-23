@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Pagination } from '../../components/Pagination'
-import { Modal } from '../../components/Modal'
-import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { useToast } from '../../components/Toast'
+import { Pagination } from '@/shared/ui/Pagination'
+import { Modal } from '@/shared/ui/Modal'
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
+import { useToast } from '@/shared/ui/Toast'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import type { InventoryCategory } from '../../types/inventory'
-import { getErrorMessage } from '../../utils/errors'
+import { getErrorMessage } from '@/shared/lib/errors'
 
 const limit = 10
 

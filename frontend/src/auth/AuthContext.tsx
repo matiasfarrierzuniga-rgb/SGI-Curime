@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { authService } from '../services/authService'
 import type { AuthenticatedUser, LoginCredentials } from '../types/auth'
-import { sessionStorageService } from '../utils/sessionStorage'
+import { sessionStorageService } from '@/shared/session/sessionStorage'
 
 interface AuthValue { user: AuthenticatedUser | null; token: string | null; isAuthenticated: boolean; isLoading: boolean; login: (data: LoginCredentials) => Promise<AuthenticatedUser>; logout: () => void }
 const AuthContext = createContext<AuthValue | undefined>(undefined)

@@ -1,4 +1,4 @@
-import { httpClient } from '../api/httpClient'
+import { httpClient } from '@/shared/api/httpClient'
 import type { ApiMessage } from '../types/api'
 import type { AuthenticatedUser, LoginCredentials, LoginResponse, PasswordWithConfirmation } from '../types/auth'
 

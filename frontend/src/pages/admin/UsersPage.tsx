@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Pagination } from "../../components/Pagination";
-import { Modal } from "../../components/Modal";
-import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Pagination } from "@/shared/ui/Pagination";
+import { Modal } from "@/shared/ui/Modal";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { usersService } from "../../services/usersService";
 import { rolesService } from "../../services/rolesService";
 import type { RoleOption, User, UserStatus } from "../../types/users";
-import { getErrorMessage } from "../../utils/errors";
-import { useToast } from "../../components/Toast";
-import { digitsOnly, normalizeEmail, normalizeText, personContactErrors, phoneNationalMaxLength } from "../../utils/formValidation";
+import { getErrorMessage } from "@/shared/lib/errors";
+import { useToast } from "@/shared/ui/Toast";
+import { digitsOnly, normalizeEmail, normalizeText, personContactErrors, phoneNationalMaxLength } from "@/shared/lib/formValidation";
 const limit = 10;
 const statusLabel = (u: User) =>
   u.isTemporarilyLocked

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AppRoutes } from '../../routes/AppRoutes'
+import { AppRoutes } from '@/app/router/AppRoutes'
 
 const state = vi.hoisted(() => ({
   value: {

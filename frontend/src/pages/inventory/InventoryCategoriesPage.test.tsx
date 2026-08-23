@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ToastProvider } from '../../components/Toast'
+import { ToastProvider } from '@/shared/ui/Toast'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import { InventoryCategoriesPage } from './InventoryCategoriesPage'
 

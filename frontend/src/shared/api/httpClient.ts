@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { env } from '../config/env'
-import { sessionStorageService } from '../utils/sessionStorage'
+import { env } from '@/shared/config/env'
+import { sessionStorageService } from '@/shared/session/sessionStorage'
 
 export const httpClient = axios.create({ baseURL: env.apiUrl, headers: { 'Content-Type': 'application/json', Accept: 'application/json' } })
 

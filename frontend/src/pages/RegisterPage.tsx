@@ -1,10 +1,10 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { StatusMessage } from '../components/StatusMessage'
+import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { userRequestsService } from '../services/userRequestsService'
 import type { CreateUserRequest } from '../types/userRequests'
-import { digitsOnly, identificationError, identificationMaxLength, normalizeEmail, normalizeText, personContactErrors, phoneNationalMaxLength, type IdentificationType } from '../utils/formValidation'
-import { getErrorMessage } from '../utils/errors'
+import { digitsOnly, identificationError, identificationMaxLength, normalizeEmail, normalizeText, personContactErrors, phoneNationalMaxLength, type IdentificationType } from '@/shared/lib/formValidation'
+import { getErrorMessage } from '@/shared/lib/errors'
 
 const initial: CreateUserRequest = { fullName: '', identificationType: 'NATIONAL', identification: '', email: '', phoneCountryCode: '+506', phoneNationalNumber: '', address: '', reason: '' }
 

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
-import { PublicLayout } from '../../layouts/PublicLayout'
+import { PublicLayout } from '@/app/layouts/PublicLayout'
 import { ContactPage, EventsPage, HomePage, NewsPage, ServicesPage } from './PublicPages'
 
 vi.mock('../../auth/AuthContext', () => ({
