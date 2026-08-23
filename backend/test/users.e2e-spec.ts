@@ -21,6 +21,7 @@ const auditContextWithIpAddress = {
     return (
       typeof value === 'object' &&
       value !== null &&
+      'ipAddress' in value &&
       typeof value.ipAddress === 'string'
     );
   },

@@ -1,5 +1,8 @@
 import { HttpException } from '@nestjs/common';
 import { AuthApplicationError } from '../../application/errors/auth.errors';
+import { ActivateAccountUseCase } from '../../application/use-cases/activate-account.use-case';
+import { LoginUseCase } from '../../application/use-cases/login.use-case';
+import { ResetPasswordUseCase } from '../../application/use-cases/reset-password.use-case';
 import { AuthController } from './auth.controller';
 
 describe('AuthController error boundary', () => {
@@ -9,13 +12,39 @@ describe('AuthController error boundary', () => {
   } as never;
 
   function createController() {
-    return new AuthController(
-      { execute: jest.fn() } as never,
-      { execute: jest.fn() } as never,
-      { execute: jest.fn() } as never,
-      { execute: jest.fn() } as never,
-      { execute: jest.fn() } as never,
-    );
+    const loginUseCase = {
+      execute: jest.fn<
+        ReturnType<LoginUseCase['execute']>,
+        Parameters<LoginUseCase['execute']>
+      >(),
+    };
+    const activateAccountUseCase = {
+      execute: jest.fn<
+        ReturnType<ActivateAccountUseCase['execute']>,
+        Parameters<ActivateAccountUseCase['execute']>
+      >(),
+    };
+    const requestPasswordResetUseCase = { execute: jest.fn() };
+    const resetPasswordUseCase = {
+      execute: jest.fn<
+        ReturnType<ResetPasswordUseCase['execute']>,
+        Parameters<ResetPasswordUseCase['execute']>
+      >(),
+    };
+    const changePasswordUseCase = { execute: jest.fn() };
+
+    return {
+      controller: new AuthController(
+        loginUseCase as never,
+        activateAccountUseCase as never,
+        requestPasswordResetUseCase as never,
+        resetPasswordUseCase as never,
+        changePasswordUseCase as never,
+      ),
+      loginUseCase,
+      activateAccountUseCase,
+      resetPasswordUseCase,
+    };
   }
 
   async function expectHttpError(
@@ -36,9 +65,8 @@ describe('AuthController error boundary', () => {
   }
 
   it('maps invalid credentials to the existing 401 response', async () => {
-    const controller = createController();
-    const login = controller['loginUseCase'] as { execute: jest.Mock };
-    login.execute.mockRejectedValue(
+    const { controller, loginUseCase } = createController();
+    loginUseCase.execute.mockRejectedValue(
       new AuthApplicationError('INVALID_CREDENTIALS', 'Invalid credentials'),
     );
 
@@ -54,11 +82,8 @@ describe('AuthController error boundary', () => {
   });
 
   it('maps invalid activation input to the existing 400 response', async () => {
-    const controller = createController();
-    const activation = controller['activateAccountUseCase'] as {
-      execute: jest.Mock;
-    };
-    activation.execute.mockRejectedValue(
+    const { controller, activateAccountUseCase } = createController();
+    activateAccountUseCase.execute.mockRejectedValue(
       new AuthApplicationError(
         'ACTIVATION_TOKEN_EXPIRED',
         'Activation token has expired',
@@ -81,9 +106,8 @@ describe('AuthController error boundary', () => {
   });
 
   it('maps password conflicts to the existing 409 response', async () => {
-    const controller = createController();
-    const reset = controller['resetPasswordUseCase'] as { execute: jest.Mock };
-    reset.execute.mockRejectedValue(
+    const { controller, resetPasswordUseCase } = createController();
+    resetPasswordUseCase.execute.mockRejectedValue(
       new AuthApplicationError(
         'RESET_TOKEN_USED',
         'Reset token has already been used',
