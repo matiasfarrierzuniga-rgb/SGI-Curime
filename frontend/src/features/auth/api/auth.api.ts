@@ -1,5 +1,5 @@
 import { httpClient } from '@/shared/api/httpClient'
-import type { ApiMessage } from '@/types/api'
+import type { ApiMessage } from '@/shared/api/api.types'
 import type { AuthenticatedUser, LoginCredentials, LoginResponse, PasswordWithConfirmation } from '../model/auth.types'
 
 export const authService = {

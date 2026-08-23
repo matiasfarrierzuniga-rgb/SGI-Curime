@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { userRequestsService } from '@/services/userRequestsService'
+import { userRequestsService } from '../api/userRequests.api'
 import { RegisterPage } from './RegisterPage'
 
-vi.mock('@/services/userRequestsService', () => ({ userRequestsService: { create: vi.fn() } }))
+vi.mock('../api/userRequests.api', () => ({ userRequestsService: { create: vi.fn() } }))
 
 describe('RegisterPage', () => {
   beforeEach(() => vi.clearAllMocks())

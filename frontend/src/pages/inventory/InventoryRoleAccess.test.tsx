@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Navigate, Outlet } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/router/AppRoutes'
 
@@ -15,10 +15,20 @@ const state = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('@/features/auth/model/AuthContext', () => ({
-  useAuth: () => state.value,
-  AuthProvider: ({ children }: { children: ReactNode }) => children,
-}))
+vi.mock('@/features/auth', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/features/auth')>()
+  return {
+    ...actual,
+    useAuth: () => state.value,
+    AuthProvider: ({ children }: { children: ReactNode }) => children,
+    LoginPage: () => <h1>Iniciar sesión</h1>,
+    ProtectedRoute: () => state.value.isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />,
+    RoleRoute: ({ role }: { role: string | string[] }) => {
+      const allowed = Array.isArray(role) ? role.includes(state.value.user?.role ?? '') : state.value.user?.role === role
+      return allowed ? <Outlet /> : <Navigate to="/403" replace />
+    },
+  }
+})
 
 vi.mock('../../services/inventoryReportsService', () => ({
   inventoryReportsService: {

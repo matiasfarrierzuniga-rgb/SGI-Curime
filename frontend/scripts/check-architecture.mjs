@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join, relative, resolve, dirname, posix } from 'node:path'
+import { join, relative, resolve, dirname } from 'node:path'
 import process from 'node:process'
 
 const ROOT = resolve(process.argv[2] ?? 'src')
 const ALIAS = '@'
+const SHARED_FORBIDDEN = new Set(['app', 'features', 'pages', 'services', 'types', 'components', 'auth', 'users', 'roles'])
+const FEATURE_FORBIDDEN = new Set(['app', 'pages', 'services', 'types', 'components'])
 
 const violations = []
 
@@ -25,13 +27,12 @@ function layerOf(absPath) {
     return { zone: 'features', feature: seg[1] }
   }
   if (rel.startsWith('shared/')) return { zone: 'shared', feature: null }
-  return { zone: 'legacy', feature: null }
+  return { zone: rel.split('/')[0] || 'legacy', feature: null }
 }
 
 function specifierToPath(specifier, importerAbs) {
-  if (specifier === ALIAS || specifier.startsWith(ALIAS + '/')) {
-    return resolve(ROOT, specifier.slice(1).replaceAll('/', '\\'))
-  }
+  if (specifier === ALIAS) return ROOT
+  if (specifier.startsWith(ALIAS + '/')) return resolve(ROOT, specifier.slice(2).replaceAll('/', '\\'))
   if (specifier.startsWith('.')) {
     return resolve(dirname(importerAbs), specifier.replaceAll('/', '\\'))
   }
@@ -47,44 +48,37 @@ function check(importerAbs, lineNo, rawLine) {
     const targetLayer = layerOf(target)
 
     if (importer.zone === 'shared') {
-      if (targetLayer.zone === 'features' || targetLayer.zone === 'app') {
+      if (SHARED_FORBIDDEN.has(targetLayer.zone)) {
         violations.push(`${relative(process.cwd(), importerAbs)}:${lineNo}: shared -> ${targetLayer.zone} forbidden (${spec})`)
       }
       continue
     }
 
     if (importer.zone === 'features') {
-      if (targetLayer.zone === 'app') {
-        violations.push(`${relative(process.cwd(), importerAbs)}:${lineNo}: feature -> app forbidden (${spec})`)
+      if (FEATURE_FORBIDDEN.has(targetLayer.zone)) {
+        violations.push(`${relative(process.cwd(), importerAbs)}:${lineNo}: feature -> ${targetLayer.zone} forbidden (${spec})`)
         continue
       }
-      if (
-        targetLayer.zone === 'features' &&
-        targetLayer.feature !== importer.feature &&
-        !/[/\\]index\.tsx?$/.test(target) &&
-        !/[/\\]index\.ts$/.test(target)
-      ) {
-        violations.push(
-          `${relative(process.cwd(), importerAbs)}:${lineNo}: cross-feature internal import (${spec}); use the feature public API (index.ts)`,
-        )
-      }
-      continue
     }
 
-    if (importer.zone === 'app' && targetLayer.zone === 'features') {
-      if (!/[/\\]index\.tsx?$/.test(target) && !/[/\\]index\.ts$/.test(target)) {
-        violations.push(
-          `${relative(process.cwd(), importerAbs)}:${lineNo}: app must consume features through their public API (${spec})`,
-        )
-      }
+    const crossesFeatureBoundary = targetLayer.zone === 'features' &&
+      (importer.zone !== 'features' || importer.feature !== targetLayer.feature)
+    const targetRel = relative(ROOT, target).replaceAll('\\', '/')
+    const usesPublicApi = targetRel === `features/${targetLayer.feature}`
+    if (crossesFeatureBoundary && !usesPublicApi) {
+      violations.push(
+        `${relative(process.cwd(), importerAbs)}:${lineNo}: cross-feature internal import (${spec}); use the feature public API (index.ts)`,
+      )
     }
   }
 }
 
 function visit(file) {
   const rel = relative(ROOT, file).replaceAll('\\', '/')
-  if (/\.test\.(ts|tsx)$/.test(rel) || rel.startsWith('test/')) return
   const content = readFileSync(file, 'utf8')
+  if (content.includes('import.meta.env') && rel !== 'shared/config/env.ts') {
+    violations.push(`${relative(process.cwd(), file)}: direct import.meta.env access forbidden; use shared/config/env.ts`)
+  }
   content.split(/\r?\n/).forEach((line, i) => {
     if (/['"]/.test(line)) check(file, i + 1, line)
   })

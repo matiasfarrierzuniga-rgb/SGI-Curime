@@ -3,7 +3,6 @@ export { ProtectedRoute } from './routing/ProtectedRoute'
 export { RoleRoute } from './routing/RoleRoute'
 export { authService } from './api/auth.api'
 export { LoginPage } from './ui/LoginPage'
-export { RegisterPage } from './ui/RegisterPage'
 export { ForgotPasswordPage } from './ui/ForgotPasswordPage'
 export { TokenPasswordPage } from './ui/TokenPasswordPage'
 export type {
