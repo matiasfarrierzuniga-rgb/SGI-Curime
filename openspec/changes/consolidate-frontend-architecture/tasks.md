@@ -48,6 +48,6 @@
 
 ## 6. Follow-On Governance
 
-- [ ] 6.1 Record remaining Inventory, Affiliates, public-site, token, accessibility, and test gaps as separate follow-on work rather than expanding this migration.
-- [ ] 6.2 Document criteria for proposing router, styling, global-state, or broad tooling replacement as separate changes.
-- [ ] 6.3 Review the migration retrospective and update architecture rules only through an approved follow-up decision.
+- [x] 6.1 Record remaining Inventory, Affiliates, public-site, token, accessibility, and test gaps as separate follow-on work rather than expanding this migration.
+- [x] 6.2 Document criteria for proposing router, styling, global-state, or broad tooling replacement as separate changes.
+- [x] 6.3 Review the migration retrospective and update architecture rules only through an approved follow-up decision.
