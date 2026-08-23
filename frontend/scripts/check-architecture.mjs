@@ -1,0 +1,100 @@
+#!/usr/bin/env node
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { join, relative, resolve, dirname, posix } from 'node:path'
+import process from 'node:process'
+
+const ROOT = resolve(process.argv[2] ?? 'src')
+const ALIAS = '@'
+
+const violations = []
+
+function walk(dir) {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry)
+    const st = statSync(full)
+    if (st.isDirectory()) walk(full)
+    else if (/\.(ts|tsx)$/.test(entry)) visit(full)
+  }
+}
+
+function layerOf(absPath) {
+  const rel = relative(ROOT, absPath).replaceAll('\\', '/')
+  if (rel.startsWith('app/')) return { zone: 'app', feature: null }
+  if (rel.startsWith('features/')) {
+    const seg = rel.split('/')
+    return { zone: 'features', feature: seg[1] }
+  }
+  if (rel.startsWith('shared/')) return { zone: 'shared', feature: null }
+  return { zone: 'legacy', feature: null }
+}
+
+function specifierToPath(specifier, importerAbs) {
+  if (specifier === ALIAS || specifier.startsWith(ALIAS + '/')) {
+    return resolve(ROOT, specifier.slice(1).replaceAll('/', '\\'))
+  }
+  if (specifier.startsWith('.')) {
+    return resolve(dirname(importerAbs), specifier.replaceAll('/', '\\'))
+  }
+  return null // bare module
+}
+
+function check(importerAbs, lineNo, rawLine) {
+  const importer = layerOf(importerAbs)
+  const specifiers = [...rawLine.matchAll(/(?:from|import|vi\.mock)\s*\(?\s*['"]([^'"]+)['"]/g)].map(m => m[1])
+  for (const spec of specifiers) {
+    const target = specifierToPath(spec, importerAbs)
+    if (!target) continue
+    const targetLayer = layerOf(target)
+
+    if (importer.zone === 'shared') {
+      if (targetLayer.zone === 'features' || targetLayer.zone === 'app') {
+        violations.push(`${relative(process.cwd(), importerAbs)}:${lineNo}: shared -> ${targetLayer.zone} forbidden (${spec})`)
+      }
+      continue
+    }
+
+    if (importer.zone === 'features') {
+      if (targetLayer.zone === 'app') {
+        violations.push(`${relative(process.cwd(), importerAbs)}:${lineNo}: feature -> app forbidden (${spec})`)
+        continue
+      }
+      if (
+        targetLayer.zone === 'features' &&
+        targetLayer.feature !== importer.feature &&
+        !/[/\\]index\.tsx?$/.test(target) &&
+        !/[/\\]index\.ts$/.test(target)
+      ) {
+        violations.push(
+          `${relative(process.cwd(), importerAbs)}:${lineNo}: cross-feature internal import (${spec}); use the feature public API (index.ts)`,
+        )
+      }
+      continue
+    }
+
+    if (importer.zone === 'app' && targetLayer.zone === 'features') {
+      if (!/[/\\]index\.tsx?$/.test(target) && !/[/\\]index\.ts$/.test(target)) {
+        violations.push(
+          `${relative(process.cwd(), importerAbs)}:${lineNo}: app must consume features through their public API (${spec})`,
+        )
+      }
+    }
+  }
+}
+
+function visit(file) {
+  const rel = relative(ROOT, file).replaceAll('\\', '/')
+  if (/\.test\.(ts|tsx)$/.test(rel) || rel.startsWith('test/')) return
+  const content = readFileSync(file, 'utf8')
+  content.split(/\r?\n/).forEach((line, i) => {
+    if (/['"]/.test(line)) check(file, i + 1, line)
+  })
+}
+
+walk(ROOT)
+
+if (violations.length > 0) {
+  console.error(`Architecture boundary violations (${violations.length}):`)
+  for (const v of violations) console.error(`  - ${v}`)
+  process.exit(1)
+}
+console.log(`Architecture boundaries OK (scanned ${ROOT})`)

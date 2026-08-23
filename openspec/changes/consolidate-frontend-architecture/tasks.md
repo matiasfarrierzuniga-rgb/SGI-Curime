@@ -39,12 +39,12 @@
 
 ## 5. Architecture Enforcement
 
-- [ ] 5.1 Write frontend conventions covering naming, ownership, public APIs, dependency direction, shared extraction, state, forms, schemas, and tests.
-- [ ] 5.2 Implement an actionable boundary check for forbidden app/shared/feature imports and feature-internal imports.
-- [ ] 5.3 Add validation for feature public API usage and document intentional cross-feature contracts.
-- [ ] 5.4 Add architecture checks to the frontend verification command set and prepare CI integration without changing unrelated pipelines.
-- [ ] 5.5 Validate the migrated Auth, Users, and Roles paths against conventions and fix only boundary violations within this scope.
-- [ ] 5.6 Run full lint, build/type validation, automated tests, architecture checks, smoke checks, and `git diff --check`; publish final evidence and rollback guidance.
+- [x] 5.1 Write frontend conventions covering naming, ownership, public APIs, dependency direction, shared extraction, state, forms, schemas, and tests.
+- [x] 5.2 Implement an actionable boundary check for forbidden app/shared/feature imports and feature-internal imports.
+- [x] 5.3 Add validation for feature public API usage and document intentional cross-feature contracts.
+- [x] 5.4 Add architecture checks to the frontend verification command set and prepare CI integration without changing unrelated pipelines.
+- [x] 5.5 Validate the migrated Auth, Users, and Roles paths against conventions and fix only boundary violations within this scope.
+- [x] 5.6 Run full lint, build/type validation, automated tests, architecture checks, smoke checks, and `git diff --check`; publish final evidence and rollback guidance.
 
 ## 6. Follow-On Governance
 
