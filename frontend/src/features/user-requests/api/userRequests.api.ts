@@ -1,6 +1,7 @@
 import { httpClient } from '@/shared/api/httpClient'
-import type { PaginatedResponse } from '../types/api'
-import type { CreateUserRequest, UserRequest, UserRequestQuery } from '../types/userRequests'
+import type { PaginatedResponse } from '@/shared/api/api.types'
+import type { CreateUserRequest, UserRequest, UserRequestQuery } from '../model/userRequests.types'
+
 export const userRequestsService = {
   async create(payload: CreateUserRequest) { return (await httpClient.post<UserRequest>('/user-requests', payload)).data },
   async list(params: UserRequestQuery) { return (await httpClient.get<PaginatedResponse<UserRequest>>('/user-requests', { params })).data },
