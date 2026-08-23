@@ -29,6 +29,28 @@ type TestUser = {
   role: { name: string };
 };
 
+type AuthenticatedUser = {
+  id: number;
+  fullName: string;
+  email: string;
+  status: TestUser['status'];
+  role: string;
+  passwordHash?: unknown;
+};
+
+type LoginResponseBody = {
+  accessToken: string;
+  user: AuthenticatedUser;
+};
+
+function loginResponseBody(response: { body: unknown }): LoginResponseBody {
+  return response.body as LoginResponseBody;
+}
+
+function messageResponseBody(response: { body: unknown }): { message: string } {
+  return response.body as { message: string };
+}
+
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
   let jwtService: JwtService;
@@ -102,7 +124,7 @@ describe('AuthController (e2e)', () => {
             failedLoginAttempts: currentUser.failedLoginAttempts,
           });
         }
-        currentUser = { ...currentUser, ...data } as TestUser;
+        currentUser = { ...currentUser, ...data };
         return Promise.resolve(currentUser);
       },
     );
@@ -183,16 +205,17 @@ describe('AuthController (e2e)', () => {
 
   it('allows login with valid credentials', async () => {
     const response = await login().expect(200);
+    const body = loginResponseBody(response);
 
-    expect(response.body.accessToken).toEqual(expect.any(String));
-    expect(response.body.user).toEqual({
+    expect(body.accessToken).toEqual(expect.any(String));
+    expect(body.user).toEqual({
       id: 1,
       fullName: 'Administrador de Prueba',
       email: 'admin@curime.test',
       status: 'ACTIVE',
       role: 'Administrador',
     });
-    expect(response.body.user.passwordHash).toBeUndefined();
+    expect(body.user.passwordHash).toBeUndefined();
   });
 
   it('rejects an incorrect password', async () => {
@@ -216,7 +239,7 @@ describe('AuthController (e2e)', () => {
   it('rejects an unknown email with the same generic response', async () => {
     const response = await login('unknown@curime.test').expect(401);
 
-    expect(response.body.message).toBe('Invalid credentials');
+    expect(messageResponseBody(response).message).toBe('Invalid credentials');
   });
 
   it('rejects an inactive account', async () => {
@@ -257,7 +280,7 @@ describe('AuthController (e2e)', () => {
       })
       .expect(400);
 
-    const { body } = await login().expect(200);
+    const body = loginResponseBody(await login().expect(200));
     await request(app.getHttpServer())
       .patch('/auth/change-password')
       .set('Authorization', `Bearer ${body.accessToken}`)
@@ -313,7 +336,7 @@ describe('AuthController (e2e)', () => {
       })
       .expect(401);
 
-    const { body } = await login().expect(200);
+    const body = loginResponseBody(await login().expect(200));
     await request(app.getHttpServer())
       .patch('/auth/change-password')
       .set('Authorization', `Bearer ${body.accessToken}`)
@@ -339,7 +362,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('returns the authenticated user for a valid JWT', async () => {
-    const { body } = await login().expect(200);
+    const body = loginResponseBody(await login().expect(200));
 
     const response = await request(app.getHttpServer())
       .get('/auth/me')
@@ -379,7 +402,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('rejects a JWT when its user becomes inactive', async () => {
-    const { body } = await login().expect(200);
+    const body = loginResponseBody(await login().expect(200));
     currentUser = { ...currentUser!, status: 'INACTIVE' };
 
     await request(app.getHttpServer())
@@ -389,7 +412,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('allows the administrator endpoint for the Administrador role', async () => {
-    const { body } = await login().expect(200);
+    const body = loginResponseBody(await login().expect(200));
 
     await request(app.getHttpServer())
       .get('/auth/admin-test')
@@ -400,7 +423,7 @@ describe('AuthController (e2e)', () => {
 
   it('denies the administrator endpoint to another role', async () => {
     currentUser = { ...currentUser!, role: { name: 'Tesorero' } };
-    const { body } = await login().expect(200);
+    const body = loginResponseBody(await login().expect(200));
 
     await request(app.getHttpServer())
       .get('/auth/admin-test')
