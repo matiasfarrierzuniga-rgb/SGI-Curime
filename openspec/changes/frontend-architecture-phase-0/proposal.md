@@ -11,10 +11,10 @@ The frontend has functional coverage across public pages, authentication, admini
 
 ## Baseline Evidence
 
-- **VERIFIED** Git: `main` tracks `origin/main` at `6e256e3975aab68ef73fe367cb3fa91c77b63d9f`. Thirty-two unstaged modifications exist only under `backend/`; no staged or frontend modifications existed before this change. They are outside this change and preserved.
+- **VERIFIED** Git at closure review: branch `docs/frontend-architecture-phase-0`, HEAD `2d4cc77`. Thirty-two unstaged modifications exist only under `backend/`; they are outside this change and preserved.
 - **VERIFIED** Tooling: Node `v24.18.0`; npm `11.16.0`; frontend uses React 19, TypeScript, Vite, React Router, Axios, Vitest, Testing Library, and OXLint (`frontend/package.json`).
-- **VERIFIED** validation: `npm run lint` PASS; `npm run test -- --run --reporter=verbose --testTimeout=10000 --hookTimeout=10000` PASS, 24 files / 85 tests, with React `act(...)` warnings; `npm run build` PASS. `git diff --check` has no whitespace errors but prints CRLF conversion warnings for pre-existing backend files.
-- **VERIFIED** current bootstrap: `frontend/src/main.tsx` composes `BrowserRouter`, `ErrorBoundary`, `ToastProvider`, and `AuthProvider`; `App.tsx` delegates to `AppRoutes`.
+- **VERIFIED** closure validation: `npm run lint` PASS with one non-failing unused-import warning in the existing architecture checker; `npm run test -- --run` PASS, 27 files / 101 tests, with existing React `act(...)` warnings; `npm run build` PASS. `git diff --check` has no whitespace errors but prints CRLF conversion warnings for pre-existing backend files.
+- **VERIFIED** current bootstrap: `frontend/src/main.tsx` composes existing providers and `app/App.tsx` delegates routing to `app/router/`. Foundation/Auth/Users/Roles source changes are pre-existing commits, not Phase 0 edits.
 
 ## Non-Goals
 
@@ -24,6 +24,12 @@ The frontend has functional coverage across public pages, authentication, admini
 ## Expected Outcome
 
 Durable OpenSpec artifacts distinguish observed facts from proposed decisions and provide an evidence-backed migration sequence: Auth, Users, then Roles.
+
+## Phase 0 Closure Rule
+
+This change is documentation and validation only. It does not install
+dependencies or modify production frontend behavior. Authoritative final
+decisions and Definition of Done are recorded in `design.md`.
 
 ## Risks
 

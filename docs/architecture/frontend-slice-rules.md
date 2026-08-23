@@ -15,6 +15,10 @@ src/
 └── shared/
 ```
 
+La estructura ya materializada no implica que todos los módulos restantes se
+muevan en Phase 0. Inventory, Affiliates, Assemblies y otros módulos quedan
+fuera del alcance inicial.
+
 ## Dependencias permitidas
 
 ```text
@@ -124,6 +128,21 @@ import { UserStatusBadge } from '@/features/users/components/UserStatusBadge';
 ```
 
 a menos que el componente sea API pública deliberada.
+
+Desde `app` o desde otro feature, preferir siempre el API público:
+
+```typescript
+import { ProtectedRoute } from '@/features/auth';
+```
+
+Evitar imports de internals cuando exista `features/<feature>/index.ts`.
+
+## Estrategia de migración
+
+1. Move first, behavior later.
+2. Cada fase preserva rutas, contratos HTTP, autorización, comportamiento UI y tests.
+3. No mezclar moves con reemplazo de router, state management o rediseño visual salvo necesidad demostrada.
+4. Cada fase debe dejar `main` estable y mergeable.
 
 ## Feature `auth`
 

@@ -331,3 +331,94 @@ Per-feature checklist template (pre-migration baseline, consumer inventory, cros
 
 - PENDING: user approval converts ADR-001..008 from Proposed to Accepted; pilot Auth recommendation awaits sign-off.
 - PENDING: shared UI boundary, feature public APIs, and pilot choice require full dependency map and approval.
+
+## Phase 0 Closure Addendum (authoritative)
+
+This section supersedes earlier `PROPOSED` wording for the Phase 0 baseline.
+Implementation already present in Git is evidence, not work authorized by this
+documentation change.
+
+### Target boundaries
+
+```text
+src/
+├── app/       providers, router, layouts, config, bootstrap, App.tsx
+├── features/  auth, users, roles; optional internal layers only when needed
+└── shared/    api, ui, lib, types and other domain-neutral concepts
+```
+
+Allowed: `app -> features/shared`, `features -> shared`.
+Forbidden: `shared -> app/features`, `features -> app`, and feature-to-feature
+internal imports. Cross-feature use goes through target feature's small public
+`index.ts` API.
+
+`app` owns composition, not Users/Auth domain logic. `shared` owns generic HTTP,
+UI, utilities and API types; `UsersTable`, `LoginForm`, and `RoleBadge` remain
+domain-owned.
+
+### Reference slices and order
+
+- Auth: session, login, authorization UX, protected routing, public API; target layers `api`, `model`, `routing`, and `ui/pages` as needed.
+- Users: complete reference slice with `api`, `model`, `hooks`, `components/ui`, `pages`, and public API as needed. Future pilot for Query, Zod, Form, and Table.
+- Roles: minimal catalog with `api`, `model`, and public API; no UI layers without a real requirement.
+- Migration order: Foundation -> Auth -> Users -> Roles -> enforcement.
+
+### Final stack adoption matrix
+
+| Technology | Decision | Moment | Phase 0 action |
+| --- | --- | --- | --- |
+| React | KEEP | Current | None |
+| TypeScript | KEEP | Current | None |
+| Vite | KEEP | Current | None |
+| Axios | KEEP | Foundation | None |
+| React Router | KEEP | Sprint 1 | No router replacement |
+| TanStack Query | ADOPT | Users / server state | Future pilot; not installed by Phase 0 |
+| Zod | ADOPT | Forms and contracts | Future adoption; not installed by Phase 0 |
+| TanStack Form | ADOPT INCREMENTALLY | Migrated forms | Need-based migration |
+| TanStack Table | ADOPT INCREMENTALLY | Users pilot | Need-based migration |
+| Zustand | DEFER | Demonstrated real need only | Not adopted |
+| TanStack Router | DEFER | Future ADR | Not a Foundation requirement |
+| Tailwind CSS | SEPARATE | UI/design decision | Outside architectural refactor |
+
+No Phase 0 task installs a dependency or changes package manifests/lockfiles.
+
+### Official migration matrix
+
+| Current | Target | Phase |
+| --- | --- | --- |
+| `routes/AppRoutes.tsx` | `app/router/` | Foundation |
+| `layouts/*` | `app/layouts/` | Foundation |
+| `api/httpClient.ts` | `shared/api/` | Foundation |
+| generic `components/` UI | `shared/ui/` | Foundation |
+| `auth/AuthContext.tsx` | `features/auth/model/` | Auth |
+| `auth/ProtectedRoute.tsx` | `features/auth/routing/` | Auth |
+| `auth/RoleRoute.tsx` | `features/auth/routing/` | Auth |
+| `services/authService.ts` | `features/auth/api/` | Auth |
+| Auth pages | `features/auth/...` | Auth |
+| `services/usersService.ts` | `features/users/api/` | Users |
+| `types/users.ts` | `features/users/model/` | Users |
+| `pages/admin/UsersPage.tsx` | `features/users/pages/` | Users |
+| `services/rolesService.ts` | `features/roles/api/` | Roles |
+
+Inventory, Affiliates, Assemblies and other later modules are out of initial scope.
+
+### Regression and delivery rules
+
+Every migration preserves routes, HTTP contracts, authorization behavior, UI behavior, and existing tests. Separate file moves from router/state replacement and visual redesign unless necessity is demonstrated. Each phase leaves `main` stable and mergeable.
+
+### Definition of Done
+
+#### FRONTEND ARCHITECTURE PHASE 0 — DEFINITION OF DONE
+
+- [x] AS-IS verified; current truth is `frontend-as-is.md`.
+- [x] TO-BE approved for `app/features/shared` boundaries.
+- [x] Dependency directions and public API rule defined.
+- [x] Auth, Users, and Roles reference patterns defined.
+- [x] Stack inventory and KEEP/ADOPT/DEFER/SEPARATE decisions documented.
+- [x] Migration matrix, order, scope, and out-of-scope modules documented.
+- [x] Move-first strategy and regression gates documented.
+- [x] Historical documents marked as snapshots.
+- [x] OpenSpec validation PASS: `openspec validate frontend-architecture-phase-0 --strict --no-interactive`.
+- [x] `git diff --check` PASS; CRLF conversion warnings concern existing worktree files only.
+- [x] Frontend lint/build/tests PASS: lint warning is non-failing; build passed; tests passed with 27 files and 101 tests.
+- [x] No Phase 0 production code or dependency changes.

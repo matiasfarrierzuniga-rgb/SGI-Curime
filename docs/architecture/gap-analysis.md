@@ -1,5 +1,9 @@
 # Análisis de brechas arquitectónicas
 
+> **Historical architecture snapshot.** Captured at commit/date: 5efd424,
+> 2026-08-14. **Not the current frontend source of truth.** Use
+> [frontend-as-is.md](./frontend-as-is.md) for current frontend state.
+
 ## Objetivo
 
 Este documento compara el estado verificado en [current-state.md](./current-state.md) con la arquitectura objetivo del Plan de ejecución para SGI-Curime. No convierte propuestas en decisiones ni corrige brechas durante la Fase 0.

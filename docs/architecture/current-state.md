@@ -1,5 +1,9 @@
 # Estado actual de la arquitectura
 
+> **Historical architecture snapshot.** Captured at commit/date: 5efd424,
+> 2026-08-14. **Not the current frontend source of truth.** Use
+> [frontend-as-is.md](./frontend-as-is.md) for current frontend state.
+
 ## Propósito y alcance
 
 Este documento registra la arquitectura real observada en el repositorio SGI-Curime durante la Fase 0. La referencia de Git auditada es el commit `5efd424b1be545d0a51b627317bbad06c83ffbde` de la rama `main`.

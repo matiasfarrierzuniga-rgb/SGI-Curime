@@ -37,3 +37,10 @@
 ## Final Validation
 
 - [x] Validate OpenSpec artifacts, re-run required checks as appropriate, inspect Git state, and report scope boundaries.
+
+## Closure Constraints
+
+- [x] Phase 0 remains documentation and validation only.
+- [x] No dependency installation, router migration, UI redesign, or production source move is authorized by this change.
+- [x] Future Foundation -> Auth -> Users -> Roles order is explicit.
+- [x] Validation results are recorded only after commands execute; unchecked gates remain blockers.
