@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { site, services } from '../../content/publicSiteContent'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '@/features/auth'
 
 export function Seo({ title, description }: { title: string; description: string }) { useEffect(() => { document.title = `${title} | ADI Curime`; let meta = document.querySelector('meta[name="description"]'); if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'description'); document.head.append(meta) }; meta.setAttribute('content', description) }, [title, description]); return null }
 function Brand() { return <Link className="public-brand" to="/" aria-label={`${site.shortName}, inicio`}><span className="brand-mark" aria-hidden="true">C</span><span><strong>{site.shortName}</strong><small>Desarrollo comunitario</small></span></Link> }

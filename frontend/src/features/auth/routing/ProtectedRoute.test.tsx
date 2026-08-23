@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { ProtectedRoute } from './ProtectedRoute'
 const state = vi.hoisted(() => ({ value: { isLoading: false, isAuthenticated: false } }))
-vi.mock('./AuthContext', () => ({ useAuth: () => state.value }))
+vi.mock('../model/AuthContext', () => ({ useAuth: () => state.value }))
 function Login() { const l = useLocation(); return <p>Login from {(l.state as any)?.from?.pathname}</p> }
 describe('ProtectedRoute', () => {
   it('does not expose protected content while restoring', () => { state.value = { isLoading: true, isAuthenticated: false }; render(<MemoryRouter initialEntries={['/private']}><Routes><Route element={<ProtectedRoute/>}><Route path="/private" element={<p>Secret</p>}/></Route></Routes></MemoryRouter>); expect(screen.queryByText('Secret')).not.toBeInTheDocument(); expect(screen.getByText(/Restaurando sesión/)).toBeInTheDocument() })

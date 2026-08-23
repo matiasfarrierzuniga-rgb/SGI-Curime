@@ -1,13 +1,13 @@
 import { Route, Routes } from 'react-router-dom'
-import { ProtectedRoute } from '@/auth/ProtectedRoute'
-import { RoleRoute } from '@/auth/RoleRoute'
+import { ProtectedRoute } from '@/features/auth'
+import { RoleRoute } from '@/features/auth'
 import { AppLayout } from '@/app/layouts/AppLayout'
-import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
-import { LoginPage } from '@/pages/LoginPage'
+import { ForgotPasswordPage } from '@/features/auth'
+import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProfilePage } from '@/pages/ProfilePage'
-import { RegisterPage } from '@/pages/RegisterPage'
-import { TokenPasswordPage } from '@/pages/TokenPasswordPage'
+import { RegisterPage } from '@/features/auth'
+import { TokenPasswordPage } from '@/features/auth'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
 import { UserRequestsPage } from '@/pages/admin/UserRequestsPage'
 import { UsersPage } from '@/pages/admin/UsersPage'
@@ -22,7 +22,7 @@ import { ForbiddenPage } from '@/pages/ForbiddenPage'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
 import { AboutPage, AppHomePage, CommunityPage, ContactPage, EventsPage, HomePage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '@/pages/public/PublicPages'
 import { AffiliationPage } from '@/pages/public/AffiliationPage'
-const INVENTORY_ROLES = ['Administrador', 'Gestor de Inventario']
+import { ADMIN_ROLES, INVENTORY_ROLES } from '@/shared/security/roles'
 export function AppRoutes() {
   return (
     <Routes>
@@ -48,12 +48,12 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/app" element={<AppHomePage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route element={<RoleRoute role="Administrador" />}>
+          <Route element={<RoleRoute role={[...ADMIN_ROLES]} />}>
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
           </Route>
-          <Route element={<RoleRoute role={INVENTORY_ROLES} />}>
+          <Route element={<RoleRoute role={[...INVENTORY_ROLES]} />}>
             <Route path="/inventory" element={<InventoryDashboardPage />} />
             <Route path="/inventory/items" element={<InventoryItemsPage />} />
             <Route path="/inventory/categories" element={<InventoryCategoriesPage />} />

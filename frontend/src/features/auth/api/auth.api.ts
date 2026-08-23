@@ -1,6 +1,6 @@
 import { httpClient } from '@/shared/api/httpClient'
-import type { ApiMessage } from '../types/api'
-import type { AuthenticatedUser, LoginCredentials, LoginResponse, PasswordWithConfirmation } from '../types/auth'
+import type { ApiMessage } from '@/types/api'
+import type { AuthenticatedUser, LoginCredentials, LoginResponse, PasswordWithConfirmation } from '../model/auth.types'
 
 export const authService = {
   async login(payload: LoginCredentials) { return (await httpClient.post<LoginResponse>('/auth/login', payload)).data },

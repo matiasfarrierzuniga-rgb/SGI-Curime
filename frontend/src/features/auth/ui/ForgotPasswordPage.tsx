@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
-import { authService } from '../services/authService'
+import { authService } from '../api/auth.api'
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState(''); const [loading, setLoading] = useState(false); const [error, setError] = useState(''); const [success, setSuccess] = useState(''); const submitting = useRef(false)

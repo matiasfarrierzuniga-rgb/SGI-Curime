@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { LoginPage } from './LoginPage'
 const auth = vi.hoisted(() => ({ login: vi.fn(), isAuthenticated: false }))
-vi.mock('../auth/AuthContext', () => ({ useAuth: () => auth }))
+vi.mock('../model/AuthContext', () => ({ useAuth: () => auth }))
 function renderPage(entry = '/login') { return render(<MemoryRouter initialEntries={[entry]}><Routes><Route path="/login" element={<LoginPage/>}/><Route path="/profile" element={<p>Profile</p>}/><Route path="/admin/users" element={<p>Admin</p>}/></Routes></MemoryRouter>) }
 describe('LoginPage', () => { beforeEach(() => { vi.clearAllMocks(); auth.isAuthenticated = false })
   it('renders and relies on required fields validation', () => { renderPage(); expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument(); expect(screen.getByLabelText('Correo electrónico')).toBeRequired(); expect(screen.getByLabelText('Contraseña')).toBeRequired() })

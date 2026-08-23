@@ -9,14 +9,14 @@
 
 ## 2. Auth Vertical Slice
 
-- [ ] 2.1 Inventory Auth consumers and establish feature contracts for auth API, types, provider, guards, and pages before moving files.
-- [ ] 2.2 Move Auth transport and model ownership into the Auth feature while preserving login, restore, logout, activation, recovery, and reset contracts.
-- [ ] 2.3 Move protected and role route guards behind the Auth feature public API and preserve current authorization outcomes.
-- [ ] 2.4 Make the Auth provider the sole session-storage mutation owner while retaining current 401 event behavior and provider composition semantics.
-- [ ] 2.5 Centralize role constants and permission derivation for guards, navigation, cards, and post-login redirects without changing allowed roles.
-- [ ] 2.6 Expose only documented Auth public exports and update app routing/provider imports to avoid feature-internal paths.
-- [ ] 2.7 Add or close critical Auth coverage for forgot-password, activation/reset flows, session restoration, unauthorized handling, and post-login routing.
-- [ ] 2.8 Run Auth smoke checks plus lint, build/type validation, tests, and `git diff --check`; record rollback point and unresolved product defects separately.
+- [x] 2.1 Inventory Auth consumers and establish feature contracts for auth API, types, provider, guards, and pages before moving files.
+- [x] 2.2 Move Auth transport and model ownership into the Auth feature while preserving login, restore, logout, activation, recovery, and reset contracts.
+- [x] 2.3 Move protected and role route guards behind the Auth feature public API and preserve current authorization outcomes.
+- [x] 2.4 Make the Auth provider the sole session-storage mutation owner while retaining current 401 event behavior and provider composition semantics.
+- [x] 2.5 Centralize role constants and permission derivation for guards, navigation, cards, and post-login redirects without changing allowed roles.
+- [x] 2.6 Expose only documented Auth public exports and update app routing/provider imports to avoid feature-internal paths.
+- [x] 2.7 Add or close critical Auth coverage for forgot-password, activation/reset flows, session restoration, unauthorized handling, and post-login routing.
+- [x] 2.8 Run Auth smoke checks plus lint, build/type validation, tests, and `git diff --check`; record rollback point and unresolved product defects separately.
 
 ## 3. Users Reference Slice
 

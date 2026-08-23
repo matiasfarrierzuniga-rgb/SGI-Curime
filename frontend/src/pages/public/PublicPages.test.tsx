@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
 import { ContactPage, EventsPage, HomePage, NewsPage, ServicesPage } from './PublicPages'
 
-vi.mock('../../auth/AuthContext', () => ({
+vi.mock('@/features/auth', () => ({
   useAuth: () => ({ isAuthenticated: false }),
 }))
 

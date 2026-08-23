@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
-import { authService } from '../services/authService'
+import { authService } from '../api/auth.api'
 import { getErrorMessage } from '@/shared/lib/errors'
 export function TokenPasswordPage({ mode }: { mode: 'activate' | 'reset' }) { const [params] = useSearchParams(); const [token, setToken] = useState(params.get('token') ?? ''); const [password, setPassword] = useState(''); const [confirmation, setConfirmation] = useState(''); const [loading, setLoading] = useState(false); const [error, setError] = useState(''); const [success, setSuccess] = useState('')
   async function submit(e: FormEvent) { e.preventDefault(); if (password !== confirmation) { setError('Las contraseñas no coinciden.'); return } setLoading(true); setError(''); try { const payload = { token, password, passwordConfirmation: confirmation }; const result = mode === 'activate' ? await authService.activate(payload) : await authService.resetPassword(payload); setSuccess(result.message); setPassword(''); setConfirmation('') } catch (err) { setError(getErrorMessage(err)) } finally { setLoading(false) } }

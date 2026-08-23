@@ -1,14 +1,15 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
-import { useAuth } from '../auth/AuthContext'
+import { useAuth } from '../model/AuthContext'
+import { homePathForRole } from '@/shared/security/roles'
 
 export function LoginPage() {
   const { login } = useAuth(); const navigate = useNavigate(); const location = useLocation()
   const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [loading, setLoading] = useState(false); const [error, setError] = useState(''); const submitting = useRef(false)
   async function submit(event: FormEvent) {
     event.preventDefault(); if (submitting.current) return; submitting.current = true; setLoading(true); setError('')
-    try { const user = await login({ email: email.trim().toLowerCase(), password }); const requested = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname; navigate(requested || (user.role === 'Administrador' ? '/admin/users' : '/profile'), { replace: true }) }
+    try { const user = await login({ email: email.trim().toLowerCase(), password }); const requested = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname; navigate(requested || homePathForRole(user.role), { replace: true }) }
     catch { setError('No fue posible iniciar sesión. Verifique sus credenciales.') }
     finally { submitting.current = false; setLoading(false) }
   }

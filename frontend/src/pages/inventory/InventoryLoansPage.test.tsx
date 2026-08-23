@@ -6,7 +6,7 @@ import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryLoansService } from '../../services/inventoryLoansService'
 import { InventoryLoansPage } from './InventoryLoansPage'
 
-vi.mock('../../auth/AuthContext', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
 vi.mock('../../services/inventoryLoansService', () => ({
   inventoryLoansService: { list: vi.fn(), get: vi.fn(), create: vi.fn(), return: vi.fn(), cancel: vi.fn() },
 }))

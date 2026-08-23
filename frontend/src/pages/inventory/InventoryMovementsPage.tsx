@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '@/features/auth'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryMovementsService } from '../../services/inventoryMovementsService'
 import { usersService } from '../../services/usersService'

@@ -19,7 +19,8 @@ import {
   ServiceCard,
   StatusBadge,
 } from "../../components/public/PublicComponents";
-import { useAuth } from "../../auth/AuthContext";
+import { useAuth } from "@/features/auth";
+import { canManageInventory, isAdmin } from "@/shared/security/roles";
 
 export function HomePage() {
   const { isAuthenticated } = useAuth();
@@ -330,8 +331,8 @@ export function ContactPage() {
 }
 export function AppHomePage() {
   const { user } = useAuth();
-  const admin = user?.role === "Administrador";
-  const inventory = admin || user?.role === "Gestor de Inventario";
+  const admin = isAdmin(user?.role);
+  const inventory = canManageInventory(user?.role);
   return (
     <>
       <Seo
