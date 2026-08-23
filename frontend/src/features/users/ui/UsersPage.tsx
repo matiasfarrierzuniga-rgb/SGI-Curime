@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pagination } from "@/shared/ui/Pagination";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
-import { usersService } from "../api/users.api";
-import { rolesService } from "@/services/rolesService";
-import type { RoleOption, User, UserStatus } from "../model/users.types";
+import type { UserStatus } from "../model/users.types";
 import { getErrorMessage } from "@/shared/lib/errors";
 import { useToast } from "@/shared/ui/Toast";
 import { normalizeEmail, normalizeText, personContactErrors } from "@/shared/lib/formValidation";
+import {
+  useUserDetail,
+  useUsersList,
+  useUserMutations,
+  useRolesOptions,
+} from "../hooks/useUsersQueries";
 import { UserFilters } from "./UserFilters";
 import { UsersTable } from "./UsersTable";
 import { UserDetailsModal, type UsersDialogMode } from "./UserDetailsModal";
@@ -15,122 +19,101 @@ import { ChangeRoleModal } from "./ChangeRoleModal";
 
 const limit = 10;
 
+const emptyForm: UserEditForm = {
+  fullName: "",
+  email: "",
+  phoneCountryCode: "+506",
+  phoneNationalNumber: "",
+  address: "",
+  roleId: "",
+};
+
 export function UsersPage() {
   const { notify } = useToast();
-  const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<RoleOption[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [name, setName] = useState("");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<UserStatus | "">("");
   const [roleId, setRoleId] = useState("");
-  const [selected, setSelected] = useState<User | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [mode, setMode] = useState<UsersDialogMode>(null);
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [form, setForm] = useState<UserEditForm>({
-    fullName: "",
-    email: "",
-    phoneCountryCode: "+506",
-    phoneNationalNumber: "",
-    address: "",
-    roleId: "",
-  });
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const r = await usersService.list({
-        page,
-        limit,
-        name: query || undefined,
-        status: status || undefined,
-        roleId: roleId ? Number(roleId) : undefined,
-      });
-      setUsers(r.data);
-      setTotal(r.total);
-    } catch (e) {
-      setError(getErrorMessage(e, "No fue posible cargar los usuarios."));
-    } finally {
-      setLoading(false);
-    }
-  }, [page, query, status, roleId]);
+  const [form, setForm] = useState<UserEditForm>(emptyForm);
+
+  const filters = { page, limit, name: query, status, roleId: roleId ? Number(roleId) : 0 };
+  const listQuery = useUsersList(filters);
+  const rolesQuery = useRolesOptions();
+  const detailQuery = useUserDetail(selectedId);
+  const mutations = useUserMutations();
+
+  const users = listQuery.data?.data ?? [];
+  const total = listQuery.data?.total ?? 0;
+  const loading = listQuery.isPending;
+  const error =
+    listQuery.error
+      ? getErrorMessage(listQuery.error, "No fue posible cargar los usuarios.")
+      : rolesQuery.error
+        ? getErrorMessage(rolesQuery.error, "No fue posible cargar los roles.")
+        : "";
+  const selected = detailQuery.data ?? null;
+  const busy =
+    mutations.update.isPending ||
+    mutations.changeRole.isPending ||
+    mutations.activate.isPending ||
+    mutations.deactivate.isPending ||
+    mutations.unlock.isPending ||
+    detailQuery.isFetching;
+
   useEffect(() => {
-    void load();
-  }, [load]);
-  useEffect(() => {
-    rolesService
-      .listActive()
-      .then(setRoles)
-      .catch((e) =>
-        setError(getErrorMessage(e, "No fue posible cargar los roles.")),
-      );
-  }, []);
-  const open = async (id: number) => {
-    setBusy(true);
-    try {
-      const u = await usersService.get(id);
-      setSelected(u);
+    if (selected) {
       setForm({
-        fullName: u.fullName,
-        email: u.email,
-        phoneCountryCode: u.phoneCountryCode ?? "+506",
-        phoneNationalNumber: u.phoneNationalNumber ?? "",
-        address: u.address ?? "",
-        roleId: String(u.roleId),
+        fullName: selected.fullName,
+        email: selected.email,
+        phoneCountryCode: selected.phoneCountryCode ?? "+506",
+        phoneNationalNumber: selected.phoneNationalNumber ?? "",
+        address: selected.address ?? "",
+        roleId: String(selected.roleId),
       });
-    } catch (e) {
-      notify(getErrorMessage(e), "error");
-    } finally {
-      setBusy(false);
     }
-  };
+  }, [selected]);
+
   const run = async () => {
-    if (!selected || !mode) return;
+    if (!selected || !mode || busy) return;
     if (mode === "edit") {
       const nextErrors = personContactErrors(form);
       setFieldErrors(nextErrors);
       if (Object.values(nextErrors).some(Boolean)) return;
     }
-    setBusy(true);
     try {
       if (mode === "edit")
-        await usersService.update(selected.id, {
-          fullName: normalizeText(form.fullName),
-          email: normalizeEmail(form.email),
-          phoneCountryCode: form.phoneNationalNumber
-            ? normalizeText(form.phoneCountryCode)
-            : undefined,
-          phoneNationalNumber: form.phoneNationalNumber.trim() || undefined,
-          address: normalizeText(form.address) || undefined,
+        await mutations.update.mutateAsync({
+          id: selected.id,
+          payload: {
+            fullName: normalizeText(form.fullName),
+            email: normalizeEmail(form.email),
+            phoneCountryCode: form.phoneNationalNumber
+              ? normalizeText(form.phoneCountryCode)
+              : undefined,
+            phoneNationalNumber: form.phoneNationalNumber.trim() || undefined,
+            address: normalizeText(form.address) || undefined,
+          },
         });
       if (mode === "role")
-        await usersService.changeRole(selected.id, Number(form.roleId));
-      if (mode === "activate") await usersService.activate(selected.id);
-      if (mode === "deactivate") await usersService.deactivate(selected.id);
-      if (mode === "unlock") await usersService.unlock(selected.id);
+        await mutations.changeRole.mutateAsync({
+          id: selected.id,
+          roleId: Number(form.roleId),
+        });
+      if (mode === "activate") await mutations.activate.mutateAsync(selected.id);
+      if (mode === "deactivate")
+        await mutations.deactivate.mutateAsync(selected.id);
+      if (mode === "unlock") await mutations.unlock.mutateAsync(selected.id);
       notify("Usuario actualizado correctamente.", "success");
       setMode(null);
-      const updated = await usersService.get(selected.id);
-      setSelected(updated);
-      setForm({
-        fullName: updated.fullName,
-        email: updated.email,
-        phoneCountryCode: updated.phoneCountryCode ?? "+506",
-        phoneNationalNumber: updated.phoneNationalNumber ?? "",
-        address: updated.address ?? "",
-        roleId: String(updated.roleId),
-      });
-      await load();
     } catch (e) {
       notify(getErrorMessage(e), "error");
-    } finally {
-      setBusy(false);
     }
   };
+
   return (
     <section>
       <h1>Administración de usuarios</h1>
@@ -147,7 +130,7 @@ export function UsersPage() {
           setPage(1);
           setRoleId(value);
         }}
-        roles={roles}
+        roles={rolesQuery.data ?? []}
         onSubmit={() => {
           setPage(1);
           setQuery(name.trim());
@@ -164,7 +147,7 @@ export function UsersPage() {
         <p className="card">No hay usuarios que coincidan con los filtros.</p>
       ) : (
         <>
-          <UsersTable users={users} onOpen={(id) => void open(id)} />
+          <UsersTable users={users} onOpen={setSelectedId} />
           <Pagination
             page={page}
             total={total}
@@ -177,8 +160,14 @@ export function UsersPage() {
         <UserDetailsModal
           selected={selected}
           busy={busy}
-          onClose={() => setSelected(null)}
-          onMode={setMode}
+          onClose={() => {
+            setSelectedId(null);
+            setFieldErrors({});
+          }}
+          onMode={(nextMode) => {
+            setFieldErrors({});
+            setMode(nextMode);
+          }}
         />
       )}
       {mode === "edit" && (
@@ -195,7 +184,7 @@ export function UsersPage() {
         <ChangeRoleModal
           form={form}
           onFormChange={setForm}
-          roles={roles}
+          roles={rolesQuery.data ?? []}
           busy={busy}
           onClose={() => setMode(null)}
           onConfirm={() => void run()}

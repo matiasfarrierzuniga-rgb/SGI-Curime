@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '@/shared/ui/Toast'
 import { usersService } from '../api/users.api'
@@ -43,12 +44,18 @@ const user = {
   isAdministrativelyBlocked: false,
 } as const
 
-const page = () =>
-  render(
-    <ToastProvider>
-      <UsersPage />
-    </ToastProvider>,
+const page = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <UsersPage />
+      </ToastProvider>
+    </QueryClientProvider>,
   )
+}
 
 const open = async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }))
@@ -121,6 +128,18 @@ describe('UsersPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: confirmLabel }))
     await waitFor(() => expect((usersService as Record<string, unknown>)[method]).toHaveBeenCalled())
+  })
+
+  it('blocks edit submission when validation fails and keeps the service untouched', async () => {
+    page()
+    await open()
+    fireEvent.click(screen.getByRole('button', { name: 'Editar datos' }))
+    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: '' } })
+    const save = await screen.findByRole('button', { name: 'Guardar cambios' })
+    await waitFor(() => expect(save).not.toBeDisabled())
+    fireEvent.submit(save.closest('form')!)
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(usersService.update).not.toHaveBeenCalled()
   })
 
   it('activates an inactive account', async () => {

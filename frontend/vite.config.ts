@@ -9,6 +9,12 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+    dedupe: ['react', 'react-dom'],
   },
-  test: { environment: 'jsdom', setupFiles: ['./src/test/setup.ts'], globals: true },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    globals: true,
+    server: { deps: { inline: ['@tanstack/react-query'] } },
+  },
 })

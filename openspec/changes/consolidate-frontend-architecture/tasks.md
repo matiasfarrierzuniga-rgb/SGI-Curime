@@ -20,15 +20,15 @@
 
 ## 3. Users Reference Slice
 
-- [ ] 3.1 Inventory Users service, models, role lookups, page consumers, and mutation flows; define feature API and cross-feature role contract.
-- [ ] 3.2 Move Users API and model code into a feature-owned boundary without changing endpoint payloads or error mapping.
-- [ ] 3.3 Split Users page composition into cohesive filters, table, detail/edit, role, status, and feedback responsibilities only where current behavior remains equivalent.
-- [ ] 3.4 Introduce URL-backed filters or pagination only if the approved migration unit explicitly preserves existing navigation behavior and test coverage.
-- [ ] 3.5 Measure repeated server-state, validation, form, and table problems before selecting any new library pilot.
-- [ ] 3.6 If justified, pilot server-state caching/invalidation in Users only and document before/after behavior and invalidation rules.
-- [ ] 3.7 If justified, pilot typed schemas, form handling, or table management in one Users consumer at a time; do not migrate unrelated forms or tables.
-- [ ] 3.8 Add coverage for Users detail/edit, role assignment, status mutations, loading/error states, and dialog/confirmation flows.
-- [ ] 3.9 Run Users smoke checks plus lint, build/type validation, tests, and `git diff --check`; record rollback point and pilot outcomes.
+- [x] 3.1 Inventory Users service, models, role lookups, page consumers, and mutation flows; define feature API and cross-feature role contract.
+- [x] 3.2 Move Users API and model code into a feature-owned boundary without changing endpoint payloads or error mapping.
+- [x] 3.3 Split Users page composition into cohesive filters, table, detail/edit, role, status, and feedback responsibilities only where current behavior remains equivalent.
+- [x] 3.4 URL-backed filters/pagination: evaluated and deferred - adopting them changes navigation/back-button behavior, which this behavior-preserving phase forbids; recorded as follow-up.
+- [x] 3.5 Measured: ~10 list pages repeat manual fetch/loading/error/invalidation; roles lookup refetched per mount; two validation regimes; form/table libraries would each have a single consumer with no duplication relief.
+- [x] 3.6 TanStack Query piloted in Users only (list/detail/mutations + transitional shared roles lookup); invalidation via usersKeys.all after every mutation; app QueryClient defaults retry=1, staleTime 30s, no focus refetch; vitest deps.inline configured.
+- [x] 3.7 Zod/TanStack Form/TanStack Table pilots: evaluated and deferred - single consumer each, existing mechanisms pass all gates; adoption criteria recorded for follow-up work.
+- [x] 3.8 Add coverage for Users detail/edit, role assignment, status mutations, loading/error states, and dialog/confirmation flows.
+- [x] 3.9 Run Users smoke checks plus lint, build/type validation, tests, and `git diff --check`; record rollback point and pilot outcomes.
 
 ## 4. Minimal Roles Boundary
 
