@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { rolesService } from "@/services/rolesService";
+import { rolesService } from "@/features/roles";
 import { usersService } from "../api/users.api";
 import type { UserUpdate } from "../model/users.types";
 

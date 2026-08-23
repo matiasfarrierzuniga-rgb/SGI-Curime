@@ -17,7 +17,7 @@ vi.mock('../api/users.api', () => ({
   },
 }))
 
-vi.mock('@/services/rolesService', () => ({
+vi.mock('@/features/roles', () => ({
   rolesService: {
     listActive: vi.fn().mockResolvedValue([
       { id: 1, name: 'Usuario' },

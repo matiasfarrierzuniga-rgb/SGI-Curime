@@ -3,7 +3,7 @@ import { Pagination } from "@/shared/ui/Pagination";
 import { Modal } from "@/shared/ui/Modal";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { userRequestsService } from "../../services/userRequestsService";
-import { rolesService } from "../../services/rolesService";
+import { rolesService } from "@/features/roles";
 import type { RequestStatus, UserRequest } from "../../types/userRequests";
 import type { RoleOption } from "@/features/users";
 import { getErrorMessage } from "@/shared/lib/errors";

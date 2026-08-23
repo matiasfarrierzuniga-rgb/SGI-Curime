@@ -32,10 +32,10 @@
 
 ## 4. Minimal Roles Boundary
 
-- [ ] 4.1 Define Roles catalog types, service contract, and public exports based on existing backend responses and current consumers.
-- [ ] 4.2 Move Roles API/model ownership without creating a CRUD page or artificial UI layers.
-- [ ] 4.3 Replace direct internal role imports and duplicated literals with the documented Roles/security public contract.
-- [ ] 4.4 Test role lookup consumers, permission derivation, navigation visibility, route guards, and post-login redirect behavior.
+- [x] 4.1 Define Roles catalog types, service contract, and public exports based on existing backend responses and current consumers.
+- [x] 4.2 Move Roles API/model ownership without creating a CRUD page or artificial UI layers.
+- [x] 4.3 Replace direct internal role imports and duplicated literals with the documented Roles/security public contract.
+- [x] 4.4 Test role lookup consumers, permission derivation, navigation visibility, route guards, and post-login redirect behavior.
 
 ## 5. Architecture Enforcement
 
