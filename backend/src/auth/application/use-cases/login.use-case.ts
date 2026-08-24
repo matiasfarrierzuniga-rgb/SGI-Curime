@@ -1,8 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  Optional,
-} from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../audit/audit-actions';
 import { AuthApplicationError } from '../errors/auth.errors';
 import type { AuthenticatedUser } from '../../domain/entities/auth-user';
@@ -57,7 +53,10 @@ export class LoginUseCase {
         module: 'AUTH',
         ...context,
       });
-      throw new AuthApplicationError('INVALID_CREDENTIALS', 'Invalid credentials');
+      throw new AuthApplicationError(
+        'INVALID_CREDENTIALS',
+        'Invalid credentials',
+      );
     }
 
     if (
@@ -69,7 +68,10 @@ export class LoginUseCase {
         module: 'AUTH',
         ...context,
       });
-      throw new AuthApplicationError('INVALID_CREDENTIALS', 'Invalid credentials');
+      throw new AuthApplicationError(
+        'INVALID_CREDENTIALS',
+        'Invalid credentials',
+      );
     }
 
     if (account.lockedAt) {
@@ -102,7 +104,10 @@ export class LoginUseCase {
           ...context,
         });
       }
-      throw new AuthApplicationError('INVALID_CREDENTIALS', 'Invalid credentials');
+      throw new AuthApplicationError(
+        'INVALID_CREDENTIALS',
+        'Invalid credentials',
+      );
     }
 
     const accessToken = await this.tokens.sign({

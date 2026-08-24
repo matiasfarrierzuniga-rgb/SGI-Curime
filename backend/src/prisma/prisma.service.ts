@@ -11,7 +11,9 @@ export class PrismaService
     const connectionString = process.env.DATABASE_URL;
 
     if (!connectionString) {
-      throw new Error('DATABASE_URL must be configured to connect to PostgreSQL.');
+      throw new Error(
+        'DATABASE_URL must be configured to connect to PostgreSQL.',
+      );
     }
 
     const adapter = new PrismaPg({ connectionString });

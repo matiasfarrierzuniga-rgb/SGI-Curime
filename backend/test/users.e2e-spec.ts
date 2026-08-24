@@ -16,6 +16,17 @@ import { ListUsersUseCase } from '../src/modules/users/application/use-cases/lis
 import { UnlockUserUseCase } from '../src/modules/users/application/use-cases/unlock-user.use-case';
 import { UpdateUserUseCase } from '../src/modules/users/application/use-cases/update-user.use-case';
 
+const auditContextWithIpAddress = {
+  asymmetricMatch(value: unknown): boolean {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'ipAddress' in value &&
+      typeof value.ipAddress === 'string'
+    );
+  },
+};
+
 describe('UsersController (e2e)', () => {
   let app: INestApplication<App>;
   let jwt: JwtService;
@@ -158,10 +169,15 @@ describe('UsersController (e2e)', () => {
       .set('Authorization', await authorization())
       .send({ fullName: ' Nombre Nuevo ', email: 'NEW@EXAMPLE.COM' })
       .expect(200);
-    expect(updateUser.execute).toHaveBeenCalledWith(2, {
-      fullName: 'Nombre Nuevo',
-      email: 'new@example.com',
-    }, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
+    expect(updateUser.execute).toHaveBeenCalledWith(
+      2,
+      {
+        fullName: 'Nombre Nuevo',
+        email: 'new@example.com',
+      },
+      1,
+      auditContextWithIpAddress,
+    );
 
     await request(app.getHttpServer())
       .patch('/users/2')
@@ -194,7 +210,11 @@ describe('UsersController (e2e)', () => {
       .patch('/users/2/activate')
       .set('Authorization', await authorization())
       .expect(200);
-    expect(activateUser.execute).toHaveBeenCalledWith(2, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
+    expect(activateUser.execute).toHaveBeenCalledWith(
+      2,
+      1,
+      auditContextWithIpAddress,
+    );
   });
 
   it('allows only an administrator to unlock an account', async () => {
@@ -202,7 +222,11 @@ describe('UsersController (e2e)', () => {
       .patch('/users/2/unlock')
       .set('Authorization', await authorization())
       .expect(200);
-    expect(unlockUser.execute).toHaveBeenCalledWith(2, 1, expect.objectContaining({ ipAddress: expect.any(String) }));
+    expect(unlockUser.execute).toHaveBeenCalledWith(
+      2,
+      1,
+      auditContextWithIpAddress,
+    );
 
     role = 'Tesorero';
     await request(app.getHttpServer())

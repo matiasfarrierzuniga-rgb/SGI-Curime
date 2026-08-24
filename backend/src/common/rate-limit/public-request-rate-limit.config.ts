@@ -8,7 +8,14 @@ function positiveInteger(value: string | undefined, fallback: number): number {
 
 export function publicRequestRateLimitConfig() {
   return {
-    ttl: positiveInteger(process.env.PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS, DEFAULT_TTL_SECONDS) * 1000,
-    limit: positiveInteger(process.env.PUBLIC_REQUEST_RATE_LIMIT_MAX, DEFAULT_MAX),
+    ttl:
+      positiveInteger(
+        process.env.PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS,
+        DEFAULT_TTL_SECONDS,
+      ) * 1000,
+    limit: positiveInteger(
+      process.env.PUBLIC_REQUEST_RATE_LIMIT_MAX,
+      DEFAULT_MAX,
+    ),
   };
 }

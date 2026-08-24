@@ -194,7 +194,12 @@ export class AffiliateRequestsService {
     const duplicate = await this.prisma.affiliateRequest.findFirst({
       where: {
         status: 'PENDING',
-        OR: [{ identification }, ...(email ? [{ email: { equals: email, mode: 'insensitive' as const } }] : [])],
+        OR: [
+          { identification },
+          ...(email
+            ? [{ email: { equals: email, mode: 'insensitive' as const } }]
+            : []),
+        ],
       },
       select: { id: true },
     });
@@ -206,7 +211,14 @@ export class AffiliateRequestsService {
     email?: string | null,
   ) {
     const duplicate = await this.prisma.affiliate.findFirst({
-      where: { OR: [{ identification }, ...(email ? [{ email: { equals: email, mode: 'insensitive' as const } }] : [])] },
+      where: {
+        OR: [
+          { identification },
+          ...(email
+            ? [{ email: { equals: email, mode: 'insensitive' as const } }]
+            : []),
+        ],
+      },
       select: { id: true },
     });
     if (duplicate)
