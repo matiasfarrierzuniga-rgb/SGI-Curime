@@ -40,32 +40,75 @@ features/<domain>/
 - API modules: `<domain>.api.ts` exporting a single service object.
 - Query keys: exported per feature as `<domain>Keys`.
 
-## Server state (TanStack Query)
+## Technology stack
 
-- Features own their queries/mutations in `hooks/`; UI never calls services directly.
-- Every mutation invalidates its feature key root (`<domain>Keys.all`) on success.
-- App defaults: `retry: 1`, `staleTime: 30_000`, `refetchOnWindowFocus: false`.
-- Vitest requires `server.deps.inline: ['@tanstack/react-query']` (already configured).
+| Concern | Tool | Responsibility |
+|---------|------|----------------|
+| Framework | React 19 | UI rendering |
+| Language | TypeScript 6 | Type safety |
+| Build | Vite 8 | Bundling, HMR |
+| Routing | React Router 7 | Navigation, layouts, route guards (TanStack Router target — separate epic) |
+| Server State | TanStack Query 5 | API data, caching, invalidation |
+| Client State | Zustand | UI-only ephemeral state (no server state duplication) |
+| HTTP | Axios | Transport via `shared/api/httpClient.ts` |
+| Runtime Validation | Zod | Schema contracts, API response validation, form validation |
+| Forms | TanStack Form | Form lifecycle (pilot phase) |
+| Tables | TanStack Table | Headless table logic (pilot phase) |
+| Styling | Tailwind CSS 4 | Utility-first CSS with institutional tokens |
+| UI Primitives | shadcn/ui | Accessible base components in `shared/ui/` |
 
-## Forms & validation
+## Styling & Design Tokens
 
-- Validation lives in `shared/lib/formValidation.ts` until a schema pilot justifies Zod.
-- Never duplicate validators; import from shared lib.
-- Double-submit guard: `busy` state or ref; disabled buttons must keep labels informative ("Guardando…").
+### Tailwind CSS
 
-## Session security policy
+- Tailwind v4 with `@tailwindcss/vite` plugin (CSS-first config).
+- Tokens defined in `src/tailwind.css` using `@theme` directive.
+- Legacy `src/index.css` preserved during transition; new code uses Tailwind utilities.
 
-- Role names come from `shared/security/roles.ts` constants — never inline literals.
-- Guards, navigation, cards, and post-login redirect derive from those helpers.
-- Only `AuthProvider` writes session storage. The HTTP layer reads the token and emits
-  `auth:unauthorized`; it must not clear storage itself.
+### Design Tokens
 
-## Shared extraction criteria
+Institutional palette (Curime / Nicoya / Guanacaste):
 
-A module moves to `shared/` only with two concrete consumers and domain-neutral behavior.
-No speculative abstractions, no barrels except feature `index.ts`.
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--color-brand-deep` | `#174c5b` | Deep Teal — primary dark |
+| `--color-brand-primary` | `#287b7b` | Teal — primary |
+| `--color-brand-soft` | `#75b5a6` | Soft Teal — secondary |
+| `--color-brand-accent` | `#e7c477` | Warm Gold — accent |
+| `--color-brand-ivory` | `#f7f5ed` | Warm Ivory — background |
+| `--color-brand-ink` | `#123b47` | Dark ink — text |
 
-## Verification gates (per phase / PR)
+### Typography
+
+- **DM Serif Display**: headlines, display, institutional messaging (`--font-display`)
+- **DM Sans**: body, UI, navigation, inputs, buttons, tables (`--font-body`)
+- Loaded via Google Fonts in `index.html` with `display=swap` to prevent CLS.
+
+### Semantic tokens
+
+Background/surface, foreground, border, focus, success/warning/danger/info states
+are all defined as Tailwind theme tokens. Single source of truth in `src/tailwind.css`.
+
+## shadcn/ui
+
+Components live in `src/shared/ui/`. They are:
+- Generic, presentational, accessible, typed, composable.
+- Never contain business logic or domain-specific code.
+- Imported by features as `@/shared/ui/button`, `@/shared/ui/dialog`, etc.
+
+Initial set: Button, Input, Label, Dialog, Sheet, Card, Badge, Alert, Skeleton.
+Add more under demand only.
+
+**Incorrect**: `shared/ui/UserTable`, `shared/ui/LoginForm` — these belong to features.
+
+## Zod
+
+- Installed and available for runtime validation.
+- Convention: API response → Zod schema → typed model → feature consumption.
+- Forms: TanStack Form → Zod schema → validated values → API.
+- No bulk migration of existing DTOs; pilot on next feature.
+
+## Validation & verification gates
 
 ```bash
 npm run verify   # lint + architecture check + tests + build
@@ -75,6 +118,29 @@ git diff --check # no whitespace errors
 Manual smoke checklist for structural phases: login, protected routes, role-restricted
 routes, deep links, public portal rendering.
 
+## Accessibility
+
+All UI must meet WCAG 2.2 AA:
+- Keyboard navigation, visible focus, focus management.
+- Color contrast 4.5:1 normal / 3:1 large text.
+- Semantic HTML, landmarks, labels, error messages.
+- `aria-*` only when native semantics insufficient.
+- Touch targets ≥ 44px recommended, ≥ 24px minimum.
+- `prefers-reduced-motion` support via CSS and Tailwind tokens.
+
+## SEO (public pages only)
+
+- `<html lang="es">` set.
+- Unique `<title>` and `<meta name="description">` per public route.
+- Heading hierarchy: single `<h1>`, logical nesting.
+- Semantic HTML for crawlability.
+- No SEO overhead for `/admin/*`, `/app/*`, `/inventory/*`.
+
+## Responsive
+
+Foundation must work at: 320px, 375px, 768px, 1024px, 1440px.
+Mobile-first approach. Tailwind breakpoints available as theme tokens.
+
 ## Delivery rules
 
 - One migration phase = one branch = one PR; move commits stay separate from behavior commits.
@@ -82,7 +148,7 @@ routes, deep links, public portal rendering.
 - Product defects discovered mid-migration become separate backlog items unless required
   to preserve an architecture contract here.
 
-## Adopting new tooling (Zod, TanStack Form/Table, Zustand, router or styling replacement)
+## Adopting new tooling
 
 Requires: a named pilot consumer, measured duplication pain the tool removes, before/after
 behavior notes, and its own OpenSpec change if it replaces an existing mechanism broadly.

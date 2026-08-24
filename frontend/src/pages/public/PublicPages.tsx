@@ -1,10 +1,5 @@
 import { Link, Navigate, useParams } from "react-router-dom";
-import {
-  moduleAvailability,
-  news,
-  services,
-  site,
-} from "../../content/publicSiteContent";
+import { moduleAvailability, services, site } from "../../content/publicSiteContent";
 import { publicContentService } from "../../services/publicContentService";
 import {
   Breadcrumbs,
@@ -14,7 +9,6 @@ import {
   NewsCard,
   PublicPageHeader,
   SectionContainer,
-  SectionHeader,
   Seo,
   ServiceCard,
   StatusBadge,
@@ -22,88 +16,6 @@ import {
 import { useAuth } from "@/features/auth";
 import { canManageInventory, isAdmin } from "@/shared/security/roles";
 
-export function HomePage() {
-  const { isAuthenticated } = useAuth();
-  return (
-    <>
-      <Seo
-        title="Inicio"
-        description="Portal público de la Asociación de Desarrollo Integral de Curime."
-      />
-      <section className="hero">
-        <div className="container-public hero-grid">
-          <div>
-            <p className="eyebrow">Curime, Guanacaste, Costa Rica</p>
-            <h1>{site.name}</h1>
-            <p className="hero-copy">{site.slogan}</p>
-            <div className="actions">
-              <Link className="button" to="/nosotros">
-                Conocer la Asociación
-              </Link>
-              <Link
-                className="button button-ghost"
-                to={isAuthenticated ? "/app" : "/login"}
-              >
-                {isAuthenticated ? "Acceder al SGI" : "Acceder al SGI"}
-              </Link>
-            </div>
-          </div>
-          <div
-            className="hero-art"
-            aria-label="Espacio reservado para fotografía oficial futura"
-          >
-            <span>Espacio para fotografía oficial</span>
-          </div>
-        </div>
-      </section>
-      <SectionContainer>
-        <SectionHeader
-          eyebrow="Comunidad"
-          title="Trabajando juntos por nuestra comunidad"
-          text="La Asociación de Desarrollo Integral promueve la participación, el diálogo y la coordinación comunitaria para acompañar el desarrollo de Curime."
-        />
-        <div className="feature-grid">
-          <article>
-            <h3>Participación</h3>
-            <p>
-              Un punto de encuentro para informarse y sumarse a las iniciativas
-              comunitarias.
-            </p>
-          </article>
-          <article>
-            <h3>Información clara</h3>
-            <p>
-              Canales digitales para compartir noticias, actividades y
-              documentación pública.
-            </p>
-          </article>
-          <article>
-            <h3>Futuro compartido</h3>
-            <p>
-              Una plataforma preparada para crecer junto con las necesidades de
-              la comunidad.
-            </p>
-          </article>
-        </div>
-      </SectionContainer>
-      <SectionContainer className="surface-section">
-        <SectionHeader
-          title="Actualidad comunitaria"
-          text="Próximamente encontrará aquí las comunicaciones oficiales de la ADI."
-        />
-        <div className="card-grid">
-          {news.map((item) => (
-            <NewsCard key={item.slug} item={item} />
-          ))}
-        </div>
-        <Link className="text-link" to="/noticias">
-          Ver todas las noticias
-        </Link>
-      </SectionContainer>
-      <CTASection />
-    </>
-  );
-}
 const pendingBlocks = [
   "Quiénes somos",
   "Historia",

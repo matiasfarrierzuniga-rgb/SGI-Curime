@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/*
+ * SGI-Curime Design Tokens — Nicoya Contemporáneo
+ * Institutional visual identity for Asociación de Desarrollo Integral de Curime
+ */
+
+@theme {
+  --color-deep-teal: #174c5b;
+  --color-warm-gold: #e7c477;
+  --color-sage: #92b6a6;
+  --color-soft-sage: #dce7e1;
+  --color-warm-ivory: #f7f5ed;
+  --color-card-white: #ffffff;
+
+  --color-background: #f7f5ed;
+  --color-foreground: #174c5b;
+
+  --color-primary: #174c5b;
+  --color-primary-foreground: #f7f5ed;
+
+  --color-secondary: #dce7e1;
+  --color-secondary-foreground: #174c5b;
+
+  --color-accent: #e7c477;
+  --color-accent-foreground: #174c5b;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #174c5b;
+
+  --color-border: #dce7e1;
+  --color-ring: #174c5b;
+
+  --color-muted: #dce7e1;
+  --color-muted-foreground: #5e6b62;
+
+  --color-destructive: #802323;
+  --color-destructive-foreground: #fdecec;
+
+  --color-success: #205f33;
+  --color-success-bg: #e8f6ec;
+
+  --color-warning: #765000;
+  --color-warning-bg: #fff2d8;
+
+  --color-danger: #802323;
+  --color-danger-bg: #fdecec;
+
+  --color-info: #174c5b;
+  --color-info-bg: #f7f5ed;
+
+  /* conserva debajo tus fuentes, spacing,
+     breakpoints, shadows y brand aliases */
+}

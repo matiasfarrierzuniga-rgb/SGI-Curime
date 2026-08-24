@@ -2,10 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
-import { ContactPage, EventsPage, HomePage, NewsPage, ServicesPage } from './PublicPages'
+import { LandingPage } from '@/features/public-site'
+import { ContactPage, EventsPage, NewsPage, ServicesPage } from './PublicPages'
 
+const authState = vi.hoisted(() => ({ isAuthenticated: false }))
 vi.mock('@/features/auth', () => ({
-  useAuth: () => ({ isAuthenticated: false }),
+  useAuth: () => authState,
 }))
 
 function renderPublic(path = '/') {
@@ -13,7 +15,7 @@ function renderPublic(path = '/') {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
           <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/servicios" element={<ServicesPage />} />
             <Route path="/contacto" element={<ContactPage />} />
             <Route path="/noticias" element={<NewsPage />} />
@@ -28,7 +30,9 @@ function renderPublic(path = '/') {
 describe('portal público', () => {
   it('muestra la landing y navega al inicio de sesión', () => {
     const { container } = renderPublic()
-    expect(container.querySelector('h1')).toHaveTextContent(/asociación de desarrollo integral/i)
+    expect(container.querySelector('h1')).toHaveTextContent(/gestión y desarrollo/i)
+    expect(document.title).toBe('SGI-Curime | ADI Curime')
+    expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toMatch(/portal comunitario/i)
 
     const loginLink = container.querySelector<HTMLAnchorElement>('a[href="/login"]')
     expect(loginLink).not.toBeNull()
@@ -37,13 +41,70 @@ describe('portal público', () => {
     expect(screen.getByText('Login')).toBeInTheDocument()
   })
 
+  it('dirige a personas autenticadas al área interna', () => {
+    authState.isAuthenticated = true
+    const { container } = renderPublic()
+
+    expect(container.querySelector<HTMLAnchorElement>('a[href="/app"]')).not.toBeNull()
+    expect(screen.getAllByRole('link', { name: 'Ir al SGI' })).not.toHaveLength(0)
+    authState.isAuthenticated = false
+  })
+
   it('abre y cierra el menú móvil con Escape', () => {
     renderPublic()
-    fireEvent.click(screen.getByRole('button', { name: /abrir menú/i }))
-    expect(screen.getByRole('navigation', { name: /navegación pública/i })).toHaveClass('is-open')
+    const menuButton = screen.getByRole('button', { name: /abrir menú/i })
+    fireEvent.click(menuButton)
+    expect(menuButton).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('navigation', { name: /navegación pública/i })).toBeVisible()
     fireEvent.keyDown(window, { key: 'Escape' })
-    expect(screen.getByRole('navigation', { name: /navegación pública/i })).not.toHaveClass('is-open')
+    expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+    expect(menuButton).toHaveFocus()
   })
+
+  it('muestra marca, enlace activo y cierra menú al navegar', () => {
+    renderPublic('/servicios')
+    expect(screen.getByRole('link', { name: 'ADI Curime, inicio' })).toBeInTheDocument()
+    const navigation = screen.getByRole('navigation', { name: /navegación pública/i })
+    expect(navigation.querySelector('a[href="/servicios"]')).toHaveAttribute('aria-current', 'page')
+
+    const menuButton = screen.getByRole('button', { name: /abrir menú/i })
+    fireEvent.click(menuButton)
+    fireEvent.click(navigation.querySelector('a[href="/servicios"]')!)
+    expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('incluye un enlace para saltar al contenido principal', () => {
+    renderPublic()
+    expect(screen.getByRole('link', { name: /saltar al contenido/i })).toHaveAttribute('href', '#public-content')
+  })
+
+  it('muestra actualidad comunitaria con enlace a todas las noticias', () => {
+    renderPublic()
+    expect(screen.getByRole('heading', { name: /avanzamos juntos/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /ver todas las noticias/i })).toHaveAttribute('href', '/noticias')
+    expect(screen.getByRole('link', { name: /leer noticia/i })).toHaveAttribute('href', '/noticias/canal-informativo-en-preparacion')
+  })
+
+  it('muestra beneficios y servicios con enlaces reales', () => {
+    renderPublic()
+    expect(screen.getByRole('heading', { name: /gestión centralizada/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /herramientas para una gestión eficiente/i })).toBeInTheDocument()
+    const serviceLinks = screen.getAllByRole('link', { name: /conocer más/i })
+    expect(serviceLinks).toHaveLength(4)
+    for (const link of serviceLinks) {
+      expect(link).toHaveAttribute('href', '/servicios')
+    }
+  })
+
+  it('ofrece solicitud de cuenta en el hero', () => {
+    renderPublic()
+    const links = screen.getAllByRole('link', { name: /solicitar una cuenta/i })
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) {
+      expect(link).toHaveAttribute('href', '/register')
+    }
+  })
+
 
   it.each([
     ['/servicios', /servicios/i],
