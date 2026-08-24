@@ -20,14 +20,15 @@ import { InventoryMovementsPage } from '@/pages/inventory/InventoryMovementsPage
 import { InventoryReportsPage } from '@/pages/inventory/InventoryReportsPage'
 import { ForbiddenPage } from '@/pages/ForbiddenPage'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
-import { AboutPage, AppHomePage, CommunityPage, ContactPage, EventsPage, HomePage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '@/pages/public/PublicPages'
+import { AboutPage, AppHomePage, CommunityPage, ContactPage, EventsPage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '@/pages/public/PublicPages'
 import { AffiliationPage } from '@/pages/public/AffiliationPage'
+import { LandingPage } from '@/features/public-site'
 import { ADMIN_ROLES, INVENTORY_ROLES } from '@/shared/security/roles'
 export function AppRoutes() {
   return (
     <Routes>
       <Route element={<PublicLayout />}>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/nosotros" element={<AboutPage />} />
         <Route path="/comunidad" element={<CommunityPage />} />
         <Route path="/noticias" element={<NewsPage />} />

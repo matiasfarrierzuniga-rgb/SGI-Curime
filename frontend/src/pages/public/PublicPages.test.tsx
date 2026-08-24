@@ -2,10 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
-import { ContactPage, EventsPage, HomePage, NewsPage, ServicesPage } from './PublicPages'
+import { LandingPage } from '@/features/public-site'
+import { ContactPage, EventsPage, NewsPage, ServicesPage } from './PublicPages'
 
+const authState = vi.hoisted(() => ({ isAuthenticated: false }))
 vi.mock('@/features/auth', () => ({
-  useAuth: () => ({ isAuthenticated: false }),
+  useAuth: () => authState,
 }))
 
 function renderPublic(path = '/') {
@@ -13,7 +15,7 @@ function renderPublic(path = '/') {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
           <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/servicios" element={<ServicesPage />} />
             <Route path="/contacto" element={<ContactPage />} />
             <Route path="/noticias" element={<NewsPage />} />
@@ -28,7 +30,9 @@ function renderPublic(path = '/') {
 describe('portal público', () => {
   it('muestra la landing y navega al inicio de sesión', () => {
     const { container } = renderPublic()
-    expect(container.querySelector('h1')).toHaveTextContent(/asociación de desarrollo integral/i)
+    expect(container.querySelector('h1')).toHaveTextContent(/gestión comunitaria/i)
+    expect(document.title).toBe('SGI-Curime | ADI Curime')
+    expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toMatch(/portal comunitario/i)
 
     const loginLink = container.querySelector<HTMLAnchorElement>('a[href="/login"]')
     expect(loginLink).not.toBeNull()
@@ -37,12 +41,28 @@ describe('portal público', () => {
     expect(screen.getByText('Login')).toBeInTheDocument()
   })
 
+  it('dirige a personas autenticadas al área interna', () => {
+    authState.isAuthenticated = true
+    const { container } = renderPublic()
+
+    expect(container.querySelector<HTMLAnchorElement>('a[href="/app"]')).not.toBeNull()
+    expect(screen.getAllByRole('link', { name: 'Ir al SGI' })).not.toHaveLength(0)
+    authState.isAuthenticated = false
+  })
+
   it('abre y cierra el menú móvil con Escape', () => {
     renderPublic()
-    fireEvent.click(screen.getByRole('button', { name: /abrir menú/i }))
-    expect(screen.getByRole('navigation', { name: /navegación pública/i })).toHaveClass('is-open')
+    const menuButton = screen.getByRole('button', { name: /abrir menú/i })
+    fireEvent.click(menuButton)
+    expect(menuButton).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('navigation', { name: /navegación pública/i })).toBeVisible()
     fireEvent.keyDown(window, { key: 'Escape' })
-    expect(screen.getByRole('navigation', { name: /navegación pública/i })).not.toHaveClass('is-open')
+    expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('incluye un enlace para saltar al contenido principal', () => {
+    renderPublic()
+    expect(screen.getByRole('link', { name: /saltar al contenido/i })).toHaveAttribute('href', '#public-content')
   })
 
   it.each([
