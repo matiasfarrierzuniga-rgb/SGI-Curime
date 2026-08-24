@@ -58,6 +58,19 @@ describe('portal público', () => {
     expect(screen.getByRole('navigation', { name: /navegación pública/i })).toBeVisible()
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+    expect(menuButton).toHaveFocus()
+  })
+
+  it('muestra marca, enlace activo y cierra menú al navegar', () => {
+    renderPublic('/servicios')
+    expect(screen.getByRole('link', { name: 'ADI Curime, inicio' })).toBeInTheDocument()
+    const navigation = screen.getByRole('navigation', { name: /navegación pública/i })
+    expect(navigation.querySelector('a[href="/servicios"]')).toHaveAttribute('aria-current', 'page')
+
+    const menuButton = screen.getByRole('button', { name: /abrir menú/i })
+    fireEvent.click(menuButton)
+    fireEvent.click(navigation.querySelector('a[href="/servicios"]')!)
+    expect(menuButton).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('incluye un enlace para saltar al contenido principal', () => {

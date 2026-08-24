@@ -25,9 +25,9 @@ export function PublicFooter() {
                 aria-hidden="true"
                 className="grid size-11 place-items-center rounded-[50%_50%_45%_45%] bg-brand-accent font-display text-xl font-bold text-brand-ink"
               >
-                C
+                ADI
               </span>
-              <strong className="font-display text-xl font-normal">{site.shortName}</strong>
+              <strong className="font-display text-xl font-normal">ADI Curime</strong>
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-brand-ivory/75">
               {site.slogan}
