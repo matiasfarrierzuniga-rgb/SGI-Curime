@@ -114,6 +114,15 @@
   --z-toast: 30;
 }
 
+/* ─── Focus visibility (WCAG 2.4.7 / 2.4.13) ──────── */
+
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
 /* ─── Reduced motion ───────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
