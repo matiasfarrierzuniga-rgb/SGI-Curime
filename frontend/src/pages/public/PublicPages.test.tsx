@@ -65,6 +65,19 @@ describe('portal público', () => {
     expect(screen.getByRole('link', { name: /saltar al contenido/i })).toHaveAttribute('href', '#public-content')
   })
 
+  it('muestra actualidad comunitaria con enlace a todas las noticias', () => {
+    renderPublic()
+    expect(screen.getByRole('heading', { name: /actualidad comunitaria/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /ver todas las noticias/i })).toHaveAttribute('href', '/noticias')
+    expect(screen.getByRole('link', { name: /leer noticia/i })).toHaveAttribute('href', '/noticias/canal-informativo-en-preparacion')
+  })
+
+  it('ofrece solicitud de cuenta en el cierre', () => {
+    renderPublic()
+    expect(screen.getByRole('link', { name: /solicitar una cuenta/i })).toHaveAttribute('href', '/register')
+  })
+
+
   it.each([
     ['/servicios', /servicios/i],
     ['/contacto', /contacto/i],
