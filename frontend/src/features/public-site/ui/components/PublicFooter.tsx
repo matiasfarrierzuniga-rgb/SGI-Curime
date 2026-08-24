@@ -5,40 +5,82 @@ import { site } from '@/content/publicSiteContent'
 export function PublicFooter() {
   const { isAuthenticated } = useAuth()
   return (
-    <footer className="bg-brand-ink font-body text-brand-ivory">
-      <div className="mx-auto grid w-full max-w-[1180px] gap-8 px-4 py-12 min-[375px]:px-6 md:grid-cols-[1.2fr_1fr]">
-        <div>
-          <strong className="font-display text-xl">{site.shortName}</strong>
-          <p className="mt-2 max-w-sm text-sm leading-relaxed text-brand-ivory/80">
-            {site.slogan}
-          </p>
-          <p className="mt-4 text-sm leading-relaxed text-brand-ivory/80">
-            {site.location}
-            <br />
-            <a className="text-brand-accent hover:underline" href={`mailto:${site.email}`}>
-              {site.email}
-            </a>
-            <br />
-            <span>Instagram: {site.instagram}</span>
+    <>
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 1440 64"
+        preserveAspectRatio="none"
+        className="-mb-px block h-12 w-full text-brand-ink md:h-16"
+      >
+        <path
+          fill="currentColor"
+          d="M0,40 C180,64 360,8 540,16 C720,24 900,60 1080,52 C1260,44 1350,20 1440,28 L1440,64 L0,64 Z"
+        />
+      </svg>
+      <footer className="bg-brand-ink pt-6 font-body text-brand-ivory">
+        <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-4 pb-12 min-[375px]:px-6 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="grid size-11 place-items-center rounded-[50%_50%_45%_45%] bg-brand-accent font-display text-xl font-bold text-brand-ink"
+              >
+                C
+              </span>
+              <strong className="font-display text-xl font-normal">{site.shortName}</strong>
+            </div>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-brand-ivory/75">
+              {site.slogan}
+            </p>
+            <p className="mt-3 text-sm text-brand-ivory/60">{site.location}</p>
+          </div>
+          <nav aria-label="Contacto">
+            <h3 className="font-display text-lg font-normal text-brand-accent">Contacto</h3>
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <a className="text-brand-ivory/80 hover:text-brand-accent" href={`mailto:${site.email}`}>
+                  {site.email}
+                </a>
+              </li>
+              <li>
+                <span className="text-brand-ivory/80">Instagram: {site.instagram}</span>
+              </li>
+            </ul>
+          </nav>
+          <nav aria-label="Enlaces rápidos">
+            <h3 className="font-display text-lg font-normal text-brand-accent">Enlaces rápidos</h3>
+            <ul className="mt-4 space-y-2 text-sm">
+              {site.nav.slice(1, 6).map((item) => (
+                <li key={item.to}>
+                  <Link className="text-brand-ivory/80 hover:text-brand-accent" to={item.to}>
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <nav aria-label="Acceso al sistema">
+            <h3 className="font-display text-lg font-normal text-brand-accent">Sistema</h3>
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <Link className="text-brand-ivory/80 hover:text-brand-accent" to={isAuthenticated ? '/app' : '/login'}>
+                  {isAuthenticated ? 'Ir al SGI' : 'Acceso al SGI'}
+                </Link>
+              </li>
+              <li>
+                <Link className="text-brand-ivory/80 hover:text-brand-accent" to="/register">
+                  Solicitar una cuenta
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        </div>
+        <div className="border-t border-brand-ivory/15">
+          <p className="mx-auto w-full max-w-[1180px] px-4 py-5 text-xs text-brand-ivory/55 min-[375px]:px-6">
+            © {new Date().getFullYear()} {site.name}. Todos los derechos reservados.
           </p>
         </div>
-        <nav aria-label="Enlaces del pie" className="flex flex-col gap-2 text-sm">
-          <strong className="mb-1">Navegación</strong>
-          {site.nav.slice(0, 5).map((item) => (
-            <Link key={item.to} to={item.to} className="text-brand-accent hover:underline">
-              {item.label}
-            </Link>
-          ))}
-          <Link to={isAuthenticated ? '/app' : '/login'} className="text-brand-accent hover:underline">
-            {isAuthenticated ? 'Ir al SGI' : 'Acceso al SGI'}
-          </Link>
-        </nav>
-      </div>
-      <div className="border-t border-brand-ivory/15">
-        <p className="mx-auto w-full max-w-[1180px] px-4 py-4 text-xs text-brand-ivory/60 min-[375px]:px-6">
-          © {new Date().getFullYear()} {site.shortName}. Todos los derechos reservados.
-        </p>
-      </div>
-    </footer>
+      </footer>
+    </>
   )
 }

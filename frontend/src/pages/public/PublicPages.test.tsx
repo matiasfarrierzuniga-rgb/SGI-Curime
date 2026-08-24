@@ -30,7 +30,7 @@ function renderPublic(path = '/') {
 describe('portal público', () => {
   it('muestra la landing y navega al inicio de sesión', () => {
     const { container } = renderPublic()
-    expect(container.querySelector('h1')).toHaveTextContent(/gestión comunitaria/i)
+    expect(container.querySelector('h1')).toHaveTextContent(/gestión y desarrollo/i)
     expect(document.title).toBe('SGI-Curime | ADI Curime')
     expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toMatch(/portal comunitario/i)
 
@@ -67,14 +67,29 @@ describe('portal público', () => {
 
   it('muestra actualidad comunitaria con enlace a todas las noticias', () => {
     renderPublic()
-    expect(screen.getByRole('heading', { name: /actualidad comunitaria/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /avanzamos juntos/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /ver todas las noticias/i })).toHaveAttribute('href', '/noticias')
     expect(screen.getByRole('link', { name: /leer noticia/i })).toHaveAttribute('href', '/noticias/canal-informativo-en-preparacion')
   })
 
-  it('ofrece solicitud de cuenta en el cierre', () => {
+  it('muestra beneficios y servicios con enlaces reales', () => {
     renderPublic()
-    expect(screen.getByRole('link', { name: /solicitar una cuenta/i })).toHaveAttribute('href', '/register')
+    expect(screen.getByRole('heading', { name: /gestión centralizada/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /herramientas para una gestión eficiente/i })).toBeInTheDocument()
+    const serviceLinks = screen.getAllByRole('link', { name: /conocer más/i })
+    expect(serviceLinks).toHaveLength(4)
+    for (const link of serviceLinks) {
+      expect(link).toHaveAttribute('href', '/servicios')
+    }
+  })
+
+  it('ofrece solicitud de cuenta en el hero', () => {
+    renderPublic()
+    const links = screen.getAllByRole('link', { name: /solicitar una cuenta/i })
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) {
+      expect(link).toHaveAttribute('href', '/register')
+    }
   })
 
 
