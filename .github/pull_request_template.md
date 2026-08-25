@@ -5,14 +5,14 @@ Describe the problem/change and why it is needed.
 ## Scope
 
 ### In scope
-- 
+-
 
 ### Out of scope
-- 
+-
 
 ## Changes
 
-- 
+-
 
 ## Verification / QA
 
