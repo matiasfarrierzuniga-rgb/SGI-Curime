@@ -7,6 +7,7 @@ export const ACCESS_CAPABILITIES = [
   'usr.profile.read',
   'adm.affiliates.read',
   'adm.requests.read',
+  'aud.logs.read',
 ] as const
 
 export type AccessCapability = (typeof ACCESS_CAPABILITIES)[number]

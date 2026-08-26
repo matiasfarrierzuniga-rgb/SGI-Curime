@@ -68,8 +68,9 @@ accepted Administrator and authenticated-user paths.
 | `usr.profile.read` | Read the signed-in user's profile | Authenticated user | Profile route | Authenticated session and profile page exist | YES | ACCEPTED |
 | `usr.profile.update` | Update the signed-in user's profile | Authenticated user | Deferred until editable profile flow exists | Exact backend operation requires confirmation | NO | TBD_NON_BLOCKING |
 
-`usr.audit.read` is deferred. The repository has audit infrastructure, but no
-Sprint 1 consumer is accepted for this capability.
+`usr.audit.read` was deferred in this profile and is superseded by DEC-AUD-01.
+`aud.logs.read` is the canonical audit-read capability, granted only to
+`Administrador` for Sprint 1; audit-specific frontend consumers remain deferred.
 
 ## 6. MOD-ADM Core capabilities
 
@@ -180,7 +181,8 @@ implemented, but do not close the Sprint 1 authorization foundation gate.
 
 ## 16. Deferred
 
-- `usr.audit.read` and audit-specific frontend consumers;
+- audit-specific frontend consumers; the historical `usr.audit.read` deferral
+  is superseded by DEC-AUD-01 and canonical `aud.logs.read`;
 - `SELF` scopes for non-profile resources;
 - ABAC, segregation of duties, organization scopes, and resource-level UI
   policy simulation;
