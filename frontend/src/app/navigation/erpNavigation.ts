@@ -30,6 +30,13 @@ const navigation: readonly ErpNavigationItem[] = [
       { label: 'Solicitudes', path: '/app/admin/requests', capability: 'adm.requests.read' },
     ],
   },
+  {
+    label: 'Información',
+    path: '/app/audit-logs',
+    children: [
+      { label: 'Bitácora', path: '/app/audit-logs', capability: 'aud.logs.read' },
+    ],
+  },
 ]
 
 function isVisible(item: ErpNavigationItem, role: string | null | undefined): boolean {

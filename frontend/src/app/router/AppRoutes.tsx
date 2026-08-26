@@ -69,6 +69,9 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="adm.requests.read" />}>
             <Route path="/app/admin/requests" element={<ErpPlaceholderPage title="Solicitudes" />} />
           </Route>
+          <Route element={<RoleRoute capability="aud.logs.read" />}>
+            <Route path="/app/audit-logs" element={<AuditLogsPage />} />
+          </Route>
         </Route>
         <Route element={<AppLayout />}>
           <Route path="/profile" element={<ProfilePage />} />

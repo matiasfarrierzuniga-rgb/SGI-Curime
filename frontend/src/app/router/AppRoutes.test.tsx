@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { authService, AuthProvider } from '@/features/auth'
+import { auditLogsService } from '@/services/auditLogsService'
+import { ToastProvider } from '@/shared/ui/Toast'
 import { AppRoutes } from './AppRoutes'
 
 function renderRoute(path: string, role: string | null) {
@@ -17,7 +19,8 @@ function renderRoute(path: string, role: string | null) {
   }
 
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(<QueryClientProvider client={queryClient}><AuthProvider><MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter></AuthProvider></QueryClientProvider>)
+  vi.spyOn(auditLogsService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
+  return render(<QueryClientProvider client={queryClient}><ToastProvider><AuthProvider><MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter></AuthProvider></ToastProvider></QueryClientProvider>)
 }
 
 afterEach(() => {
@@ -106,5 +109,25 @@ describe('AppRoutes capability deep links', () => {
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Afiliados' })).not.toBeInTheDocument()
+  })
+
+  it('renders AuditLogsPage from /app/audit-logs for aud.logs.read', async () => {
+    renderRoute('/app/audit-logs', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Bitácora' })).toBeInTheDocument()
+  })
+
+  it('redirects authenticated users without aud.logs.read from /app/audit-logs to 403', async () => {
+    renderRoute('/app/audit-logs', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Bitácora' })).not.toBeInTheDocument()
+  })
+
+  it('redirects anonymous users from /app/audit-logs to login', () => {
+    renderRoute('/app/audit-logs', null)
+
+    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Bitácora' })).not.toBeInTheDocument()
   })
 })

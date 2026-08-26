@@ -12,6 +12,7 @@ describe('getErpNavigation', () => {
       { label: 'Mi perfil', children: undefined },
       { label: 'Usuarios', children: ['Usuarios', 'Roles'] },
       { label: 'Administrativo', children: ['Afiliados', 'Solicitudes'] },
+      { label: 'Información', children: ['Bitácora'] },
     ])
   })
 
@@ -34,5 +35,19 @@ describe('getErpNavigation', () => {
     expect(basicNavigation.some((item) => item.children?.length === 0)).toBe(false)
     expect(basicNavigation.map((item) => item.label)).not.toContain('Usuarios')
     expect(basicNavigation.map((item) => item.label)).not.toContain('Administrativo')
+    expect(basicNavigation.map((item) => item.label)).not.toContain('Información')
+  })
+
+  it('shows Bitácora only with aud.logs.read', () => {
+    const administratorNavigation = getErpNavigation('Administrador')
+    const auditLogsItem = administratorNavigation
+      .find((item) => item.label === 'Información')
+      ?.children?.find((item) => item.label === 'Bitácora')
+
+    expect(auditLogsItem).toMatchObject({
+      path: '/app/audit-logs',
+      capability: 'aud.logs.read',
+    })
+    expect(labels('Vecino/Afiliado').flatMap((item) => item.children ?? [])).not.toContain('Bitácora')
   })
 })
