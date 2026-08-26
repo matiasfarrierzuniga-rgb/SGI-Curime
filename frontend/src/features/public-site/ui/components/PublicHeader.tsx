@@ -22,6 +22,7 @@ export function PublicHeader() {
   }, [open])
   const close = () => setOpen(false)
   const accessTo = isAuthenticated ? '/app' : '/login'
+  const accessLabel = isAuthenticated ? 'Volver al SGI' : 'Ir al SGI'
   const publicNavItems = site.nav.filter((item) =>
     ['/', '/nosotros', '/servicios', '/noticias', '/contacto'].includes(item.to),
   )
@@ -80,14 +81,14 @@ export function PublicHeader() {
             onClick={close}
             className="mt-2 inline-flex min-h-11 items-center justify-center rounded-md bg-brand-accent px-5 font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-ivory lg:hidden"
           >
-            {isAuthenticated ? 'Ir al SGI' : 'Iniciar sesión'}
+            {accessLabel}
           </Link>
         </nav>
         <Link
           to={accessTo}
           className="hidden min-h-11 justify-self-end rounded-md bg-brand-accent px-5 text-sm font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-ivory lg:inline-flex lg:items-center lg:justify-center"
         >
-          {isAuthenticated ? 'Ir al SGI' : 'Iniciar sesión'}
+          {accessLabel}
         </Link>
       </div>
     </header>

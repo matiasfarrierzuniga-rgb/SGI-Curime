@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { authService } from '../api/auth.api'
 import type { AuthenticatedUser, LoginCredentials, StoredSession } from './auth.types'
 import { sessionStorageService } from '@/shared/session/sessionStorage'
@@ -7,11 +8,12 @@ interface AuthValue { user: AuthenticatedUser | null; token: string | null; isAu
 const AuthContext = createContext<AuthValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
   const stored = sessionStorageService.get<StoredSession>()
   const [user, setUser] = useState<AuthenticatedUser | null>(stored?.user ?? null)
   const [token, setToken] = useState<string | null>(stored?.token ?? null)
   const [isLoading, setIsLoading] = useState(Boolean(stored?.token))
-  const logout = useCallback(() => { sessionStorageService.clear(); setUser(null); setToken(null) }, [])
+  const logout = useCallback(() => { sessionStorageService.clear(); queryClient.clear(); setUser(null); setToken(null) }, [queryClient])
 
   useEffect(() => {
     const unauthorized = () => logout()

@@ -64,7 +64,7 @@ export function PublicFooter() {
             <ul className="mt-4 space-y-2 text-sm">
               <li>
                 <Link className="text-brand-ivory/80 hover:text-brand-accent" to={isAuthenticated ? '/app' : '/login'}>
-                  {isAuthenticated ? 'Ir al SGI' : 'Acceso al SGI'}
+                  {isAuthenticated ? 'Volver al SGI' : 'Ir al SGI'}
                 </Link>
               </li>
               <li>

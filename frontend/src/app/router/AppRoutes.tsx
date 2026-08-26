@@ -2,6 +2,8 @@ import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
 import { AppLayout } from '@/app/layouts/AppLayout'
+import { AccessLayout } from '@/app/layouts/AccessLayout'
+import { ErpLayout } from '@/app/layouts/ErpLayout'
 import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -20,9 +22,11 @@ import { InventoryMovementsPage } from '@/pages/inventory/InventoryMovementsPage
 import { InventoryReportsPage } from '@/pages/inventory/InventoryReportsPage'
 import { ForbiddenPage } from '@/pages/ForbiddenPage'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
-import { AboutPage, AppHomePage, CommunityPage, ContactPage, EventsPage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '@/pages/public/PublicPages'
+import { AboutPage, CommunityPage, ContactPage, EventsPage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '@/pages/public/PublicPages'
 import { AffiliationPage } from '@/pages/public/AffiliationPage'
 import { LandingPage } from '@/features/public-site'
+import { AppHomePage } from '@/pages/erp/AppHomePage'
+import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ADMIN_ROLES, INVENTORY_ROLES } from '@/shared/security/roles'
 export function AppRoutes() {
   return (
@@ -39,15 +43,34 @@ export function AppRoutes() {
         <Route path="/contacto" element={<ContactPage />} />
         <Route path="/afiliacion" element={<AffiliationPage />} />
       </Route>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/activate-account" element={<TokenPasswordPage mode="activate" />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<TokenPasswordPage mode="reset" />} />
+      <Route element={<AccessLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/activate-account" element={<TokenPasswordPage mode="activate" />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<TokenPasswordPage mode="reset" />} />
+      </Route>
       <Route path="/403" element={<ForbiddenPage />} />
       <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
+        <Route element={<ErpLayout />}>
           <Route path="/app" element={<AppHomePage />} />
+          <Route element={<RoleRoute capability="usr.profile.read" />}>
+            <Route path="/app/profile" element={<ErpPlaceholderPage title="Mi perfil" />} />
+          </Route>
+          <Route element={<RoleRoute capability="usr.users.read" />}>
+            <Route path="/app/users" element={<ErpPlaceholderPage title="Usuarios" />} />
+          </Route>
+          <Route element={<RoleRoute capability="usr.roles.read" />}>
+            <Route path="/app/roles" element={<ErpPlaceholderPage title="Roles" />} />
+          </Route>
+          <Route element={<RoleRoute capability="adm.affiliates.read" />}>
+            <Route path="/app/admin/affiliates" element={<ErpPlaceholderPage title="Afiliados" />} />
+          </Route>
+          <Route element={<RoleRoute capability="adm.requests.read" />}>
+            <Route path="/app/admin/requests" element={<ErpPlaceholderPage title="Solicitudes" />} />
+          </Route>
+        </Route>
+        <Route element={<AppLayout />}>
           <Route path="/profile" element={<ProfilePage />} />
           <Route element={<RoleRoute role={[...ADMIN_ROLES]} />}>
             <Route path="/admin/users" element={<UsersPage />} />
