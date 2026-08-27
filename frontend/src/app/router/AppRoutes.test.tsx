@@ -1,10 +1,33 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { authService, AuthProvider } from '@/features/auth'
+import { usersService } from '@/features/users/api/users.api'
+import { rolesService } from '@/features/roles'
+import { auditLogsService } from '@/services/auditLogsService'
+import { inventoryReportsService } from '@/services/inventoryReportsService'
+import { httpClient } from '@/shared/api/httpClient'
 import { AppRoutes } from './AppRoutes'
 import { ToastProvider } from '@/shared/ui/Toast'
+
+vi.mock('@/features/users/api/users.api', () => ({
+  usersService: { list: vi.fn(), get: vi.fn(), update: vi.fn(), changeRole: vi.fn(), activate: vi.fn(), deactivate: vi.fn(), unlock: vi.fn() },
+}))
+
+vi.mock('@/features/roles', () => ({
+  rolesService: { listActive: vi.fn() },
+}))
+
+vi.mock('@/services/auditLogsService', () => ({
+  auditLogsService: { list: vi.fn(), get: vi.fn() },
+}))
+
+vi.mock('@/services/inventoryReportsService', () => ({
+  inventoryReportsService: { summary: vi.fn() },
+}))
+
+let httpGet: ReturnType<typeof vi.spyOn>
 
 function renderRoute(path: string, role: string | null) {
   if (role !== null) {
@@ -21,7 +44,19 @@ function renderRoute(path: string, role: string | null) {
   return render(<QueryClientProvider client={queryClient}><ToastProvider><AuthProvider><MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter></AuthProvider></ToastProvider></QueryClientProvider>)
 }
 
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.mocked(usersService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
+  vi.mocked(rolesService.listActive).mockResolvedValue([])
+  vi.mocked(auditLogsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
+  vi.mocked(inventoryReportsService.summary).mockResolvedValue({ activeItems: 0, lowStockCount: 0, outOfStockCount: 0, overdueLoans: 0 })
+  httpGet = vi.spyOn(httpClient, 'get').mockImplementation(() => {
+    throw new Error('AppRoutes tests must not make HTTP requests')
+  })
+})
+
 afterEach(() => {
+  expect(httpGet).not.toHaveBeenCalled()
   localStorage.clear()
   vi.restoreAllMocks()
 })
