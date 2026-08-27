@@ -17,8 +17,8 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
     pool: 'threads',
-    fileParallelism: false,
-    maxWorkers: 1,
+    fileParallelism: true,
+    maxWorkers: 2,
     server: { deps: { inline: ['@tanstack/react-query'] } },
   },
 })

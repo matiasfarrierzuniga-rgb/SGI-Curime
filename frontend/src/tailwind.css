@@ -119,7 +119,7 @@
   --duration-normal: 250ms;
   --duration-slow: 400ms;
 
-  --container-max: 1180px;
+  --container-max: 1440px;
 
   --z-nav: 10;
   --z-modal: 20;
@@ -142,5 +142,32 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .public-container {
+    width: 100%;
+    max-width: var(--container-max);
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 375px) {
+    .public-container {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .public-container {
+      padding-inline: 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .public-container {
+      padding-inline: 3rem;
+    }
   }
 }

@@ -9,11 +9,11 @@ const items = [
 
 export function ValueStrip() {
   return (
-    <section aria-label="Beneficios de SGI-Curime" className="relative z-10">
-      <div className="mx-auto w-full max-w-[1060px] px-4 min-[375px]:px-6 md:-mt-14">
-        <div className="grid grid-cols-1 gap-8 rounded-2xl bg-white px-6 py-8 shadow-[0_18px_40px_-24px_rgba(18,59,71,0.35)] min-[480px]:grid-cols-2 md:grid-cols-4 md:gap-0 md:px-4">
+    <section aria-label="Beneficios de SGI-Curime" className="relative z-10 py-4 md:py-6 lg:-mt-8 lg:py-0">
+      <div className="public-container">
+        <div className="grid grid-cols-1 gap-6 rounded-2xl bg-white px-6 py-8 shadow-[0_18px_40px_-24px_rgba(18,59,71,0.35)] sm:grid-cols-2 md:gap-0 md:px-4 lg:grid-cols-4">
           {items.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="flex flex-col items-center gap-3 px-4 text-center md:border-l md:border-border md:first:border-l-0">
+            <div key={title} className="flex flex-col items-center gap-3 px-4 text-center md:px-6 lg:border-l lg:border-border lg:first:border-l-0">
               <span className="grid size-12 place-items-center rounded-full bg-brand-ivory text-brand-primary">
                 <Icon className="size-5" aria-hidden="true" />
               </span>

@@ -18,7 +18,7 @@ export function PublicFooter() {
         />
       </svg>
       <footer className="bg-brand-ink pt-6 font-body text-brand-ivory">
-        <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-4 pb-12 min-[375px]:px-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="public-container grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr_1fr] lg:gap-12 xl:gap-16">
           <div>
             <div className="flex items-center gap-3">
               <span
@@ -76,7 +76,7 @@ export function PublicFooter() {
           </nav>
         </div>
         <div className="border-t border-brand-ivory/15">
-          <p className="mx-auto w-full max-w-[1180px] px-4 py-5 text-xs text-brand-ivory/55 min-[375px]:px-6">
+          <p className="public-container py-5 text-xs text-brand-ivory/55">
             © {new Date().getFullYear()} {site.name}. Todos los derechos reservados.
           </p>
         </div>
