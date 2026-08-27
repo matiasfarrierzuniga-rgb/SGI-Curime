@@ -1,50 +1,55 @@
-import {
-  hasAuthenticatedSessionCapability,
-  hasCapability,
-  type AccessCapability,
-} from '@/shared/security/access'
+import type { LucideIcon } from 'lucide-react'
+import { ArrowLeftRight, Boxes, ChartNoAxesCombined, ClipboardList, FileClock, Handshake, Home, Package, Tags, TriangleAlert, UserRound, Users } from 'lucide-react'
+import { hasAuthenticatedSessionCapability, hasCapability, type AccessCapability } from '@/shared/security/access'
 
 export type ErpNavigationItem = {
   label: string
-  path: string
+  path?: string
   capability?: AccessCapability
-  children?: ErpNavigationItem[]
+  icon?: LucideIcon
+  children?: readonly ErpNavigationItem[]
 }
 
-const navigation: readonly ErpNavigationItem[] = [
-  { label: 'Inicio', path: '/app' },
-  { label: 'Mi perfil', path: '/app/profile', capability: 'usr.profile.read' },
+export type ErpNavigationSection = { label: string; items: readonly ErpNavigationItem[] }
+
+const navigation: readonly ErpNavigationSection[] = [
+  { label: 'General', items: [{ label: 'Dashboard', path: '/app', capability: 'erp.dashboard.read', icon: Home }] },
   {
-    label: 'Usuarios',
-    path: '/app/users',
-    children: [
-      { label: 'Usuarios', path: '/app/users', capability: 'usr.users.read' },
-      { label: 'Roles', path: '/app/roles', capability: 'usr.roles.read' },
+    label: 'Gestión administrativa',
+    items: [
+      { label: 'Usuarios', path: '/admin/users', capability: 'usr.users.read', icon: Users },
+      { label: 'Solicitudes', path: '/admin/user-requests', capability: 'adm.requests.read', icon: ClipboardList },
     ],
   },
   {
-    label: 'Administrativo',
-    path: '/app/admin/affiliates',
-    children: [
-      { label: 'Afiliados', path: '/app/admin/affiliates', capability: 'adm.affiliates.read' },
-      { label: 'Solicitudes', path: '/app/admin/requests', capability: 'adm.requests.read' },
-    ],
+    label: 'Operación',
+    items: [{
+      label: 'Inventario', path: '/inventory', capability: 'inv.inventory.read', icon: Boxes,
+      children: [
+        { label: 'Resumen', path: '/inventory', icon: Boxes },
+        { label: 'Artículos', path: '/inventory/items', icon: Package },
+        { label: 'Categorías', path: '/inventory/categories', icon: Tags },
+        { label: 'Movimientos', path: '/inventory/movements', icon: ArrowLeftRight },
+        { label: 'Préstamos', path: '/inventory/loans', icon: Handshake },
+        { label: 'Alertas', path: '/inventory/alerts', icon: TriangleAlert },
+        { label: 'Reportes', path: '/inventory/reports', icon: ChartNoAxesCombined },
+      ],
+    }],
   },
+  { label: 'Información', items: [{ label: 'Bitácora', path: '/admin/audit-logs', capability: 'adm.audit.read', icon: FileClock }] },
+  { label: 'Cuenta', items: [{ label: 'Mi perfil', path: '/profile', capability: 'usr.profile.read', icon: UserRound }] },
 ]
 
 function isVisible(item: ErpNavigationItem, role: string | null | undefined): boolean {
-  return item.capability === undefined ||
-    hasAuthenticatedSessionCapability(item.capability) ||
-    hasCapability(role, item.capability)
+  return item.capability === undefined || hasAuthenticatedSessionCapability(item.capability) || hasCapability(role, item.capability)
 }
 
-export function getErpNavigation(role: string | null | undefined): ErpNavigationItem[] {
-  return navigation.flatMap((item) => {
-    if (item.children) {
-      const children = item.children.filter((child) => isVisible(child, role))
-      return children.length > 0 ? [{ ...item, children }] : []
-    }
-
-    return isVisible(item, role) ? [item] : []
+export function getErpNavigation(role: string | null | undefined): ErpNavigationSection[] {
+  return navigation.flatMap((section) => {
+    const items = section.items.flatMap((item) => {
+      if (!isVisible(item, role)) return []
+      return [{ ...item, children: item.children?.filter((child) => isVisible(child, role)) }]
+    })
+    return items.length > 0 ? [{ ...section, items }] : []
   })
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { MemoryRouter, Navigate, Outlet } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/router/AppRoutes'
+import { hasAuthenticatedSessionCapability, hasCapability } from '@/shared/security/access'
 
 const state = vi.hoisted(() => ({
   value: {
@@ -23,8 +24,11 @@ vi.mock('@/features/auth', async importOriginal => {
     AuthProvider: ({ children }: { children: ReactNode }) => children,
     LoginPage: () => <h1>Iniciar sesión</h1>,
     ProtectedRoute: () => state.value.isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />,
-    RoleRoute: ({ role }: { role: string | string[] }) => {
-      const allowed = Array.isArray(role) ? role.includes(state.value.user?.role ?? '') : state.value.user?.role === role
+    RoleRoute: ({ role, capability }: { role?: string | string[]; capability?: string }) => {
+      const currentRole = state.value.user?.role
+      const allowed = capability
+        ? hasAuthenticatedSessionCapability(capability) || hasCapability(currentRole, capability)
+        : Array.isArray(role) ? role.includes(currentRole ?? '') : currentRole === role
       return allowed ? <Outlet /> : <Navigate to="/403" replace />
     },
   }

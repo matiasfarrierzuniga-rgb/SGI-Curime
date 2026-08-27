@@ -9,11 +9,14 @@ import {
 describe('shared security access policy', () => {
   it('grants all accepted capabilities to Administrador', () => {
     expect(ACCESS_CAPABILITIES).toEqual([
+      'erp.dashboard.read',
       'usr.users.read',
       'usr.roles.read',
       'usr.profile.read',
       'adm.affiliates.read',
       'adm.requests.read',
+      'adm.audit.read',
+      'inv.inventory.read',
     ])
     expect(ACCESS_ROLE_CAPABILITIES.Administrador).toEqual(ACCESS_CAPABILITIES)
     expect(hasCapability('Administrador', 'adm.requests.read')).toBe(true)
@@ -30,8 +33,9 @@ describe('shared security access policy', () => {
     expect(hasCapability('Administrador', '')).toBe(false)
   })
 
-  it('grants only profile access to authenticated sessions', () => {
+  it('grants profile and dashboard access to authenticated sessions', () => {
     expect(hasAuthenticatedSessionCapability('usr.profile.read')).toBe(true)
+    expect(hasAuthenticatedSessionCapability('erp.dashboard.read')).toBe(true)
     expect(hasAuthenticatedSessionCapability('adm.affiliates.read')).toBe(false)
   })
 })

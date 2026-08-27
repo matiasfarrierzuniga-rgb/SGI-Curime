@@ -2,37 +2,34 @@ import { describe, expect, it } from 'vitest'
 import { getErpNavigation } from './erpNavigation'
 
 function labels(role: string | null | undefined) {
-  return getErpNavigation(role).map((item) => ({ label: item.label, children: item.children?.map((child) => child.label) }))
+  return getErpNavigation(role).map((section) => ({ label: section.label, items: section.items.map((item) => ({ label: item.label, children: item.children?.map((child) => child.label) })) }))
 }
 
 describe('getErpNavigation', () => {
-  it('shows all Sprint 1 navigation for administrators', () => {
+  it('shows implemented administrative areas to administrators', () => {
     expect(labels('Administrador')).toEqual([
-      { label: 'Inicio', children: undefined },
-      { label: 'Mi perfil', children: undefined },
-      { label: 'Usuarios', children: ['Usuarios', 'Roles'] },
-      { label: 'Administrativo', children: ['Afiliados', 'Solicitudes'] },
+      { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
+      { label: 'Gestión administrativa', items: [{ label: 'Usuarios', children: undefined }, { label: 'Solicitudes', children: undefined }] },
+      { label: 'Operación', items: [{ label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'Información', items: [{ label: 'Bitácora', children: undefined }] },
+      { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
   })
 
-  it('hides privileged items when an authenticated basic user lacks their capabilities', () => {
+  it('limits inventory managers to dashboard, inventory, and profile', () => {
+    const result = labels('Gestor de Inventario')
+    expect(result).toEqual([
+      { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
+      { label: 'Operación', items: [{ label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
+    ])
+    expect(JSON.stringify(result)).not.toMatch(/Usuarios|Solicitudes|Bitácora/)
+  })
+
+  it('shows only session-wide navigation to other authenticated roles', () => {
     expect(labels('Vecino/Afiliado')).toEqual([
-      { label: 'Inicio', children: undefined },
-      { label: 'Mi perfil', children: undefined },
+      { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
+      { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
-  })
-
-  it('denies privileged navigation to an unknown role', () => {
-    expect(labels('Rol desconocido')).toEqual([
-      { label: 'Inicio', children: undefined },
-      { label: 'Mi perfil', children: undefined },
-    ])
-  })
-
-  it('hides groups when none of their capability-gated children are visible', () => {
-    const basicNavigation = getErpNavigation('Vecino/Afiliado')
-    expect(basicNavigation.some((item) => item.children?.length === 0)).toBe(false)
-    expect(basicNavigation.map((item) => item.label)).not.toContain('Usuarios')
-    expect(basicNavigation.map((item) => item.label)).not.toContain('Administrativo')
   })
 })
