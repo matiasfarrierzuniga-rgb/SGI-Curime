@@ -11,7 +11,7 @@ export function ProjectsNewsSection() {
           </p>
           <h2
             id="news-title"
-            className="mt-3 font-display text-[clamp(2.25rem,4vw,3.5rem)] font-normal leading-tight text-brand-ink"
+            className="mt-3 font-heading text-heading-1 font-bold text-brand-ink"
           >
             Avanzamos juntos
           </h2>
@@ -33,7 +33,7 @@ export function ProjectsNewsSection() {
               </div>
               <div className="flex flex-1 flex-col gap-2 p-6">
                 <p className="text-sm font-bold tracking-wide text-brand-primary">{item.date}</p>
-                <h3 className="font-display text-2xl font-normal leading-snug text-brand-ink">
+                <h3 className="font-heading text-heading-3 font-semibold text-brand-ink">
                   <Link to={`/noticias/${item.slug}`} className="group-hover:text-brand-primary">
                     {item.title}
                   </Link>

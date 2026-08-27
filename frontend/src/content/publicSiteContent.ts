@@ -4,7 +4,16 @@ export const site = {
   slogan: "Un pueblo unido, un futuro compartido.",
   location: "Curime, Guanacaste, Costa Rica",
   email: "adicurimenicoya@gmail.com",
-  instagram: "@adicurime",
+  socialLinks: {
+    instagram: {
+      label: "@adicurime",
+      url: "https://www.instagram.com/adicurime?igsi=NnM0cGRvaGZ3cmZt",
+    },
+    facebook: {
+      label: "ADI Curime",
+      url: "https://www.facebook.com/profile.php?id=100084633551482",
+    },
+  },
   phone: null as string | null,
   whatsapp: null as string | null,
   authorizedContacts: [] as ReadonlyArray<{ name: string; role: string; channel: string }>,

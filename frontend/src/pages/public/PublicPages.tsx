@@ -1,4 +1,5 @@
 import { Link, Navigate, useParams } from "react-router-dom";
+import { Camera, Mail, UsersRound, type LucideIcon } from "lucide-react";
 import { moduleAvailability, services, site } from "../../content/publicSiteContent";
 import { publicContentService } from "../../services/publicContentService";
 import {
@@ -14,6 +15,7 @@ import {
   StatusBadge,
 } from "../../components/public/PublicComponents";
 import { useAuth } from "@/features/auth";
+import { ContactForm } from "@/features/public-site";
 import { canManageInventory, isAdmin } from "@/shared/security/roles";
 
 const pendingBlocks = [
@@ -205,6 +207,42 @@ export function TransparencyPage() {
   );
 }
 export function ContactPage() {
+  const channels: ReadonlyArray<{
+    name: string;
+    detail: string;
+    action: string;
+    ariaLabel: string;
+    href: string;
+    icon: LucideIcon;
+    external?: boolean;
+  }> = [
+    {
+      name: "Instagram",
+      detail: site.socialLinks.instagram.label,
+      action: "Visitar Instagram",
+      ariaLabel: "Abrir Instagram de ADI Curime",
+      href: site.socialLinks.instagram.url,
+      icon: Camera,
+      external: true,
+    },
+    {
+      name: "Facebook",
+      detail: site.socialLinks.facebook.label,
+      action: "Visitar Facebook",
+      ariaLabel: "Abrir Facebook de ADI Curime",
+      href: site.socialLinks.facebook.url,
+      icon: UsersRound,
+      external: true,
+    },
+    {
+      name: "Correo electrónico",
+      detail: site.email,
+      action: "Enviar correo",
+      ariaLabel: "Enviar correo a ADI Curime",
+      href: `mailto:${site.email}`,
+      icon: Mail,
+    },
+  ];
   return (
     <>
       <Seo title="Contacto" description="Canales de contacto de ADI Curime." />
@@ -214,28 +252,38 @@ export function ContactPage() {
       />
       <Breadcrumbs current="Contacto" />
       <SectionContainer>
-        <div className="contact-grid">
-          <article className="content-card">
-            <h2>Correo</h2>
-            <p>
-              <a href={`mailto:${site.email}`}>{site.email}</a>
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:gap-12 xl:gap-16">
+          <div className="min-w-0 lg:py-4">
+            <p className="eyebrow">Contacto</p>
+            <h2 className="mt-2 text-heading-1 text-brand-deep">Contáctese con nosotros</h2>
+            <h3 className="mt-5 text-heading-3 text-brand-primary">Consultas generales</h3>
+            <p className="mt-3 max-w-xl text-body-large text-foreground-muted">
+              Este formulario permite preparar consultas dirigidas a la Asociación de Desarrollo Integral de Curime.
             </p>
-          </article>
-          <article className="content-card">
-            <h2>Instagram</h2>
-            <p>{site.instagram}</p>
-          </article>
-          <article className="content-card">
-            <h2>Teléfono y WhatsApp</h2>
-            <p>{site.phone ?? "Pendiente de confirmación institucional."}</p>
-            {site.whatsapp && <p>{site.whatsapp}</p>}
-          </article>
-        </div>
-        <div className="contact-note">
-          <h2>Otros canales autorizados</h2>
-          <p>
-            Se publicarán únicamente personas y canales confirmados por la Asociación.
-          </p>
+            <div className="mt-8 grid gap-4" aria-label="Canales oficiales de contacto">
+              {channels.map(({ name, detail, action, ariaLabel, href, icon: Icon, external }) => (
+                <article key={name} className="grid min-w-0 grid-cols-[auto_1fr] gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm">
+                  <div aria-hidden="true" className="grid size-11 place-items-center rounded-lg bg-brand-soft/20 text-brand-deep">
+                    <Icon className="size-5" strokeWidth={1.8} />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-brand-deep">{name}</h4>
+                    <p className="mt-1 [overflow-wrap:anywhere] text-body-small text-foreground-muted">{detail}</p>
+                    <a
+                      className="mt-2 inline-flex min-h-11 items-center rounded-md font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep"
+                      href={href}
+                      aria-label={ariaLabel}
+                      target={external ? "_blank" : undefined}
+                      rel={external ? "noopener noreferrer" : undefined}
+                    >
+                      {action}
+                    </a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+          <ContactForm />
         </div>
       </SectionContainer>
     </>

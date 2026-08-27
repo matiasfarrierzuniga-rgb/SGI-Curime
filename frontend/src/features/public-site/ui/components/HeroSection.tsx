@@ -12,7 +12,7 @@ export function HeroSection() {
           </p>
           <h1
             id="hero-title"
-            className="mt-4 max-w-[17ch] font-display text-[clamp(2.75rem,5vw,5.75rem)] font-normal leading-[1.02] tracking-[-0.02em] text-brand-ink"
+            className="mt-4 max-w-[17ch] font-heading text-display font-bold tracking-[-0.02em] text-brand-ink"
           >
             Gestión y desarrollo para nuestra comunidad
           </h1>
@@ -30,7 +30,7 @@ export function HeroSection() {
               to={isAuthenticated ? '/app' : '/register'}
               className="inline-flex min-h-12 items-center justify-center rounded-md border-2 border-brand-deep px-6 py-3 text-center font-bold text-brand-deep transition-colors hover:bg-brand-deep hover:text-brand-ivory"
             >
-              {isAuthenticated ? 'Ir al SGI' : 'Solicitar una cuenta'}
+              {isAuthenticated ? 'Mi panel' : 'Solicitar una cuenta'}
             </Link>
           </div>
         </div>

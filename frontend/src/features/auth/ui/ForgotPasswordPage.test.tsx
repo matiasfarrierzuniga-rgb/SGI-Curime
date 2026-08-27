@@ -15,6 +15,7 @@ describe('ForgotPasswordPage', () => {
     renderPage()
     expect(screen.getByRole('heading', { name: 'Recuperar contraseña' })).toBeInTheDocument()
     expect(screen.getByLabelText('Correo electrónico')).toBeRequired()
+    expect(screen.getByRole('link', { name: 'Volver a iniciar sesión' })).toHaveAttribute('href', '/login')
   })
 
   it('sends a normalized email and shows the success message', async () => {

@@ -19,7 +19,7 @@ export function AboutSection() {
           </p>
           <h2
             id="about-title"
-            className="mt-3 font-display text-[clamp(2.25rem,4vw,3.5rem)] font-normal leading-tight text-brand-ink"
+            className="mt-3 font-heading text-heading-1 font-bold text-brand-ink"
           >
             Un pueblo unido, un futuro compartido
           </h2>

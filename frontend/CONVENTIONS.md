@@ -80,9 +80,22 @@ Institutional palette (Curime / Nicoya / Guanacaste):
 
 ### Typography
 
-- **DM Serif Display**: headlines, display, institutional messaging (`--font-display`)
-- **DM Sans**: body, UI, navigation, inputs, buttons, tables (`--font-body`)
-- Loaded via Google Fonts in `index.html` with `display=swap` to prevent CLS.
+- **DM Sans** is the single typeface for the complete platform: public portal,
+  authentication, ERP, modules, forms, tables, dialogs and reports.
+- `--font-sans` is the primary family and `--font-heading` is its semantic heading
+  alias. Both resolve to DM Sans so hierarchy never depends on switching typefaces.
+- The responsive semantic scale is defined in `src/tailwind.css`: `display`,
+  `heading-1`, `heading-2`, `heading-3`, `body-large`, `body`, `body-small`,
+  `label`, `caption` and `navigation`. Use the corresponding `text-*` utility or
+  inherited base heading style instead of introducing arbitrary page-level sizes.
+- Display and H1/H2 use weight 700, H3 uses 600, body uses 400, and labels or
+  navigation use 500–600. Use size, weight, line height, spacing and color to
+  establish hierarchy.
+- Font loading lives only in `index.html`, uses `display=swap`, and requests the
+  weights actually used by the interface: 400, 500, 600 and 700.
+- The product may use at most two approved families. Do not introduce another
+  family, remote font request, `@font-face`, or component-level `font-family`
+  without an explicit design-system decision and documented performance reason.
 
 ### Semantic tokens
 

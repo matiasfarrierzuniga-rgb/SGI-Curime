@@ -22,12 +22,12 @@ export function PublicHeader() {
   }, [open])
   const close = () => setOpen(false)
   const accessTo = isAuthenticated ? '/app' : '/login'
-  const accessLabel = isAuthenticated ? 'Volver al SGI' : 'Ir al SGI'
+  const accessLabel = isAuthenticated ? 'Mi panel' : 'Mi cuenta'
   const publicNavItems = site.nav.filter((item) =>
     ['/', '/nosotros', '/servicios', '/noticias', '/contacto'].includes(item.to),
   )
   return (
-    <header className="sticky top-0 z-20 border-b border-brand-ivory/10 bg-brand-deep font-body text-brand-ivory">
+    <header className="sticky top-0 z-20 border-b border-brand-ivory/10 bg-brand-deep font-sans text-brand-ivory">
       <div className="public-container grid min-h-20 grid-cols-[1fr_auto] items-center gap-x-4 md:min-h-[88px] lg:grid-cols-[minmax(270px,1fr)_auto_minmax(180px,1fr)] xl:min-h-[104px]">
         <Link
           to="/"
@@ -36,12 +36,12 @@ export function PublicHeader() {
         >
           <span
             aria-hidden="true"
-            className="grid size-12 shrink-0 place-items-center rounded-[50%_50%_45%_45%] bg-brand-accent font-display text-[1.35rem] font-bold leading-none text-brand-deep lg:size-14 lg:text-2xl"
+            className="grid size-12 shrink-0 place-items-center rounded-[50%_50%_45%_45%] bg-brand-accent font-heading text-[1.35rem] font-bold leading-none text-brand-deep lg:size-14 lg:text-2xl"
           >
             ADI
           </span>
           <span className="min-w-0">
-            <strong className="block font-display text-[clamp(1.65rem,2vw,2.15rem)] font-normal leading-none tracking-wide">
+            <strong className="block font-heading text-[clamp(1.65rem,2vw,2.15rem)] font-bold leading-none tracking-wide">
               ADI Curime
             </strong>
             <small className="mt-1 hidden text-[0.68rem] font-medium uppercase tracking-[0.12em] text-brand-accent min-[375px]:block lg:text-xs">

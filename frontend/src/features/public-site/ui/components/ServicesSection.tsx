@@ -18,7 +18,7 @@ export function ServicesSection() {
           </p>
           <h2
             id="services-title"
-            className="mt-3 font-display text-[clamp(2.25rem,4vw,3.5rem)] font-normal leading-tight text-brand-ink"
+            className="mt-3 font-heading text-heading-1 font-bold text-brand-ink"
           >
             Herramientas para una gestión eficiente
           </h2>
@@ -33,7 +33,7 @@ export function ServicesSection() {
               <span className="grid size-12 place-items-center rounded-full bg-brand-ivory text-brand-deep">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
-              <h3 className="font-display text-xl font-normal text-brand-ink">{title}</h3>
+              <h3 className="font-heading text-heading-3 font-semibold text-brand-ink">{title}</h3>
               <p className="flex-1 text-sm leading-relaxed text-brand-ink/70">{text}</p>
               <Link
                 to="/servicios"

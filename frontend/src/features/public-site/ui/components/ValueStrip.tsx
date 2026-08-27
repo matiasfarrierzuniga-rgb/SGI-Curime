@@ -17,7 +17,7 @@ export function ValueStrip() {
               <span className="grid size-12 place-items-center rounded-full bg-brand-ivory text-brand-primary">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
-              <h3 className="font-display text-lg font-normal text-brand-ink">{title}</h3>
+              <h3 className="font-heading text-heading-3 font-semibold text-brand-ink">{title}</h3>
               <p className="text-sm leading-relaxed text-brand-ink/70">{text}</p>
             </div>
           ))}
