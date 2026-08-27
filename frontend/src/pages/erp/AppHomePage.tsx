@@ -13,7 +13,7 @@ const quickActions = [
   { label: 'Gestionar usuarios', description: 'Consultar y administrar cuentas.', path: '/admin/users', capability: 'usr.users.read', icon: Users },
   { label: 'Revisar solicitudes', description: 'Atender solicitudes de registro.', path: '/admin/user-requests', capability: 'adm.requests.read', icon: ClipboardList },
   { label: 'Abrir inventario', description: 'Ver existencias, préstamos y movimientos.', path: '/inventory', capability: 'inv.inventory.read', icon: Boxes },
-  { label: 'Consultar bitácora', description: 'Revisar la actividad registrada.', path: '/admin/audit-logs', capability: 'adm.audit.read', icon: FileClock },
+  { label: 'Consultar bitácora', description: 'Revisar la actividad registrada.', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: FileClock },
 ] as const
 
 export function AppHomePage() {

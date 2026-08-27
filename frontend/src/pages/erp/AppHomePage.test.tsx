@@ -20,7 +20,7 @@ describe('AppHomePage', () => {
     expect(await screen.findByText('Artículos activos')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Gestionar usuarios/ })).toHaveAttribute('href', '/admin/users')
     expect(screen.getByRole('link', { name: /Revisar solicitudes/ })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Consultar bitácora/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Consultar bitácora/ })).toHaveAttribute('href', '/admin/audit-logs')
   })
 
   it('does not expose administrative actions to inventory managers', async () => {

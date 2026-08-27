@@ -15,11 +15,12 @@ describe('shared security access policy', () => {
       'usr.profile.read',
       'adm.affiliates.read',
       'adm.requests.read',
-      'adm.audit.read',
+      'aud.logs.read',
       'inv.inventory.read',
     ])
     expect(ACCESS_ROLE_CAPABILITIES.Administrador).toEqual(ACCESS_CAPABILITIES)
     expect(hasCapability('Administrador', 'adm.requests.read')).toBe(true)
+    expect(hasCapability('Administrador', 'aud.logs.read')).toBe(true)
   })
 
   it('denies known capabilities not granted to a role', () => {
@@ -30,6 +31,7 @@ describe('shared security access policy', () => {
   it('denies unknown roles and capabilities', () => {
     expect(hasCapability('Secretaría', 'adm.affiliates.read')).toBe(false)
     expect(hasCapability('Administrador', 'usr.users.create')).toBe(false)
+    expect(hasCapability('Administrador', 'adm.audit.read')).toBe(false)
     expect(hasCapability('Administrador', '')).toBe(false)
   })
 
