@@ -9,15 +9,15 @@ const items = [
 
 export function ValueStrip() {
   return (
-    <section aria-label="Beneficios de SGI-Curime" className="relative z-10 py-4 md:py-6 lg:-mt-8 lg:py-0">
+    <section aria-label="Beneficios de SGI-Curime" className="bg-brand-ivory pb-6 md:pb-10 lg:pb-12">
       <div className="public-container">
-        <div className="grid grid-cols-1 gap-6 rounded-2xl bg-white px-6 py-8 shadow-[0_18px_40px_-24px_rgba(18,59,71,0.35)] sm:grid-cols-2 md:gap-0 md:px-4 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-0 border-y border-brand-deep/15 bg-white/45 px-2 py-3 md:grid-cols-2 md:px-4 md:py-4 lg:grid-cols-4 lg:px-0">
           {items.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="flex flex-col items-center gap-3 px-4 text-center md:px-6 lg:border-l lg:border-border lg:first:border-l-0">
+            <div key={title} className="flex flex-col items-center gap-3 border-b border-brand-deep/10 px-5 py-7 text-center last:border-b-0 md:px-7 md:even:border-l md:[&:nth-child(3)]:border-b-0 lg:border-b-0 lg:border-l lg:first:border-l-0">
               <span className="grid size-12 place-items-center rounded-full bg-brand-ivory text-brand-primary">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
-              <h3 className="font-display text-lg font-normal text-brand-ink">{title}</h3>
+              <h3 className="font-heading text-heading-3 font-semibold text-brand-ink">{title}</h3>
               <p className="text-sm leading-relaxed text-brand-ink/70">{text}</p>
             </div>
           ))}

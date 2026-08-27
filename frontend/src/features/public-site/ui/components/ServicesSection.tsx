@@ -10,7 +10,7 @@ const services = [
 
 export function ServicesSection() {
   return (
-    <section aria-labelledby="services-title" className="bg-brand-ivory py-16 md:py-24 xl:py-28">
+    <section aria-labelledby="services-title" className="bg-brand-ivory py-20 md:py-24 xl:py-32">
       <div className="public-container">
         <header className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">
@@ -18,13 +18,13 @@ export function ServicesSection() {
           </p>
           <h2
             id="services-title"
-            className="mt-3 font-display text-[clamp(2.25rem,4vw,3.5rem)] font-normal leading-tight text-brand-ink"
+            className="mt-3 font-heading text-heading-1 font-bold text-brand-ink"
           >
             Herramientas para una gestión eficiente
           </h2>
           <span aria-hidden="true" className="mx-auto mt-4 block h-1 w-16 rounded-full bg-brand-accent" />
         </header>
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4 xl:gap-8">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:mt-14 lg:grid-cols-4 xl:gap-9">
           {services.map(({ icon: Icon, title, text }) => (
             <article
               key={title}
@@ -33,7 +33,7 @@ export function ServicesSection() {
               <span className="grid size-12 place-items-center rounded-full bg-brand-ivory text-brand-deep">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
-              <h3 className="font-display text-xl font-normal text-brand-ink">{title}</h3>
+              <h3 className="font-heading text-heading-3 font-semibold text-brand-ink">{title}</h3>
               <p className="flex-1 text-sm leading-relaxed text-brand-ink/70">{text}</p>
               <Link
                 to="/servicios"

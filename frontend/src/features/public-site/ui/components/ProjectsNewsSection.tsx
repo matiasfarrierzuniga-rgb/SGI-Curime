@@ -3,7 +3,7 @@ import { news } from '@/content/publicSiteContent'
 
 export function ProjectsNewsSection() {
   return (
-    <section aria-labelledby="news-title" className="bg-brand-ivory pb-20 pt-4 md:pb-28 xl:pb-32">
+    <section aria-labelledby="news-title" className="bg-brand-ivory py-20 md:py-24 xl:py-32">
       <div className="public-container">
         <header className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">
@@ -11,13 +11,13 @@ export function ProjectsNewsSection() {
           </p>
           <h2
             id="news-title"
-            className="mt-3 font-display text-[clamp(2.25rem,4vw,3.5rem)] font-normal leading-tight text-brand-ink"
+            className="mt-3 font-heading text-heading-1 font-bold text-brand-ink"
           >
             Avanzamos juntos
           </h2>
           <span aria-hidden="true" className="mx-auto mt-4 block h-1 w-16 rounded-full bg-brand-accent" />
         </header>
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 xl:gap-8">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 xl:gap-9">
           {news.map((item) => (
             <article
               key={item.slug}
@@ -33,7 +33,7 @@ export function ProjectsNewsSection() {
               </div>
               <div className="flex flex-1 flex-col gap-2 p-6">
                 <p className="text-sm font-bold tracking-wide text-brand-primary">{item.date}</p>
-                <h3 className="font-display text-2xl font-normal leading-snug text-brand-ink">
+                <h3 className="font-heading text-heading-3 font-semibold text-brand-ink">
                   <Link to={`/noticias/${item.slug}`} className="group-hover:text-brand-primary">
                     {item.title}
                   </Link>

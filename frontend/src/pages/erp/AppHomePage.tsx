@@ -41,7 +41,7 @@ export function AppHomePage() {
       <header className="flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-primary">Dashboard</p>
-          <h1 className="mt-2 font-display text-3xl leading-tight text-brand-ink sm:text-4xl">{firstName ? `Hola, ${firstName}` : 'Área de gestión'}</h1>
+          <h1 className="mt-2 font-heading text-heading-1 font-bold text-brand-ink">{firstName ? `Hola, ${firstName}` : 'Área de gestión'}</h1>
           <p className="mt-2 max-w-2xl text-foreground-muted">Resumen de las áreas disponibles para tu trabajo en SGI-Curime.</p>
         </div>
         {user?.role && <Badge variant="secondary" className="w-fit">{user.role}</Badge>}

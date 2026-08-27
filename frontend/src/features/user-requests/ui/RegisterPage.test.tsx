@@ -15,6 +15,7 @@ describe('RegisterPage', () => {
     expect(identification.value).toBe('123456789')
     expect(screen.getByLabelText(/Nombre completo/)).toHaveAttribute('autocomplete', 'name')
     expect(screen.getByLabelText(/Correo electrónico/)).toHaveAttribute('autocomplete', 'email')
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
   })
   it('normalizes email and prevents concurrent submit', async () => {
     let release!: () => void

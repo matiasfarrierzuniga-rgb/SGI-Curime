@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
@@ -46,7 +46,7 @@ describe('portal público', () => {
     const { container } = renderPublic()
 
     expect(container.querySelector<HTMLAnchorElement>('a[href="/app"]')).not.toBeNull()
-    expect(screen.getAllByRole('link', { name: 'Ir al SGI' })).not.toHaveLength(0)
+    expect(screen.getAllByRole('link', { name: 'Mi panel' })).not.toHaveLength(0)
     authState.isAuthenticated = false
   })
 
@@ -103,6 +103,64 @@ describe('portal público', () => {
     for (const link of links) {
       expect(link).toHaveAttribute('href', '/register')
     }
+  })
+
+  it('ofrece Mi cuenta a visitantes sin mostrar terminología técnica', () => {
+    renderPublic()
+    const links = screen.getAllByRole('link', { name: 'Mi cuenta' })
+    expect(links.length).toBeGreaterThan(0)
+    links.forEach((link) => expect(link).toHaveAttribute('href', '/login'))
+    expect(screen.queryByText('Ir al SGI')).not.toBeInTheDocument()
+  })
+
+  it('muestra los canales oficiales con enlaces accesibles y seguros', () => {
+    renderPublic('/contacto')
+    const contact = within(screen.getByRole('main'))
+
+    expect(contact.getByRole('heading', { name: 'Instagram' })).toBeVisible()
+    expect(contact.getByText('@adicurime')).toBeVisible()
+    expect(contact.getByRole('heading', { name: 'Facebook' })).toBeVisible()
+    expect(contact.getByRole('heading', { name: 'Correo electrónico' })).toBeVisible()
+    expect(contact.getByText('adicurimenicoya@gmail.com')).toBeVisible()
+
+    const instagram = contact.getByRole('link', { name: 'Abrir Instagram de ADI Curime' })
+    expect(instagram).toHaveAttribute('href', 'https://www.instagram.com/adicurime?igsi=NnM0cGRvaGZ3cmZt')
+    expect(instagram).toHaveAttribute('target', '_blank')
+    expect(instagram).toHaveAttribute('rel', 'noopener noreferrer')
+
+    const facebook = contact.getByRole('link', { name: 'Abrir Facebook de ADI Curime' })
+    expect(facebook).toHaveAttribute('href', 'https://www.facebook.com/profile.php?id=100084633551482')
+    expect(facebook).toHaveAttribute('target', '_blank')
+    expect(facebook).toHaveAttribute('rel', 'noopener noreferrer')
+
+    const email = contact.getByRole('link', { name: 'Enviar correo a ADI Curime' })
+    expect(email).toHaveAttribute('href', 'mailto:adicurimenicoya@gmail.com')
+    expect(email).not.toHaveAttribute('target')
+  })
+
+  it('muestra el formulario de consulta y errores inline básicos', () => {
+    renderPublic('/contacto')
+    const contact = within(screen.getByRole('main'))
+    const firstName = contact.getByLabelText(/^Nombre/)
+    const lastNames = contact.getByLabelText(/^Apellidos/)
+    const email = contact.getByLabelText(/^Correo electrónico/)
+    const subject = contact.getByLabelText(/^Asunto/)
+    const message = contact.getByLabelText(/^Mensaje/)
+
+    expect(firstName).toHaveAttribute('autocomplete', 'given-name')
+    expect(lastNames).toHaveAttribute('autocomplete', 'family-name')
+    expect(email).toHaveAttribute('autocomplete', 'email')
+    expect(contact.getByRole('button', { name: 'Enviar consulta' })).toBeVisible()
+
+    fireEvent.click(contact.getByRole('button', { name: 'Enviar consulta' }))
+
+    expect(firstName).toHaveAttribute('aria-invalid', 'true')
+    expect(lastNames).toHaveAttribute('aria-invalid', 'true')
+    expect(email).toHaveAttribute('aria-invalid', 'true')
+    expect(subject).toHaveAttribute('aria-invalid', 'true')
+    expect(message).toHaveAttribute('aria-invalid', 'true')
+    expect(contact.getAllByRole('alert')).toHaveLength(5)
+    expect(contact.queryByText(/enviado correctamente/i)).not.toBeInTheDocument()
   })
 
 

@@ -32,7 +32,7 @@ export function ErpLayout() {
   )
 
   return (
-    <div className="min-h-dvh bg-brand-ivory font-body text-brand-ink">
+    <div className="min-h-dvh bg-brand-ivory font-sans text-brand-ink">
       <a className="skip-link" href="#erp-content">Saltar al contenido</a>
       <header className="sticky top-0 z-30 border-b border-brand-sage/60 bg-white/95 backdrop-blur">
         <div className={`flex min-h-16 items-center gap-3 px-4 sm:px-6 md:pr-8 xl:pl-[18rem] ${tabletCollapsed ? 'md:pl-24' : 'md:pl-[18rem]'}`}>
@@ -42,7 +42,7 @@ export function ErpLayout() {
             </SheetTrigger>
             <SheetContent side="left" className="w-[min(88vw,20rem)] bg-white p-0" aria-label="Navegación móvil">
               <SheetHeader className="border-b border-border px-5 py-5">
-                <SheetTitle className="font-display text-xl text-brand-deep">Navegación móvil</SheetTitle>
+                <SheetTitle className="font-heading text-xl text-brand-deep">Navegación móvil</SheetTitle>
                 <SheetDescription>SGI-Curime · Área de gestión</SheetDescription>
               </SheetHeader>
               <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">{navigationContent}</div>
@@ -64,7 +64,7 @@ export function ErpLayout() {
 
       <aside className={`fixed inset-y-0 left-0 z-40 hidden border-r border-brand-sage/60 bg-brand-deep text-brand-ivory transition-[width] motion-reduce:transition-none md:flex md:flex-col xl:w-64 ${tabletCollapsed ? 'md:w-20' : 'md:w-64'}`}>
         <div className="border-b border-white/15 px-6 py-5">
-          <p className={`font-display text-2xl ${tabletCollapsed ? 'md:text-center md:text-xl xl:text-left xl:text-2xl' : ''}`}><span className={tabletCollapsed ? 'md:hidden xl:inline' : ''}>SGI-Curime</span><span className={tabletCollapsed ? 'hidden md:inline xl:hidden' : 'hidden'} aria-hidden="true">SGI</span></p>
+          <p className={`font-heading text-2xl ${tabletCollapsed ? 'md:text-center md:text-xl xl:text-left xl:text-2xl' : ''}`}><span className={tabletCollapsed ? 'md:hidden xl:inline' : ''}>SGI-Curime</span><span className={tabletCollapsed ? 'hidden md:inline xl:hidden' : 'hidden'} aria-hidden="true">SGI</span></p>
           <p className={`mt-1 text-xs font-bold uppercase tracking-[0.12em] text-brand-accent ${tabletCollapsed ? 'md:sr-only xl:not-sr-only' : ''}`}>Área de gestión</p>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4"><ErpNavigation id="sidebar" currentPath={location.pathname} navigation={navigation} onNavigate={() => undefined} onLogout={closeSession} compact={tabletCollapsed} /></div>

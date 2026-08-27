@@ -26,7 +26,7 @@ const fill = (password = 'Secure12345', confirmation = password) => {
 
 describe.each([
   ['activate', 'Activar cuenta', 'activate'],
-  ['reset', 'Restablecer contraseña', 'resetPassword'],
+  ['reset', 'Crear nueva contraseña', 'resetPassword'],
 ] as const)('TokenPasswordPage (%s)', (mode, heading, serviceMethod) => {
   beforeEach(() => vi.clearAllMocks())
 

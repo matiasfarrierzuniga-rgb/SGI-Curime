@@ -19,7 +19,7 @@ export function LandingPage() {
   }, [])
 
   return (
-    <div className="overflow-clip bg-brand-ivory font-body text-brand-ink">
+    <div className="overflow-clip bg-brand-ivory font-sans text-brand-ink">
       <HeroSection />
       <ValueStrip />
       <ServicesSection />

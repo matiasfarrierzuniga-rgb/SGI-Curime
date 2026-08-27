@@ -1,12 +1,13 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { StatusMessage } from '@/shared/ui/StatusMessage'
-import { digitsOnly, identificationError, identificationMaxLength, normalizeEmail, normalizeText, personContactErrors, phoneNationalMaxLength, type IdentificationType } from '@/shared/lib/formValidation'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { digitsOnly, identificationError, identificationMaxLength, normalizeEmail, normalizeText, personContactErrors, phoneNationalMaxLength, type IdentificationType } from '@/shared/lib/formValidation'
+import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { userRequestsService } from '../api/userRequests.api'
 import type { CreateUserRequest } from '../model/userRequests.types'
 
 const initial: CreateUserRequest = { fullName: '', identificationType: 'NATIONAL', identification: '', email: '', phoneCountryCode: '+506', phoneNationalNumber: '', address: '', reason: '' }
+const inputClass = 'min-h-12 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal'
 
 export function RegisterPage() {
   const [form, setForm] = useState(initial)
@@ -15,30 +16,80 @@ export function RegisterPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const submitting = useRef(false)
-  const field = (name: keyof CreateUserRequest) => ({ value: form[name] ?? '', onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [name]: e.target.value }) })
+  const field = (name: keyof CreateUserRequest) => ({ value: form[name] ?? '', onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [name]: event.target.value }) })
+
   function validate() {
     const next = { ...personContactErrors(form), identification: identificationError(form.identificationType, form.identification) }
     setErrors(next)
     return !Object.values(next).some(Boolean)
   }
-  async function submit(e: FormEvent) {
-    e.preventDefault()
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
     if (submitting.current || !validate()) return
-    submitting.current = true; setLoading(true); setError('')
+    submitting.current = true
+    setLoading(true)
+    setError('')
     try {
       const payload = { ...form, fullName: normalizeText(form.fullName), email: normalizeEmail(form.email), address: form.address ? normalizeText(form.address) || undefined : undefined, phoneCountryCode: form.phoneNationalNumber ? form.phoneCountryCode : undefined, phoneNationalNumber: form.phoneNationalNumber || undefined, reason: normalizeText(form.reason) }
       await userRequestsService.create(payload)
       setSuccess('Solicitud enviada correctamente. Será revisada por una persona administradora.')
       setForm(initial)
-    } catch (err) { setError(getErrorMessage(err)) } finally { submitting.current = false; setLoading(false) }
+    } catch (requestError) {
+      setError(getErrorMessage(requestError))
+    } finally {
+      submitting.current = false
+      setLoading(false)
+    }
   }
+
   const idType = form.identificationType as IdentificationType
-  return <main className="auth-page card"><h1>Solicitud de registro</h1><StatusMessage error={error} success={success}/><form className="form-grid" onSubmit={submit} noValidate>
-    <label>Nombre completo<input required minLength={2} maxLength={150} autoComplete="name" {...field('fullName')} onBlur={validate}/>{errors.fullName && <span className="field-error" role="alert">{errors.fullName}</span>}</label>
-    <label>Tipo de identificación<select value={idType} onChange={e => setForm({ ...form, identificationType: e.target.value as IdentificationType, identification: '' })}><option value="NATIONAL">Nacional</option><option value="DIMEX">DIMEX</option></select></label>
-    <label>Número de identificación<input type="text" inputMode="numeric" required maxLength={identificationMaxLength(idType)} value={form.identification} onChange={e => setForm({ ...form, identification: digitsOnly(e.target.value, identificationMaxLength(idType)) })} onBlur={validate}/>{errors.identification && <span className="field-error" role="alert">{errors.identification}</span>}</label>
-    <label>Correo electrónico<input type="email" inputMode="email" autoComplete="email" required maxLength={254} {...field('email')} onBlur={validate}/>{errors.email && <span className="field-error" role="alert">{errors.email}</span>}</label>
-    <label>Código país<input type="text" autoComplete="tel-country-code" maxLength={5} {...field('phoneCountryCode')} /></label>
-    <label>Número (opcional)<input type="text" inputMode="numeric" autoComplete="tel-national" maxLength={phoneNationalMaxLength(form.phoneCountryCode ?? '')} value={form.phoneNationalNumber ?? ''} onChange={e => setForm({ ...form, phoneNationalNumber: digitsOnly(e.target.value, phoneNationalMaxLength(form.phoneCountryCode ?? '')) })} onBlur={validate}/>{errors.phoneNationalNumber && <span className="field-error" role="alert">{errors.phoneNationalNumber}</span>}</label>
-    <label>Dirección (opcional)<textarea maxLength={300} autoComplete="street-address" {...field('address')}/></label><label>Motivo de la solicitud<textarea required minLength={3} maxLength={1000} {...field('reason')}/></label><button className="primary" disabled={loading}>{loading ? 'Enviando…' : 'Enviar solicitud'}</button></form><p><Link to="/login">Volver al inicio de sesión</Link></p></main>
+  return (
+    <main>
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-primary">Acceso comunitario</p>
+      <h1 className="mt-2 font-heading text-heading-1 font-bold text-brand-deep">Solicitar una cuenta</h1>
+      <ol className="mt-4 grid gap-2 rounded-lg bg-brand-ivory p-4 text-sm leading-relaxed text-foreground-muted">
+        <li><strong className="text-brand-deep">1.</strong> Complete la solicitud.</li>
+        <li><strong className="text-brand-deep">2.</strong> Una persona administradora la revisará.</li>
+        <li><strong className="text-brand-deep">3.</strong> Si se aprueba, recibirá el proceso de activación.</li>
+      </ol>
+      <StatusMessage error={error} success={success} />
+      <form className="mt-7 grid gap-5" onSubmit={submit} noValidate>
+        <label className="grid gap-2 text-sm font-bold" htmlFor="full-name">Nombre completo
+          <input id="full-name" className={inputClass} required minLength={2} maxLength={150} autoComplete="name" aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'full-name-error' : undefined} {...field('fullName')} onBlur={validate} />
+          {errors.fullName && <span id="full-name-error" className="field-error" role="alert">{errors.fullName}</span>}
+        </label>
+        <label className="grid gap-2 text-sm font-bold" htmlFor="identification-type">Tipo de identificación
+          <select id="identification-type" className={inputClass} value={idType} onChange={(event) => setForm({ ...form, identificationType: event.target.value as IdentificationType, identification: '' })}><option value="NATIONAL">Nacional</option><option value="DIMEX">DIMEX</option></select>
+        </label>
+        <label className="grid gap-2 text-sm font-bold" htmlFor="identification">Número de identificación
+          <input id="identification" className={inputClass} type="text" inputMode="numeric" required maxLength={identificationMaxLength(idType)} aria-invalid={Boolean(errors.identification)} aria-describedby={errors.identification ? 'identification-error' : undefined} value={form.identification} onChange={(event) => setForm({ ...form, identification: digitsOnly(event.target.value, identificationMaxLength(idType)) })} onBlur={validate} />
+          {errors.identification && <span id="identification-error" className="field-error" role="alert">{errors.identification}</span>}
+        </label>
+        <label className="grid gap-2 text-sm font-bold" htmlFor="register-email">Correo electrónico
+          <input id="register-email" className={inputClass} type="email" inputMode="email" autoComplete="email" required maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'register-email-error' : undefined} {...field('email')} onBlur={validate} />
+          {errors.email && <span id="register-email-error" className="field-error" role="alert">{errors.email}</span>}
+        </label>
+        <div className="grid gap-4 sm:grid-cols-[8rem_1fr]">
+          <label className="grid content-start gap-2 text-sm font-bold" htmlFor="country-code">Código país
+            <input id="country-code" className={inputClass} type="text" autoComplete="tel-country-code" maxLength={5} {...field('phoneCountryCode')} />
+          </label>
+          <label className="grid gap-2 text-sm font-bold" htmlFor="phone-number">Número (opcional)
+            <input id="phone-number" className={inputClass} type="text" inputMode="numeric" autoComplete="tel-national" maxLength={phoneNationalMaxLength(form.phoneCountryCode ?? '')} aria-invalid={Boolean(errors.phoneNationalNumber)} aria-describedby={errors.phoneNationalNumber ? 'phone-error' : undefined} value={form.phoneNationalNumber ?? ''} onChange={(event) => setForm({ ...form, phoneNationalNumber: digitsOnly(event.target.value, phoneNationalMaxLength(form.phoneCountryCode ?? '')) })} onBlur={validate} />
+            {errors.phoneNationalNumber && <span id="phone-error" className="field-error" role="alert">{errors.phoneNationalNumber}</span>}
+          </label>
+        </div>
+        <label className="grid gap-2 text-sm font-bold" htmlFor="address">Dirección (opcional)
+          <textarea id="address" className="min-h-24 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" maxLength={300} autoComplete="street-address" {...field('address')} />
+        </label>
+        <label className="grid gap-2 text-sm font-bold" htmlFor="reason">Motivo de la solicitud
+          <textarea id="reason" className="min-h-28 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" required minLength={3} maxLength={1000} {...field('reason')} />
+        </label>
+        <button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold" disabled={loading}>{loading ? 'Enviando…' : 'Enviar solicitud'}</button>
+      </form>
+      <div className="mt-7 border-t border-border pt-5 text-center text-sm text-foreground-muted">
+        ¿Ya tiene una cuenta? <Link className="inline-flex min-h-11 items-center font-bold text-brand-primary underline-offset-4 hover:underline" to="/login">Iniciar sesión</Link>
+      </div>
+    </main>
+  )
 }
