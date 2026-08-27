@@ -32,8 +32,8 @@ describe('shared security role policy', () => {
   })
 
   it('routes post-login home by role', () => {
-    expect(homePathForRole('Administrador')).toBe('/admin/users')
-    expect(homePathForRole('Gestor de Inventario')).toBe('/profile')
-    expect(homePathForRole(undefined)).toBe('/profile')
+    expect(homePathForRole('Administrador')).toBe('/app')
+    expect(homePathForRole('Gestor de Inventario')).toBe('/app')
+    expect(homePathForRole(undefined)).toBe('/login')
   })
 })

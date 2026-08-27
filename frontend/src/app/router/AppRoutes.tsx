@@ -1,7 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
-import { AppLayout } from '@/app/layouts/AppLayout'
 import { AccessLayout } from '@/app/layouts/AccessLayout'
 import { ErpLayout } from '@/app/layouts/ErpLayout'
 import { ForgotPasswordPage } from '@/features/auth'
@@ -27,7 +26,6 @@ import { AffiliationPage } from '@/pages/public/AffiliationPage'
 import { LandingPage } from '@/features/public-site'
 import { AppHomePage } from '@/pages/erp/AppHomePage'
 import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
-import { ADMIN_ROLES, INVENTORY_ROLES } from '@/shared/security/roles'
 export function AppRoutes() {
   return (
     <Routes>
@@ -55,10 +53,10 @@ export function AppRoutes() {
         <Route element={<ErpLayout />}>
           <Route path="/app" element={<AppHomePage />} />
           <Route element={<RoleRoute capability="usr.profile.read" />}>
-            <Route path="/app/profile" element={<ErpPlaceholderPage title="Mi perfil" />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
           <Route element={<RoleRoute capability="usr.users.read" />}>
-            <Route path="/app/users" element={<ErpPlaceholderPage title="Usuarios" />} />
+            <Route path="/admin/users" element={<UsersPage />} />
           </Route>
           <Route element={<RoleRoute capability="usr.roles.read" />}>
             <Route path="/app/roles" element={<ErpPlaceholderPage title="Roles" />} />
@@ -68,16 +66,12 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="adm.requests.read" />}>
             <Route path="/app/admin/requests" element={<ErpPlaceholderPage title="Solicitudes" />} />
-          </Route>
-        </Route>
-        <Route element={<AppLayout />}>
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route element={<RoleRoute role={[...ADMIN_ROLES]} />}>
-            <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
+          </Route>
+          <Route element={<RoleRoute capability="adm.audit.read" />}>
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
           </Route>
-          <Route element={<RoleRoute role={[...INVENTORY_ROLES]} />}>
+          <Route element={<RoleRoute capability="inv.inventory.read" />}>
             <Route path="/inventory" element={<InventoryDashboardPage />} />
             <Route path="/inventory/items" element={<InventoryItemsPage />} />
             <Route path="/inventory/categories" element={<InventoryCategoriesPage />} />

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { authService, AuthProvider } from '@/features/auth'
 import { AppRoutes } from './AppRoutes'
+import { ToastProvider } from '@/shared/ui/Toast'
 
 function renderRoute(path: string, role: string | null) {
   if (role !== null) {
@@ -17,7 +18,7 @@ function renderRoute(path: string, role: string | null) {
   }
 
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(<QueryClientProvider client={queryClient}><AuthProvider><MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter></AuthProvider></QueryClientProvider>)
+  return render(<QueryClientProvider client={queryClient}><ToastProvider><AuthProvider><MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter></AuthProvider></ToastProvider></QueryClientProvider>)
 }
 
 afterEach(() => {
@@ -47,30 +48,30 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.queryByRole('heading', { name: 'Área de gestión' })).not.toBeInTheDocument()
   })
 
-  it('redirects anonymous users from /app/users to login before privileged content renders', () => {
-    renderRoute('/app/users', null)
+  it('redirects anonymous users from /admin/users to login before privileged content renders', () => {
+    renderRoute('/admin/users', null)
 
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Usuarios' })).not.toBeInTheDocument()
   })
 
-  it('renders /app/users for administrators', async () => {
-    renderRoute('/app/users', 'Administrador')
+  it('renders /admin/users for administrators', async () => {
+    renderRoute('/admin/users', 'Administrador')
 
-    expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Administración de usuarios' })).toBeInTheDocument()
   })
 
   it('allows authenticated users into /app', async () => {
     renderRoute('/app', 'Administrador')
 
-    expect(await screen.findByRole('heading', { name: 'Área de gestión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
   })
 
   it('preserves the authenticated session when returning to the public portal', async () => {
     renderRoute('/app', 'Administrador')
 
-    await screen.findByRole('heading', { name: 'Área de gestión' })
-    fireEvent.click(screen.getByRole('link', { name: 'Portal público' }))
+    await screen.findByRole('heading', { name: 'Hola, Ana' })
+    fireEvent.click(screen.getAllByRole('link', { name: 'Ver sitio público' })[0])
 
     expect(await screen.findAllByRole('link', { name: 'Volver al SGI' })).not.toHaveLength(0)
   })
@@ -78,9 +79,8 @@ describe('AppRoutes capability deep links', () => {
   it('clears the session and redirects logout to login', async () => {
     const sessionView = renderRoute('/app', 'Administrador')
 
-    await screen.findByRole('heading', { name: 'Área de gestión' })
-    fireEvent.click(screen.getByRole('button', { name: 'Menú de usuario de Ana Pérez' }))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Cerrar sesión' }))
+    await screen.findByRole('heading', { name: 'Hola, Ana' })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
 
     expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(localStorage.getItem('sgi-curime-session')).toBeNull()
@@ -90,15 +90,15 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
 
     appView.unmount()
-    renderRoute('/app/users', null)
+    renderRoute('/admin/users', null)
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
   })
 
-  it('redirects basic authenticated users from /app/users to 403', async () => {
-    renderRoute('/app/users', 'Vecino/Afiliado')
+  it('redirects basic authenticated users from /admin/users to 403', async () => {
+    renderRoute('/admin/users', 'Vecino/Afiliado')
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Usuarios' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Administración de usuarios' })).not.toBeInTheDocument()
   })
 
   it('redirects unknown roles from /app/admin/affiliates to 403', async () => {

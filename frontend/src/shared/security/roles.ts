@@ -13,5 +13,5 @@ export function canManageInventory(role: string | null | undefined): boolean {
 }
 
 export function homePathForRole(role: string | null | undefined): string {
-  return isAdmin(role) ? '/admin/users' : '/profile'
+  return role ? '/app' : '/login'
 }
