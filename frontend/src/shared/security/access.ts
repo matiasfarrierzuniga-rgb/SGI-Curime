@@ -8,7 +8,7 @@ export const ACCESS_CAPABILITIES = [
   'usr.profile.read',
   'adm.affiliates.read',
   'adm.requests.read',
-  'adm.audit.read',
+  'aud.logs.read',
   'inv.inventory.read',
 ] as const
 

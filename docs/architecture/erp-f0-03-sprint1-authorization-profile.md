@@ -2,8 +2,8 @@
 
 **Status:** Accepted for the Sprint 1 frontend implementation scope
 **Contract:** `ERP_F0_03_SPRINT1_CONTRACT=ACCEPTED`
-**Version:** 1.0
-**Date:** 2026-08-26
+**Version:** 1.1
+**Date:** 2026-08-27
 
 ## 1. Purpose
 
@@ -23,6 +23,7 @@ Sprint 1 covers:
 - MOD-USR access foundations: users, account requests, activations, roles,
   permissions, and security administration;
 - MOD-ADM Core: affiliate records and affiliate requests;
+- audit-log visibility for administrators;
 - the minimum protected ERP entry and denial experience.
 
 The scope is intentionally limited to capabilities with a direct Sprint 1
@@ -59,17 +60,19 @@ accepted Administrator and authenticated-user paths.
 | Capability | Description | Actor | Frontend consumer | Backend support | Required | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `usr.users.read` | View users in the access administration area | `Administrador` | Users entry and protected route | Users domain exists in the repository; operation contract requires confirmation | YES | ACCEPTED |
-| `usr.users.create` | Create a user | `Administrador` | Deferred until user form exists | No confirmed Sprint 1 consumer | NO | TBD_NON_BLOCKING |
-| `usr.users.update` | Update user data | `Administrador` | Deferred until user form exists | No confirmed Sprint 1 consumer | NO | TBD_NON_BLOCKING |
-| `usr.users.enable` | Enable a user account | `Administrador` | Deferred until account action exists | Activation domain exists; exact operation mapping requires confirmation | NO | TBD_NON_BLOCKING |
-| `usr.users.disable` | Disable a user account | `Administrador` | Deferred until account action exists | Exact operation mapping requires confirmation | NO | TBD_NON_BLOCKING |
+| `usr.users.create` | Create a user | `Administrador` | No current UI action | No confirmed Sprint 1 consumer | NO | TBD_NON_BLOCKING |
+| `usr.users.update` | Update user data | `Administrador` | User management mutation | `PATCH /users/:id` | NO | IMPLEMENTED_OUTSIDE_CAPABILITY_PROJECTION |
+| `usr.users.enable` | Enable a user account | `Administrador` | User management mutation | `PATCH /users/:id/activate` | NO | IMPLEMENTED_OUTSIDE_CAPABILITY_PROJECTION |
+| `usr.users.disable` | Disable a user account | `Administrador` | User management mutation | `PATCH /users/:id/deactivate` | NO | IMPLEMENTED_OUTSIDE_CAPABILITY_PROJECTION |
 | `usr.roles.read` | View role definitions | `Administrador` | Roles entry when implemented | Roles domain is referenced by current frontend policy; endpoint mapping requires confirmation | YES | ACCEPTED |
-| `usr.roles.assign` | Assign a role to a user | `Administrador` | Deferred until assignment action exists | Exact endpoint and audit behavior require confirmation | NO | TBD_NON_BLOCKING |
+| `usr.roles.assign` | Assign a role to a user | `Administrador` | User management mutation | `PATCH /users/:id/role` | NO | IMPLEMENTED_OUTSIDE_CAPABILITY_PROJECTION |
 | `usr.profile.read` | Read the signed-in user's profile | Authenticated user | Profile route | Authenticated session and profile page exist | YES | ACCEPTED |
 | `usr.profile.update` | Update the signed-in user's profile | Authenticated user | Deferred until editable profile flow exists | Exact backend operation requires confirmation | NO | TBD_NON_BLOCKING |
 
-`usr.audit.read` is deferred. The repository has audit infrastructure, but no
-Sprint 1 consumer is accepted for this capability.
+`aud.logs.read` is canonical for audit-log visibility. It is granted only to
+`Administrador` and projects the AuditLogsPage, `/admin/audit-logs` route,
+ERP navigation, and dashboard shortcut. `usr.audit.read` and `adm.audit.read`
+are not accepted capability identifiers.
 
 ## 6. MOD-ADM Core capabilities
 
@@ -96,6 +99,7 @@ the source of truth.
 | Authenticated user | MOD-USR | `usr.profile.read` | ALLOW, `SELF` | ACCEPTED | Authenticated session and profile route | YES |
 | `Administrador` | MOD-ADM | `adm.affiliates.read` | ALLOW | ACCEPTED | Backend affiliates domain | YES |
 | `Administrador` | MOD-ADM | `adm.requests.read` | ALLOW | ACCEPTED | Backend affiliate-requests domain | YES |
+| `Administrador` | Audit | `aud.logs.read` | ALLOW | ACCEPTED | AuditLogsPage, ERP navigation, dashboard, and `GET /audit-logs` | YES |
 | Any other role | Any Sprint module | Any privileged capability | DENY | ACCEPTED | Default-deny policy | YES |
 
 Capabilities marked `TBD_NON_BLOCKING` are not grants in this matrix and must
@@ -141,12 +145,13 @@ simulate them without authoritative resource context.
 
 ## 12. Backend authority boundary
 
-Frontend authorization is a UX, navigation, and routing projection. A hidden
-link or denied frontend route is not a security boundary. The backend remains
-authoritative through authentication, role guards, domain policies, resource
-ownership checks, and audit rules. Frontend code must not invent backend
-claims, bypass API responses, or grant an operation because its menu entry is
-visible.
+Frontend authorization is a capability projection for UX, navigation, and
+routing. A hidden link or denied frontend route is not a security boundary.
+The backend remains authoritative through authentication, role guards, domain
+policies, resource ownership checks, and audit rules. Current backend endpoints
+authorize by role, not by these frontend capability identifiers. Frontend code
+must not invent backend claims, bypass API responses, or grant an operation
+because its menu entry is visible.
 
 ## 13. TBD blocking
 
@@ -161,7 +166,7 @@ conditions were resolved by scope:
 ## 14. TBD non-blocking
 
 - canonical `Secretaría` role mapping;
-- granular create, update, enable, disable, and assign operations;
+- separate capability guards for user mutations and role assignment;
 - exact backend transition names for affiliate request resolution;
 - backend claims beyond the current role and session identity;
 - detailed profile mutation contract.
@@ -180,7 +185,6 @@ implemented, but do not close the Sprint 1 authorization foundation gate.
 
 ## 16. Deferred
 
-- `usr.audit.read` and audit-specific frontend consumers;
 - `SELF` scopes for non-profile resources;
 - ABAC, segregation of duties, organization scopes, and resource-level UI
   policy simulation;
@@ -215,8 +219,11 @@ It does not authorize changes to this document's out-of-scope capabilities.
 | Authentication and session identity | `frontend/src/features/auth/model/AuthContext.tsx` and `frontend/src/features/auth/model/auth.types.ts` |
 | Existing profile route | `frontend/src/app/router/AppRoutes.tsx` and `frontend/src/pages/ProfilePage.tsx` |
 | MOD-USR backend boundary | `backend/src/auth`, `backend/src/user-requests`, and related auth guards |
+| User mutations and role assignment | `frontend/src/features/users`, `backend/src/modules/users`, and `PATCH /users/:id`, `/role`, `/activate`, `/deactivate`, `/unlock` |
+| User requests | `frontend/src/pages/admin/UserRequestsPage.tsx`, `frontend/src/features/user-requests`, and `backend/src/user-requests` |
 | MOD-ADM affiliate records | `backend/src/affiliates` |
 | MOD-ADM affiliate requests | `backend/src/affiliate-requests` |
+| Audit visibility | `frontend/src/pages/admin/AuditLogsPage.tsx`, `frontend/src/app/navigation/erpNavigation.ts`, `frontend/src/app/router/AppRoutes.tsx`, `frontend/src/pages/erp/AppHomePage.tsx`, and `backend/src/audit/audit.controller.ts` |
 | Prior F0 functional inventory | `docs/architecture/erp-f0-01.md` and `docs/architecture/erp-f0-baseline.md` in the quarantined reference material |
 
 The last two F0 documents were used as reference from the quarantine stash;

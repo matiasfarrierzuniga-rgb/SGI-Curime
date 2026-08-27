@@ -62,6 +62,18 @@ describe('AppRoutes capability deep links', () => {
     expect(await screen.findByRole('heading', { name: 'Administración de usuarios' })).toBeInTheDocument()
   })
 
+  it('allows administrators to deep-link to audit logs', async () => {
+    renderRoute('/admin/audit-logs', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Bitácora' })).toBeInTheDocument()
+  })
+
+  it('denies unprivileged deep-links to audit logs', async () => {
+    renderRoute('/admin/audit-logs', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+  })
+
   it('allows authenticated users into /app', async () => {
     renderRoute('/app', 'Administrador')
 

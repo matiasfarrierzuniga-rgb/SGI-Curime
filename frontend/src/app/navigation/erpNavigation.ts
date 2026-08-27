@@ -36,7 +36,7 @@ const navigation: readonly ErpNavigationSection[] = [
       ],
     }],
   },
-  { label: 'Información', items: [{ label: 'Bitácora', path: '/admin/audit-logs', capability: 'adm.audit.read', icon: FileClock }] },
+  { label: 'Información', items: [{ label: 'Bitácora', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: FileClock }] },
   { label: 'Cuenta', items: [{ label: 'Mi perfil', path: '/profile', capability: 'usr.profile.read', icon: UserRound }] },
 ]
 
