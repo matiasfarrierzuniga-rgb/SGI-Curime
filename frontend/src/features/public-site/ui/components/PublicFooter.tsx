@@ -17,8 +17,8 @@ export function PublicFooter() {
           d="M0,40 C180,64 360,8 540,16 C720,24 900,60 1080,52 C1260,44 1350,20 1440,28 L1440,64 L0,64 Z"
         />
       </svg>
-      <footer className="bg-brand-ink pt-6 font-body text-brand-ivory">
-        <div className="public-container grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr_1fr] lg:gap-12 xl:gap-16">
+      <footer className="bg-brand-ink pt-8 font-body text-brand-ivory">
+        <div className="public-container grid gap-10 pb-14 sm:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr_1fr] lg:gap-14 xl:gap-20 xl:pb-16">
           <div>
             <div className="flex items-center gap-3">
               <span

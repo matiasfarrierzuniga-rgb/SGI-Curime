@@ -10,7 +10,7 @@ const services = [
 
 export function ServicesSection() {
   return (
-    <section aria-labelledby="services-title" className="bg-brand-ivory py-16 md:py-24 xl:py-28">
+    <section aria-labelledby="services-title" className="bg-brand-ivory py-20 md:py-24 xl:py-32">
       <div className="public-container">
         <header className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">
@@ -24,7 +24,7 @@ export function ServicesSection() {
           </h2>
           <span aria-hidden="true" className="mx-auto mt-4 block h-1 w-16 rounded-full bg-brand-accent" />
         </header>
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4 xl:gap-8">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:mt-14 lg:grid-cols-4 xl:gap-9">
           {services.map(({ icon: Icon, title, text }) => (
             <article
               key={title}

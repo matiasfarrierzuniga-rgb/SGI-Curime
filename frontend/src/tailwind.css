@@ -119,7 +119,7 @@
   --duration-normal: 250ms;
   --duration-slow: 400ms;
 
-  --container-max: 1440px;
+  --container-max: 1600px;
 
   --z-nav: 10;
   --z-modal: 20;
@@ -170,4 +170,5 @@
       padding-inline: 3rem;
     }
   }
+
 }

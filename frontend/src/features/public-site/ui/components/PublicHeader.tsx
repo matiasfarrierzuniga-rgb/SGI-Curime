@@ -28,7 +28,7 @@ export function PublicHeader() {
   )
   return (
     <header className="sticky top-0 z-20 border-b border-brand-ivory/10 bg-brand-deep font-body text-brand-ivory">
-      <div className="public-container grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-x-4 md:min-h-20 lg:grid-cols-[minmax(250px,1fr)_auto_minmax(160px,1fr)] xl:min-h-24">
+      <div className="public-container grid min-h-20 grid-cols-[1fr_auto] items-center gap-x-4 md:min-h-[88px] lg:grid-cols-[minmax(270px,1fr)_auto_minmax(180px,1fr)] xl:min-h-[104px]">
         <Link
           to="/"
           aria-label="ADI Curime, inicio"
@@ -36,7 +36,7 @@ export function PublicHeader() {
         >
           <span
             aria-hidden="true"
-            className="grid size-11 shrink-0 place-items-center rounded-[50%_50%_45%_45%] bg-brand-accent font-display text-[1.35rem] font-bold leading-none text-brand-deep lg:size-[52px]"
+            className="grid size-12 shrink-0 place-items-center rounded-[50%_50%_45%_45%] bg-brand-accent font-display text-[1.35rem] font-bold leading-none text-brand-deep lg:size-14 lg:text-2xl"
           >
             ADI
           </span>
@@ -63,7 +63,7 @@ export function PublicHeader() {
         <nav
           id={id}
           aria-label="Navegación pública"
-          className={`${open ? 'flex' : 'hidden'} col-span-2 w-full flex-col items-stretch border-t border-brand-ivory/15 py-3 lg:col-auto lg:flex lg:w-auto lg:flex-row lg:justify-self-center lg:gap-5 lg:border-0 lg:py-0 xl:gap-9`}
+          className={`${open ? 'flex' : 'hidden'} col-span-2 w-full flex-col items-stretch border-t border-brand-ivory/15 py-3 lg:col-auto lg:flex lg:w-auto lg:flex-row lg:justify-self-center lg:gap-7 lg:border-0 lg:py-0 xl:gap-10`}
         >
           {publicNavItems.map((item) => (
             <NavLink
@@ -86,7 +86,7 @@ export function PublicHeader() {
         </nav>
         <Link
           to={accessTo}
-          className="hidden min-h-11 justify-self-end rounded-md bg-brand-accent px-5 text-base font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-ivory lg:inline-flex lg:items-center lg:justify-center xl:px-6"
+          className="hidden min-h-12 justify-self-end rounded-md bg-brand-accent px-6 text-base font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-ivory lg:inline-flex lg:items-center lg:justify-center xl:px-7"
         >
           {accessLabel}
         </Link>

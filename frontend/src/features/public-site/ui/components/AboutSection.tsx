@@ -3,8 +3,8 @@ import { site } from '@/content/publicSiteContent'
 
 export function AboutSection() {
   return (
-    <section aria-labelledby="about-title" className="bg-brand-ivory py-16 md:py-24 xl:py-28">
-      <div className="public-container grid items-center gap-10 md:grid-cols-[45fr_55fr] md:gap-14 lg:gap-20 xl:grid-cols-2 xl:gap-24">
+    <section aria-labelledby="about-title" className="bg-brand-ivory py-20 md:py-24 xl:py-32">
+      <div className="public-container grid items-center gap-12 md:grid-cols-[45fr_55fr] md:gap-16 lg:gap-20 xl:grid-cols-2 xl:gap-28">
         <div
           aria-hidden="true"
           className="relative aspect-[4/3] w-full max-w-2xl justify-self-center overflow-hidden rounded-[2rem] bg-brand-soft/40 md:aspect-[5/4]"
