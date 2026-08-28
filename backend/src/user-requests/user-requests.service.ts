@@ -196,6 +196,7 @@ export class UserRequestsService {
     });
 
     await this.tokenDelivery.deliver({
+      userId: result.user.id,
       email: result.user.email,
       fullName: result.user.fullName,
       token: generated.token,

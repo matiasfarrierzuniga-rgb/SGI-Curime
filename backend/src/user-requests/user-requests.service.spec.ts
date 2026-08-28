@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment -- Jest mocks intentionally model Prisma's generated client dynamically. */
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { UserRequestsService } from './user-requests.service';
@@ -56,7 +57,7 @@ describe('UserRequestsService', () => {
   const service = new UserRequestsService(
     prisma as never,
     tokenService,
-    delivery,
+    delivery as never,
   );
 
   beforeEach(() => {
@@ -189,9 +190,29 @@ describe('UserRequestsService', () => {
       }),
     );
     expect(delivery.deliver).toHaveBeenCalledWith(
-      expect.objectContaining({ token: rawToken }),
+      expect.objectContaining({
+        userId: 22,
+        email: pending.email,
+        fullName: pending.fullName,
+        token: rawToken,
+        expiresAt: generated.expiresAt,
+      }),
     );
     expect(result.userRequest.status).toBe('APPROVED');
+  });
+
+  it('does not create another token when post-commit delivery fails', async () => {
+    delivery.deliver.mockRejectedValueOnce(new Error('delivery unavailable'));
+
+    await expect(service.approve(10, { roleId: 2 }, 1)).rejects.toThrow(
+      'delivery unavailable',
+    );
+
+    expect(tx.user.create).toHaveBeenCalledTimes(1);
+    expect(tx.accountActivationToken.create).toHaveBeenCalledTimes(1);
+    expect(tx.accountActivationToken.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ tokenHash: generated.tokenHash }),
+    });
   });
 
   it('rejects an unknown role', async () => {
