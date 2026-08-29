@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { authService, AuthProvider } from '@/features/auth'
+import { affiliatesService } from '@/features/affiliates'
 import { usersService } from '@/features/users'
 import { rolesService } from '@/features/roles'
 import { auditLogsService } from '@/services/auditLogsService'
@@ -43,6 +44,7 @@ function renderRoute(path: string, role: string | null) {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.spyOn(usersService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
+  vi.spyOn(affiliatesService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
   vi.mocked(rolesService.listActive).mockResolvedValue([])
   vi.mocked(auditLogsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
   vi.mocked(inventoryReportsService.summary).mockResolvedValue({ activeItems: 0, lowStockCount: 0, outOfStockCount: 0, overdueLoans: 0 })
@@ -150,5 +152,27 @@ describe('AppRoutes capability deep links', () => {
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Afiliados' })).not.toBeInTheDocument()
+  })
+
+  it('redirects anonymous users from /app/admin/affiliates to login', () => {
+    renderRoute('/app/admin/affiliates', null)
+
+    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Afiliados' })).not.toBeInTheDocument()
+  })
+
+  it('renders the real affiliates page for administrators without HTTP requests', async () => {
+    renderRoute('/app/admin/affiliates', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Afiliados' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay afiliados')).toBeInTheDocument()
+    expect(affiliatesService.list).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 20 }))
+  })
+
+  it('redirects authenticated users without affiliate capability to 403', async () => {
+    renderRoute('/app/admin/affiliates', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByText('No hay afiliados')).not.toBeInTheDocument()
   })
 })
