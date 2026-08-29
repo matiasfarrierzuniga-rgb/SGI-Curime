@@ -10,7 +10,7 @@ Governance for the `app / features / shared` architecture. These rules are enfor
 | `src/app`  | Bootstrap providers, router composition, layouts, global status pages |
 | `src/features/<domain>` | Domain API access, models, hooks, UI screens, route contributions |
 | `src/shared` | Domain-neutral HTTP client, UI primitives, lib utilities, session storage, security policy, test setup |
-| Legacy roots (`pages/`, `services/`, `types/`, `components/`, `content/`) | Transitional only; code migrates feature by feature |
+| Legacy roots (`pages/`, `services/`, `types/`, `components/`, `content/`) | `NO_NEW_CODE`; migrate feature by feature |
 
 ## Dependency direction (enforced)
 
@@ -18,7 +18,13 @@ Governance for the `app / features / shared` architecture. These rules are enfor
 - `feature -> app`: forbidden
 - `feature -> other feature`: only through the target's `index.ts` public API
 - `app -> feature`: only through the feature's `index.ts`
-- Tests (`*.test.*`) may import or mock internals; they are exempt from the scan
+- Tests must respect feature public APIs and must not import or mock feature internals
+
+## Legacy zones
+
+`src/pages`, `src/services`, `src/types`, and `src/components` are legacy zones. New code must not be added there.
+
+Allowed exceptions: urgent bug fixes, security fixes, temporary compatibility work, or an explicit module migration. Document the exception in its pull request.
 
 ## Feature structure
 
