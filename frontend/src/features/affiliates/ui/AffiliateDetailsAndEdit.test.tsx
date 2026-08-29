@@ -108,4 +108,77 @@ describe('Affiliate detail and edit', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo completar la operación por un conflicto con los datos.')
   })
+
+  it.each([
+    ['ACTIVE', 'Desactivar afiliado', 'Activar afiliado'],
+    ['INACTIVE', 'Activar afiliado', 'Desactivar afiliado'],
+  ] as const)('shows only the valid lifecycle action for %s', async (status, availableAction, hiddenAction) => {
+    vi.mocked(affiliatesService.detail).mockResolvedValue({ ...affiliate, status })
+
+    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+
+    expect(await screen.findByRole('button', { name: availableAction })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: hiddenAction })).not.toBeInTheDocument()
+  })
+
+  it('requires confirmation and cancellation does not deactivate', async () => {
+    vi.mocked(affiliatesService.detail).mockResolvedValue(affiliate)
+    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Desactivar afiliado' }))
+    expect(screen.getByRole('heading', { name: 'Desactivar afiliado' })).toBeInTheDocument()
+    expect(screen.getByText('Desactivarás a Ana Pérez. Quedará en estado Inactivo.')).toBeInTheDocument()
+    expect(affiliatesService.deactivate).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(affiliatesService.deactivate).not.toHaveBeenCalled()
+  })
+
+  it('deactivates once, disables duplicate confirmation, invalidates cache, and refreshes status', async () => {
+    let resolve!: (value: typeof affiliate) => void
+    vi.mocked(affiliatesService.detail).mockResolvedValueOnce(affiliate).mockResolvedValue({ ...affiliate, status: 'INACTIVE' })
+    vi.mocked(affiliatesService.deactivate).mockReturnValue(new Promise((next) => { resolve = next }))
+    const { queryClient } = renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Desactivar afiliado' }))
+    const confirm = screen.getByRole('button', { name: 'Desactivar' })
+    fireEvent.click(confirm)
+    fireEvent.click(confirm)
+    expect(await screen.findByRole('button', { name: 'Procesando…' })).toBeDisabled()
+    expect(affiliatesService.deactivate).toHaveBeenCalledTimes(1)
+    resolve({ ...affiliate, status: 'INACTIVE' })
+
+    expect(await screen.findByText('Inactivo', { selector: 'span' })).toBeInTheDocument()
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: affiliatesKeys.all })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: affiliatesKeys.detail(7) })
+  })
+
+  it('activates once after confirmation and refreshes status', async () => {
+    vi.mocked(affiliatesService.detail).mockResolvedValueOnce({ ...affiliate, status: 'INACTIVE' }).mockResolvedValue({ ...affiliate, status: 'ACTIVE' })
+    vi.mocked(affiliatesService.activate).mockResolvedValue({ ...affiliate, status: 'ACTIVE' })
+    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Activar afiliado' }))
+    expect(screen.getByText('Activarás a Ana Pérez. Recuperará el estado Activo.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Activar' }))
+
+    await waitFor(() => expect(affiliatesService.activate).toHaveBeenCalledOnce())
+    expect(await screen.findByText('Activo', { selector: 'span' })).toBeInTheDocument()
+  })
+
+  it.each([
+    ['deactivate', affiliate, 'Desactivar afiliado', 'Desactivar', new Error('fallo'), 'No fue posible actualizar el estado del afiliado.'],
+    ['activate', { ...affiliate, status: 'INACTIVE' as const }, 'Activar afiliado', 'Activar', { isAxiosError: true, response: { status: 404 } }, 'No se encontró el recurso solicitado.'],
+    ['activate', { ...affiliate, status: 'INACTIVE' as const }, 'Activar afiliado', 'Activar', { isAxiosError: true, response: { status: 409 } }, 'No se pudo completar la operación por un conflicto con los datos.'],
+  ] as const)('shows recoverable %s errors', async (action, detail, actionLabel, confirmLabel, error, message) => {
+    vi.mocked(affiliatesService.detail).mockResolvedValue(detail)
+    vi.mocked(affiliatesService[action]).mockRejectedValue(error)
+    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: actionLabel }))
+    fireEvent.click(screen.getByRole('button', { name: confirmLabel }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(screen.getByRole('button', { name: confirmLabel })).toBeEnabled()
+  })
 })
