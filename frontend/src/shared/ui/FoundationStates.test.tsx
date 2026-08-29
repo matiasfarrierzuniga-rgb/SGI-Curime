@@ -39,10 +39,11 @@ describe("Foundation UI states", () => {
   })
 
   it("renders metric content and optional supporting details", () => {
-    render(<MetricCard label="Stock bajo" value={12} supportingText="Requiere revisión" state="warning" icon={<span>!</span>} />)
+    render(<MetricCard label="Stock bajo" value={12} supportingText="Requiere revisión" state="warning" stateLabel="Atención requerida" icon={<span>!</span>} />)
 
     expect(screen.getByText("Stock bajo")).toBeInTheDocument()
     expect(screen.getByText("12")).toBeInTheDocument()
+    expect(screen.getByText("Atención requerida")).toBeVisible()
     expect(screen.getByText("Requiere revisión")).toBeInTheDocument()
   })
 })
