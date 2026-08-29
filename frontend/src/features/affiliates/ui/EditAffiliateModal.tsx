@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getErrorMessage } from '@/shared/lib/errors'
-import { digitsOnly, emailError, fullNameError, identificationError, identificationMaxLength, normalizeEmail, normalizeText, phoneError, phoneNationalMaxLength } from '@/shared/lib/formValidation'
+import { digitsOnly, emailError, fullNameError, identificationError as identificationFormatError, identificationMaxLength, normalizeEmail, normalizeText, phoneError, phoneNationalMaxLength } from '@/shared/lib/formValidation'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { Modal } from '@/shared/ui/Modal'
 import { useAffiliateMutations } from '../hooks/useAffiliatesQueries'
@@ -43,11 +43,14 @@ function initialForm(affiliate: Affiliate): AffiliateEditForm {
   }
 }
 
-function toPayload(form: AffiliateEditForm, affiliate: Affiliate): AffiliateUpdate {
+function toPayload(form: AffiliateEditForm): AffiliateUpdate {
+  const identification = normalizeText(form.identification)
+  const hasIdentificationPair = Boolean(form.identificationType && identification)
+
   return {
     fullName: normalizeText(form.fullName),
-    identificationType: form.identificationType || undefined,
-    identification: form.identificationType || affiliate.identificationType ? normalizeText(form.identification) : undefined,
+    identificationType: hasIdentificationPair ? form.identificationType || undefined : undefined,
+    identification: hasIdentificationPair ? identification : undefined,
     birthDate: form.birthDate || undefined,
     gender: normalizeText(form.gender) || undefined,
     phoneCountryCode: normalizeText(form.phoneCountryCode) || undefined,
@@ -60,12 +63,30 @@ function toPayload(form: AffiliateEditForm, affiliate: Affiliate): AffiliateUpda
   }
 }
 
+function affiliatePhoneError(countryCode: string, nationalNumber: string) {
+  const code = normalizeText(countryCode)
+  const number = nationalNumber.trim()
+
+  if (!code && !number) return ''
+  if (!code || !number) return 'Ingrese código de país y número telefónico juntos.'
+  return phoneError(code, number)
+}
+
 function validate(form: AffiliateEditForm) {
+  const identification = normalizeText(form.identification)
+  const identificationError = form.identificationType && identification
+    ? identificationFormatError(form.identificationType, identification)
+    : form.identificationType
+      ? 'Ingrese una identificación para el tipo seleccionado.'
+      : identification
+        ? 'Seleccione el tipo de identificación.'
+        : ''
+
   return {
     fullName: fullNameError(form.fullName),
-    identification: form.identificationType ? identificationError(form.identificationType, form.identification) : '',
+    identification: identificationError,
     email: form.email ? emailError(form.email) : '',
-    phone: phoneError(form.phoneCountryCode, form.phoneNationalNumber),
+    phone: affiliatePhoneError(form.phoneCountryCode, form.phoneNationalNumber),
     address: normalizeText(form.address) ? '' : 'La dirección es requerida.',
   }
 }
@@ -84,7 +105,7 @@ export function EditAffiliateModal({ affiliate, onClose }: EditAffiliateModalPro
 
     setError('')
     try {
-      await update.mutateAsync({ id: affiliate.id, payload: toPayload(form, affiliate) })
+      await update.mutateAsync({ id: affiliate.id, payload: toPayload(form) })
       onClose()
     } catch (reason) {
       setError(getErrorMessage(reason, 'No fue posible actualizar el afiliado.'))
@@ -98,7 +119,7 @@ export function EditAffiliateModal({ affiliate, onClose }: EditAffiliateModalPro
         <fieldset disabled={update.isPending} className="contents">
           <label>Nombre completo<input required minLength={2} maxLength={150} autoComplete="name" value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} />{fieldErrors.fullName && <span className="field-error" role="alert">{fieldErrors.fullName}</span>}</label>
           <label>Tipo de identificación<select value={form.identificationType} onChange={(event) => setForm({ ...form, identificationType: event.target.value as AffiliateEditForm['identificationType'] })}><option value="">Sin especificar</option><option value="NATIONAL">Cédula nacional</option><option value="DIMEX">DIMEX</option></select></label>
-          <label>Identificación<input required maxLength={form.identificationType ? identificationMaxLength(form.identificationType) : 50} value={form.identification} onChange={(event) => setForm({ ...form, identification: digitsOnly(event.target.value, form.identificationType ? identificationMaxLength(form.identificationType) : 50) })} />{fieldErrors.identification && <span className="field-error" role="alert">{fieldErrors.identification}</span>}</label>
+          <label>Identificación<input maxLength={form.identificationType ? identificationMaxLength(form.identificationType) : 50} value={form.identification} onChange={(event) => setForm({ ...form, identification: digitsOnly(event.target.value, form.identificationType ? identificationMaxLength(form.identificationType) : 50) })} />{fieldErrors.identification && <span className="field-error" role="alert">{fieldErrors.identification}</span>}</label>
           <label>Fecha de nacimiento<input required type="date" max={new Date().toISOString().slice(0, 10)} value={form.birthDate} onChange={(event) => setForm({ ...form, birthDate: event.target.value })} /></label>
           <label>Género<input maxLength={30} value={form.gender} onChange={(event) => setForm({ ...form, gender: event.target.value })} /></label>
           <label>Código país<input maxLength={5} autoComplete="tel-country-code" value={form.phoneCountryCode} onChange={(event) => setForm({ ...form, phoneCountryCode: event.target.value })} /></label>

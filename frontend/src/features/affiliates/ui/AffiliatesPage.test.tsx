@@ -57,6 +57,17 @@ describe('AffiliatesPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar los afiliados.')
   })
 
+  it('retries list loading after an error without real HTTP', async () => {
+    vi.mocked(affiliatesService.list).mockRejectedValueOnce(new Error('fallo')).mockResolvedValueOnce({ data: [affiliate], total: 1, page: 1, limit: 20 })
+    page()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar los afiliados.')
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
+
+    expect(await screen.findByText('Ana Pérez')).toBeInTheDocument()
+    expect(affiliatesService.list).toHaveBeenCalledTimes(2)
+  })
+
   it('renders affiliate data and visible status labels', async () => {
     page()
 

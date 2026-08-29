@@ -63,6 +63,17 @@ describe('Affiliate detail and edit', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar el detalle del afiliado.')
   })
 
+  it('retries detail loading after an error', async () => {
+    vi.mocked(affiliatesService.detail).mockRejectedValueOnce(new Error('fallo')).mockResolvedValueOnce(affiliate)
+    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar el detalle del afiliado.')
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
+
+    expect(await screen.findByText('Ana Pérez')).toBeInTheDocument()
+    expect(affiliatesService.detail).toHaveBeenCalledTimes(2)
+  })
+
   it('initializes editable fields and sends only an AffiliateUpdate payload', async () => {
     vi.mocked(affiliatesService.update).mockResolvedValue(affiliate)
     const close = vi.fn()
@@ -107,6 +118,53 @@ describe('Affiliate detail and edit', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo completar la operación por un conflicto con los datos.')
+  })
+
+  it('blocks an identification without a selected type before updating', () => {
+    renderWithClient(<EditAffiliateModal affiliate={affiliate} onClose={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('Tipo de identificación'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Seleccione el tipo de identificación.')
+    expect(affiliatesService.update).not.toHaveBeenCalled()
+  })
+
+  it('blocks a phone country code without a national number before updating', () => {
+    renderWithClient(<EditAffiliateModal affiliate={affiliate} onClose={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('Número telefónico'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Ingrese código de país y número telefónico juntos.')
+    expect(affiliatesService.update).not.toHaveBeenCalled()
+  })
+
+  it('allows both optional phone values to be empty', async () => {
+    vi.mocked(affiliatesService.update).mockResolvedValue(affiliate)
+    renderWithClient(<EditAffiliateModal affiliate={affiliate} onClose={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('Código país'), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('Número telefónico'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(affiliatesService.update).toHaveBeenCalledOnce())
+    expect(affiliatesService.update).toHaveBeenCalledWith(7, expect.objectContaining({ phoneCountryCode: undefined, phoneNationalNumber: undefined }))
+  })
+
+  it('keeps the edit modal recoverable after a 400 response', async () => {
+    vi.mocked(affiliatesService.update).mockRejectedValueOnce({ isAxiosError: true, response: { status: 400, data: { message: 'El teléfono no es válido.' } } }).mockResolvedValueOnce(affiliate)
+    const close = vi.fn()
+    renderWithClient(<EditAffiliateModal affiliate={affiliate} onClose={close} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('El teléfono no es válido.')
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled()
+    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Corregida' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(affiliatesService.update).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(close).toHaveBeenCalledOnce())
   })
 
   it.each([
