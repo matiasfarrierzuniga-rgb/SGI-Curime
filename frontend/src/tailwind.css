@@ -64,8 +64,29 @@
   --color-info: #174c5b;
   --color-info-bg: #f7f5ed;
 
+  --color-surface-page: #f7f5ed;
+  --color-surface-card: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-surface-muted: #f0f2f5;
+  --color-text-primary: #174c5b;
+  --color-text-secondary: #5e6b62;
+  --color-text-muted: #5e6b62;
+  --color-text-inverse: #f7f5ed;
+  --color-border-default: #dce7e1;
+  --color-border-subtle: #f0f2f5;
+  --color-status-success: #205f33;
+  --color-status-success-surface: #e8f6ec;
+  --color-status-warning: #765000;
+  --color-status-warning-surface: #fff2d8;
+  --color-status-danger: #802323;
+  --color-status-danger-surface: #fdecec;
+  --color-status-info: #174c5b;
+  --color-status-info-surface: #dce7e1;
+  --color-status-neutral: #5e6b62;
+  --color-status-neutral-surface: #f0f2f5;
+
   --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-heading: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-heading: "DM Serif Display", ui-serif, Georgia, serif;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -120,11 +141,14 @@
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-full: 9999px;
+  --radius-control: 0.5rem;
+  --radius-surface: 0.75rem;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 28px rgba(24, 51, 38, 0.10);
   --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.28);
+  --shadow-surface: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 
   --breakpoint-xs: 320px;
   --breakpoint-sm: 375px;
