@@ -61,6 +61,7 @@ describe('AffiliatesPage', () => {
     page()
 
     expect(await screen.findByText('Ana Pérez')).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'Listado de afiliados' })).toBeInTheDocument()
     expect(screen.getByText('Activo', { selector: 'span' })).toBeInTheDocument()
   })
 

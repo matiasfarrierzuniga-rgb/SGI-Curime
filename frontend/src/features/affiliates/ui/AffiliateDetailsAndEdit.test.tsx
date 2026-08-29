@@ -51,7 +51,7 @@ describe('Affiliate detail and edit', () => {
     expect(await screen.findByText('Ana Pérez')).toBeInTheDocument()
     expect(screen.getByText('Activo', { selector: 'span' })).toBeInTheDocument()
     expect(affiliatesService.detail).toHaveBeenCalledWith(7)
-    fireEvent.click(screen.getByRole('button', { name: 'Editar datos' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Editar afiliado' }))
     expect(edit).toHaveBeenCalledWith(affiliate)
   })
 

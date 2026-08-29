@@ -69,7 +69,7 @@ export function AffiliateDetailsModal({ id, onClose, onEdit }: AffiliateDetailsM
           </dl>
           {statusError && <ErrorState title="No fue posible actualizar el estado" message={statusError} />}
           <div className="actions">
-            <button type="button" onClick={() => onEdit(detailQuery.data)} disabled={statusBusy}>Editar datos</button>
+            <button type="button" onClick={() => onEdit(detailQuery.data)} disabled={statusBusy}>Editar afiliado</button>
             {detailQuery.data.status === 'ACTIVE' ? (
               <button className="danger" type="button" onClick={() => { setStatusError(''); setPendingAction('deactivate') }} disabled={statusBusy}>Desactivar afiliado</button>
             ) : (

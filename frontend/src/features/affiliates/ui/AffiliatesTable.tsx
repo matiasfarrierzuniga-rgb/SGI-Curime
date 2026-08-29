@@ -15,15 +15,16 @@ export function AffiliatesTable({ affiliates, onOpen }: AffiliatesTableProps) {
   return (
     <div className="overflow-x-auto rounded-surface border border-border-default" tabIndex={0} aria-label="Tabla de afiliados, desplazable horizontalmente">
       <table className="min-w-225 w-full text-left text-sm">
+        <caption className="sr-only">Listado de afiliados</caption>
         <thead className="bg-surface-muted text-text-secondary">
           <tr>
-            <th className="px-4 py-3 font-semibold">Nombre</th>
-            <th className="px-4 py-3 font-semibold">Identificación</th>
-            <th className="px-4 py-3 font-semibold">Contacto</th>
-            <th className="px-4 py-3 font-semibold">Tipo de afiliado</th>
-            <th className="px-4 py-3 font-semibold">Fecha de afiliación</th>
-            <th className="px-4 py-3 font-semibold">Estado</th>
-            <th className="px-4 py-3 font-semibold"><span className="sr-only">Acciones</span></th>
+            <th scope="col" className="px-4 py-3 font-semibold">Nombre</th>
+            <th scope="col" className="px-4 py-3 font-semibold">Identificación</th>
+            <th scope="col" className="px-4 py-3 font-semibold">Contacto</th>
+            <th scope="col" className="px-4 py-3 font-semibold">Tipo de afiliado</th>
+            <th scope="col" className="px-4 py-3 font-semibold">Fecha de afiliación</th>
+            <th scope="col" className="px-4 py-3 font-semibold">Estado</th>
+            <th scope="col" className="px-4 py-3 font-semibold"><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border-default bg-surface-card text-text-primary">
