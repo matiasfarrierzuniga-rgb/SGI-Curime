@@ -30,9 +30,9 @@
 
 ## 5. Routing / Navigation
 
-- [ ] 5.1 Replace the `/app/admin/requests` placeholder with the Affiliate Requests feature page under the existing `adm.requests.read` gate.
-- [ ] 5.2 Expose `/app/admin/requests` as "Solicitudes de afiliación" in ERP navigation and keep `/admin/user-requests` semantically distinct without refactoring its workflow.
-- [ ] 5.3 Extend routing and navigation tests for administrator access, anonymous redirect to `/login`, missing/unknown capability redirect to `/403`, default deny, correct labels, and zero real HTTP requests.
+- [x] 5.1 Replace the `/app/admin/requests` placeholder with the Affiliate Requests feature page under the existing `adm.requests.read` gate.
+- [x] 5.2 Expose `/app/admin/requests` as "Solicitudes de afiliación" in ERP navigation and keep `/admin/user-requests` semantically distinct without refactoring its workflow.
+- [x] 5.3 Extend routing and navigation tests for administrator access, anonymous redirect to `/login`, missing/unknown capability redirect to `/403`, default deny, correct labels, and zero real HTTP requests.
 
 ## 6. Backend Test Hardening
 

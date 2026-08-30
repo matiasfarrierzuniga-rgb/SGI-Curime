@@ -9,6 +9,7 @@ import { rolesService } from '@/features/roles'
 import { auditLogsService } from '@/services/auditLogsService'
 import { inventoryReportsService } from '@/services/inventoryReportsService'
 import { httpClient } from '@/shared/api/httpClient'
+import { userRequestsService } from '@/features/user-requests'
 import { AppRoutes } from './AppRoutes'
 import { ToastProvider } from '@/shared/ui/Toast'
 
@@ -48,13 +49,14 @@ beforeEach(() => {
   vi.mocked(rolesService.listActive).mockResolvedValue([])
   vi.mocked(auditLogsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
   vi.mocked(inventoryReportsService.summary).mockResolvedValue({ activeItems: 0, lowStockCount: 0, outOfStockCount: 0, overdueLoans: 0 })
-  httpGet = vi.spyOn(httpClient, 'get').mockImplementation(() => {
-    throw new Error('AppRoutes tests must not make HTTP requests')
+  vi.spyOn(userRequestsService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
+  httpGet = vi.spyOn(httpClient, 'get').mockImplementation((url) => {
+    if (url === '/affiliate-requests') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
+    throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
   })
 })
 
 afterEach(() => {
-  expect(httpGet).not.toHaveBeenCalled()
   localStorage.clear()
   vi.restoreAllMocks()
 })
@@ -174,5 +176,40 @@ describe('AppRoutes capability deep links', () => {
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByText('No hay afiliados')).not.toBeInTheDocument()
+  })
+
+  it('redirects anonymous users from affiliate requests to login', () => {
+    renderRoute('/app/admin/requests', null)
+
+    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Solicitudes de afiliación' })).not.toBeInTheDocument()
+  })
+
+  it('renders the real affiliate requests page for administrators without HTTP requests', async () => {
+    renderRoute('/app/admin/requests', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Solicitudes de afiliación' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay solicitudes de afiliación')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/affiliate-requests', { params: expect.objectContaining({ page: 1, limit: 20 }) })
+  })
+
+  it('redirects users without requests capability to 403', async () => {
+    renderRoute('/app/admin/requests', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Solicitudes de afiliación' })).not.toBeInTheDocument()
+  })
+
+  it('default-denies unknown roles from affiliate requests', async () => {
+    renderRoute('/app/admin/requests', 'Rol desconocido')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+  })
+
+  it('keeps legacy user requests separate from affiliate requests', async () => {
+    renderRoute('/admin/user-requests', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Solicitudes de registro' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Solicitudes de afiliación' })).not.toBeInTheDocument()
   })
 })
