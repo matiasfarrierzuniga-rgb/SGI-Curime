@@ -1,4 +1,5 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { AuditAction } from '../audit/audit-actions';
 import { AffiliateRequestsService } from './affiliate-requests.service';
 
 describe('AffiliateRequestsService', () => {
@@ -129,9 +130,56 @@ describe('AffiliateRequestsService', () => {
       }),
     });
     expect(result.affiliate.id).toBe(20);
+    expect(result.affiliate.status).toBe('ACTIVE');
+    expect(audit.log).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        action: AuditAction.AFFILIATE_CREATED,
+        entityId: 20,
+        userId: 1,
+      }),
+    );
+    expect(audit.log).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        action: AuditAction.AFFILIATE_REQUEST_APPROVED,
+        entityId: 10,
+        userId: 1,
+      }),
+    );
   });
 
-  it('does not resolve an already reviewed request', async () => {
+  it('rejects successfully, persists review data, and audits the decision', async () => {
+    const rejected = {
+      ...pending,
+      status: 'REJECTED',
+      rejectionReason: 'Documentación incompleta',
+      reviewedById: 1,
+    };
+    prisma.affiliateRequest.findUnique.mockResolvedValueOnce(pending).mockResolvedValueOnce(rejected);
+
+    await expect(service.reject(10, rejected.rejectionReason, 1)).resolves.toEqual(rejected);
+
+    expect(prisma.affiliateRequest.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 10, status: 'PENDING' },
+        data: expect.objectContaining({
+          status: 'REJECTED',
+          rejectionReason: rejected.rejectionReason,
+          reviewedById: 1,
+        }),
+      }),
+    );
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.AFFILIATE_REQUEST_REJECTED,
+        entityId: 10,
+        userId: 1,
+      }),
+    );
+  });
+
+  it('does not process an already reviewed request through approve or reject', async () => {
     prisma.affiliateRequest.findUnique.mockResolvedValue({
       ...pending,
       status: 'REJECTED',
@@ -139,6 +187,42 @@ describe('AffiliateRequestsService', () => {
     await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
       ConflictException,
     );
+    await expect(service.reject(10, 'Documentación incompleta', 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+  });
+
+  it('prevents duplicate processing when the approval claim affects no request', async () => {
+    tx.affiliateRequest.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(ConflictException);
+
+    expect(tx.affiliate.create).not.toHaveBeenCalled();
+    expect(audit.log).not.toHaveBeenCalled();
+  });
+
+  it('prevents duplicate processing when the rejection claim affects no request', async () => {
+    prisma.affiliateRequest.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(service.reject(10, 'Documentación incompleta', 1)).rejects.toBeInstanceOf(ConflictException);
+
+    expect(audit.log).not.toHaveBeenCalled();
+  });
+
+  it('rejects approval when the affiliate already exists', async () => {
+    prisma.affiliate.findFirst.mockResolvedValue({ id: 20 });
+
+    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(ConflictException);
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('propagates affiliate creation failure without emitting post-transaction audit events', async () => {
+    tx.affiliate.create.mockRejectedValue(new Error('database failure'));
+
+    await expect(service.approve(10, 1)).rejects.toThrow('database failure');
+
+    expect(audit.log).not.toHaveBeenCalled();
   });
 
   it('returns 404 for an unknown request', async () => {

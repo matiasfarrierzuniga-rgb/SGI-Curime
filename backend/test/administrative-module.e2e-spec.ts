@@ -60,6 +60,7 @@ describe('Administrative affiliate requests (e2e)', () => {
       affiliate: { id: 20 },
       affiliateRequest: { id: 10, status: 'APPROVED' },
     });
+    service.reject.mockResolvedValue({ id: 10, status: 'REJECTED' });
     const module = await Test.createTestingModule({
       imports: [AffiliateRequestsModule],
     })
@@ -210,5 +211,30 @@ describe('Administrative affiliate requests (e2e)', () => {
       1,
       expect.objectContaining({ ipAddress: expect.any(String) }),
     );
+  });
+
+  it('passes the rejection reason and administrator id when rejecting', async () => {
+    await request(app.getHttpServer())
+      .patch('/affiliate-requests/10/reject')
+      .set('Authorization', await authorization())
+      .send({ rejectionReason: 'Documentación incompleta' })
+      .expect(200);
+
+    expect(service.reject).toHaveBeenCalledWith(
+      10,
+      'Documentación incompleta',
+      1,
+      expect.objectContaining({ ipAddress: expect.any(String) }),
+    );
+  });
+
+  it('rejects an empty rejection reason before calling the service', async () => {
+    await request(app.getHttpServer())
+      .patch('/affiliate-requests/10/reject')
+      .set('Authorization', await authorization())
+      .send({ rejectionReason: '   ' })
+      .expect(400);
+
+    expect(service.reject).not.toHaveBeenCalled();
   });
 });

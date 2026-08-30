@@ -19,7 +19,7 @@ const navigation: readonly ErpNavigationSection[] = [
     items: [
       { label: 'Usuarios', path: '/admin/users', capability: 'usr.users.read', icon: Users },
       { label: 'Afiliados', path: '/app/admin/affiliates', capability: 'adm.affiliates.read', icon: Handshake },
-      { label: 'Solicitudes', path: '/admin/user-requests', capability: 'adm.requests.read', icon: ClipboardList },
+      { label: 'Solicitudes de afiliación', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
     ],
   },
   {
