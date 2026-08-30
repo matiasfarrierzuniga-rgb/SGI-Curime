@@ -1,11 +1,13 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useAffiliateRequestDetail, useAffiliateRequestsList } from '../hooks/useAffiliateRequestsQueries'
+import { useAffiliateRequestDetail, useAffiliateRequestMutations, useAffiliateRequestsList } from '../hooks/useAffiliateRequestsQueries'
 import type { AffiliateRequest } from '../model/affiliateRequests.types'
+import { AffiliateRequestDetail } from './AffiliateRequestDetail'
 import { AffiliateRequestsPage } from './AffiliateRequestsPage'
 
 vi.mock('../hooks/useAffiliateRequestsQueries', () => ({
   useAffiliateRequestDetail: vi.fn(),
+  useAffiliateRequestMutations: vi.fn(),
   useAffiliateRequestsList: vi.fn(),
 }))
 
@@ -43,8 +45,18 @@ function listState(data: AffiliateRequest[] = [request], total = data.length) {
   }
 }
 
-function detailState(data: AffiliateRequest | undefined = request) {
-  return { data, isPending: false, isError: false, error: null, refetch: vi.fn() }
+function detailState(data: AffiliateRequest | undefined = request, refetch = vi.fn()) {
+  return { data, isPending: false, isError: false, error: null, refetch }
+}
+
+function mutationState() {
+  return { mutateAsync: vi.fn(), isPending: false }
+}
+
+function deferred<T>() {
+  let resolve: (value: T) => void
+  const promise = new Promise<T>((done) => { resolve = done })
+  return { promise, resolve: resolve! }
 }
 
 async function goToSecondPage() {
@@ -57,6 +69,7 @@ describe('AffiliateRequestsPage', () => {
     vi.clearAllMocks()
     vi.mocked(useAffiliateRequestsList).mockReturnValue(listState() as never)
     vi.mocked(useAffiliateRequestDetail).mockReturnValue(detailState() as never)
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve: mutationState(), reject: mutationState() } as never)
   })
 
   it('shows loading, error, and unfiltered empty states', () => {
@@ -208,6 +221,15 @@ describe('AffiliateRequestsPage', () => {
     expect(screen.queryByRole('button', { name: /aprobar|rechazar/i })).not.toBeInTheDocument()
   })
 
+  it('keeps rejected requests read-only', () => {
+    vi.mocked(useAffiliateRequestDetail).mockReturnValue(detailState({ ...request, status: 'REJECTED', rejectionReason: 'Documentación incompleta' }) as never)
+    render(<AffiliateRequestsPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+
+    expect(screen.getByText('Rechazada', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /aprobar solicitud|rechazar solicitud/i })).not.toBeInTheDocument()
+  })
+
   it('shows rejection reason and handles optional values without literal null text', () => {
     vi.mocked(useAffiliateRequestDetail).mockReturnValue(detailState({ ...request, status: 'REJECTED', rejectionReason: 'Documentación incompleta', reviewedAt: '2026-01-20T00:00:00.000Z', reviewedBy: null }) as never)
     render(<AffiliateRequestsPage />)
@@ -275,5 +297,280 @@ describe('AffiliateRequestsPage', () => {
     bPending = false
     view.rerender(<AffiliateRequestsPage />)
     expect(screen.getByText('Apoyar proyectos locales')).toBeInTheDocument()
+  })
+
+  it('confirms approval once, reports success, and refreshes the terminal state', async () => {
+    const approve = mutationState()
+    let currentRequest = request
+    approve.mutateAsync.mockImplementation(async () => { currentRequest = { ...request, status: 'APPROVED' }; return { affiliateRequest: currentRequest } })
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject: mutationState() } as never)
+    vi.mocked(useAffiliateRequestDetail).mockImplementation(() => detailState(currentRequest) as never)
+    const view = render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' }))
+    expect(screen.getByRole('dialog', { name: '¿Aprobar esta solicitud?' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
+
+    await waitFor(() => expect(approve.mutateAsync).toHaveBeenCalledTimes(1))
+    expect(approve.mutateAsync).toHaveBeenCalledWith(7)
+    view.rerender(<AffiliateRequestsPage />)
+    expect(screen.getByRole('status')).toHaveTextContent('Solicitud aprobada correctamente.')
+    expect(screen.getByText('Aprobada', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /aprobar solicitud|rechazar solicitud/i })).not.toBeInTheDocument()
+  })
+
+  it('cancels approval without calling its mutation', () => {
+    const approve = mutationState()
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject: mutationState() } as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(approve.mutateAsync).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: 'Detalle de solicitud de afiliación' })).toBeInTheDocument()
+  })
+
+  it('locks approval controls and close paths while the first confirmation is pending', async () => {
+    const approve = mutationState()
+    const pending = deferred<unknown>()
+    approve.mutateAsync.mockReturnValue(pending.promise)
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject: mutationState() } as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' }))
+    const confirm = screen.getByRole('button', { name: 'Aprobar' })
+    fireEvent.click(confirm)
+    fireEvent.click(confirm)
+
+    expect(approve.mutateAsync).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(screen.getByRole('dialog', { name: '¿Aprobar esta solicitud?' })).toHaveAttribute('aria-busy', 'true'))
+    expect(screen.getByRole('button', { name: 'Procesando…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cerrar diálogo' })).toBeDisabled()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.mouseDown(screen.getByRole('dialog').parentElement!)
+    expect(screen.getByRole('dialog', { name: '¿Aprobar esta solicitud?' })).toBeInTheDocument()
+    pending.resolve({})
+  })
+
+  it('rejects blank and whitespace-only reasons without a mutation', () => {
+    const reject = mutationState()
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve: mutationState(), reject } as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar solicitud' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Indique un motivo de rechazo.')
+    fireEvent.change(screen.getByLabelText('Motivo de rechazo'), { target: { value: '   ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+
+    expect(reject.mutateAsync).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent('Indique un motivo de rechazo.')
+  })
+
+  it('confirms rejection once with a trimmed reason and refreshes terminal state', async () => {
+    const reject = mutationState()
+    let currentRequest = request
+    reject.mutateAsync.mockImplementation(async ({ payload }) => { currentRequest = { ...request, status: 'REJECTED', rejectionReason: payload.rejectionReason }; return currentRequest })
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve: mutationState(), reject } as never)
+    vi.mocked(useAffiliateRequestDetail).mockImplementation(() => detailState(currentRequest) as never)
+    const view = render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar solicitud' }))
+    fireEvent.change(screen.getByLabelText('Motivo de rechazo'), { target: { value: ' Documentación incompleta ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(screen.getByRole('dialog', { name: '¿Rechazar esta solicitud?' })).toHaveTextContent('Documentación incompleta')
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }))
+
+    await waitFor(() => expect(reject.mutateAsync).toHaveBeenCalledWith({ id: 7, payload: { rejectionReason: 'Documentación incompleta' } }))
+    view.rerender(<AffiliateRequestsPage />)
+    expect(screen.getByRole('status')).toHaveTextContent('Solicitud rechazada correctamente.')
+    expect(screen.getByText('Documentación incompleta')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /aprobar solicitud|rechazar solicitud/i })).not.toBeInTheDocument()
+  })
+
+  it('cancels rejection before confirmation without calling its mutation', () => {
+    const reject = mutationState()
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve: mutationState(), reject } as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar solicitud' }))
+    fireEvent.change(screen.getByLabelText('Motivo de rechazo'), { target: { value: 'Información incompleta' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(reject.mutateAsync).not.toHaveBeenCalled()
+  })
+
+  it('locks rejection controls and close paths while the first confirmation is pending', async () => {
+    const reject = mutationState()
+    const pending = deferred<unknown>()
+    reject.mutateAsync.mockReturnValue(pending.promise)
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve: mutationState(), reject } as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar solicitud' }))
+    fireEvent.change(screen.getByLabelText('Motivo de rechazo'), { target: { value: 'Información incompleta' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    const confirm = screen.getByRole('button', { name: 'Rechazar' })
+    fireEvent.click(confirm)
+    fireEvent.click(confirm)
+
+    expect(reject.mutateAsync).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(screen.getByRole('dialog', { name: '¿Rechazar esta solicitud?' })).toHaveAttribute('aria-busy', 'true'))
+    expect(screen.getByRole('button', { name: 'Procesando…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.mouseDown(screen.getByRole('dialog').parentElement!)
+    expect(screen.getByRole('dialog', { name: '¿Rechazar esta solicitud?' })).toBeInTheDocument()
+    pending.resolve({})
+  })
+
+  it('keeps approval recoverable after a backend conflict', async () => {
+    const approve = mutationState()
+    approve.mutateAsync.mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: 'La solicitud ya fue resuelta.' } } })
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject: mutationState() } as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('La solicitud ya fue resuelta.')
+    expect(screen.getByRole('dialog', { name: '¿Aprobar esta solicitud?' })).toBeInTheDocument()
+    expect(screen.queryByText('Solicitud aprobada correctamente.')).not.toBeInTheDocument()
+  })
+
+  it('keeps rejection recoverable after a backend conflict', async () => {
+    const reject = mutationState()
+    reject.mutateAsync.mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: 'La solicitud ya fue resuelta.' } } })
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve: mutationState(), reject } as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar solicitud' }))
+    fireEvent.change(screen.getByLabelText('Motivo de rechazo'), { target: { value: 'Información incompleta' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('La solicitud ya fue resuelta.')
+    expect(screen.getByRole('dialog', { name: '¿Rechazar esta solicitud?' })).toBeInTheDocument()
+  })
+
+  it('keeps generic approval errors recoverable without false success', async () => {
+    const approve = mutationState()
+    approve.mutateAsync.mockRejectedValue(new Error('fallo de red'))
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject: mutationState() } as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible procesar la solicitud. Intente nuevamente.')
+    expect(screen.getByRole('button', { name: 'Aprobar' })).toBeEnabled()
+    expect(screen.queryByText('Solicitud aprobada correctamente.')).not.toBeInTheDocument()
+  })
+
+  it('resets A action state and ignores its late result when request B replaces it', async () => {
+    const approve = mutationState()
+    const pending = deferred<unknown>()
+    approve.mutateAsync.mockReturnValue(pending.promise)
+    const secondRequest = { ...request, id: 8, fullName: 'Beatriz Mora' }
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject: mutationState() } as never)
+    vi.mocked(useAffiliateRequestDetail).mockImplementation((id) => detailState(id === 8 ? secondRequest : request) as never)
+    const view = render(<AffiliateRequestDetail requestId={7} onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
+    view.rerender(<AffiliateRequestDetail requestId={8} onClose={vi.fn()} />)
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Detalle de solicitud de afiliación' })).toBeInTheDocument())
+    expect(screen.getByText('Beatriz Mora')).toBeInTheDocument()
+    expect(screen.queryByText('Solicitud aprobada correctamente.')).not.toBeInTheDocument()
+    pending.resolve({})
+    await Promise.resolve()
+    expect(screen.queryByText('Solicitud aprobada correctamente.')).not.toBeInTheDocument()
+  })
+
+  it('returns approval conflict to terminal authoritative detail', async () => {
+    const approve = mutationState()
+    const terminalRequest = { ...request, status: 'APPROVED' as const }
+    let currentRequest = request
+    const refetch = vi.fn().mockImplementation(async () => { currentRequest = terminalRequest; return { data: terminalRequest } })
+    approve.mutateAsync.mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: 'La solicitud ya fue resuelta.' } } })
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject: mutationState() } as never)
+    vi.mocked(useAffiliateRequestDetail).mockImplementation(() => detailState(currentRequest, refetch) as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
+
+    await waitFor(() => expect(refetch).toHaveBeenCalledOnce())
+    expect(screen.getByRole('dialog', { name: 'Detalle de solicitud de afiliación' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('La solicitud ya fue resuelta.')
+    expect(screen.queryByRole('button', { name: /aprobar solicitud|rechazar solicitud/i })).not.toBeInTheDocument()
+  })
+
+  it('returns rejection conflict to terminal authoritative detail', async () => {
+    const reject = mutationState()
+    const terminalRequest = { ...request, status: 'REJECTED' as const, rejectionReason: 'Ya fue revisada' }
+    let currentRequest = request
+    const refetch = vi.fn().mockImplementation(async () => { currentRequest = terminalRequest; return { data: terminalRequest } })
+    reject.mutateAsync.mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: 'La solicitud ya fue resuelta.' } } })
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve: mutationState(), reject } as never)
+    vi.mocked(useAffiliateRequestDetail).mockImplementation(() => detailState(currentRequest, refetch) as never)
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar solicitud' }))
+    fireEvent.change(screen.getByLabelText('Motivo de rechazo'), { target: { value: 'Documentación incompleta' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }))
+
+    await waitFor(() => expect(refetch).toHaveBeenCalledOnce())
+    expect(screen.getByRole('dialog', { name: 'Detalle de solicitud de afiliación' })).toBeInTheDocument()
+    expect(screen.getByText('Ya fue revisada')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /aprobar solicitud|rechazar solicitud/i })).not.toBeInTheDocument()
+  })
+
+  it('retries approval and rejection successfully after recoverable errors', async () => {
+    const approve = mutationState()
+    const reject = mutationState()
+    let currentRequest = request
+    approve.mutateAsync.mockRejectedValueOnce(new Error('fallo')).mockImplementationOnce(async () => { currentRequest = { ...request, status: 'APPROVED' }; return { affiliateRequest: currentRequest } })
+    reject.mutateAsync.mockRejectedValueOnce(new Error('fallo')).mockImplementationOnce(async ({ payload }) => { currentRequest = { ...request, status: 'REJECTED', rejectionReason: payload.rejectionReason }; return currentRequest })
+    vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject } as never)
+    vi.mocked(useAffiliateRequestDetail).mockImplementation(() => detailState(currentRequest) as never)
+    const view = render(<AffiliateRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
+    await screen.findByRole('alert')
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
+    await waitFor(() => expect(approve.mutateAsync).toHaveBeenCalledTimes(2))
+    view.rerender(<AffiliateRequestsPage />)
+    expect(screen.getByText('Aprobada', { selector: 'span' })).toBeInTheDocument()
+
+    currentRequest = request
+    view.rerender(<AffiliateRequestsPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar solicitud' }))
+    fireEvent.change(screen.getByLabelText('Motivo de rechazo'), { target: { value: 'Información incompleta' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }))
+    await screen.findByRole('alert')
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }))
+    await waitFor(() => expect(reject.mutateAsync).toHaveBeenCalledTimes(2))
+    view.rerender(<AffiliateRequestsPage />)
+    expect(screen.getByText('Rechazada', { selector: 'span' })).toBeInTheDocument()
   })
 })

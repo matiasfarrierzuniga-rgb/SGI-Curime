@@ -73,7 +73,7 @@ export function AffiliateRequestsPage() {
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
-      {selectedRequestId !== null && <AffiliateRequestDetail requestId={selectedRequestId} onClose={() => setSelectedRequestId(null)} />}
+      {selectedRequestId !== null && <AffiliateRequestDetail key={selectedRequestId} requestId={selectedRequestId} onClose={() => setSelectedRequestId(null)} />}
     </section>
   )
 }

@@ -22,11 +22,11 @@
 
 ## 4. Approve / Reject
 
-- [ ] 4.1 Add explicit approval confirmation for `PENDING` requests, with busy feedback and a synchronous in-flight guard against duplicate submission.
-- [ ] 4.2 Add rejection-reason capture and validation followed by explicit destructive confirmation, without sending a mutation for blank input.
-- [ ] 4.3 Handle approve/reject success by refreshing authoritative request data and reporting success without directly creating an Affiliate.
-- [ ] 4.4 Handle backend conflict and generic mutation errors with backend-derived messages, released busy state, refresh/retry paths, and no accidental dialog close.
-- [ ] 4.5 Add network-isolated workflow tests for approve, reject, blank rejection reason, 409 conflict, generic recovery, successful retry, duplicate prevention, and terminal-state refresh.
+- [x] 4.1 Add explicit approval confirmation for `PENDING` requests, with busy feedback and a synchronous in-flight guard against duplicate submission.
+- [x] 4.2 Add rejection-reason capture and validation followed by explicit destructive confirmation, without sending a mutation for blank input.
+- [x] 4.3 Handle approve/reject success by refreshing authoritative request data and reporting success without directly creating an Affiliate.
+- [x] 4.4 Handle backend conflict and generic mutation errors with backend-derived messages, released busy state, refresh/retry paths, and no accidental dialog close.
+- [x] 4.5 Add network-isolated workflow tests for approve, reject, blank rejection reason, 409 conflict, generic recovery, successful retry, duplicate prevention, and terminal-state refresh.
 
 ## 5. Routing / Navigation
 
