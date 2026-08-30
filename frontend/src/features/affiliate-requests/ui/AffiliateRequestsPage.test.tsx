@@ -201,6 +201,37 @@ describe('AffiliateRequestsPage', () => {
     expect(screen.queryByText('8888-8888')).not.toBeInTheDocument()
   })
 
+  it('keeps detail dialog focus operable and restores it to the invoking action', () => {
+    render(<AffiliateRequestsPage />)
+
+    const trigger = screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' })
+    trigger.focus()
+    fireEvent.click(trigger)
+
+    const dialog = screen.getByRole('dialog', { name: 'Detalle de solicitud de afiliación' })
+    expect(dialog).toHaveFocus()
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).toHaveAttribute('aria-labelledby')
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(screen.getByRole('button', { name: 'Cerrar diálogo' })).toHaveFocus()
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(screen.getByRole('button', { name: 'Rechazar solicitud' })).toHaveFocus()
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
+
+  it('keeps responsive filters, table overflow, and detail actions constrained', () => {
+    render(<AffiliateRequestsPage />)
+
+    expect(screen.getByLabelText('Búsqueda').closest('form')).toHaveClass('sm:grid-cols-2', 'lg:grid-cols-5')
+    expect(screen.getByLabelText('Tabla de solicitudes de afiliación, desplazable horizontalmente')).toHaveClass('overflow-x-auto')
+    fireEvent.click(screen.getByRole('button', { name: 'Ver solicitud de Ana Pérez' }))
+    expect(screen.getByRole('dialog').querySelector('.overflow-y-auto')).toHaveClass('max-h-[70vh]')
+    expect(screen.getByRole('button', { name: 'Aprobar solicitud' }).parentElement).toHaveClass('flex-wrap')
+  })
+
   it('shows loading detail without stale request data', () => {
     vi.mocked(useAffiliateRequestDetail).mockReturnValue({ ...detailState(), data: undefined, isPending: true } as never)
     render(<AffiliateRequestsPage />)

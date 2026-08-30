@@ -36,22 +36,22 @@
 
 ## 6. Backend Test Hardening
 
-- [ ] 6.1 Extend Affiliate Requests service tests for successful reject, `REJECTED` persistence data, and approve/reject attempts against already processed requests.
-- [ ] 6.2 Test transactional claim failure and duplicate-processing protection when the conditional `PENDING` update affects no row.
-- [ ] 6.3 Test approval transaction behavior: request becomes `APPROVED`, created Affiliate data is `ACTIVE`, duplicate Affiliate is rejected, Affiliate creation failure rejects the transaction, and post-success audit is not emitted on failure.
-- [ ] 6.4 Extend applicable e2e coverage for existing approve/reject HTTP behavior without changing controllers, DTOs, Prisma schema, migrations, states, or authorization.
-- [ ] 6.5 Stop implementation and request explicit approval if hardening tests reveal a production defect that requires backend source changes.
+- [x] 6.1 Extend Affiliate Requests service tests for successful reject, `REJECTED` persistence data, and approve/reject attempts against already processed requests.
+- [x] 6.2 Test transactional claim failure and duplicate-processing protection when the conditional `PENDING` update affects no row.
+- [x] 6.3 Test approval transaction behavior: request becomes `APPROVED`, created Affiliate data is `ACTIVE`, duplicate Affiliate is rejected, Affiliate creation failure rejects the transaction, and post-success audit is not emitted on failure.
+- [x] 6.4 Extend applicable e2e coverage for existing approve/reject HTTP behavior without changing controllers, DTOs, Prisma schema, migrations, states, or authorization.
+- [x] 6.5 Stop implementation and request explicit approval if hardening tests reveal a production defect that requires backend source changes.
 
 ## 7. UX / Accessibility Hardening
 
-- [ ] 7.1 Reuse existing Foundation UI for status, loading, empty, error, modal, confirmation, page header, and pagination behavior; add no duplicate generic abstractions.
-- [ ] 7.2 Verify keyboard operation, initial/restored focus, accessible names and labels, dialog semantics, live busy/error feedback, and non-color-only status communication.
-- [ ] 7.3 Verify filters, list/table, detail, and action dialogs remain readable and operable at mobile, tablet, and desktop widths.
-- [ ] 7.4 Add focused accessibility assertions for action names, status text, validation feedback, busy states, and modal/confirmation behavior.
+- [x] 7.1 Reuse existing Foundation UI for status, loading, empty, error, modal, confirmation, page header, and pagination behavior; add no duplicate generic abstractions.
+- [x] 7.2 Verify keyboard operation, initial/restored focus, accessible names and labels, dialog semantics, live busy/error feedback, and non-color-only status communication.
+- [x] 7.3 Verify filters, list/table, detail, and action dialogs remain readable and operable at mobile, tablet, and desktop widths.
+- [x] 7.4 Add focused accessibility assertions for action names, status text, validation feedback, busy states, and modal/confirmation behavior.
 
 ## 8. Final Validation
 
-- [ ] 8.1 Run focused frontend Affiliate Requests API, hooks, page, workflow, routing, and navigation tests.
-- [ ] 8.2 Run focused backend Affiliate Requests unit/e2e tests and backend build when backend tests are changed.
-- [ ] 8.3 Run `npm run verify` from `frontend` and record architecture, lint, full test, and build results without treating known unchanged warnings as regressions.
-- [ ] 8.4 Inspect final Git diff for network isolation, no secrets, no new dependencies, no new endpoint/capability/business rule, no `POST /affiliates`, and no out-of-scope legacy or User Requests changes.
+- [x] 8.1 Run focused frontend Affiliate Requests API, hooks, page, workflow, routing, and navigation tests.
+- [x] 8.2 Run focused backend Affiliate Requests unit/e2e tests and backend build when backend tests are changed.
+- [x] 8.3 Run `npm run verify` from `frontend` and record architecture, lint, full test, and build results without treating known unchanged warnings as regressions.
+- [x] 8.4 Inspect final Git diff for network isolation, no secrets, no new dependencies, no new endpoint/capability/business rule, no `POST /affiliates`, and no out-of-scope legacy or User Requests changes.
