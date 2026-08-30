@@ -9,10 +9,10 @@
 
 ## 2. Requests List
 
-- [ ] 2.1 Build request filters for backend-supported status, search, email, and identification fields, resetting pagination when filter input changes.
-- [ ] 2.2 Build the responsive request list/table with visible status text, accessible row actions, server totals, and pagination.
-- [ ] 2.3 Compose `AffiliateRequestsPage` with `PageHeader`, loading, empty, error, retry, filtered-empty, and successful list states.
-- [ ] 2.4 Add network-isolated page tests for list rendering, supported filters, pagination reset, loading, empty, error, and meaningful retry behavior.
+- [x] 2.1 Build request filters for backend-supported status, search, email, and identification fields, resetting pagination when filter input changes.
+- [x] 2.2 Build the responsive request list/table with visible status text, accessible row actions, server totals, and pagination.
+- [x] 2.3 Compose `AffiliateRequestsPage` with `PageHeader`, loading, empty, error, retry, filtered-empty, and successful list states.
+- [x] 2.4 Add network-isolated page tests for list rendering, supported filters, pagination reset, loading, empty, error, and meaningful retry behavior.
 
 ## 3. Detail / Review
 
