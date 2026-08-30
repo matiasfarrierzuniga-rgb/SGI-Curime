@@ -8,6 +8,7 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { useAffiliateRequestsList } from '../hooks/useAffiliateRequestsQueries'
 import type { AffiliateRequestStatus } from '../model/affiliateRequests.types'
 import { AffiliateRequestsFilters } from './AffiliateRequestsFilters'
+import { AffiliateRequestDetail } from './AffiliateRequestDetail'
 import { AffiliateRequestsTable } from './AffiliateRequestsTable'
 
 const limit = 20
@@ -19,6 +20,7 @@ export function AffiliateRequestsPage() {
   const [email, setEmail] = useState('')
   const [identification, setIdentification] = useState('')
   const [status, setStatus] = useState<AffiliateRequestStatus | ''>('')
+  const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null)
   const listQuery = useAffiliateRequestsList({ search, email, identification, status: status || undefined, page, limit })
   const requests = listQuery.data?.data ?? []
   const total = listQuery.data?.total ?? 0
@@ -67,10 +69,11 @@ export function AffiliateRequestsPage() {
         />
       ) : (
         <>
-          <AffiliateRequestsTable requests={requests} />
+          <AffiliateRequestsTable requests={requests} onView={setSelectedRequestId} />
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
+      {selectedRequestId !== null && <AffiliateRequestDetail requestId={selectedRequestId} onClose={() => setSelectedRequestId(null)} />}
     </section>
   )
 }

@@ -3,6 +3,7 @@ import type { AffiliateRequest, AffiliateRequestStatus } from '../model/affiliat
 
 type AffiliateRequestsTableProps = {
   requests: AffiliateRequest[]
+  onView: (id: number) => void
 }
 
 const statusPresentation: Record<AffiliateRequestStatus, { label: string; variant: 'warning' | 'success' | 'danger' }> = {
@@ -15,7 +16,7 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('es-CR', { dateStyle: 'medium' }).format(new Date(value))
 }
 
-export function AffiliateRequestsTable({ requests }: AffiliateRequestsTableProps) {
+export function AffiliateRequestsTable({ requests, onView }: AffiliateRequestsTableProps) {
   return (
     <div className="overflow-x-auto rounded-surface border border-border-default" tabIndex={0} aria-label="Tabla de solicitudes de afiliación, desplazable horizontalmente">
       <table className="min-w-200 w-full text-left text-sm">
@@ -27,6 +28,7 @@ export function AffiliateRequestsTable({ requests }: AffiliateRequestsTableProps
             <th scope="col" className="px-4 py-3 font-semibold">Contacto</th>
             <th scope="col" className="px-4 py-3 font-semibold">Recibida</th>
             <th scope="col" className="px-4 py-3 font-semibold">Estado</th>
+            <th scope="col" className="px-4 py-3 font-semibold"><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border-default bg-surface-card text-text-primary">
@@ -40,6 +42,7 @@ export function AffiliateRequestsTable({ requests }: AffiliateRequestsTableProps
                 <td className="px-4 py-3">{request.email ?? request.phone ?? 'Sin contacto'}</td>
                 <td className="px-4 py-3">{formatDate(request.createdAt)}</td>
                 <td className="px-4 py-3"><StatusBadge variant={status.variant}>{status.label}</StatusBadge></td>
+                <td className="px-4 py-3"><button className="min-h-10 rounded-control border border-border-default px-3 font-semibold text-text-primary" type="button" aria-label={`Ver solicitud de ${request.fullName}`} onClick={() => onView(request.id)}>Ver</button></td>
               </tr>
             )
           })}

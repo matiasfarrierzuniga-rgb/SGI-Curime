@@ -16,9 +16,9 @@
 
 ## 3. Detail / Review
 
-- [ ] 3.1 Build the request detail modal around the authoritative detail query and display identity, contact, affiliation reason, status, review metadata, and rejection reason when present.
-- [ ] 3.2 Hide approve/reject controls for `APPROVED` and `REJECTED` requests while keeping terminal state and review information visible.
-- [ ] 3.3 Add network-isolated detail tests for loading, success, terminal states, error, retry, and close behavior.
+- [x] 3.1 Build the request detail modal around the authoritative detail query and display identity, contact, affiliation reason, status, review metadata, and rejection reason when present.
+- [x] 3.2 Hide approve/reject controls for `APPROVED` and `REJECTED` requests while keeping terminal state and review information visible.
+- [x] 3.3 Add network-isolated detail tests for loading, success, terminal states, error, retry, and close behavior.
 
 ## 4. Approve / Reject
 
