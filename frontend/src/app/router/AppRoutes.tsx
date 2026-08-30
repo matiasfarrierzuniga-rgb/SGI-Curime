@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
+import { AffiliatesPage } from '@/features/affiliates'
 import { AccessLayout } from '@/app/layouts/AccessLayout'
 import { ErpLayout } from '@/app/layouts/ErpLayout'
 import { ForgotPasswordPage } from '@/features/auth'
@@ -62,7 +63,7 @@ export function AppRoutes() {
             <Route path="/app/roles" element={<ErpPlaceholderPage title="Roles" />} />
           </Route>
           <Route element={<RoleRoute capability="adm.affiliates.read" />}>
-            <Route path="/app/admin/affiliates" element={<ErpPlaceholderPage title="Afiliados" />} />
+            <Route path="/app/admin/affiliates" element={<AffiliatesPage />} />
           </Route>
           <Route element={<RoleRoute capability="adm.requests.read" />}>
             <Route path="/app/admin/requests" element={<ErpPlaceholderPage title="Solicitudes" />} />
