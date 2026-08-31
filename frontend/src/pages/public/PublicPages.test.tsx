@@ -30,8 +30,8 @@ function renderPublic(path = '/') {
 describe('portal público', () => {
   it('muestra la landing y navega al inicio de sesión', () => {
     const { container } = renderPublic()
-    expect(container.querySelector('h1')).toHaveTextContent(/gestión y desarrollo/i)
-    expect(document.title).toBe('SGI-Curime | ADI Curime')
+    expect(container.querySelector('h1')).toHaveTextContent(/información, participación y servicios/i)
+    expect(document.title).toBe('Portal comunitario | ADI Curime')
     expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toMatch(/portal comunitario/i)
 
     const loginLink = container.querySelector<HTMLAnchorElement>('a[href="/login"]')
@@ -46,7 +46,7 @@ describe('portal público', () => {
     const { container } = renderPublic()
 
     expect(container.querySelector<HTMLAnchorElement>('a[href="/app"]')).not.toBeNull()
-    expect(screen.getAllByRole('link', { name: 'Mi panel' })).not.toHaveLength(0)
+    expect(screen.getAllByRole('link', { name: 'Ir al SGI' })).not.toHaveLength(0)
     authState.isAuthenticated = false
   })
 
@@ -78,39 +78,32 @@ describe('portal público', () => {
     expect(screen.getByRole('link', { name: /saltar al contenido/i })).toHaveAttribute('href', '#public-content')
   })
 
-  it('muestra actualidad comunitaria con enlace a todas las noticias', () => {
+  it('muestra transparencia con enlace a información autorizada', () => {
     renderPublic()
-    expect(screen.getByRole('heading', { name: /avanzamos juntos/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /ver todas las noticias/i })).toHaveAttribute('href', '/noticias')
-    expect(screen.getByRole('link', { name: /leer noticia/i })).toHaveAttribute('href', '/noticias/canal-informativo-en-preparacion')
+    expect(screen.getByRole('heading', { name: /información pública, con claridad/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /ir a transparencia/i })).toHaveAttribute('href', '/transparencia')
   })
 
-  it('muestra beneficios y servicios con enlaces reales', () => {
+  it('muestra rutas comunitarias reales y futuras opciones no interactivas', () => {
     renderPublic()
-    expect(screen.getByRole('heading', { name: /gestión centralizada/i })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: /herramientas para una gestión eficiente/i })).toBeInTheDocument()
-    const serviceLinks = screen.getAllByRole('link', { name: /conocer más/i })
-    expect(serviceLinks).toHaveLength(4)
-    for (const link of serviceLinks) {
-      expect(link).toHaveAttribute('href', '/servicios')
-    }
+    expect(screen.getByRole('heading', { name: /encuentre lo que necesita/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /consultar sobre afiliación/i })).toHaveAttribute('href', '/afiliacion')
+    expect(screen.getAllByText('Próximamente')).toHaveLength(3)
+    expect(screen.queryByRole('link', { name: /reservas/i })).not.toBeInTheDocument()
   })
 
-  it('ofrece solicitud de cuenta en el hero', () => {
+  it('separa acceso público y acceso al SGI', () => {
     renderPublic()
-    const links = screen.getAllByRole('link', { name: /solicitar una cuenta/i })
-    expect(links.length).toBeGreaterThan(0)
-    for (const link of links) {
-      expect(link).toHaveAttribute('href', '/register')
-    }
+    const accessLinks = screen.getAllByRole('link', { name: 'Ingresar al SGI' })
+    expect(accessLinks).not.toHaveLength(0)
+    accessLinks.forEach((link) => expect(link).toHaveAttribute('href', '/login'))
   })
 
-  it('ofrece Mi cuenta a visitantes sin mostrar terminología técnica', () => {
+  it('ofrece Ingresar al SGI a visitantes', () => {
     renderPublic()
-    const links = screen.getAllByRole('link', { name: 'Mi cuenta' })
+    const links = screen.getAllByRole('link', { name: 'Ingresar al SGI' })
     expect(links.length).toBeGreaterThan(0)
     links.forEach((link) => expect(link).toHaveAttribute('href', '/login'))
-    expect(screen.queryByText('Ir al SGI')).not.toBeInTheDocument()
   })
 
   it('muestra los canales oficiales con enlaces accesibles y seguros', () => {

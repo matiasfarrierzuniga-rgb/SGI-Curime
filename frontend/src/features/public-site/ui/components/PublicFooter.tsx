@@ -57,7 +57,9 @@ export function PublicFooter() {
           <nav aria-label="Enlaces rápidos">
             <h3 className="font-heading text-heading-3 font-semibold text-brand-accent">Enlaces rápidos</h3>
             <ul className="mt-4 space-y-2 text-sm">
-              {site.nav.slice(1, 6).map((item) => (
+              {site.nav.filter((item) =>
+                ['/nosotros', '/comunidad', '/servicios', '/transparencia', '/contacto'].includes(item.to),
+              ).map((item) => (
                 <li key={item.to}>
                   <Link className="text-brand-ivory/80 hover:text-brand-accent" to={item.to}>
                     {item.label}
@@ -71,7 +73,7 @@ export function PublicFooter() {
             <ul className="mt-4 space-y-2 text-sm">
               <li>
                 <Link className="text-brand-ivory/80 hover:text-brand-accent" to={isAuthenticated ? '/app' : '/login'}>
-                  {isAuthenticated ? 'Mi panel' : 'Mi cuenta'}
+                  {isAuthenticated ? 'Ir al SGI' : 'Ingresar al SGI'}
                 </Link>
               </li>
               <li>
