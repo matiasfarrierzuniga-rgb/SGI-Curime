@@ -20,6 +20,7 @@ import { BcryptPasswordHasher } from './infrastructure/security/bcrypt-password-
 import { JwtTokenService } from './infrastructure/security/jwt-token-service';
 import { AuthController } from './presentation/controllers/auth.controller';
 import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
+import { CapabilityGuard } from './presentation/guards/capability.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
 import { JwtStrategy } from './presentation/strategies/jwt.strategy';
 
@@ -70,6 +71,7 @@ import { JwtStrategy } from './presentation/strategies/jwt.strategy';
     ChangePasswordUseCase,
     JwtStrategy,
     JwtAuthGuard,
+    CapabilityGuard,
     RolesGuard,
   ],
 })
