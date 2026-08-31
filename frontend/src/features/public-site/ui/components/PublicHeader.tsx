@@ -27,27 +27,20 @@ export function PublicHeader() {
     ['/', '/nosotros', '/comunidad', '/servicios', '/transparencia', '/contacto'].includes(item.to),
   )
   return (
-    <header className="sticky top-0 z-20 border-b border-brand-ivory/10 bg-brand-deep font-sans text-brand-ivory">
-      <div className="public-container grid min-h-20 grid-cols-[1fr_auto] items-center gap-x-4 md:min-h-[88px] lg:grid-cols-[minmax(270px,1fr)_auto_minmax(180px,1fr)] xl:min-h-[104px]">
+    <header className="sticky top-0 z-20 border-b border-brand-deep/15 bg-brand-ivory font-sans text-brand-deep">
+      <div className="public-container grid grid-cols-[1fr_auto] items-center gap-x-3 py-1 lg:grid-cols-[minmax(220px,1fr)_auto_minmax(160px,1fr)] lg:gap-x-4">
         <Link
           to="/"
           aria-label="ADI Curime, inicio"
-          className="flex min-w-0 items-center gap-3 justify-self-start focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-accent"
+          className="min-w-0 justify-self-start rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep"
         >
-          <span
-            aria-hidden="true"
-            className="grid size-12 shrink-0 place-items-center rounded-[50%_50%_45%_45%] bg-brand-accent font-heading text-[1.35rem] font-bold leading-none text-brand-deep lg:size-14 lg:text-2xl"
-          >
-            ADI
-          </span>
-          <span className="min-w-0">
-            <strong className="block font-heading text-[clamp(1.65rem,2vw,2.15rem)] font-bold leading-none tracking-wide">
-              ADI Curime
-            </strong>
-            <small className="mt-1 hidden text-[0.68rem] font-medium uppercase tracking-[0.12em] text-brand-accent min-[375px]:block lg:text-xs">
-              Asociación de Desarrollo Integral
-            </small>
-          </span>
+          <img
+            src="/brand/adi-curime-logo-horizontal-color.png"
+            alt=""
+            width="1448"
+            height="1086"
+            className="block h-auto w-48 sm:w-52 xl:w-56"
+          />
         </Link>
         <button
           ref={menuButtonRef}
@@ -56,14 +49,14 @@ export function PublicHeader() {
           aria-label={open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
           aria-expanded={open}
           aria-controls={id}
-          className="inline-flex size-11 items-center justify-center rounded-md border border-brand-ivory/60 text-sm font-semibold text-brand-ivory transition-colors hover:bg-brand-ivory/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-accent lg:hidden"
+          className="inline-flex size-11 items-center justify-center rounded-md border border-brand-deep/50 text-sm font-semibold text-brand-deep transition-colors hover:bg-brand-soft/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:hidden"
         >
           {open ? 'Cerrar' : 'Menú'}
         </button>
         <nav
           id={id}
           aria-label="Navegación pública"
-          className={`${open ? 'flex' : 'hidden'} col-span-2 w-full flex-col items-stretch border-t border-brand-ivory/15 py-3 lg:col-auto lg:flex lg:w-auto lg:flex-row lg:justify-self-center lg:gap-7 lg:border-0 lg:py-0 xl:gap-10`}
+          className={`${open ? 'flex' : 'hidden'} col-span-2 w-full flex-col items-stretch border-t border-brand-deep/15 py-3 lg:col-auto lg:flex lg:w-auto lg:flex-row lg:justify-self-center lg:gap-4 lg:border-0 lg:py-0 xl:gap-7 2xl:gap-10`}
         >
           {publicNavItems.map((item) => (
             <NavLink
@@ -71,7 +64,7 @@ export function PublicHeader() {
               to={item.to}
               end={item.to === '/'}
               onClick={close}
-              className="relative flex min-h-11 items-center px-3 text-base font-medium text-brand-ivory transition-colors hover:text-brand-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-accent lg:min-h-0 lg:px-0 lg:py-2 aria-[current=page]:font-semibold aria-[current=page]:after:absolute aria-[current=page]:after:bottom-0 aria-[current=page]:after:left-0 aria-[current=page]:after:h-0.5 aria-[current=page]:after:w-7 aria-[current=page]:after:bg-brand-accent"
+              className="relative flex min-h-11 items-center px-3 text-base font-medium text-brand-deep transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:min-h-0 lg:px-0 lg:py-2 lg:text-sm xl:text-base aria-[current=page]:font-semibold aria-[current=page]:after:absolute aria-[current=page]:after:bottom-0 aria-[current=page]:after:left-0 aria-[current=page]:after:h-0.5 aria-[current=page]:after:w-7 aria-[current=page]:after:bg-brand-accent"
             >
               {item.label}
             </NavLink>
@@ -79,14 +72,14 @@ export function PublicHeader() {
           <Link
             to={accessTo}
             onClick={close}
-            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-md bg-brand-accent px-5 font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-ivory lg:hidden"
+            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-md bg-brand-accent px-5 font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:hidden"
           >
             {accessLabel}
           </Link>
         </nav>
         <Link
           to={accessTo}
-          className="hidden min-h-12 justify-self-end rounded-md bg-brand-accent px-6 text-base font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-ivory lg:inline-flex lg:items-center lg:justify-center xl:px-7"
+          className="hidden min-h-12 justify-self-end rounded-md bg-brand-accent px-4 text-sm font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:inline-flex lg:items-center lg:justify-center xl:px-7 xl:text-base"
         >
           {accessLabel}
         </Link>
