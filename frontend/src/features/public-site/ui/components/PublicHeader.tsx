@@ -22,9 +22,9 @@ export function PublicHeader() {
   }, [open])
   const close = () => setOpen(false)
   const accessTo = isAuthenticated ? '/app' : '/login'
-  const accessLabel = isAuthenticated ? 'Mi panel' : 'Mi cuenta'
+  const accessLabel = isAuthenticated ? 'Ir al SGI' : 'Ingresar al SGI'
   const publicNavItems = site.nav.filter((item) =>
-    ['/', '/nosotros', '/servicios', '/noticias', '/contacto'].includes(item.to),
+    ['/', '/nosotros', '/comunidad', '/servicios', '/transparencia', '/contacto'].includes(item.to),
   )
   return (
     <header className="sticky top-0 z-20 border-b border-brand-ivory/10 bg-brand-deep font-sans text-brand-ivory">

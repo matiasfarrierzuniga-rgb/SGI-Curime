@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom'
-import { useAuth } from '@/features/auth'
 
 export function HeroSection() {
-  const { isAuthenticated } = useAuth()
   return (
     <section aria-labelledby="hero-title" className="bg-brand-ivory">
       <div className="public-container grid items-center gap-12 pb-16 pt-14 md:grid-cols-2 md:gap-12 md:pb-20 md:pt-20 lg:gap-20 lg:pb-24 lg:pt-24 xl:grid-cols-[minmax(0,49fr)_minmax(0,51fr)] xl:gap-24 xl:pb-28 xl:pt-28">
@@ -14,23 +12,23 @@ export function HeroSection() {
             id="hero-title"
             className="mt-4 max-w-[17ch] font-heading text-display font-bold tracking-[-0.02em] text-brand-ink"
           >
-            Gestión y desarrollo para nuestra comunidad
+            Información, participación y servicios para Curime
           </h1>
           <p className="mt-7 max-w-[64ch] text-[clamp(1rem,1.25vw,1.25rem)] leading-relaxed text-brand-ink/75 lg:mt-8">
-            SGI-Curime acompaña a la Asociación de Desarrollo Integral de Curime: información oficial clara, participación cercana y gestión transparente para la comunidad.
+            Plataforma digital de la Asociación de Desarrollo Integral de Curime para consultar información, participar en la comunidad y acceder a servicios habilitados.
           </p>
           <div className="mt-9 flex flex-wrap gap-3 lg:mt-10 lg:gap-4">
             <Link
-              to="/nosotros"
+              to="/comunidad"
               className="inline-flex min-h-12 items-center justify-center rounded-md bg-brand-accent px-6 py-3 text-center font-bold text-brand-ink transition-colors hover:bg-brand-accent/85"
             >
-              Conozca la Asociación
+              Conozca la comunidad
             </Link>
             <Link
-              to={isAuthenticated ? '/app' : '/register'}
+              to="/servicios"
               className="inline-flex min-h-12 items-center justify-center rounded-md border-2 border-brand-deep px-6 py-3 text-center font-bold text-brand-deep transition-colors hover:bg-brand-deep hover:text-brand-ivory"
             >
-              {isAuthenticated ? 'Mi panel' : 'Solicitar una cuenta'}
+              Ver servicios comunitarios
             </Link>
           </div>
         </div>

@@ -1,11 +1,16 @@
 import { Link } from 'react-router-dom'
-import { CalendarDays, Handshake, HeartHandshake, Store } from 'lucide-react'
+import { CalendarDays, FileText, Handshake, HeartHandshake, Store, UsersRound } from 'lucide-react'
 
-const services = [
-  { icon: Handshake, title: 'Afiliación', text: 'Gestiones de afiliación comunitaria de la Asociación.' },
-  { icon: CalendarDays, title: 'Reservas', text: 'Solicitud y seguimiento de espacios comunitarios.' },
-  { icon: HeartHandshake, title: 'Voluntariado', text: 'Participación en iniciativas de la comunidad.' },
-  { icon: Store, title: 'Emprendimientos', text: 'Apoyo y visibilidad para iniciativas locales.' },
+const portalLinks = [
+  { icon: UsersRound, title: 'Comunidad', text: 'Conozca los espacios comunitarios de la Asociación.', to: '/comunidad' },
+  { icon: Handshake, title: 'Afiliación', text: 'Inicie una gestión de afiliación comunitaria.', to: '/afiliacion' },
+  { icon: FileText, title: 'Transparencia', text: 'Consulte información pública autorizada.', to: '/transparencia' },
+] as const
+
+const upcomingServices = [
+  { icon: CalendarDays, title: 'Eventos', text: 'Agenda comunitaria en preparación.' },
+  { icon: HeartHandshake, title: 'Voluntariado', text: 'Espacio de participación en preparación.' },
+  { icon: Store, title: 'Emprendimientos', text: 'Directorio comunitario en preparación.' },
 ] as const
 
 export function ServicesSection() {
@@ -14,33 +19,43 @@ export function ServicesSection() {
       <div className="public-container">
         <header className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">
-            Nuestros servicios
+            Portal comunitario
           </p>
           <h2
             id="services-title"
             className="mt-3 font-heading text-heading-1 font-bold text-brand-ink"
           >
-            Herramientas para una gestión eficiente
+            Encuentre lo que necesita
           </h2>
           <span aria-hidden="true" className="mx-auto mt-4 block h-1 w-16 rounded-full bg-brand-accent" />
         </header>
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:mt-14 lg:grid-cols-4 xl:gap-9">
-          {services.map(({ icon: Icon, title, text }) => (
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-5">
+          {portalLinks.map(({ icon: Icon, title, text, to }) => (
             <article
               key={title}
-              className="flex flex-col items-center gap-3 rounded-2xl border border-border/70 bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-md"
+              className="flex flex-col gap-4 rounded-xl border border-border/70 bg-white p-6 shadow-sm"
             >
-              <span className="grid size-12 place-items-center rounded-full bg-brand-ivory text-brand-deep">
+              <span className="grid size-12 place-items-center rounded-lg bg-brand-ivory text-brand-deep">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
               <h3 className="font-heading text-heading-3 font-semibold text-brand-ink">{title}</h3>
               <p className="flex-1 text-sm leading-relaxed text-brand-ink/70">{text}</p>
               <Link
-                to="/servicios"
-                className="text-sm font-bold text-brand-primary hover:underline"
+                to={to}
+                className="inline-flex min-h-11 items-center font-bold text-brand-primary underline-offset-4 hover:underline"
               >
-                Conocer más<span className="sr-only"> sobre {title}</span>
+                Consultar{' '}<span className="sr-only">sobre {title}</span>
               </Link>
+            </article>
+          ))}
+          {upcomingServices.map(({ icon: Icon, title, text }) => (
+            <article key={title} className="flex flex-col gap-4 rounded-xl border border-border/70 bg-surface-muted/45 p-6">
+              <span className="grid size-12 place-items-center rounded-lg bg-brand-soft/20 text-brand-deep">
+                <Icon className="size-5" aria-hidden="true" />
+              </span>
+              <h3 className="font-heading text-heading-3 font-semibold text-brand-ink">{title}</h3>
+              <p className="flex-1 text-sm leading-relaxed text-brand-ink/70">{text}</p>
+              <span className="text-sm font-semibold text-foreground-muted">Próximamente</span>
             </article>
           ))}
         </div>
