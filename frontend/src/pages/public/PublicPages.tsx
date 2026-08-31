@@ -6,7 +6,6 @@ import {
   Breadcrumbs,
   CTASection,
   EmptyContentState,
-  EventCard,
   NewsCard,
   PublicPageHeader,
   SectionContainer,
@@ -118,25 +117,6 @@ export function NewsDetailPage() {
         <p className="lead">{item.excerpt}</p>
         <p>{item.body}</p>
         <Link to="/noticias">Volver a noticias</Link>
-      </SectionContainer>
-    </>
-  );
-}
-export function EventsPage() {
-  return (
-    <>
-      <Seo title="Eventos" description="Agenda de actividades de ADI Curime." />
-      <PublicPageHeader
-        title="Eventos"
-        intro="Consulte las actividades comunicadas oficialmente por la Asociación."
-      />
-      <Breadcrumbs current="Eventos" />
-      <SectionContainer>
-        <div className="card-grid">
-          {publicContentService.listEvents().map((item) => (
-            <EventCard key={item.title} item={item} />
-          ))}
-        </div>
       </SectionContainer>
     </>
   );

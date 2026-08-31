@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { ArrowLeftRight, Boxes, ChartNoAxesCombined, ClipboardList, FileClock, Handshake, Home, Package, Tags, TriangleAlert, UserRound, Users } from 'lucide-react'
+import { ArrowLeftRight, Boxes, CalendarDays, ChartNoAxesCombined, ClipboardList, FileClock, Handshake, Home, Package, Tags, TriangleAlert, UserRound, Users } from 'lucide-react'
 import { hasAuthenticatedSessionCapability, hasCapability, type AccessCapability } from '@/shared/security/access'
 
 export type ErpNavigationItem = {
@@ -20,6 +20,7 @@ const navigation: readonly ErpNavigationSection[] = [
       { label: 'Usuarios', path: '/admin/users', capability: 'usr.users.read', icon: Users },
       { label: 'Afiliados', path: '/app/admin/affiliates', capability: 'adm.affiliates.read', icon: Handshake },
       { label: 'Solicitudes de afiliación', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
+      { label: 'Eventos', path: '/app/events', capability: 'pub.events.manage', icon: CalendarDays },
     ],
   },
   {

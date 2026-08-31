@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
 import { AffiliatesPage } from '@/features/affiliates'
+import { EventsManagementPage, PublicEventsPage } from '@/features/events'
 import { AffiliateRequestsPage } from '@/features/affiliate-requests'
 import { AccessLayout } from '@/app/layouts/AccessLayout'
 import { ErpLayout } from '@/app/layouts/ErpLayout'
@@ -23,7 +24,7 @@ import { InventoryMovementsPage } from '@/pages/inventory/InventoryMovementsPage
 import { InventoryReportsPage } from '@/pages/inventory/InventoryReportsPage'
 import { ForbiddenPage } from '@/pages/ForbiddenPage'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
-import { AboutPage, CommunityPage, ContactPage, EventsPage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '@/pages/public/PublicPages'
+import { AboutPage, CommunityPage, ContactPage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '@/pages/public/PublicPages'
 import { AffiliationPage } from '@/pages/public/AffiliationPage'
 import { LandingPage } from '@/features/public-site'
 import { AppHomePage } from '@/pages/erp/AppHomePage'
@@ -37,7 +38,7 @@ export function AppRoutes() {
         <Route path="/comunidad" element={<CommunityPage />} />
         <Route path="/noticias" element={<NewsPage />} />
         <Route path="/noticias/:slug" element={<NewsDetailPage />} />
-        <Route path="/eventos" element={<EventsPage />} />
+        <Route path="/eventos" element={<PublicEventsPage />} />
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/transparencia" element={<TransparencyPage />} />
         <Route path="/contacto" element={<ContactPage />} />
@@ -72,6 +73,9 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="aud.logs.read" />}>
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+          </Route>
+          <Route element={<RoleRoute capability="pub.events.manage" />}>
+            <Route path="/app/events" element={<EventsManagementPage />} />
           </Route>
           <Route element={<RoleRoute capability="inv.inventory.read" />}>
             <Route path="/inventory" element={<InventoryDashboardPage />} />
