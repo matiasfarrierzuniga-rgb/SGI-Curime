@@ -52,6 +52,8 @@ beforeEach(() => {
   vi.spyOn(userRequestsService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
   httpGet = vi.spyOn(httpClient, 'get').mockImplementation((url) => {
     if (url === '/affiliate-requests') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
+    if (url === '/events') return Promise.resolve({ data: [] })
+    if (url === '/public/events') return Promise.resolve({ data: [] })
     throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
   })
 })
@@ -100,6 +102,19 @@ describe('AppRoutes capability deep links', () => {
     renderRoute('/admin/audit-logs', 'Administrador')
 
     expect(await screen.findByRole('heading', { name: 'Bitácora' })).toBeInTheDocument()
+  })
+
+  it('allows administrators into event management', async () => {
+    renderRoute('/app/events', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Eventos' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay eventos registrados')).toBeInTheDocument()
+  })
+
+  it('denies users without event management capability', async () => {
+    renderRoute('/app/events', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
 
   it('denies unprivileged deep-links to audit logs', async () => {

@@ -10,6 +10,8 @@ export const ACCESS_CAPABILITIES = [
   'adm.requests.read',
   'aud.logs.read',
   'inv.inventory.read',
+  'pub.events.manage',
+  'pub.events.publish',
 ] as const
 
 export type AccessCapability = (typeof ACCESS_CAPABILITIES)[number]

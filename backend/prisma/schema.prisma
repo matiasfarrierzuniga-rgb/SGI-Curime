@@ -36,6 +36,20 @@ enum AssemblyStatus {
   CANCELLED
 }
 
+enum EventStatus {
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+}
+
+enum PublicationStatus {
+  INTERNAL
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
 enum AttendanceStatus {
   PRESENT
   ABSENT
@@ -247,6 +261,24 @@ model Assembly {
 
   @@index([date])
   @@index([status])
+}
+
+model Event {
+  id                Int               @id @default(autoincrement())
+  publicId          String            @unique @default(uuid())
+  title             String
+  summary           String
+  description       String?
+  startAt           DateTime
+  endAt             DateTime?
+  location          String?
+  status            EventStatus       @default(SCHEDULED)
+  publicationStatus PublicationStatus @default(DRAFT)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([publicationStatus, startAt])
+  @@index([startAt])
 }
 
 model AssemblyAttendance {

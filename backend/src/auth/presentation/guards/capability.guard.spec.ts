@@ -28,6 +28,14 @@ describe('CapabilityGuard', () => {
     expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
   });
 
+  it('allows administrators to manage and publish events', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['pub.events.manage', 'pub.events.publish']);
+
+    expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
+  });
+
   it('denies a known role without required capability', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.users.read']);
 

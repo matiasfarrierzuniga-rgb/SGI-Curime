@@ -5,10 +5,10 @@ const portalLinks = [
   { icon: UsersRound, title: 'Comunidad', text: 'Conozca los espacios comunitarios de la Asociación.', to: '/comunidad' },
   { icon: Handshake, title: 'Afiliación', text: 'Inicie una gestión de afiliación comunitaria.', to: '/afiliacion' },
   { icon: FileText, title: 'Transparencia', text: 'Consulte información pública autorizada.', to: '/transparencia' },
+  { icon: CalendarDays, title: 'Eventos', text: 'Consulte la agenda publicada por la Asociación.', to: '/eventos' },
 ] as const
 
 const upcomingServices = [
-  { icon: CalendarDays, title: 'Eventos', text: 'Agenda comunitaria en preparación.' },
   { icon: HeartHandshake, title: 'Voluntariado', text: 'Espacio de participación en preparación.' },
   { icon: Store, title: 'Emprendimientos', text: 'Directorio comunitario en preparación.' },
 ] as const

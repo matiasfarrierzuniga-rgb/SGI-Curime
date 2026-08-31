@@ -29,7 +29,6 @@ export const site = {
   ],
   pending: "Contenido pendiente de validación con la ADI.",
 } as const;
-
 export const moduleAvailability = {
   affiliation: { enabled: true },
   reservations: { enabled: false },
@@ -76,17 +75,5 @@ export const news = [
     excerpt:
       "Este espacio publicará noticias institucionales verificadas cuando estén disponibles.",
     body: "Las noticias de la Asociación serán incorporadas y validadas antes de su publicación.",
-  },
-] as const;
-
-export const events = [
-  {
-    title: "Agenda comunitaria en preparación",
-    date: "Por confirmar",
-    time: "Por confirmar",
-    place: "Curime",
-    summary:
-      "La programación oficial se comunicará por los canales de la Asociación.",
-    status: "próximo",
   },
 ] as const;

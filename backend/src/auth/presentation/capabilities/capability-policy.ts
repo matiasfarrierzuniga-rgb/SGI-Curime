@@ -7,6 +7,8 @@ export const CAPABILITIES = [
   'adm.requests.read',
   'aud.logs.read',
   'inv.inventory.read',
+  'pub.events.manage',
+  'pub.events.publish',
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];

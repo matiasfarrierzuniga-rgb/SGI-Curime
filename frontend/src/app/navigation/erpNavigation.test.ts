@@ -9,7 +9,7 @@ describe('getErpNavigation', () => {
   it('shows implemented administrative areas to administrators', () => {
     expect(labels('Administrador')).toEqual([
       { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Gestión administrativa', items: [{ label: 'Usuarios', children: undefined }, { label: 'Afiliados', children: undefined }, { label: 'Solicitudes de afiliación', children: undefined }] },
+      { label: 'Gestión administrativa', items: [{ label: 'Usuarios', children: undefined }, { label: 'Afiliados', children: undefined }, { label: 'Solicitudes de afiliación', children: undefined }, { label: 'Eventos', children: undefined }] },
       { label: 'Operación', items: [{ label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Información', items: [{ label: 'Bitácora', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
@@ -43,5 +43,11 @@ describe('getErpNavigation', () => {
     const requests = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Solicitudes de afiliación')
 
     expect(requests).toMatchObject({ path: '/app/admin/requests', capability: 'adm.requests.read' })
+  })
+
+  it('assigns event navigation to its management capability', () => {
+    const events = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Eventos')
+
+    expect(events).toMatchObject({ path: '/app/events', capability: 'pub.events.manage' })
   })
 })

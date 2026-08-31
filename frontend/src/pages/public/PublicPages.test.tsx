@@ -1,29 +1,32 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
 import { LandingPage } from '@/features/public-site'
-import { ContactPage, EventsPage, NewsPage, ServicesPage } from './PublicPages'
+import { PublicEventsPage } from '@/features/events'
+import { ContactPage, NewsPage, ServicesPage } from './PublicPages'
 
 const authState = vi.hoisted(() => ({ isAuthenticated: false }))
 vi.mock('@/features/auth', () => ({
   useAuth: () => authState,
 }))
+vi.mock('@/shared/api/httpClient', () => ({ httpClient: { get: vi.fn().mockResolvedValue({ data: [] }) } }))
 
 function renderPublic(path = '/') {
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemoryRouter initialEntries={[path]}>
       <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<LandingPage />} />
             <Route path="/servicios" element={<ServicesPage />} />
             <Route path="/contacto" element={<ContactPage />} />
             <Route path="/noticias" element={<NewsPage />} />
-            <Route path="/eventos" element={<EventsPage />} />
+            <Route path="/eventos" element={<PublicEventsPage />} />
           </Route>
           <Route path="/login" element={<p>Login</p>} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter></QueryClientProvider>,
   )
 }
 
@@ -88,7 +91,8 @@ describe('portal público', () => {
     renderPublic()
     expect(screen.getByRole('heading', { name: /encuentre lo que necesita/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /consultar sobre afiliación/i })).toHaveAttribute('href', '/afiliacion')
-    expect(screen.getAllByText('Próximamente')).toHaveLength(3)
+    expect(screen.getByRole('link', { name: /consultar sobre eventos/i })).toHaveAttribute('href', '/eventos')
+    expect(screen.getAllByText('Próximamente')).toHaveLength(2)
     expect(screen.queryByRole('link', { name: /reservas/i })).not.toBeInTheDocument()
   })
 
