@@ -13,7 +13,7 @@ export function AboutSection() {
             Un pueblo unido, un futuro compartido
           </h2>
         </div>
-        <div className="max-w-2xl lg:border-l lg:border-soft-sage lg:pl-12 xl:pl-16">
+        <div className="max-w-2xl lg:border-l lg:border-brand-soft/35 lg:pl-12 xl:pl-16">
           <p className="mt-6 max-w-[52ch] leading-relaxed text-brand-ink/75">
             La Asociación de Desarrollo Integral de Curime, en el corazón de la península de Nicoya, coordina esfuerzos vecinales para el desarrollo del distrito. Este sistema acompaña esa labor con información clara y gestiones digitales al servicio de la comunidad.
           </p>
@@ -22,7 +22,7 @@ export function AboutSection() {
           </p>
           <Link
             to="/nosotros"
-            className="mt-8 inline-flex min-h-12 items-center justify-center rounded-md border-2 border-brand-deep px-6 py-3 text-center font-bold text-brand-deep transition-colors hover:bg-brand-deep hover:text-brand-ivory focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep"
+            className="mt-8 inline-flex min-h-12 items-center justify-center rounded-md border-2 border-brand-deep px-6 py-3 text-center font-bold text-brand-deep transition-colors hover:bg-brand-deep hover:text-brand-ivory focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary"
           >
             Conozca la Asociación
           </Link>
