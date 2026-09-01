@@ -17,17 +17,21 @@ function label(value: string) {
 export function EventsManagementPage() {
   const { user } = useAuth()
   const eventsQuery = useAdminEvents()
-  const { publish, archive } = useEventMutations()
+  const { submitForReview, returnToDraft, publish, archive } = useEventMutations()
   const [editing, setEditing] = useState<AdminEvent | undefined>()
   const [creating, setCreating] = useState(false)
   const [actionError, setActionError] = useState('')
   const mayPublish = hasCapability(user?.role, 'pub.events.publish')
+  const mayManage = hasCapability(user?.role, 'pub.events.manage')
+  const workflowBusy = submitForReview.isPending || returnToDraft.isPending || publish.isPending || archive.isPending
 
-  const runPublicationAction = async (event: AdminEvent, action: 'publish' | 'archive') => {
-    if (!mayPublish) return
+  const runPublicationAction = async (event: AdminEvent, action: 'review' | 'draft' | 'publish' | 'archive') => {
+    if (workflowBusy || ((action === 'review' || action === 'draft') ? !mayManage : !mayPublish)) return
     setActionError('')
     try {
-      if (action === 'publish') await publish.mutateAsync(event.id)
+      if (action === 'review') await submitForReview.mutateAsync(event.id)
+      else if (action === 'draft') await returnToDraft.mutateAsync(event.id)
+      else if (action === 'publish') await publish.mutateAsync(event.id)
       else await archive.mutateAsync(event.id)
     } catch (reason) { setActionError(getErrorMessage(reason, 'No fue posible actualizar la publicación del evento.')) }
   }
@@ -47,8 +51,10 @@ export function EventsManagementPage() {
         </div>
         <div className="flex flex-wrap gap-2 md:justify-end">
           <button className="min-h-11 rounded-md border border-border px-4 font-semibold" type="button" onClick={() => setEditing(event)}>Editar</button>
-          {mayPublish && event.publicationStatus !== 'PUBLISHED' && event.publicationStatus !== 'ARCHIVED' ? <button className="min-h-11 rounded-md bg-brand-deep px-4 font-semibold text-brand-ivory hover:bg-brand-primary" disabled={publish.isPending} type="button" onClick={() => void runPublicationAction(event, 'publish')}>Publicar</button> : null}
-          {mayPublish && event.publicationStatus !== 'ARCHIVED' ? <button className="min-h-11 rounded-md border border-danger px-4 font-semibold text-danger" disabled={archive.isPending} type="button" onClick={() => void runPublicationAction(event, 'archive')}>Archivar</button> : null}
+          {mayManage && event.publicationStatus === 'DRAFT' ? <button className="min-h-11 rounded-md border border-border px-4 font-semibold" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'review')}>Enviar a revisión</button> : null}
+          {mayManage && event.publicationStatus === 'REVIEW' ? <button className="min-h-11 rounded-md border border-border px-4 font-semibold" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'draft')}>Devolver a borrador</button> : null}
+          {mayPublish && event.publicationStatus === 'REVIEW' ? <button className="min-h-11 rounded-md bg-brand-deep px-4 font-semibold text-brand-ivory hover:bg-brand-primary" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'publish')}>Publicar</button> : null}
+          {mayPublish && event.publicationStatus === 'PUBLISHED' ? <button className="min-h-11 rounded-md border border-danger px-4 font-semibold text-danger" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'archive')}>Archivar</button> : null}
         </div>
       </article>)}
     </div> : null}

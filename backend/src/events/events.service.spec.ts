@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EventStatus, PublicationStatus } from '../../generated/prisma/enums';
 import { AuditAction } from '../audit/audit-actions';
 import { EventsService } from './events.service';
@@ -24,6 +24,7 @@ describe('EventsService', () => {
     $transaction: jest.fn(),
     event: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -88,6 +89,39 @@ describe('EventsService', () => {
     await service.archive(event.id, 3);
 
     expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ action: AuditAction.EVENT_ARCHIVED, userId: 3 }), expect.anything());
+  });
+
+  it('returns a published event by its public identifier', async () => {
+    prisma.event.findFirst.mockResolvedValue({ ...event, publicationStatus: PublicationStatus.PUBLISHED });
+
+    await expect(service.findPublicByPublicId(event.publicId)).resolves.toEqual({
+      publicId: event.publicId,
+      title: event.title,
+      summary: event.summary,
+      description: event.description,
+      startAt: event.startAt,
+      endAt: event.endAt,
+      location: event.location,
+      status: event.status,
+    });
+    expect(prisma.event.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { publicId: event.publicId, publicationStatus: PublicationStatus.PUBLISHED },
+    }));
+  });
+
+  it.each([PublicationStatus.DRAFT, PublicationStatus.REVIEW, PublicationStatus.ARCHIVED])(
+    'does not reveal a %s event through the public detail contract',
+    async () => {
+      prisma.event.findFirst.mockResolvedValue(null);
+
+      await expect(service.findPublicByPublicId(event.publicId)).rejects.toBeInstanceOf(NotFoundException);
+    },
+  );
+
+  it('does not reveal an unknown public identifier', async () => {
+    prisma.event.findFirst.mockResolvedValue(null);
+
+    await expect(service.findPublicByPublicId('unknown-id')).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('submits draft content for review and records the transition', async () => {

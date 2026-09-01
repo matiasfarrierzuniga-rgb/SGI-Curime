@@ -24,7 +24,7 @@ export function PublicHeader() {
   const accessTo = isAuthenticated ? '/app' : '/login'
   const accessLabel = isAuthenticated ? 'Ir al panel' : 'Iniciar sesión'
   const publicNavItems = site.nav.filter((item) =>
-    ['/', '/nosotros', '/comunidad', '/servicios', '/transparencia', '/contacto'].includes(item.to),
+    ['/', '/nosotros', '/comunidad', '/eventos', '/servicios', '/transparencia', '/contacto'].includes(item.to),
   )
   return (
     <header className="sticky top-0 z-20 border-b border-brand-deep/15 bg-brand-ivory font-sans text-brand-deep">

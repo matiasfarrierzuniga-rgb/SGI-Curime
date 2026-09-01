@@ -48,4 +48,7 @@ export class PublicEventsController {
 
   @Get()
   findAll() { return this.service.findPublic(); }
+
+  @Get(':publicId')
+  findOne(@Param('publicId') publicId: string) { return this.service.findPublicByPublicId(publicId); }
 }

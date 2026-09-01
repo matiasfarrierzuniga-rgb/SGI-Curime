@@ -2,7 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
 import { AffiliatesPage } from '@/features/affiliates'
-import { EventsManagementPage, PublicEventsPage } from '@/features/events'
+import { EventsManagementPage, PublicEventDetailPage, PublicEventsPage } from '@/features/events'
 import { AffiliateRequestsPage } from '@/features/affiliate-requests'
 import { AccessLayout } from '@/app/layouts/AccessLayout'
 import { ErpLayout } from '@/app/layouts/ErpLayout'
@@ -39,6 +39,7 @@ export function AppRoutes() {
         <Route path="/noticias" element={<NewsPage />} />
         <Route path="/noticias/:slug" element={<NewsDetailPage />} />
         <Route path="/eventos" element={<PublicEventsPage />} />
+        <Route path="/eventos/:publicId" element={<PublicEventDetailPage />} />
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/transparencia" element={<TransparencyPage />} />
         <Route path="/contacto" element={<ContactPage />} />

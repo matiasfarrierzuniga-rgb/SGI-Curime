@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { CalendarDays, MapPin } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
@@ -49,12 +50,13 @@ export function PublicEventsPage() {
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-primary">{statusLabel(event.status)}</p>
                     {event.status === 'CANCELLED' ? <span className="rounded-full bg-danger/10 px-3 py-1 text-xs font-semibold text-danger">Cancelado</span> : null}
                   </div>
-                  <h2 className="mt-4 font-heading text-heading-3 font-semibold text-brand-ink">{event.title}</h2>
+                  <h2 className="mt-4 font-heading text-heading-3 font-semibold text-brand-ink"><Link className="rounded-sm hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to={`/eventos/${event.publicId}`}>{event.title}</Link></h2>
                   <p className="mt-3 flex-1 text-body text-brand-ink/75">{event.summary}</p>
                   <dl className="mt-6 space-y-3 border-t border-border pt-5 text-body-small text-brand-ink/80">
                     <div className="flex gap-3"><CalendarDays className="mt-0.5 size-4 shrink-0 text-brand-primary" aria-hidden="true" /><div><dt className="sr-only">Fecha y hora</dt><dd>{formatDate(event.startAt)}{event.endAt ? ` - ${formatDate(event.endAt)}` : ''}</dd></div></div>
                     {event.location ? <div className="flex gap-3"><MapPin className="mt-0.5 size-4 shrink-0 text-brand-primary" aria-hidden="true" /><div><dt className="sr-only">Lugar</dt><dd>{event.location}</dd></div></div> : null}
                   </dl>
+                  <Link aria-label={`Ver detalle de ${event.title}`} className="mt-6 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to={`/eventos/${event.publicId}`}>Ver detalle</Link>
                 </article>
               ))}
             </div>

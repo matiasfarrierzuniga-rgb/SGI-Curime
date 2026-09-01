@@ -68,6 +68,18 @@ export class EventsService {
     return events.map(toPublicEvent);
   }
 
+  async findPublicByPublicId(publicId: string) {
+    const event = await this.prisma.event.findFirst({
+      where: {
+        publicId,
+        publicationStatus: PublicationStatus.PUBLISHED,
+      },
+      select: publicSelect,
+    });
+    if (!event) throw new NotFoundException('Public event not found');
+    return toPublicEvent(event);
+  }
+
   async create(dto: CreateEventDto, actorId: number, context: AuditContext = {}) {
     this.assertDateRange(dto.startAt, dto.endAt);
     const event = await this.prisma.event.create({ data: dto, select: adminSelect });
