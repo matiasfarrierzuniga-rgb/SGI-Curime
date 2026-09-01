@@ -67,15 +67,15 @@ describe('AppRoutes capability deep links', () => {
   it('sends anonymous portal access to login', () => {
     renderRoute('/', null)
 
-    expect(screen.getAllByRole('link', { name: 'Ingresar al SGI' })).not.toHaveLength(0)
-    screen.getAllByRole('link', { name: 'Ingresar al SGI' }).forEach((link) => expect(link).toHaveAttribute('href', '/login'))
+    expect(screen.getAllByRole('link', { name: 'Iniciar sesión' })).not.toHaveLength(0)
+    screen.getAllByRole('link', { name: 'Iniciar sesión' }).forEach((link) => expect(link).toHaveAttribute('href', '/login'))
   })
 
-  it('sends authenticated portal access back to the ERP', async () => {
+  it('sends authenticated portal access to the panel', async () => {
     renderRoute('/', 'Administrador')
 
-    expect(await screen.findAllByRole('link', { name: 'Ir al SGI' })).not.toHaveLength(0)
-    screen.getAllByRole('link', { name: 'Ir al SGI' }).forEach((link) => expect(link).toHaveAttribute('href', '/app'))
+    expect(await screen.findAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
+    screen.getAllByRole('link', { name: 'Ir al panel' }).forEach((link) => expect(link).toHaveAttribute('href', '/app'))
   })
 
   it('redirects anonymous users from /app to login', () => {
@@ -135,7 +135,7 @@ describe('AppRoutes capability deep links', () => {
     await screen.findByRole('heading', { name: 'Hola, Ana' })
     fireEvent.click(screen.getAllByRole('link', { name: 'Ver sitio público' })[0])
 
-    expect(await screen.findAllByRole('link', { name: 'Ir al SGI' })).not.toHaveLength(0)
+    expect(await screen.findAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
   })
 
   it('clears the session and redirects logout to login', async () => {

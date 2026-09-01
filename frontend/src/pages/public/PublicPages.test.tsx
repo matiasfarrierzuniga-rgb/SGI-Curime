@@ -49,7 +49,7 @@ describe('portal público', () => {
     const { container } = renderPublic()
 
     expect(container.querySelector<HTMLAnchorElement>('a[href="/app"]')).not.toBeNull()
-    expect(screen.getAllByRole('link', { name: 'Ir al SGI' })).not.toHaveLength(0)
+    expect(screen.getAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
     authState.isAuthenticated = false
   })
 
@@ -96,16 +96,16 @@ describe('portal público', () => {
     expect(screen.queryByRole('link', { name: /reservas/i })).not.toBeInTheDocument()
   })
 
-  it('separa acceso público y acceso al SGI', () => {
+  it('separa acceso público e inicio de sesión', () => {
     renderPublic()
-    const accessLinks = screen.getAllByRole('link', { name: 'Ingresar al SGI' })
+    const accessLinks = screen.getAllByRole('link', { name: 'Iniciar sesión' })
     expect(accessLinks).not.toHaveLength(0)
     accessLinks.forEach((link) => expect(link).toHaveAttribute('href', '/login'))
   })
 
-  it('ofrece Ingresar al SGI a visitantes', () => {
+  it('ofrece iniciar sesión a visitantes', () => {
     renderPublic()
-    const links = screen.getAllByRole('link', { name: 'Ingresar al SGI' })
+    const links = screen.getAllByRole('link', { name: 'Iniciar sesión' })
     expect(links.length).toBeGreaterThan(0)
     links.forEach((link) => expect(link).toHaveAttribute('href', '/login'))
   })

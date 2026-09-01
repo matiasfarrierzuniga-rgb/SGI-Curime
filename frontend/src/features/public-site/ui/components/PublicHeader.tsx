@@ -22,13 +22,13 @@ export function PublicHeader() {
   }, [open])
   const close = () => setOpen(false)
   const accessTo = isAuthenticated ? '/app' : '/login'
-  const accessLabel = isAuthenticated ? 'Ir al SGI' : 'Ingresar al SGI'
+  const accessLabel = isAuthenticated ? 'Ir al panel' : 'Iniciar sesión'
   const publicNavItems = site.nav.filter((item) =>
     ['/', '/nosotros', '/comunidad', '/servicios', '/transparencia', '/contacto'].includes(item.to),
   )
   return (
     <header className="sticky top-0 z-20 border-b border-brand-deep/15 bg-brand-ivory font-sans text-brand-deep">
-      <div className="public-container grid grid-cols-[1fr_auto] items-center gap-x-3 py-1 lg:grid-cols-[minmax(220px,1fr)_auto_minmax(160px,1fr)] lg:gap-x-4">
+      <div className="public-container grid max-w-6xl grid-cols-[1fr_auto] items-center gap-x-3 py-1 lg:grid-cols-[minmax(220px,1fr)_auto_minmax(160px,1fr)] lg:gap-x-4">
         <Link
           to="/"
           aria-label="ADI Curime, inicio"
@@ -39,7 +39,7 @@ export function PublicHeader() {
             alt=""
             width="1448"
             height="1086"
-            className="block h-auto w-48 sm:w-52 xl:w-56"
+            className="block h-auto w-48 sm:w-52 lg:w-56 xl:w-60"
           />
         </Link>
         <button
@@ -56,7 +56,7 @@ export function PublicHeader() {
         <nav
           id={id}
           aria-label="Navegación pública"
-          className={`${open ? 'flex' : 'hidden'} col-span-2 w-full flex-col items-stretch border-t border-brand-deep/15 py-3 lg:col-auto lg:flex lg:w-auto lg:flex-row lg:justify-self-center lg:gap-4 lg:border-0 lg:py-0 xl:gap-7 2xl:gap-10`}
+          className={`${open ? 'flex' : 'hidden'} col-span-2 w-full flex-col items-stretch border-t border-brand-deep/15 py-3 lg:col-auto lg:flex lg:w-auto lg:flex-row lg:justify-self-center lg:gap-3 lg:border-0 lg:py-0 xl:gap-5`}
         >
           {publicNavItems.map((item) => (
             <NavLink
@@ -79,7 +79,7 @@ export function PublicHeader() {
         </nav>
         <Link
           to={accessTo}
-          className="hidden min-h-12 justify-self-end rounded-md bg-brand-accent px-4 text-sm font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:inline-flex lg:items-center lg:justify-center xl:px-7 xl:text-base"
+          className="hidden min-h-12 justify-self-end rounded-md bg-brand-accent px-4 text-sm font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:inline-flex lg:items-center lg:justify-center xl:px-6 xl:text-base"
         >
           {accessLabel}
         </Link>
