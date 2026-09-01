@@ -26,10 +26,10 @@ export function LandingPage() {
       <ServicesSection />
       <TransparencySection />
       <AboutSection />
-      <section aria-labelledby="portal-access-title" className="bg-brand-ivory py-20 md:py-24 xl:py-28">
+      <section aria-labelledby="portal-access-title" className="bg-brand-ivory pb-20 md:pb-24 xl:pb-32">
         <div className="public-container border-y border-brand-deep/15 py-12 text-center md:py-16">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">Acceso privado</p>
-          <h2 id="portal-access-title" className="mx-auto mt-3 max-w-[24ch] font-heading text-heading-1 font-bold text-brand-ink">
+          <p className="public-eyebrow text-brand-primary">Acceso privado</p>
+          <h2 id="portal-access-title" className="public-heading mx-auto mt-3 max-w-[24ch] text-brand-ink">
             ¿Ya tiene acceso al Sistema de Gestión Integral?
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-body-large text-brand-ink/75">
@@ -37,9 +37,9 @@ export function LandingPage() {
           </p>
           <Link
             to={isAuthenticated ? '/app' : '/login'}
-            className="mt-8 inline-flex min-h-12 items-center justify-center rounded-md bg-brand-deep px-6 py-3 font-bold text-brand-ivory transition-colors hover:bg-brand-primary"
+            className="mt-8 inline-flex min-h-12 items-center justify-center rounded-md bg-brand-deep px-6 py-3 font-bold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep"
           >
-            {isAuthenticated ? 'Ir al SGI' : 'Ingresar al SGI'}
+            {isAuthenticated ? 'Ir al panel' : 'Iniciar sesión'}
           </Link>
         </div>
       </section>
