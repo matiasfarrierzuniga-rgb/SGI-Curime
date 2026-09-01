@@ -1,7 +1,16 @@
 import { Module } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PASSWORD_HASHER } from './auth/application/ports/password-hasher.port';
 
-@Module({})
+@Module({
+  providers: [
+    {
+      provide: PASSWORD_HASHER,
+      useValue: { hash: jest.fn(), compare: jest.fn() },
+    },
+  ],
+  exports: [PASSWORD_HASHER],
+})
 class StubAuthModule {}
 
 describe('Users and Roles module composition', () => {
@@ -11,6 +20,9 @@ describe('Users and Roles module composition', () => {
   const originalJwtExpiresIn = process.env.JWT_EXPIRES_IN;
   const originalMaxLoginAttempts = process.env.MAX_LOGIN_ATTEMPTS;
   const originalAccountLockoutMinutes = process.env.ACCOUNT_LOCKOUT_MINUTES;
+  const originalPublicRateLimitTtl =
+    process.env.PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS;
+  const originalPublicRateLimitMax = process.env.PUBLIC_REQUEST_RATE_LIMIT_MAX;
   let rolesRepositoryToken: symbol;
   let usersRepositoryToken: symbol;
   let listRolesUseCase: typeof import('./modules/roles/application/use-cases/list-roles.use-case').ListRolesUseCase;
@@ -22,6 +34,8 @@ describe('Users and Roles module composition', () => {
     process.env.JWT_EXPIRES_IN = '1h';
     process.env.MAX_LOGIN_ATTEMPTS = '5';
     process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
+    process.env.PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS = '60';
+    process.env.PUBLIC_REQUEST_RATE_LIMIT_MAX = '1000';
 
     const { AuthModule } =
       jest.requireActual<typeof import('./auth/auth.module')>(
@@ -77,6 +91,9 @@ describe('Users and Roles module composition', () => {
     process.env.JWT_EXPIRES_IN = originalJwtExpiresIn;
     process.env.MAX_LOGIN_ATTEMPTS = originalMaxLoginAttempts;
     process.env.ACCOUNT_LOCKOUT_MINUTES = originalAccountLockoutMinutes;
+    process.env.PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS =
+      originalPublicRateLimitTtl;
+    process.env.PUBLIC_REQUEST_RATE_LIMIT_MAX = originalPublicRateLimitMax;
   });
 
   it('resolves both repository tokens and their use cases', () => {

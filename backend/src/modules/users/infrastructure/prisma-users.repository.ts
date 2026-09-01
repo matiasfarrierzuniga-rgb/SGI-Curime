@@ -12,7 +12,9 @@ import {
   UserStatus as DomainUserStatus,
 } from '../domain/entities/user';
 import { EmailAlreadyRegisteredError } from '../domain/errors/email-already-registered.error';
+import { RegistrationConflictError } from '../domain/errors/registration-conflict.error';
 import {
+  UserCreateData,
   UserPage,
   UserQuery,
   UserUpdateData,
@@ -135,6 +137,28 @@ export class PrismaUsersRepository implements UsersRepository {
       select: { id: true, name: true, description: true, isActive: true },
     });
     return role;
+  }
+
+  async findRoleByName(name: string): Promise<UserRole | null> {
+    return this.db.role.findUnique({
+      where: { name },
+      select: { id: true, name: true, description: true, isActive: true },
+    });
+  }
+
+  async create(data: UserCreateData): Promise<User> {
+    try {
+      const user = await this.db.user.create({ data, select: userSelect });
+      return toUser(user);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new RegistrationConflictError();
+      }
+      throw error;
+    }
   }
 
   async getPasswordHash(id: number): Promise<string | null> {

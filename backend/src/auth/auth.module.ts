@@ -86,5 +86,6 @@ import { JwtStrategy } from './presentation/strategies/jwt.strategy';
     CapabilityGuard,
     RolesGuard,
   ],
+  exports: [PASSWORD_HASHER],
 })
 export class AuthModule {}

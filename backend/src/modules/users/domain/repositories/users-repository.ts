@@ -28,6 +28,19 @@ export interface UserUpdateData {
   address?: string;
 }
 
+export interface UserCreateData {
+  fullName: string;
+  identification: string;
+  identificationType: 'NATIONAL' | 'DIMEX';
+  email: string;
+  phoneCountryCode?: string;
+  phoneNationalNumber?: string;
+  address?: string;
+  passwordHash: string;
+  status: UserStatus;
+  roleId: number;
+}
+
 export interface UsersRepository {
   withTransaction<T>(work: (repo: UsersRepository) => Promise<T>): Promise<T>;
   findPage(query: UserQuery): Promise<UserPage>;
@@ -37,6 +50,8 @@ export interface UsersRepository {
     excludeId?: number,
   ): Promise<{ id: number } | null>;
   findRoleById(id: number): Promise<UserRole | null>;
+  findRoleByName(name: string): Promise<UserRole | null>;
+  create(data: UserCreateData): Promise<User>;
   getPasswordHash(id: number): Promise<string | null>;
   updateProfile(id: number, data: UserUpdateData): Promise<User>;
   updateStatus(id: number, status: UserStatus): Promise<User>;
