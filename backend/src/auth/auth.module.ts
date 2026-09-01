@@ -12,9 +12,12 @@ import { AUDIT_PORT } from './application/ports/audit.port';
 import { AUTH_REPOSITORY } from './application/ports/auth-repository.port';
 import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
 import { PASSWORD_RESET_DELIVERY_PORT } from './application/ports/password-reset-delivery.port';
+import { SESSION_REPOSITORY } from './application/ports/session-repository.port';
 import { TOKEN_SERVICE } from './application/ports/token-service.port';
+import { SessionService } from './application/services/session.service';
 import { AuditServiceAdapter } from './infrastructure/audit/audit-service.adapter';
 import { PrismaAuthRepository } from './infrastructure/persistence/prisma-auth.repository';
+import { PrismaSessionRepository } from './infrastructure/persistence/prisma-session.repository';
 import { PasswordResetTokenDeliveryService } from './infrastructure/password-reset-token-delivery.service';
 import { BcryptPasswordHasher } from './infrastructure/security/bcrypt-password-hasher';
 import { JwtTokenService } from './infrastructure/security/jwt-token-service';
@@ -57,6 +60,7 @@ import { JwtStrategy } from './presentation/strategies/jwt.strategy';
   controllers: [AuthController],
   providers: [
     { provide: AUTH_REPOSITORY, useClass: PrismaAuthRepository },
+    { provide: SESSION_REPOSITORY, useClass: PrismaSessionRepository },
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
     { provide: TOKEN_SERVICE, useClass: JwtTokenService },
     { provide: AUDIT_PORT, useClass: AuditServiceAdapter },
@@ -69,6 +73,7 @@ import { JwtStrategy } from './presentation/strategies/jwt.strategy';
     RequestPasswordResetUseCase,
     ResetPasswordUseCase,
     ChangePasswordUseCase,
+    SessionService,
     JwtStrategy,
     JwtAuthGuard,
     CapabilityGuard,

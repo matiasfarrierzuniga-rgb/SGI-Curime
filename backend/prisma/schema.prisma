@@ -101,6 +101,7 @@ model User {
 
   activationTokens          AccountActivationToken[]
   passwordResetTokens       PasswordResetToken[]
+  sessions                  Session[]
   auditLogs                 AuditLog[]
   reviewedAffiliateRequests AffiliateRequest[]       @relation("AffiliateRequestReviewer")
   reviewedJustifications    AbsenceJustification[]   @relation("JustificationReviewer")
@@ -111,6 +112,21 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id               Int       @id @default(autoincrement())
+  refreshTokenHash String    @unique
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  revocationReason String?
+  createdAt        DateTime  @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model AuditLog {
