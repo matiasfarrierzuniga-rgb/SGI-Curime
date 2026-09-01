@@ -20,11 +20,38 @@ export class PrismaSessionRepository implements SessionRepository {
     return session ? toSession(session) : null;
   }
 
+  async findByRefreshTokenHash(
+    refreshTokenHash: string,
+  ): Promise<Session | null> {
+    const session = await this.db.session.findUnique({
+      where: { refreshTokenHash },
+    });
+    return session ? toSession(session) : null;
+  }
+
   async findActiveById(id: number, now: Date): Promise<Session | null> {
     const session = await this.db.session.findFirst({
       where: { id, revokedAt: null, expiresAt: { gt: now } },
     });
     return session ? toSession(session) : null;
+  }
+
+  async rotate(
+    id: number,
+    currentRefreshTokenHash: string,
+    nextRefreshTokenHash: string,
+    now: Date,
+  ): Promise<boolean> {
+    const result = await this.db.session.updateMany({
+      where: {
+        id,
+        refreshTokenHash: currentRefreshTokenHash,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
+      data: { refreshTokenHash: nextRefreshTokenHash },
+    });
+    return result.count === 1;
   }
 
   async revoke(
@@ -34,6 +61,18 @@ export class PrismaSessionRepository implements SessionRepository {
   ): Promise<boolean> {
     const result = await this.db.session.updateMany({
       where: { id, revokedAt: null },
+      data: { revokedAt, revocationReason: reason },
+    });
+    return result.count === 1;
+  }
+
+  async revokeByRefreshTokenHash(
+    refreshTokenHash: string,
+    revokedAt: Date,
+    reason: string | null,
+  ): Promise<boolean> {
+    const result = await this.db.session.updateMany({
+      where: { refreshTokenHash, revokedAt: null },
       data: { revokedAt, revocationReason: reason },
     });
     return result.count === 1;

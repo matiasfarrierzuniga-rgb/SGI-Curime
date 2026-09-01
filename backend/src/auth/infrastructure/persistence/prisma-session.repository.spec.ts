@@ -67,6 +67,17 @@ describe('PrismaSessionRepository', () => {
     expect(db.session.findUnique).toHaveBeenCalledWith({ where: { id: 1 } });
   });
 
+  it('reads a session by its hashed refresh credential', async () => {
+    db.session.findUnique.mockResolvedValueOnce(sessionRow);
+
+    await expect(
+      repository.findByRefreshTokenHash('hash-one'),
+    ).resolves.toEqual(sessionRow);
+    expect(db.session.findUnique).toHaveBeenCalledWith({
+      where: { refreshTokenHash: 'hash-one' },
+    });
+  });
+
   it('finds only unrevoked and unexpired sessions as active', async () => {
     const now = new Date('2026-09-01T12:00:00.000Z');
     db.session.findFirst.mockResolvedValueOnce(sessionRow);
@@ -100,6 +111,45 @@ describe('PrismaSessionRepository', () => {
     );
     expect(db.session.updateMany).toHaveBeenCalledWith({
       where: { id: 1, revokedAt: null },
+      data: { revokedAt, revocationReason: 'logout' },
+    });
+  });
+
+  it('rotates only the current active and unexpired hash', async () => {
+    const now = new Date('2026-09-01T12:00:00.000Z');
+    db.session.updateMany.mockResolvedValueOnce({ count: 1 });
+
+    await expect(
+      repository.rotate(1, 'hash-one', 'hash-two', now),
+    ).resolves.toBe(true);
+    expect(db.session.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 1,
+        refreshTokenHash: 'hash-one',
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
+      data: { refreshTokenHash: 'hash-two' },
+    });
+  });
+
+  it('returns false when compare-and-swap rotation loses the race', async () => {
+    db.session.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    await expect(
+      repository.rotate(1, 'stale-hash', 'next-hash', new Date()),
+    ).resolves.toBe(false);
+  });
+
+  it('revokes only the session still identified by the refresh hash', async () => {
+    const revokedAt = new Date('2026-09-01T12:00:00.000Z');
+    db.session.updateMany.mockResolvedValueOnce({ count: 1 });
+
+    await expect(
+      repository.revokeByRefreshTokenHash('hash-one', revokedAt, 'logout'),
+    ).resolves.toBe(true);
+    expect(db.session.updateMany).toHaveBeenCalledWith({
+      where: { refreshTokenHash: 'hash-one', revokedAt: null },
       data: { revokedAt, revocationReason: 'logout' },
     });
   });

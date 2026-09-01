@@ -4,10 +4,14 @@ import { ChangePasswordUseCase } from './change-password.use-case';
 describe('ChangePasswordUseCase', () => {
   const repository = {
     findCredentialsById: jest.fn(),
-    updatePassword: jest.fn(),
+    withTransaction: jest.fn(),
   };
   const hasher = { hash: jest.fn(), compare: jest.fn() };
   const audit = { record: jest.fn() };
+  const tx = {
+    setUserPassword: jest.fn(),
+    revokeUserSessions: jest.fn(),
+  };
   let useCase: ChangePasswordUseCase;
 
   beforeEach(() => {
@@ -21,7 +25,10 @@ describe('ChangePasswordUseCase', () => {
       Promise.resolve(plain === 'current'),
     );
     hasher.hash.mockResolvedValue('new-hash');
-    repository.updatePassword.mockResolvedValue(undefined);
+    repository.withTransaction.mockImplementation(
+      (work: (transaction: typeof tx) => Promise<unknown>) => work(tx),
+    );
+    tx.revokeUserSessions.mockResolvedValue(1);
   });
 
   it('throws an application error when new passwords do not match', async () => {
@@ -56,6 +63,7 @@ describe('ChangePasswordUseCase', () => {
     await expect(
       useCase.execute(1, 'wrong', 'NewPassword1!', 'NewPassword1!'),
     ).rejects.toMatchObject({ code: 'CURRENT_PASSWORD_INCORRECT' });
+    expect(repository.withTransaction).not.toHaveBeenCalled();
   });
 
   it('throws an application error when the new password is the same', async () => {
@@ -64,7 +72,7 @@ describe('ChangePasswordUseCase', () => {
     await expect(
       useCase.execute(1, 'current', 'current', 'current'),
     ).rejects.toMatchObject({ code: 'NEW_PASSWORD_MUST_DIFFER' });
-    expect(repository.updatePassword).not.toHaveBeenCalled();
+    expect(repository.withTransaction).not.toHaveBeenCalled();
   });
 
   it('updates the password and audits the change', async () => {
@@ -77,7 +85,8 @@ describe('ChangePasswordUseCase', () => {
     );
 
     expect(hasher.compare).toHaveBeenCalledTimes(2);
-    expect(repository.updatePassword).toHaveBeenCalledWith(1, 'new-hash');
+    expect(tx.setUserPassword).toHaveBeenCalledWith(1, 'new-hash');
+    expect(tx.revokeUserSessions).toHaveBeenCalledWith(1, 'password-change');
     expect(audit.record).toHaveBeenCalledWith({
       userId: 1,
       action: AuditAction.PASSWORD_CHANGED,
@@ -87,5 +96,24 @@ describe('ChangePasswordUseCase', () => {
       ipAddress: '127.0.0.1',
     });
     expect(result).toEqual({ message: 'Password changed successfully' });
+  });
+
+  it('fails the transaction when session revocation fails', async () => {
+    tx.revokeUserSessions.mockRejectedValueOnce(new Error('db failure'));
+
+    await expect(
+      useCase.execute(1, 'current', 'NewPassword1!', 'NewPassword1!'),
+    ).rejects.toThrow('db failure');
+    expect(tx.setUserPassword).toHaveBeenCalledWith(1, 'new-hash');
+    expect(audit.record).not.toHaveBeenCalled();
+  });
+
+  it('does not attempt session revocation when password persistence fails', async () => {
+    tx.setUserPassword.mockRejectedValueOnce(new Error('password failure'));
+
+    await expect(
+      useCase.execute(1, 'current', 'NewPassword1!', 'NewPassword1!'),
+    ).rejects.toThrow('password failure');
+    expect(tx.revokeUserSessions).not.toHaveBeenCalled();
   });
 });

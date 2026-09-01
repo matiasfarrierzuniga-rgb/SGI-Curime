@@ -5,6 +5,7 @@ import {
   AUDIT_PORT,
   type AuditContext,
   type AuditPort,
+  recordAuditBestEffort,
 } from '../ports/audit.port';
 import {
   AUTH_REPOSITORY,
@@ -62,11 +63,24 @@ export class ChangePasswordUseCase {
       );
     }
 
-    await this.repository.updatePassword(
-      userId,
-      await this.hasher.hash(newPassword),
+    const passwordHash = await this.hasher.hash(newPassword);
+    const revokedSessions = await this.repository.withTransaction(
+      async (tx) => {
+        await tx.setUserPassword(userId, passwordHash);
+        return tx.revokeUserSessions(userId, 'password-change');
+      },
     );
-    await this.audit?.record({
+    if (revokedSessions > 0) {
+      await recordAuditBestEffort(this.audit, {
+        userId,
+        action: AuditAction.SESSION_REVOKED,
+        module: 'AUTH',
+        entityType: 'User',
+        entityId: userId,
+        ...context,
+      });
+    }
+    await recordAuditBestEffort(this.audit, {
       userId,
       action: AuditAction.PASSWORD_CHANGED,
       module: 'AUTH',

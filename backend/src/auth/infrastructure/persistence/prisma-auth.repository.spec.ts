@@ -44,6 +44,10 @@ function createDb() {
       updateMany: jest.fn(),
       create: jest.fn(),
     },
+    session: {
+      create: jest.fn(),
+      updateMany: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
   db.$transaction.mockImplementation(
@@ -172,6 +176,30 @@ describe('PrismaAuthRepository', () => {
     });
   });
 
+  it('creates a session and records login success atomically', async () => {
+    await repository.recordLoginSuccessAndCreateSession(
+      1,
+      'refresh-hash',
+      new Date('2026-09-02T00:00:00.000Z'),
+    );
+
+    expect(db.session.create).toHaveBeenCalledWith({
+      data: {
+        userId: 1,
+        refreshTokenHash: 'refresh-hash',
+        expiresAt: new Date('2026-09-02T00:00:00.000Z'),
+      },
+    });
+    expect(db.user.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: {
+        failedLoginAttempts: 0,
+        lockedAt: null,
+        lastLoginAt: anyDate,
+      },
+    });
+  });
+
   it('invalidates previous reset tokens and creates a new one', async () => {
     db.passwordResetToken.updateMany.mockResolvedValueOnce({ count: 1 });
     db.passwordResetToken.create.mockResolvedValueOnce({ id: 30 });
@@ -257,6 +285,23 @@ describe('PrismaAuthRepository', () => {
     expect(db.user.update).toHaveBeenCalledWith({
       where: { id: 5 },
       data: { passwordHash: 'hashed', failedLoginAttempts: 0, lockedAt: null },
+    });
+  });
+
+  it('revokes user sessions inside the auth transaction', async () => {
+    db.session.updateMany.mockResolvedValueOnce({ count: 2 });
+
+    const revoked = await repository.withTransaction((tx) =>
+      tx.revokeUserSessions(5, 'password-reset'),
+    );
+
+    expect(revoked).toBe(2);
+    expect(db.session.updateMany).toHaveBeenCalledWith({
+      where: { userId: 5, revokedAt: null },
+      data: {
+        revokedAt: anyDate,
+        revocationReason: 'password-reset',
+      },
     });
   });
 });

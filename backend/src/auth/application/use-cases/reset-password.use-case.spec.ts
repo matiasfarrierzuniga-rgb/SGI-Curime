@@ -18,6 +18,7 @@ describe('ResetPasswordUseCase', () => {
   const tx = {
     claimResetToken: jest.fn(),
     setUserPassword: jest.fn(),
+    revokeUserSessions: jest.fn(),
   };
   let useCase: ResetPasswordUseCase;
 
@@ -30,6 +31,7 @@ describe('ResetPasswordUseCase', () => {
     );
     tx.claimResetToken.mockResolvedValue(true);
     hasher.hash.mockResolvedValue('hashed-password');
+    tx.revokeUserSessions.mockResolvedValue(1);
   });
 
   it('throws an application error when passwords do not match', async () => {
@@ -45,6 +47,7 @@ describe('ResetPasswordUseCase', () => {
     await expect(
       useCase.execute('token', 'Password1!', 'Password1!'),
     ).rejects.toMatchObject({ code: 'INVALID_RESET_TOKEN' });
+    expect(repository.withTransaction).not.toHaveBeenCalled();
   });
 
   it('throws an application error when the token was already used', async () => {
@@ -86,6 +89,7 @@ describe('ResetPasswordUseCase', () => {
     expect(hasher.hash).toHaveBeenCalledWith('Password1!');
     expect(tx.claimResetToken).toHaveBeenCalledWith(20, expect.any(Date));
     expect(tx.setUserPassword).toHaveBeenCalledWith(5, 'hashed-password');
+    expect(tx.revokeUserSessions).toHaveBeenCalledWith(5, 'password-reset');
     expect(audit.record).toHaveBeenCalledWith({
       userId: 5,
       action: AuditAction.PASSWORD_RESET,
@@ -95,5 +99,16 @@ describe('ResetPasswordUseCase', () => {
       ipAddress: '127.0.0.1',
     });
     expect(result).toEqual({ message: 'Password reset successfully' });
+  });
+
+  it('fails the reset transaction when session revocation fails', async () => {
+    tx.revokeUserSessions.mockRejectedValueOnce(new Error('db failure'));
+
+    await expect(
+      useCase.execute('token', 'Password1!', 'Password1!'),
+    ).rejects.toThrow('db failure');
+    expect(tx.claimResetToken).toHaveBeenCalled();
+    expect(tx.setUserPassword).toHaveBeenCalled();
+    expect(audit.record).not.toHaveBeenCalled();
   });
 });

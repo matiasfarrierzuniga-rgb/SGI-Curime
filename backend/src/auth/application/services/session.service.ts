@@ -21,6 +21,10 @@ export class SessionService {
     return this.sessions.findById(id);
   }
 
+  findByRefreshTokenHash(refreshTokenHash: string): Promise<Session | null> {
+    return this.sessions.findByRefreshTokenHash(refreshTokenHash);
+  }
+
   findActiveById(id: number, now = new Date()): Promise<Session | null> {
     return this.sessions.findActiveById(id, now);
   }
@@ -37,12 +41,38 @@ export class SessionService {
     return !this.isRevoked(session) && !this.isExpired(session, now);
   }
 
+  rotate(
+    id: number,
+    currentRefreshTokenHash: string,
+    nextRefreshTokenHash: string,
+    now = new Date(),
+  ): Promise<boolean> {
+    return this.sessions.rotate(
+      id,
+      currentRefreshTokenHash,
+      nextRefreshTokenHash,
+      now,
+    );
+  }
+
   revoke(
     id: number,
     reason: string | null,
     revokedAt = new Date(),
   ): Promise<boolean> {
     return this.sessions.revoke(id, revokedAt, reason);
+  }
+
+  revokeByRefreshTokenHash(
+    refreshTokenHash: string,
+    reason: string | null,
+    revokedAt = new Date(),
+  ): Promise<boolean> {
+    return this.sessions.revokeByRefreshTokenHash(
+      refreshTokenHash,
+      revokedAt,
+      reason,
+    );
   }
 
   revokeAllForUser(
