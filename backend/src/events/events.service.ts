@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client';
 import { PublicationStatus } from '../../generated/prisma/enums';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
+import { assertPublicationTransition } from './publication-transition.policy';
 
 const adminSelect = {
   id: true,
@@ -51,7 +52,7 @@ export function toPublicEvent(event: PublicEventRecord) {
 export class EventsService {
   constructor(
     private readonly prisma: PrismaService,
-    @Optional() private readonly audit?: AuditService,
+    private readonly audit: AuditService,
   ) {}
 
   async findAll() {
@@ -70,7 +71,7 @@ export class EventsService {
   async create(dto: CreateEventDto, actorId: number, context: AuditContext = {}) {
     this.assertDateRange(dto.startAt, dto.endAt);
     const event = await this.prisma.event.create({ data: dto, select: adminSelect });
-    await this.audit?.log({
+    await this.audit.log({
       userId: actorId,
       action: AuditAction.EVENT_CREATED,
       module: 'EVENTS',
@@ -85,7 +86,7 @@ export class EventsService {
     const existing = await this.findOne(id);
     this.assertDateRange(dto.startAt ?? existing.startAt, dto.endAt ?? existing.endAt);
     const event = await this.prisma.event.update({ where: { id }, data: dto, select: adminSelect });
-    await this.audit?.log({
+    await this.audit.log({
       userId: actorId,
       action: AuditAction.EVENT_UPDATED,
       module: 'EVENTS',
@@ -98,28 +99,74 @@ export class EventsService {
   }
 
   async publish(id: number, actorId: number, context: AuditContext = {}) {
-    const existing = await this.findOne(id);
-    if (existing.publicationStatus === PublicationStatus.ARCHIVED) {
-      throw new BadRequestException('Archived events cannot be republished');
-    }
-    const event = await this.prisma.event.update({
-      where: { id },
-      data: { publicationStatus: PublicationStatus.PUBLISHED },
-      select: adminSelect,
-    });
-    await this.audit?.log({ userId: actorId, action: AuditAction.EVENT_PUBLISHED, module: 'EVENTS', entityType: 'Event', entityId: id, ...context });
-    return event;
+    return this.transitionPublication(
+      id,
+      PublicationStatus.PUBLISHED,
+      actorId,
+      AuditAction.EVENT_PUBLISHED,
+      context,
+    );
   }
 
   async archive(id: number, actorId: number, context: AuditContext = {}) {
-    await this.findOne(id);
-    const event = await this.prisma.event.update({
-      where: { id },
-      data: { publicationStatus: PublicationStatus.ARCHIVED },
-      select: adminSelect,
+    return this.transitionPublication(
+      id,
+      PublicationStatus.ARCHIVED,
+      actorId,
+      AuditAction.EVENT_ARCHIVED,
+      context,
+    );
+  }
+
+  async submitForReview(id: number, actorId: number, context: AuditContext = {}) {
+    return this.transitionPublication(
+      id,
+      PublicationStatus.REVIEW,
+      actorId,
+      AuditAction.EVENT_SUBMITTED_FOR_REVIEW,
+      context,
+    );
+  }
+
+  async returnToDraft(id: number, actorId: number, context: AuditContext = {}) {
+    return this.transitionPublication(
+      id,
+      PublicationStatus.DRAFT,
+      actorId,
+      AuditAction.EVENT_RETURNED_TO_DRAFT,
+      context,
+    );
+  }
+
+  private async transitionPublication(
+    id: number,
+    to: PublicationStatus,
+    actorId: number,
+    action: AuditAction,
+    context: AuditContext,
+  ) {
+    const existing = await this.findOne(id);
+    assertPublicationTransition(existing.publicationStatus, to);
+    return this.prisma.$transaction(async (tx) => {
+      const event = await tx.event.update({
+        where: { id },
+        data: { publicationStatus: to },
+        select: adminSelect,
+      });
+      await this.audit.log(
+        {
+          userId: actorId,
+          action,
+          module: 'EVENTS',
+          entityType: 'Event',
+          entityId: id,
+          details: { from: existing.publicationStatus, to },
+          ...context,
+        },
+        tx,
+      );
+      return event;
     });
-    await this.audit?.log({ userId: actorId, action: AuditAction.EVENT_ARCHIVED, module: 'EVENTS', entityType: 'Event', entityId: id, ...context });
-    return event;
   }
 
   private async findOne(id: number) {

@@ -27,6 +27,14 @@ export class EventsController {
   @RequireCapabilities('pub.events.publish')
   publish(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) { return this.service.publish(id, req.user.id, this.context(req)); }
 
+  @Patch(':id/review')
+  @RequireCapabilities('pub.events.manage')
+  submitForReview(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) { return this.service.submitForReview(id, req.user.id, this.context(req)); }
+
+  @Patch(':id/draft')
+  @RequireCapabilities('pub.events.manage')
+  returnToDraft(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) { return this.service.returnToDraft(id, req.user.id, this.context(req)); }
+
   @Patch(':id/archive')
   @RequireCapabilities('pub.events.publish')
   archive(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) { return this.service.archive(id, req.user.id, this.context(req)); }
