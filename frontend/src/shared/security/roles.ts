@@ -1,5 +1,10 @@
-export const ROLE_ADMIN = 'Administrador'
-export const ROLE_INVENTORY_MANAGER = 'Gestor de Inventario'
+import { hasManagementCapabilities } from './access'
+import { ROLE_NAMES } from './roleNames'
+
+export { LEGACY_ROLE_NAMES, ROLE_NAMES, type RoleName } from './roleNames'
+
+export const ROLE_ADMIN = ROLE_NAMES.ADMIN
+export const ROLE_INVENTORY_MANAGER = ROLE_NAMES.INVENTORY_MANAGER
 
 export const ADMIN_ROLES: readonly string[] = [ROLE_ADMIN]
 export const INVENTORY_ROLES: readonly string[] = [ROLE_ADMIN, ROLE_INVENTORY_MANAGER]
@@ -13,5 +18,6 @@ export function canManageInventory(role: string | null | undefined): boolean {
 }
 
 export function homePathForRole(role: string | null | undefined): string {
-  return role ? '/app' : '/login'
+  if (role === null || role === undefined) return '/login'
+  return hasManagementCapabilities(role) ? '/app' : '/mi-cuenta'
 }

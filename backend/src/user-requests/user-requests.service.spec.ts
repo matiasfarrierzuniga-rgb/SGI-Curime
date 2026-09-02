@@ -68,7 +68,11 @@ describe('UserRequestsService', () => {
     prisma.userRequest.findUnique.mockResolvedValue(pending);
     prisma.userRequest.create.mockResolvedValue(pending);
     prisma.userRequest.updateMany.mockResolvedValue({ count: 1 });
-    prisma.role.findUnique.mockResolvedValue({ id: 2, isActive: true });
+    prisma.role.findUnique.mockResolvedValue({
+      id: 2,
+      name: 'Usuario',
+      isActive: true,
+    });
     tx.userRequest.updateMany.mockResolvedValue({ count: 1 });
     tx.userRequest.findUniqueOrThrow.mockResolvedValue({
       ...pending,
@@ -165,7 +169,7 @@ describe('UserRequestsService', () => {
     );
   });
 
-  it('approves atomically and creates an inactive user and hashed token', async () => {
+  it('approves atomically with the active Usuario role and creates a hashed token', async () => {
     const result = await service.approve(10, { roleId: 2 }, 1);
     expect(tx.user.create).toHaveBeenCalledWith(
       expect.objectContaining({

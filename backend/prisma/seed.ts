@@ -2,23 +2,24 @@ import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
+import { ROLE_NAMES } from '../src/common/security/roles';
 
 const INITIAL_ROLES = [
   {
-    name: 'Administrador',
+    name: ROLE_NAMES.ADMIN,
     description: 'Gestiona la configuración y administración general del sistema.',
   },
   {
-    name: 'Tesorero',
+    name: ROLE_NAMES.TREASURER,
     description: 'Gestiona las funciones financieras autorizadas.',
   },
   {
-    name: 'Gestor de Inventario',
+    name: ROLE_NAMES.INVENTORY_MANAGER,
     description: 'Gestiona el inventario institucional autorizado.',
   },
   {
-    name: 'Vecino/Afiliado',
-    description: 'Accede a las funciones disponibles para vecinos y afiliados.',
+    name: ROLE_NAMES.USER,
+    description: 'Cuenta autenticada sin permisos administrativos.',
   },
 ] as const;
 
@@ -48,14 +49,17 @@ async function main(): Promise<void> {
       INITIAL_ROLES.map((role) =>
         prisma.role.upsert({
           where: { name: role.name },
-          update: {},
+          update: {
+            description: role.description,
+            isActive: true,
+          },
           create: role,
         }),
       ),
     );
 
     const administratorRole = await prisma.role.findUniqueOrThrow({
-      where: { name: 'Administrador' },
+      where: { name: ROLE_NAMES.ADMIN },
     });
 
     const [userWithEmail, userWithIdentification] = await Promise.all([

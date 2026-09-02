@@ -3,11 +3,11 @@ import type { ReactNode } from 'react'
 import { MemoryRouter, Navigate, Outlet } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/router/AppRoutes'
-import { hasAuthenticatedSessionCapability, hasCapability } from '@/shared/security/access'
+import { hasCapability, hasManagementCapabilities } from '@/shared/security/access'
 
 const state = vi.hoisted(() => ({
   value: {
-    user: null as { role: string } | null,
+    user: null as { role: string; fullName: string } | null,
     token: 't',
     isAuthenticated: false,
     isLoading: false,
@@ -24,10 +24,11 @@ vi.mock('@/features/auth', async importOriginal => {
     AuthProvider: ({ children }: { children: ReactNode }) => children,
     LoginPage: () => <h1>Iniciar sesión</h1>,
     ProtectedRoute: () => state.value.isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />,
+    ManagementRoute: () => hasManagementCapabilities(state.value.user?.role) ? <Outlet /> : <Navigate to="/mi-cuenta" replace />,
     RoleRoute: ({ role, capability }: { role?: string | string[]; capability?: string }) => {
       const currentRole = state.value.user?.role
       const allowed = capability
-        ? hasAuthenticatedSessionCapability(capability) || hasCapability(currentRole, capability)
+        ? hasCapability(currentRole, capability)
         : Array.isArray(role) ? role.includes(currentRole ?? '') : currentRole === role
       return allowed ? <Outlet /> : <Navigate to="/403" replace />
     },
@@ -50,7 +51,7 @@ vi.mock('../../services/inventoryReportsService', () => ({
 }))
 
 const renderAt = (path: string, role: string | null) => {
-  state.value.user = role ? { role } : null
+  state.value.user = role ? { role, fullName: 'Ana Pérez' } : null
   state.value.isAuthenticated = Boolean(role)
   return render(
     <MemoryRouter initialEntries={[path]}>
@@ -74,9 +75,9 @@ describe('Inventory route access by role', () => {
     expect(await screen.findByRole('heading', { name: 'Inventario' })).toBeInTheDocument()
   })
 
-  it('blocks a non-inventory role from protected routes', async () => {
-    renderAt('/inventory/items', 'Vecino/Afiliado')
-    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+  it('redirects a non-management role from protected routes to Mi cuenta', async () => {
+    renderAt('/inventory/items', 'Usuario')
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
     expect(screen.queryByText('Artículos')).not.toBeInTheDocument()
   })
 

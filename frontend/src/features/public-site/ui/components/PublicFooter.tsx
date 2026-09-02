@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { site } from '@/content/publicSiteContent'
+import { homePathForRole } from '@/shared/security/roles'
 
 export function PublicFooter() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   return (
     <>
       <svg
@@ -70,8 +71,8 @@ export function PublicFooter() {
             <h3 className="font-heading text-heading-3 font-semibold text-brand-accent">Sistema</h3>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
-                <Link className="text-brand-ivory/80 hover:text-brand-accent" to={isAuthenticated ? '/app' : '/login'}>
-                  {isAuthenticated ? 'Mi panel' : 'Mi cuenta'}
+                <Link className="text-brand-ivory/80 hover:text-brand-accent" to={isAuthenticated ? homePathForRole(user?.role) : '/login'}>
+                  Mi cuenta
                 </Link>
               </li>
               <li>

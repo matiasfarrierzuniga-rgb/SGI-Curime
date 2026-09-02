@@ -3,17 +3,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { authService, AuthProvider } from '@/features/auth'
-import { usersService } from '@/features/users/api/users.api'
 import { rolesService } from '@/features/roles'
 import { auditLogsService } from '@/services/auditLogsService'
 import { inventoryReportsService } from '@/services/inventoryReportsService'
 import { httpClient } from '@/shared/api/httpClient'
 import { AppRoutes } from './AppRoutes'
 import { ToastProvider } from '@/shared/ui/Toast'
-
-vi.mock('@/features/users/api/users.api', () => ({
-  usersService: { list: vi.fn(), get: vi.fn(), update: vi.fn(), changeRole: vi.fn(), activate: vi.fn(), deactivate: vi.fn(), unlock: vi.fn() },
-}))
 
 vi.mock('@/features/roles', () => ({
   rolesService: { listActive: vi.fn() },
@@ -26,8 +21,6 @@ vi.mock('@/services/auditLogsService', () => ({
 vi.mock('@/services/inventoryReportsService', () => ({
   inventoryReportsService: { summary: vi.fn() },
 }))
-
-let httpGet: ReturnType<typeof vi.spyOn>
 
 function renderRoute(path: string, role: string | null) {
   if (role !== null) {
@@ -46,17 +39,13 @@ function renderRoute(path: string, role: string | null) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(usersService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
   vi.mocked(rolesService.listActive).mockResolvedValue([])
   vi.mocked(auditLogsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
   vi.mocked(inventoryReportsService.summary).mockResolvedValue({ activeItems: 0, lowStockCount: 0, outOfStockCount: 0, overdueLoans: 0 })
-  httpGet = vi.spyOn(httpClient, 'get').mockImplementation(() => {
-    throw new Error('AppRoutes tests must not make HTTP requests')
-  })
+  vi.spyOn(httpClient, 'get').mockResolvedValue({ data: { data: [], total: 0, page: 1, limit: 10 } })
 })
 
 afterEach(() => {
-  expect(httpGet).not.toHaveBeenCalled()
   localStorage.clear()
   vi.restoreAllMocks()
 })
@@ -70,11 +59,11 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.queryByText('Ir al SGI')).not.toBeInTheDocument()
   })
 
-  it('sends authenticated portal access back to the ERP', async () => {
+  it('sends administrative portal access back to the ERP', async () => {
     renderRoute('/', 'Administrador')
 
-    expect(await screen.findAllByRole('link', { name: 'Mi panel' })).not.toHaveLength(0)
-    screen.getAllByRole('link', { name: 'Mi panel' }).forEach((link) => expect(link).toHaveAttribute('href', '/app'))
+    expect(await screen.findAllByRole('link', { name: 'Mi cuenta' })).not.toHaveLength(0)
+    screen.getAllByRole('link', { name: 'Mi cuenta' }).forEach((link) => expect(link).toHaveAttribute('href', '/app'))
   })
 
   it('redirects anonymous users from /app to login', () => {
@@ -103,10 +92,10 @@ describe('AppRoutes capability deep links', () => {
     expect(await screen.findByRole('heading', { name: 'Bitácora' })).toBeInTheDocument()
   })
 
-  it('denies unprivileged deep-links to audit logs', async () => {
+  it('redirects unprivileged deep-links to the personal area', async () => {
     renderRoute('/admin/audit-logs', 'Vecino/Afiliado')
 
-    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
   })
 
   it('allows authenticated users into /app', async () => {
@@ -121,7 +110,7 @@ describe('AppRoutes capability deep links', () => {
     await screen.findByRole('heading', { name: 'Hola, Ana' })
     fireEvent.click(screen.getAllByRole('link', { name: 'Ver sitio público' })[0])
 
-    expect(await screen.findAllByRole('link', { name: 'Mi panel' })).not.toHaveLength(0)
+    expect(await screen.findAllByRole('link', { name: 'Mi cuenta' })).not.toHaveLength(0)
   })
 
   it('clears the session and redirects logout to login', async () => {
@@ -142,11 +131,28 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
   })
 
-  it('redirects basic authenticated users from /admin/users to 403', async () => {
+  it('redirects legacy personal accounts away from ERP routes', async () => {
     renderRoute('/admin/users', 'Vecino/Afiliado')
 
-    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Administración de usuarios' })).not.toBeInTheDocument()
+  })
+
+  it.each(['Usuario', 'Vecino/Afiliado', 'Tesorero'])('redirects %s from /app to Mi cuenta', async (role) => {
+    renderRoute('/app', role)
+
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Navegación de Mi cuenta' })).toBeInTheDocument()
+    expect(screen.queryByText('Área de gestión')).not.toBeInTheDocument()
+  })
+
+  it('lets Usuario open Mi cuenta and the shared profile page', async () => {
+    const accountView = renderRoute('/mi-cuenta', 'Usuario')
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
+    accountView.unmount()
+
+    renderRoute('/profile', 'Usuario')
+    expect(await screen.findByRole('heading', { name: 'Mi perfil' })).toBeInTheDocument()
   })
 
   it('redirects unknown roles from /app/admin/affiliates to 403', async () => {

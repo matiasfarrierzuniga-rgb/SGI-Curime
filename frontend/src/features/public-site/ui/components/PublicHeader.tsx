@@ -2,9 +2,10 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { site } from '@/content/publicSiteContent'
+import { homePathForRole } from '@/shared/security/roles'
 
 export function PublicHeader() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const [open, setOpen] = useState(false)
   const id = useId()
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -21,8 +22,8 @@ export function PublicHeader() {
     return () => window.removeEventListener('keydown', escape)
   }, [open])
   const close = () => setOpen(false)
-  const accessTo = isAuthenticated ? '/app' : '/login'
-  const accessLabel = isAuthenticated ? 'Mi panel' : 'Mi cuenta'
+  const accessTo = isAuthenticated ? homePathForRole(user?.role) : '/login'
+  const accessLabel = 'Mi cuenta'
   const publicNavItems = site.nav.filter((item) =>
     ['/', '/nosotros', '/servicios', '/noticias', '/contacto'].includes(item.to),
   )

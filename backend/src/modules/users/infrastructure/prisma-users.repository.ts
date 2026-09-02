@@ -5,6 +5,7 @@ import {
   UserStatus,
 } from '../../../../generated/prisma/client';
 import { getAccountLockoutPolicy, lockoutCutoff } from '../../../auth';
+import { ROLE_NAMES } from '../../../common/security/roles';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
   User,
@@ -18,8 +19,6 @@ import {
   UserUpdateData,
   UsersRepository,
 } from '../domain/repositories/users-repository';
-
-const ADMIN_ROLE = 'Administrador';
 
 const userSelect = {
   id: true,
@@ -196,7 +195,7 @@ export class PrismaUsersRepository implements UsersRepository {
       where: {
         id: { not: excludeUserId },
         status: UserStatus.ACTIVE,
-        role: { name: ADMIN_ROLE },
+        role: { name: ROLE_NAMES.ADMIN },
       },
     });
   }

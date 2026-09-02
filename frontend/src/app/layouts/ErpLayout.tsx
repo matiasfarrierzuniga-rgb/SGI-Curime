@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ExternalLink, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { CircleUserRound, ExternalLink, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { getErpNavigation, type ErpNavigationItem } from '@/app/navigation/erpNavigation'
@@ -100,6 +100,9 @@ function ErpNavigation({ id, currentPath, navigation, onNavigate, onLogout, comp
         ))}
       </div>
       <div className="mt-auto space-y-1 border-t border-current/15 pt-4">
+        <Link to="/mi-cuenta" onClick={onNavigate} title={compact ? 'Mi cuenta' : undefined} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold text-current hover:bg-brand-soft/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent">
+          <CircleUserRound className="size-4 shrink-0" aria-hidden="true" /> <span className={compact ? 'md:sr-only xl:not-sr-only' : ''}>Mi cuenta</span>
+        </Link>
         <Link to="/" onClick={onNavigate} title={compact ? 'Ver sitio público' : undefined} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold text-current hover:bg-brand-soft/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent">
           <ExternalLink className="size-4 shrink-0" aria-hidden="true" /> <span className={compact ? 'md:sr-only xl:not-sr-only' : ''}>Ver sitio público</span>
         </Link>

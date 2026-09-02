@@ -1,9 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../model/AuthContext'
-import {
-  hasAuthenticatedSessionCapability,
-  hasCapability,
-} from '../../../shared/security/access'
+import { hasCapability } from '../../../shared/security/access'
 
 type RoleRouteProps = {
   role?: string | string[]
@@ -14,8 +11,7 @@ export function RoleRoute({ role, capability }: RoleRouteProps) {
   const { user, isAuthenticated } = useAuth()
   const allowed = capability !== undefined
     ? isAuthenticated && (
-      hasCapability(user?.role, capability) ||
-      hasAuthenticatedSessionCapability(capability)
+      hasCapability(user?.role, capability)
     )
     : role !== undefined && (
       Array.isArray(role)

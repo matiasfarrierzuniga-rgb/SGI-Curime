@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
+import { homePathForRole } from '@/shared/security/roles'
 
 export function HeroSection() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   return (
     <section aria-labelledby="hero-title" className="bg-brand-ivory">
       <div className="public-container grid items-center gap-12 pb-16 pt-14 md:grid-cols-2 md:gap-12 md:pb-20 md:pt-20 lg:gap-20 lg:pb-24 lg:pt-24 xl:grid-cols-[minmax(0,49fr)_minmax(0,51fr)] xl:gap-24 xl:pb-28 xl:pt-28">
@@ -27,10 +28,10 @@ export function HeroSection() {
               Conozca la Asociación
             </Link>
             <Link
-              to={isAuthenticated ? '/app' : '/register'}
+              to={isAuthenticated ? homePathForRole(user?.role) : '/register'}
               className="inline-flex min-h-12 items-center justify-center rounded-md border-2 border-brand-deep px-6 py-3 text-center font-bold text-brand-deep transition-colors hover:bg-brand-deep hover:text-brand-ivory"
             >
-              {isAuthenticated ? 'Mi panel' : 'Solicitar una cuenta'}
+              {isAuthenticated ? 'Mi cuenta' : 'Solicitar una cuenta'}
             </Link>
           </div>
         </div>

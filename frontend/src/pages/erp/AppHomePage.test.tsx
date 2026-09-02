@@ -32,7 +32,7 @@ describe('AppHomePage', () => {
   })
 
   it('shows a clean empty state when a role has no operational quick actions', () => {
-    auth.user = { fullName: 'María Solano', role: 'Vecino/Afiliado' }
+    auth.user = { fullName: 'María Solano', role: 'Usuario' }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
     expect(screen.getByText('No hay tareas pendientes disponibles.')).toBeInTheDocument()
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()

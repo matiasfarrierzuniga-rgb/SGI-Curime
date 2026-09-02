@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { ArrowLeftRight, Boxes, ChartNoAxesCombined, ClipboardList, FileClock, Handshake, Home, Package, Tags, TriangleAlert, UserRound, Users } from 'lucide-react'
-import { hasAuthenticatedSessionCapability, hasCapability, type AccessCapability } from '@/shared/security/access'
+import { hasCapability, type AccessCapability } from '@/shared/security/access'
 
 export type ErpNavigationItem = {
   label: string
@@ -41,7 +41,7 @@ const navigation: readonly ErpNavigationSection[] = [
 ]
 
 function isVisible(item: ErpNavigationItem, role: string | null | undefined): boolean {
-  return item.capability === undefined || hasAuthenticatedSessionCapability(item.capability) || hasCapability(role, item.capability)
+  return item.capability === undefined || hasCapability(role, item.capability)
 }
 
 export function getErpNavigation(role: string | null | undefined): ErpNavigationSection[] {

@@ -5,7 +5,7 @@ import { PublicLayout } from '@/app/layouts/PublicLayout'
 import { LandingPage } from '@/features/public-site'
 import { ContactPage, EventsPage, NewsPage, ServicesPage } from './PublicPages'
 
-const authState = vi.hoisted(() => ({ isAuthenticated: false }))
+const authState = vi.hoisted(() => ({ isAuthenticated: false, user: { role: 'Administrador' } }))
 vi.mock('@/features/auth', () => ({
   useAuth: () => authState,
 }))
@@ -46,7 +46,7 @@ describe('portal público', () => {
     const { container } = renderPublic()
 
     expect(container.querySelector<HTMLAnchorElement>('a[href="/app"]')).not.toBeNull()
-    expect(screen.getAllByRole('link', { name: 'Mi panel' })).not.toHaveLength(0)
+    expect(screen.getAllByRole('link', { name: 'Mi cuenta' })).not.toHaveLength(0)
     authState.isAuthenticated = false
   })
 

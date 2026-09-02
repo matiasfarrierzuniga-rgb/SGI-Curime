@@ -112,7 +112,7 @@ describe('InventoryLoansController (e2e)', () => {
     request(app.getHttpServer()).get('/inventory/loans').expect(401));
 
   it('forbids a role without inventory access', async () => {
-    role = 'Vecino/Afiliado';
+    role = 'Usuario';
     await request(app.getHttpServer())
       .post('/inventory/loans')
       .set('Authorization', await authorization())

@@ -26,10 +26,10 @@ describe('getErpNavigation', () => {
     expect(JSON.stringify(result)).not.toMatch(/Usuarios|Solicitudes|Bitácora/)
   })
 
-  it('shows only session-wide navigation to other authenticated roles', () => {
-    expect(labels('Vecino/Afiliado')).toEqual([
-      { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
-    ])
+  it('does not expose ERP dashboard navigation to personal roles', () => {
+    expect(labels('Usuario')).toEqual([{ label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] }])
+    expect(labels('Vecino/Afiliado')).toEqual([{ label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] }])
+    expect(labels('Tesorero')).toEqual([{ label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] }])
+    expect(labels('Rol desconocido')).toEqual([])
   })
 })

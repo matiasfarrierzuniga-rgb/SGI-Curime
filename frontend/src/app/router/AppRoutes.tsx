@@ -1,8 +1,9 @@
 import { Route, Routes } from 'react-router-dom'
-import { ProtectedRoute } from '@/features/auth'
+import { ManagementRoute, ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
 import { AccessLayout } from '@/app/layouts/AccessLayout'
 import { ErpLayout } from '@/app/layouts/ErpLayout'
+import { AccountLayout } from '@/app/layouts/AccountLayout'
 import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -26,6 +27,7 @@ import { AffiliationPage } from '@/pages/public/AffiliationPage'
 import { LandingPage } from '@/features/public-site'
 import { AppHomePage } from '@/pages/erp/AppHomePage'
 import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
+import { AccountHomePage } from '@/pages/account/AccountHomePage'
 export function AppRoutes() {
   return (
     <Routes>
@@ -50,11 +52,15 @@ export function AppRoutes() {
       </Route>
       <Route path="/403" element={<ForbiddenPage />} />
       <Route element={<ProtectedRoute />}>
-        <Route element={<ErpLayout />}>
-          <Route path="/app" element={<AppHomePage />} />
+        <Route element={<AccountLayout />}>
           <Route element={<RoleRoute capability="usr.profile.read" />}>
+            <Route path="/mi-cuenta" element={<AccountHomePage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
+        </Route>
+        <Route element={<ManagementRoute />}>
+          <Route element={<ErpLayout />}>
+            <Route path="/app" element={<AppHomePage />} />
           <Route element={<RoleRoute capability="usr.users.read" />}>
             <Route path="/admin/users" element={<UsersPage />} />
           </Route>
@@ -79,6 +85,7 @@ export function AppRoutes() {
             <Route path="/inventory/loans" element={<InventoryLoansPage />} />
             <Route path="/inventory/alerts" element={<InventoryAlertsPage />} />
             <Route path="/inventory/reports" element={<InventoryReportsPage />} />
+          </Route>
           </Route>
         </Route>
       </Route>

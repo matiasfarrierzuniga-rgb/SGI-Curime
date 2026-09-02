@@ -4,6 +4,8 @@ import {
   INVENTORY_ROLES,
   ROLE_ADMIN,
   ROLE_INVENTORY_MANAGER,
+  ROLE_NAMES,
+  LEGACY_ROLE_NAMES,
   canManageInventory,
   homePathForRole,
   isAdmin,
@@ -15,6 +17,8 @@ describe('shared security role policy', () => {
     expect(ROLE_INVENTORY_MANAGER).toBe('Gestor de Inventario')
     expect(ADMIN_ROLES).toEqual(['Administrador'])
     expect(INVENTORY_ROLES).toEqual(['Administrador', 'Gestor de Inventario'])
+    expect(ROLE_NAMES).toEqual({ ADMIN: 'Administrador', TREASURER: 'Tesorero', INVENTORY_MANAGER: 'Gestor de Inventario', USER: 'Usuario' })
+    expect(LEGACY_ROLE_NAMES.COMMUNITY_MEMBER).toBe('Vecino/Afiliado')
   })
 
   it('derives admin access', () => {
@@ -34,6 +38,10 @@ describe('shared security role policy', () => {
   it('routes post-login home by role', () => {
     expect(homePathForRole('Administrador')).toBe('/app')
     expect(homePathForRole('Gestor de Inventario')).toBe('/app')
+    expect(homePathForRole('Tesorero')).toBe('/mi-cuenta')
+    expect(homePathForRole('Usuario')).toBe('/mi-cuenta')
+    expect(homePathForRole('Vecino/Afiliado')).toBe('/mi-cuenta')
+    expect(homePathForRole('Rol desconocido')).toBe('/mi-cuenta')
     expect(homePathForRole(undefined)).toBe('/login')
   })
 })

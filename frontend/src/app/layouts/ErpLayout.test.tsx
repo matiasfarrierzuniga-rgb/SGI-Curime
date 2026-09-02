@@ -19,6 +19,7 @@ describe('ErpLayout', () => {
     expect(screen.getAllByRole('navigation', { name: 'Navegación del sistema' }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('link', { name: 'Dashboard' })[0]).toHaveAttribute('aria-current', 'page')
     expect(screen.getAllByRole('link', { name: 'Ver sitio público' })[0]).toHaveAttribute('href', '/')
+    expect(screen.getAllByRole('link', { name: 'Mi cuenta' })[0]).toHaveAttribute('href', '/mi-cuenta')
     expect(screen.getAllByRole('main')).toHaveLength(1)
   })
 
