@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../../auth';
 import { AuditModule } from '../../audit/audit.module';
 import { PublicRequestRateLimitModule } from '../../common/rate-limit/public-request-rate-limit.module';
+import { IdentityModule } from '../../identity/identity.module';
 import { AUDIT_PORT } from './application/ports/audit.port';
 import { ActivateUserUseCase } from './application/use-cases/activate-user.use-case';
 import { ChangeUserRoleUseCase } from './application/use-cases/change-user-role.use-case';
@@ -18,7 +19,12 @@ import { UsersController } from './presentation/controllers/users.controller';
 import { RegistrationController } from './presentation/controllers/registration.controller';
 
 @Module({
-  imports: [AuthModule, AuditModule, PublicRequestRateLimitModule],
+  imports: [
+    AuthModule,
+    AuditModule,
+    PublicRequestRateLimitModule,
+    IdentityModule,
+  ],
   controllers: [UsersController, RegistrationController],
   providers: [
     PrismaUsersRepository,

@@ -1,14 +1,14 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { getErrorMessage } from '@/shared/lib/errors'
-import { digitsOnly, identificationError, identificationMaxLength, normalizeEmail, normalizeText, personContactErrors, phoneNationalMaxLength, type IdentificationType } from '@/shared/lib/formValidation'
+import { digitsOnly, emailError, identificationError, identificationMaxLength, normalizeEmail, normalizeText, phoneError, phoneNationalMaxLength, structuredNameError, type IdentificationType } from '@/shared/lib/formValidation'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { authService } from '../api/auth.api'
 import type { RegisterUser } from '../model/auth.types'
 
 type RegisterForm = RegisterUser & { passwordConfirmation: string }
 
-const initial: RegisterForm = { fullName: '', identificationType: 'NATIONAL', identification: '', email: '', phoneCountryCode: '+506', phoneNationalNumber: '', address: '', password: '', passwordConfirmation: '' }
+const initial: RegisterForm = { firstName: '', firstSurname: '', secondSurname: '', identificationType: 'NATIONAL', identification: '', email: '', phoneCountryCode: '+506', phoneNationalNumber: '', address: '', password: '', passwordConfirmation: '' }
 const inputClass = 'min-h-12 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal'
 
 export function RegisterPage() {
@@ -25,7 +25,11 @@ export function RegisterPage() {
       ? 'La contraseña debe tener al menos 10 caracteres e incluir mayúscula, minúscula y número.'
       : ''
     const next = {
-      ...personContactErrors(form),
+      firstName: structuredNameError(form.firstName),
+      firstSurname: structuredNameError(form.firstSurname),
+      secondSurname: structuredNameError(form.secondSurname ?? '', false),
+      email: emailError(form.email),
+      phoneNationalNumber: phoneError(form.phoneCountryCode ?? '', form.phoneNationalNumber ?? ''),
       identification: identificationError(form.identificationType, form.identification),
       password,
       passwordConfirmation: form.password === form.passwordConfirmation ? '' : 'Las contraseñas no coinciden.',
@@ -43,7 +47,9 @@ export function RegisterPage() {
     setSuccess('')
     try {
       const payload: RegisterUser = {
-        fullName: normalizeText(form.fullName),
+        firstName: normalizeText(form.firstName),
+        firstSurname: normalizeText(form.firstSurname),
+        secondSurname: form.secondSurname ? normalizeText(form.secondSurname) || undefined : undefined,
         identificationType: form.identificationType,
         identification: form.identification,
         email: normalizeEmail(form.email),
@@ -71,12 +77,20 @@ export function RegisterPage() {
       <p className="mt-3 leading-relaxed text-foreground-muted">Complete sus datos para crear una cuenta activa. Después podrá iniciar sesión.</p>
       <StatusMessage error={error} success={success} />
       <form className="mt-7 grid gap-5" onSubmit={submit} noValidate>
-        <label className="grid gap-2 text-sm font-bold" htmlFor="full-name">Nombre completo
-          <input id="full-name" className={inputClass} required minLength={2} maxLength={150} autoComplete="name" aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'full-name-error' : undefined} {...field('fullName')} onBlur={validate} />
-          {errors.fullName && <span id="full-name-error" className="field-error" role="alert">{errors.fullName}</span>}
+        <label className="grid gap-2 text-sm font-bold" htmlFor="first-name">Nombre
+          <input id="first-name" className={inputClass} required minLength={2} maxLength={150} autoComplete="given-name" aria-invalid={Boolean(errors.firstName)} aria-describedby={errors.firstName ? 'first-name-error' : undefined} {...field('firstName')} onBlur={validate} />
+          {errors.firstName && <span id="first-name-error" className="field-error" role="alert">{errors.firstName}</span>}
+        </label>
+        <label className="grid gap-2 text-sm font-bold" htmlFor="first-surname">Primer apellido
+          <input id="first-surname" className={inputClass} required minLength={2} maxLength={150} autoComplete="family-name" aria-invalid={Boolean(errors.firstSurname)} aria-describedby={errors.firstSurname ? 'first-surname-error' : undefined} {...field('firstSurname')} onBlur={validate} />
+          {errors.firstSurname && <span id="first-surname-error" className="field-error" role="alert">{errors.firstSurname}</span>}
+        </label>
+        <label className="grid gap-2 text-sm font-bold" htmlFor="second-surname">Segundo apellido (opcional)
+          <input id="second-surname" className={inputClass} minLength={2} maxLength={150} autoComplete="family-name" aria-invalid={Boolean(errors.secondSurname)} aria-describedby={errors.secondSurname ? 'second-surname-error' : undefined} {...field('secondSurname')} onBlur={validate} />
+          {errors.secondSurname && <span id="second-surname-error" className="field-error" role="alert">{errors.secondSurname}</span>}
         </label>
         <label className="grid gap-2 text-sm font-bold" htmlFor="identification-type">Tipo de identificación
-          <select id="identification-type" className={inputClass} value={idType} onChange={(event) => setForm({ ...form, identificationType: event.target.value as IdentificationType, identification: '' })}><option value="NATIONAL">Nacional</option><option value="DIMEX">DIMEX</option></select>
+          <select id="identification-type" className={inputClass} value={idType} onChange={(event) => setForm({ ...form, identificationType: event.target.value as IdentificationType, identification: '' })}><option value="NATIONAL">Cédula nacional</option><option value="DIMEX">DIMEX</option></select>
         </label>
         <label className="grid gap-2 text-sm font-bold" htmlFor="identification">Número de identificación
           <input id="identification" className={inputClass} type="text" inputMode="numeric" required maxLength={identificationMaxLength(idType)} aria-invalid={Boolean(errors.identification)} aria-describedby={errors.identification ? 'identification-error' : undefined} value={form.identification} onChange={(event) => setForm({ ...form, identification: digitsOnly(event.target.value, identificationMaxLength(idType)) })} onBlur={validate} />

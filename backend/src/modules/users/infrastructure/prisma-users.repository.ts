@@ -7,18 +7,22 @@ import {
 import { getAccountLockoutPolicy, lockoutCutoff } from '../../../auth';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
+  PersonLogicalIdentityRaceError,
+  RuntimePersonResolverService,
+} from '../../../identity/runtime-person-resolver.service';
+import {
   User,
   UserRole,
   UserStatus as DomainUserStatus,
 } from '../domain/entities/user';
 import { EmailAlreadyRegisteredError } from '../domain/errors/email-already-registered.error';
-import { RegistrationConflictError } from '../domain/errors/registration-conflict.error';
 import {
   UserCreateData,
   UserPage,
   UserQuery,
   UserUpdateData,
   UsersRepository,
+  RegistrationDataConflictError,
 } from '../domain/repositories/users-repository';
 
 const ADMIN_ROLE = 'Administrador';
@@ -75,6 +79,7 @@ export class PrismaUsersRepository implements UsersRepository {
   private readonly lockoutMinutes: number;
   constructor(
     private readonly prisma: PrismaService,
+    private readonly personResolver: RuntimePersonResolverService,
     @Optional()
     private readonly db: PrismaClient | Prisma.TransactionClient = prisma,
   ) {
@@ -86,10 +91,39 @@ export class PrismaUsersRepository implements UsersRepository {
   ): Promise<T> {
     return this.prisma.$transaction(
       async (tx) => {
-        return work(new PrismaUsersRepository(this.prisma, tx));
+        return work(
+          new PrismaUsersRepository(this.prisma, this.personResolver, tx),
+        );
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+  }
+
+  async withRegistrationTransaction<T>(
+    work: (repo: UsersRepository) => Promise<T>,
+  ): Promise<T> {
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        return await this.prisma.$transaction(
+          async (tx) =>
+            work(
+              new PrismaUsersRepository(this.prisma, this.personResolver, tx),
+            ),
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        );
+      } catch (error) {
+        if (!isRetriableRegistrationConflict(error)) {
+          throw error;
+        }
+        if (attempt === maxAttempts) {
+          throw error instanceof PersonLogicalIdentityRaceError
+            ? new RegistrationDataConflictError('PERSON_LOGICAL_IDENTITY_RACE')
+            : error;
+        }
+      }
+    }
+    throw new Error('Registration transaction retry exhausted.');
   }
 
   async findPage(query: UserQuery): Promise<UserPage> {
@@ -131,6 +165,13 @@ export class PrismaUsersRepository implements UsersRepository {
     });
   }
 
+  async findByPersonId(personId: number): Promise<{ id: number } | null> {
+    return this.db.user.findUnique({
+      where: { personId },
+      select: { id: true },
+    });
+  }
+
   async findRoleById(id: number): Promise<UserRole | null> {
     const role = await this.db.role.findUnique({
       where: { id },
@@ -155,10 +196,17 @@ export class PrismaUsersRepository implements UsersRepository {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new RegistrationConflictError();
+        throw new RegistrationDataConflictError(classifyUserUnique(error));
       }
       throw error;
     }
+  }
+
+  resolvePerson(input: Parameters<RuntimePersonResolverService['resolve']>[0]) {
+    if (this.db === this.prisma) {
+      return this.personResolver.resolve(input, this.db);
+    }
+    return this.personResolver.resolveWithinTransaction(input, this.db);
   }
 
   async getPasswordHash(id: number): Promise<string | null> {
@@ -257,4 +305,28 @@ export class PrismaUsersRepository implements UsersRepository {
       AND: blockedCondition ? [blockedCondition] : undefined,
     };
   }
+}
+
+function isRetriableRegistrationConflict(error: unknown): boolean {
+  return (
+    error instanceof PersonLogicalIdentityRaceError ||
+    (error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2034')
+  );
+}
+
+function classifyUserUnique(
+  error: Prisma.PrismaClientKnownRequestError,
+):
+  | 'USER_EMAIL_RACE'
+  | 'USER_PERSON_RACE'
+  | 'LEGACY_USER_IDENTIFICATION_CONFLICT'
+  | 'UNEXPECTED_USER_UNIQUE_CONFLICT' {
+  const target = JSON.stringify(error.meta ?? '').toLowerCase();
+  if (target.includes('personid')) return 'USER_PERSON_RACE';
+  if (target.includes('email')) return 'USER_EMAIL_RACE';
+  if (target.includes('identification')) {
+    return 'LEGACY_USER_IDENTIFICATION_CONFLICT';
+  }
+  return 'UNEXPECTED_USER_UNIQUE_CONFLICT';
 }

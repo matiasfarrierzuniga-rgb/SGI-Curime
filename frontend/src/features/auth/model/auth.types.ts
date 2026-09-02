@@ -4,7 +4,9 @@ export interface LoginResponse { accessToken: string; user: AuthenticatedUser }
 export interface PasswordWithConfirmation { token: string; password: string; passwordConfirmation: string }
 export interface StoredSession { token: string; user: AuthenticatedUser }
 export interface RegisterUser {
-  fullName: string
+  firstName: string
+  firstSurname: string
+  secondSurname?: string
   identificationType: 'NATIONAL' | 'DIMEX'
   identification: string
   email: string

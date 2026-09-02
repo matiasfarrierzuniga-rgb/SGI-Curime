@@ -25,7 +25,24 @@ export class RegisterUserDto {
   @MinLength(2)
   @MaxLength(150)
   @Matches(FULL_NAME_PATTERN)
-  fullName: string;
+  firstName: string;
+
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(150)
+  @Matches(FULL_NAME_PATTERN)
+  firstSurname: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(150)
+  @Matches(FULL_NAME_PATTERN)
+  secondSurname?: string;
 
   @IsEnum(IdentificationType)
   identificationType: IdentificationType;

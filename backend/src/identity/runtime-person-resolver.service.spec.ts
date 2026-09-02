@@ -1,5 +1,6 @@
 import { Prisma } from '../../generated/prisma/client';
 import {
+  PersonLogicalIdentityRaceError,
   RuntimePersonResolverService,
   personSelect,
 } from './runtime-person-resolver.service';
@@ -47,9 +48,72 @@ describe('RuntimePersonResolverService', () => {
         identification: '123456789',
         identificationType: 'NATIONAL',
         normalizedIdentification: '123456789',
+        phoneCountryCode: null,
+        phoneNationalNumber: null,
+        address: null,
       },
       select: personSelect,
     });
+  });
+
+  it('writes supplied physical contact only when creating Person', async () => {
+    database.person.findMany.mockResolvedValue([]);
+    database.person.create.mockResolvedValue(person);
+
+    await resolver.resolve(
+      {
+        ...input,
+        phoneCountryCode: '+506',
+        phoneNationalNumber: '88888888',
+        address: 'Curime',
+      },
+      database as never,
+    );
+
+    expect(database.person.create).toHaveBeenCalledWith({
+      data: {
+        firstName: 'Ana',
+        firstSurname: 'Rodríguez',
+        secondSurname: 'Mora',
+        identification: '123456789',
+        identificationType: 'NATIONAL',
+        normalizedIdentification: '123456789',
+        phoneCountryCode: '+506',
+        phoneNationalNumber: '88888888',
+        address: 'Curime',
+      },
+      select: personSelect,
+    });
+  });
+
+  it('locks the logical key before transaction-scoped resolution', async () => {
+    const transaction = { ...database, $queryRaw: jest.fn() };
+    transaction.$queryRaw.mockResolvedValue([]);
+    database.person.findMany.mockResolvedValue([person]);
+
+    await resolver.resolveWithinTransaction(input, transaction as never);
+
+    expect(transaction.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(transaction.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      database.person.findMany.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('bubbles a classified P2002 instead of querying an aborted transaction', async () => {
+    const transaction = { ...database, $queryRaw: jest.fn() };
+    transaction.$queryRaw.mockResolvedValue([]);
+    database.person.findMany.mockResolvedValue([]);
+    database.person.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('unique race', {
+        code: 'P2002',
+        clientVersion: '7.9.1',
+      }),
+    );
+
+    await expect(
+      resolver.resolveWithinTransaction(input, transaction as never),
+    ).rejects.toBeInstanceOf(PersonLogicalIdentityRaceError);
+    expect(database.person.findMany).toHaveBeenCalledTimes(1);
   });
 
   it('reuses one compatible Person without mutation', async () => {

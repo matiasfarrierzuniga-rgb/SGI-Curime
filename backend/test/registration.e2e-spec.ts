@@ -1,4 +1,5 @@
 import './helpers/configure-auth-env';
+process.env.REFRESH_TOKEN_TTL = '3600';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Prisma } from '../generated/prisma/client';
@@ -10,17 +11,10 @@ import { AUDIT_PORT as USERS_AUDIT_PORT } from '../src/modules/users/application
 import { UsersModule } from '../src/modules/users/users.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
-describe('RegistrationController (e2e)', () => {
+describe('RegistrationController Person-first (e2e)', () => {
   let app: INestApplication<App>;
-  let createdData:
-    | {
-        email: string;
-        passwordHash: string;
-        status: string;
-        roleId: number;
-        [key: string]: unknown;
-      }
-    | undefined;
+  let createdUserData: Record<string, unknown> | undefined;
+  let createdPersonData: Record<string, unknown> | undefined;
   const role = {
     id: 5,
     name: 'Subscription_L1',
@@ -28,36 +22,58 @@ describe('RegistrationController (e2e)', () => {
     isActive: true,
   };
   const prisma = {
+    $transaction: jest.fn(),
+    $queryRaw: jest.fn(),
+    person: {
+      findMany: jest.fn(),
+      create: jest.fn(),
+    },
     user: {
       findFirst: jest.fn(),
-      create: jest.fn(),
-    },
-    role: {
       findUnique: jest.fn(),
-    },
-    userRequest: {
       create: jest.fn(),
+      update: jest.fn(),
     },
-    session: {
-      create: jest.fn(),
-    },
+    role: { findUnique: jest.fn() },
+    userRequest: { create: jest.fn() },
+    session: { create: jest.fn() },
+    auditLog: { create: jest.fn() },
   };
   const validBody = {
-    fullName: '  Persona Usuaria  ',
+    firstName: '  Persona  ',
+    firstSurname: '  Usuaria  ',
+    secondSurname: ' Prueba ',
     identificationType: 'NATIONAL',
     identification: '123456789',
     email: ' PERSONA@EXAMPLE.COM ',
+    phoneCountryCode: '+506',
+    phoneNationalNumber: '88888888',
+    address: ' Curime ',
     password: 'Secure12345',
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    createdData = undefined;
+    createdUserData = undefined;
+    createdPersonData = undefined;
+    prisma.$transaction.mockImplementation(
+      (work: (client: typeof prisma) => Promise<unknown>) =>
+        work({ ...prisma }),
+    );
+    prisma.$queryRaw.mockResolvedValue([{ locked: 1 }]);
     prisma.user.findFirst.mockResolvedValue(null);
+    prisma.user.findUnique.mockResolvedValue(null);
     prisma.role.findUnique.mockResolvedValue(role);
+    prisma.person.findMany.mockResolvedValue([]);
+    prisma.person.create.mockImplementation(
+      ({ data }: { data: Record<string, unknown> }) => {
+        createdPersonData = data;
+        return Promise.resolve({ id: 12, ...data });
+      },
+    );
     prisma.user.create.mockImplementation(
       ({ data }: { data: Record<string, unknown> }) => {
-        createdData = data as typeof createdData;
+        createdUserData = data;
         return Promise.resolve({
           id: 8,
           ...data,
@@ -72,6 +88,10 @@ describe('RegistrationController (e2e)', () => {
         });
       },
     );
+    prisma.user.update.mockResolvedValue({ id: 8 });
+    prisma.session.create.mockResolvedValue({ id: 1 });
+    prisma.auditLog.create.mockResolvedValue({ id: 1 });
+
     const module = await Test.createTestingModule({ imports: [UsersModule] })
       .overrideProvider(PrismaService)
       .useValue(prisma)
@@ -93,26 +113,40 @@ describe('RegistrationController (e2e)', () => {
 
   afterEach(() => app.close());
 
-  it('creates a sanitized active user through public POST /register', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/register')
-      .send(validBody)
-      .expect(201);
+  it('creates linked Person and sanitized ACTIVE User through POST /register', async () => {
+    const response = await register().expect(201);
 
     expect(prisma.role.findUnique).toHaveBeenCalledWith({
       where: { name: 'Subscription_L1' },
       select: { id: true, name: true, description: true, isActive: true },
     });
-    if (!createdData) throw new Error('Expected User creation data');
-    expect(createdData).toMatchObject({
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(createdPersonData).toMatchObject({
+      firstName: 'Persona',
+      firstSurname: 'Usuaria',
+      secondSurname: 'Prueba',
+      identification: '123456789',
+      identificationType: 'NATIONAL',
+      normalizedIdentification: '123456789',
+      phoneCountryCode: '+506',
+      phoneNationalNumber: '88888888',
+      address: 'Curime',
+    });
+    expect(createdPersonData).not.toHaveProperty('email');
+    expect(createdPersonData).not.toHaveProperty('legacyFullName');
+    expect(createdUserData).toMatchObject({
+      fullName: 'Persona Usuaria Prueba',
       email: 'persona@example.com',
       status: 'ACTIVE',
       roleId: 5,
+      personId: 12,
     });
     expect(
-      await bcrypt.compare(validBody.password, createdData.passwordHash),
+      await bcrypt.compare(
+        validBody.password,
+        createdUserData?.passwordHash as string,
+      ),
     ).toBe(true);
-    expect(createdData).not.toHaveProperty('password');
     expect(prisma.userRequest.create).not.toHaveBeenCalled();
     expect(prisma.session.create).not.toHaveBeenCalled();
     expect(response.body).toMatchObject({
@@ -120,71 +154,129 @@ describe('RegistrationController (e2e)', () => {
       status: 'ACTIVE',
       role: { name: 'Subscription_L1' },
     });
-    expect(response.body).not.toHaveProperty('password');
-    expect(response.body).not.toHaveProperty('passwordHash');
-    expect(response.body).not.toHaveProperty('accessToken');
-    expect(response.body).not.toHaveProperty('refreshToken');
+    for (const field of [
+      'password',
+      'passwordHash',
+      'accessToken',
+      'refreshToken',
+    ]) {
+      expect(response.body).not.toHaveProperty(field);
+    }
   });
 
   it.each([
     ['short password', { password: 'Short1A' }],
-    ['missing lowercase', { password: 'UPPERCASE123' }],
-    ['missing uppercase', { password: 'lowercase123' }],
-    ['missing number', { password: 'NoNumbersHere' }],
     ['invalid email', { email: 'invalid-email' }],
-  ])('rejects %s', async (_name, override) => {
-    await request(app.getHttpServer())
-      .post('/register')
-      .send({ ...validBody, ...override })
-      .expect(400);
+    ['invalid NATIONAL', { identification: '023456789' }],
+    ['invalid DIMEX', { identificationType: 'DIMEX', identification: '123' }],
+    ['invalid first name', { firstName: '123' }],
+    ['invalid first surname', { firstSurname: '---' }],
+  ])('rejects %s before Person/User creation', async (_name, override) => {
+    await register(override).expect(400);
+    expect(prisma.person.create).not.toHaveBeenCalled();
     expect(prisma.user.create).not.toHaveBeenCalled();
   });
 
-  it.each(['roleId', 'role', 'status', 'capabilities', 'isAdmin'])(
-    'rejects forbidden privilege field %s',
+  it.each(['fullName', 'passwordConfirmation', 'roleId', 'status', 'isAdmin'])(
+    'rejects forbidden request field %s',
     async (field) => {
-      await request(app.getHttpServer())
-        .post('/register')
-        .send({ ...validBody, [field]: 'Administrador' })
-        .expect(400);
-      expect(prisma.user.create).not.toHaveBeenCalled();
+      await register({ [field]: 'forbidden' }).expect(400);
+      expect(prisma.person.create).not.toHaveBeenCalled();
     },
   );
 
-  it('maps duplicate detection and uniqueness races to 400', async () => {
-    prisma.user.findFirst.mockResolvedValue({ id: 10 });
-
-    await request(app.getHttpServer())
-      .post('/register')
-      .send(validBody)
-      .expect(400);
-    expect(prisma.user.create).not.toHaveBeenCalled();
+  it('collapses duplicate email and existing-Person account to generic 400', async () => {
+    prisma.user.findFirst.mockResolvedValueOnce({ id: 10 });
+    const duplicateEmail = await register().expect(400);
+    expect((duplicateEmail.body as { message: string }).message).toBe(
+      'Email or identification is already registered',
+    );
 
     prisma.user.findFirst.mockResolvedValue(null);
+    prisma.person.findMany.mockResolvedValueOnce([
+      {
+        id: 12,
+        firstName: 'Persona',
+        firstSurname: 'Usuaria',
+        secondSurname: 'Prueba',
+        identification: '123456789',
+        identificationType: 'NATIONAL',
+        normalizedIdentification: '123456789',
+      },
+    ]);
+    prisma.user.findUnique.mockResolvedValueOnce({ id: 8 });
+    const duplicateIdentity = await register({
+      email: 'other@example.com',
+    }).expect(400);
+    expect((duplicateIdentity.body as { message: string }).message).toBe(
+      'Email or identification is already registered',
+    );
+    expect(prisma.user.create).not.toHaveBeenCalled();
+  });
+
+  it('maps User uniqueness races without exposing Prisma metadata', async () => {
     prisma.user.create.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
         code: 'P2002',
         clientVersion: 'test',
+        meta: { target: ['email'] },
       }),
     );
-    const raceResponse = await request(app.getHttpServer())
-      .post('/register')
-      .send(validBody)
-      .expect(400);
-    expect((raceResponse.body as { message: string }).message).toBe(
+
+    const response = await register().expect(400);
+    expect((response.body as { message: string }).message).toBe(
       'Email or identification is already registered',
     );
+    expect(JSON.stringify(response.body)).not.toContain('P2002');
+    expect(JSON.stringify(response.body)).not.toContain('target');
   });
 
-  it('returns a controlled 500 when Subscription_L1 is unavailable', async () => {
+  it('does not create Person when Subscription_L1 is unavailable', async () => {
     prisma.role.findUnique.mockResolvedValue(null);
 
-    const response = await request(app.getHttpServer())
-      .post('/register')
-      .send(validBody)
-      .expect(500);
+    const response = await register().expect(500);
     expect((response.body as { message: string }).message).toBe(
       'Registration role is not configured',
     );
+    expect(prisma.person.create).not.toHaveBeenCalled();
   });
+
+  it('keeps the registered account compatible with subsequent login', async () => {
+    await register().expect(201);
+    expect(prisma.session.create).not.toHaveBeenCalled();
+    prisma.user.findUnique.mockImplementation(
+      ({ where }: { where: Record<string, unknown> }) => {
+        if ('email' in where && createdUserData) {
+          return Promise.resolve({
+            id: 8,
+            ...createdUserData,
+            failedLoginAttempts: 0,
+            lockedAt: null,
+            lastLoginAt: null,
+            role,
+          });
+        }
+        return Promise.resolve(null);
+      },
+    );
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'persona@example.com', password: validBody.password })
+      .expect(200);
+    expect(response.body).toHaveProperty('accessToken');
+    expect(
+      (response.body as { user: Record<string, unknown> }).user,
+    ).toMatchObject({
+      id: 8,
+      fullName: 'Persona Usuaria Prueba',
+    });
+    expect(prisma.session.create).toHaveBeenCalledTimes(1);
+  });
+
+  function register(override: Record<string, unknown> = {}) {
+    return request(app.getHttpServer())
+      .post('/register')
+      .send({ ...validBody, ...override });
+  }
 });

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { digitsOnly, emailError, identificationError, identificationMaxLength, normalizeEmail, personContactErrors, phoneError, phoneNationalMaxLength } from './formValidation'
+import { digitsOnly, emailError, identificationError, identificationMaxLength, normalizeEmail, personContactErrors, phoneError, phoneNationalMaxLength, structuredNameError } from './formValidation'
 
 describe('form validation helpers', () => {
+  it('validates required and optional structured names', () => {
+    expect(structuredNameError('')).toBe('Este campo es obligatorio.')
+    expect(structuredNameError('', false)).toBe('')
+    expect(structuredNameError('Ana María')).toBe('')
+    expect(structuredNameError('123')).not.toBe('')
+  })
   it('limits national and DIMEX input to digits', () => {
     expect(digitsOnly('12a34567890', 9)).toBe('123456789')
     expect(digitsOnly('1234567890123', 12)).toBe('123456789012')

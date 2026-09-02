@@ -9,6 +9,9 @@ export interface RuntimePersonIdentityInput {
   firstName?: string | null;
   firstSurname?: string | null;
   secondSurname?: string | null;
+  phoneCountryCode?: string | null;
+  phoneNationalNumber?: string | null;
+  address?: string | null;
 }
 
 export interface PreparedRuntimePersonIdentity {
@@ -18,6 +21,9 @@ export interface PreparedRuntimePersonIdentity {
   firstName: string;
   firstSurname: string;
   secondSurname: string | null;
+  phoneCountryCode: string | null;
+  phoneNationalNumber: string | null;
+  address: string | null;
 }
 
 export interface RuntimePersonRecord {
@@ -76,6 +82,9 @@ export function prepareRuntimePersonIdentity(
   const firstName = input.firstName?.trim() ?? '';
   const firstSurname = input.firstSurname?.trim() ?? '';
   const secondSurname = input.secondSurname?.trim() || null;
+  const phoneCountryCode = input.phoneCountryCode?.trim() || null;
+  const phoneNationalNumber = input.phoneNationalNumber?.trim() || null;
+  const address = input.address?.trim() || null;
   const missingFields: Extract<
     RuntimeIdentityValidationResult,
     { status: 'IDENTITY_INCOMPLETE' }
@@ -128,6 +137,9 @@ export function prepareRuntimePersonIdentity(
       firstName,
       firstSurname,
       secondSurname,
+      phoneCountryCode,
+      phoneNationalNumber,
+      address,
     },
   };
 }

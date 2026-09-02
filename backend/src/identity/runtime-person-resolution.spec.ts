@@ -14,6 +14,9 @@ const input = (
   firstName: 'Ana María',
   firstSurname: 'Rodríguez',
   secondSurname: 'Mora',
+  phoneCountryCode: null,
+  phoneNationalNumber: null,
+  address: null,
   ...overrides,
 });
 
@@ -26,6 +29,9 @@ const prepared = (
   firstName: 'Ana María',
   firstSurname: 'Rodríguez',
   secondSurname: 'Mora',
+  phoneCountryCode: null,
+  phoneNationalNumber: null,
+  address: null,
   ...overrides,
 });
 
