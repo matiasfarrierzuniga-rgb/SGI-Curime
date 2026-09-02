@@ -12,6 +12,7 @@ const account = {
   failedLoginAttempts: 0,
   lastLoginAt: null,
   roleName: 'Administrador',
+  subscriptionExpirationDate: null,
 };
 
 describe('LoginUseCase', () => {
@@ -77,6 +78,20 @@ describe('LoginUseCase', () => {
       useCase.execute('admin@example.com', 'secret'),
     ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
     expect(hasher.compare).not.toHaveBeenCalled();
+  });
+
+  it('denies an expired Subscription_L1 after valid credentials with 403 error code', async () => {
+    repository.findCredentialsByEmail.mockResolvedValueOnce({
+      ...account,
+      roleName: 'Subscription_L1',
+      subscriptionExpirationDate: new Date(Date.now() - 1),
+    });
+
+    await expect(
+      useCase.execute('admin@example.com', 'secret'),
+    ).rejects.toMatchObject({ code: 'SUBSCRIPTION_EXPIRED' });
+    expect(hasher.compare).toHaveBeenCalledWith('secret', 'hashed-password');
+    expect(tokens.sign).not.toHaveBeenCalled();
   });
 
   it('throws an application error when the account has no password hash', async () => {

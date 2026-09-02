@@ -113,7 +113,25 @@ describe('RegisterUserUseCase', () => {
       roleId: 5,
       personId: 12,
       status: UserStatus.ACTIVE,
+      subscriptionExpirationDate: expect.any(Date),
     });
+  });
+
+  it('creates a Subscription_L1 expiration approximately one UTC year ahead', async () => {
+    const before = new Date();
+
+    await useCase.execute(input);
+
+    const created = repository.create.mock.calls[0][0]
+      .subscriptionExpirationDate as Date;
+    const after = new Date();
+    expect(created.getUTCFullYear()).toBe(before.getUTCFullYear() + 1);
+    expect(created.getTime()).toBeGreaterThanOrEqual(
+      before.getTime() + 365 * 24 * 60 * 60 * 1000 - 1000,
+    );
+    expect(created.getTime()).toBeLessThanOrEqual(
+      after.getTime() + 367 * 24 * 60 * 60 * 1000,
+    );
   });
 
   it('reuses one compatible Person without a User', async () => {

@@ -28,6 +28,7 @@ type TestUser = {
   status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
   lockedAt: Date | null;
   failedLoginAttempts: number;
+  subscriptionExpirationDate: Date | null;
   role: { name: string };
 };
 
@@ -42,6 +43,7 @@ type AuthenticatedUser = {
 
 type LoginResponseBody = {
   accessToken: string;
+  refreshToken: string;
   user: AuthenticatedUser;
 };
 
@@ -132,6 +134,7 @@ describe('AuthController (e2e)', () => {
       status: 'ACTIVE',
       lockedAt: null,
       failedLoginAttempts: 0,
+      subscriptionExpirationDate: null,
       role: { name: 'Administrador' },
     };
     resetTokenRecord = undefined;
@@ -315,6 +318,23 @@ describe('AuthController (e2e)', () => {
     );
   });
 
+  it('supports academic POST /login with body and HTTP-only refresh tokens', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/login')
+      .send({ email: 'admin@curime.test', password: 'valid-password' })
+      .expect(200);
+
+    const body = loginResponseBody(response);
+    expect(body.accessToken).toEqual(expect.any(String));
+    expect(body.refreshToken).toEqual(expect.any(String));
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('HttpOnly'),
+        expect.stringContaining('Path=/'),
+      ]),
+    );
+  });
+
   it('rotates the refresh cookie once and rejects the old credential', async () => {
     const loginResponse = await login().expect(200);
     const firstCookie = refreshCookie(loginResponse);
@@ -333,6 +353,44 @@ describe('AuthController (e2e)', () => {
       expect.arrayContaining([expect.stringContaining('HttpOnly')]),
     );
     await refresh().expect(401);
+  });
+
+  it('supports academic POST /refresh using a body token and rotates it', async () => {
+    const loginResponse = await request(app.getHttpServer())
+      .post('/login')
+      .send({ email: 'admin@curime.test', password: 'valid-password' })
+      .expect(200);
+    const firstRefreshToken = loginResponseBody(loginResponse).refreshToken;
+
+    const refreshed = await request(app.getHttpServer())
+      .post('/refresh')
+      .send({ refreshToken: firstRefreshToken })
+      .expect(200);
+    const body = loginResponseBody(refreshed);
+    expect(body.accessToken).toEqual(expect.any(String));
+    expect(body.refreshToken).toEqual(expect.any(String));
+    expect(body.refreshToken).not.toBe(firstRefreshToken);
+    expect(refreshed.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('HttpOnly')]),
+    );
+
+    await request(app.getHttpServer())
+      .post('/refresh')
+      .send({ refreshToken: firstRefreshToken })
+      .expect(401);
+  });
+
+  it('supports academic POST /refresh using the HTTP-only cookie', async () => {
+    const loginResponse = await request(app.getHttpServer())
+      .post('/login')
+      .send({ email: 'admin@curime.test', password: 'valid-password' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post('/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', refreshCookie(loginResponse))
+      .expect(200);
   });
 
   it('limits a rotated cookie to the remaining absolute session lifetime', async () => {
@@ -396,6 +454,37 @@ describe('AuthController (e2e)', () => {
       .expect(401);
   });
 
+  it('supports academic POST /logout using body or cookie refresh tokens', async () => {
+    const bodyLogin = await request(app.getHttpServer())
+      .post('/login')
+      .send({ email: 'admin@curime.test', password: 'valid-password' })
+      .expect(200);
+    const bodyRefreshToken = loginResponseBody(bodyLogin).refreshToken;
+
+    const bodyLogout = await request(app.getHttpServer())
+      .post('/logout')
+      .send({ refreshToken: bodyRefreshToken })
+      .expect(200);
+    expect(bodyLogout.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('sgi_refresh=;')]),
+    );
+    await request(app.getHttpServer())
+      .post('/refresh')
+      .send({ refreshToken: bodyRefreshToken })
+      .expect(401);
+
+    const cookieLogin = await request(app.getHttpServer())
+      .post('/login')
+      .send({ email: 'admin@curime.test', password: 'valid-password' })
+      .expect(200);
+    const cookie = refreshCookie(cookieLogin);
+    await request(app.getHttpServer())
+      .post('/logout')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', cookie)
+      .expect(200);
+  });
+
   it('rejects an incorrect password', async () => {
     await login('admin@curime.test', 'incorrect-password').expect(401);
     expect(currentUser?.failedLoginAttempts).toBe(1);
@@ -424,6 +513,46 @@ describe('AuthController (e2e)', () => {
     currentUser = { ...currentUser!, status: 'INACTIVE' };
 
     await login().expect(401);
+  });
+
+  it('keeps inactive and expired Subscription_L1 academic login responses at 401 and 403', async () => {
+    currentUser = { ...currentUser!, status: 'INACTIVE' };
+    await request(app.getHttpServer())
+      .post('/login')
+      .send({ email: 'admin@curime.test', password: 'valid-password' })
+      .expect(401);
+
+    currentUser = {
+      ...currentUser!,
+      status: 'ACTIVE',
+      role: { name: 'Subscription_L1' },
+      subscriptionExpirationDate: new Date(Date.now() - 1),
+    };
+    await request(app.getHttpServer())
+      .post('/login')
+      .send({ email: 'admin@curime.test', password: 'valid-password' })
+      .expect(403);
+  });
+
+  it('rejects expired Subscription_L1 login and refresh with 403', async () => {
+    currentUser = {
+      ...currentUser!,
+      role: { name: 'Subscription_L1' },
+      subscriptionExpirationDate: new Date(Date.now() + 60_000),
+    };
+    const response = await login().expect(200);
+    const cookie = refreshCookie(response);
+    currentUser = {
+      ...currentUser!,
+      subscriptionExpirationDate: new Date(Date.now() - 1),
+    };
+
+    await login().expect(403);
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', cookie)
+      .expect(403);
   });
 
   it('returns indistinguishable forgot-password responses and stores only a token hash', async () => {
@@ -587,6 +716,24 @@ describe('AuthController (e2e)', () => {
       .get('/auth/me')
       .set('Authorization', `Bearer ${body.accessToken}`)
       .expect(401);
+  });
+
+  it('rejects a JWT when its Subscription_L1 user expires', async () => {
+    currentUser = {
+      ...currentUser!,
+      role: { name: 'Subscription_L1' },
+      subscriptionExpirationDate: new Date(Date.now() + 60_000),
+    };
+    const body = loginResponseBody(await login().expect(200));
+    currentUser = {
+      ...currentUser!,
+      subscriptionExpirationDate: new Date(Date.now() - 1),
+    };
+
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${body.accessToken}`)
+      .expect(403);
   });
 
   it('allows the administrator endpoint for the Administrador role', async () => {

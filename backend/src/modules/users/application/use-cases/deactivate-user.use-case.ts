@@ -3,6 +3,7 @@ import { AuditAction } from '../../../../audit/audit-actions';
 import { User, UserStatus } from '../../domain/entities/user';
 import { AccountAlreadyInactiveError } from '../../domain/errors/account-already-inactive.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
+import { SelfDeactivationError } from '../../domain/errors/self-deactivation.error';
 import {
   assertAnotherActiveAdministrator,
   requiresAdminContinuity,
@@ -30,6 +31,7 @@ export class DeactivateUserUseCase {
     actorId?: number,
     context: AuditContext = {},
   ): Promise<User> {
+    if (actorId === id) throw new SelfDeactivationError();
     const result = await this.repository.withTransaction(async (tx) => {
       const user = await tx.findById(id);
       if (!user) throw new UserNotFoundError();

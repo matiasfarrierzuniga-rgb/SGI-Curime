@@ -15,6 +15,7 @@ const user = {
   email: 'admin@example.com',
   roleName: 'Administrador',
   status: 'ACTIVE',
+  subscriptionExpirationDate: null,
 };
 
 describe('RefreshSessionUseCase', () => {
@@ -99,6 +100,19 @@ describe('RefreshSessionUseCase', () => {
 
     await expect(useCase.execute('current-raw')).rejects.toMatchObject({
       code: 'UNAUTHORIZED',
+    });
+    expect(sessions.rotate).not.toHaveBeenCalled();
+  });
+
+  it('denies expired Subscription_L1 users without rotating the session', async () => {
+    users.findCredentialsById.mockResolvedValueOnce({
+      ...user,
+      roleName: 'Subscription_L1',
+      subscriptionExpirationDate: new Date(Date.now() - 1),
+    });
+
+    await expect(useCase.execute('current-raw')).rejects.toMatchObject({
+      code: 'SUBSCRIPTION_EXPIRED',
     });
     expect(sessions.rotate).not.toHaveBeenCalled();
   });

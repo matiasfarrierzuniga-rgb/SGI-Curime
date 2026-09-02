@@ -6,11 +6,14 @@ import {
   type AuthRepository,
 } from '../../application/ports/auth-repository.port';
 import type { AuthenticatedUser } from '../../domain/entities/auth-user';
+import { AuthApplicationError } from '../../application/errors/auth.errors';
 import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
 } from '../../domain/policies/account-lockout.policy';
+import { isSubscriptionExpired } from '../../domain/policies/subscription-expiration.policy';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { toAuthHttpError } from '../errors/auth-http-error.mapper';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -51,6 +54,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (account.lockedAt) {
       await this.repository.clearLockout(account.id);
     }
+    if (
+      isSubscriptionExpired(
+        account.roleName,
+        account.subscriptionExpirationDate,
+      )
+    ) {
+      throw toAuthHttpError(
+        new AuthApplicationError(
+          'SUBSCRIPTION_EXPIRED',
+          'Subscription has expired',
+        ),
+      );
+    }
 
     return {
       id: account.id,
@@ -58,6 +74,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: account.email,
       status: account.status,
       role: account.roleName,
+      ...(account.subscriptionExpirationDate
+        ? { subscriptionExpirationDate: account.subscriptionExpirationDate }
+        : {}),
     };
   }
 }

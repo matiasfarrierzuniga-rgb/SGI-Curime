@@ -15,6 +15,8 @@ import { GetUserUseCase } from '../src/modules/users/application/use-cases/get-u
 import { ListUsersUseCase } from '../src/modules/users/application/use-cases/list-users.use-case';
 import { UnlockUserUseCase } from '../src/modules/users/application/use-cases/unlock-user.use-case';
 import { UpdateUserUseCase } from '../src/modules/users/application/use-cases/update-user.use-case';
+import { UpdateSubscriptionExpirationUseCase } from '../src/modules/users/application/use-cases/update-subscription-expiration.use-case';
+import { SelfDeactivationError } from '../src/modules/users/domain/errors/self-deactivation.error';
 
 const auditContextWithIpAddress = {
   asymmetricMatch(value: unknown): boolean {
@@ -32,6 +34,7 @@ describe('UsersController (e2e)', () => {
   let jwt: JwtService;
   let role = 'Administrador';
   let status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE';
+  let subscriptionExpirationDate: Date | null = null;
   const listUsers = { execute: jest.fn() };
   const getUser = { execute: jest.fn() };
   const updateUser = { execute: jest.fn() };
@@ -39,6 +42,7 @@ describe('UsersController (e2e)', () => {
   const activateUser = { execute: jest.fn() };
   const deactivateUser = { execute: jest.fn() };
   const unlockUser = { execute: jest.fn() };
+  const updateSubscriptionExpiration = { execute: jest.fn() };
   const user = {
     id: 2,
     fullName: 'Usuario',
@@ -50,6 +54,7 @@ describe('UsersController (e2e)', () => {
     phone: null,
     address: null,
     status: 'ACTIVE' as const,
+    subscriptionExpirationDate: null,
     lockedAt: null,
     roleId: 2,
     role: { id: 2, name: 'Tesorero', description: null, isActive: true },
@@ -65,6 +70,7 @@ describe('UsersController (e2e)', () => {
           fullName: 'Admin',
           email: 'admin@example.com',
           status,
+          subscriptionExpirationDate,
           lockedAt: null,
           role: { ...user.role, name: role },
         }),
@@ -76,6 +82,7 @@ describe('UsersController (e2e)', () => {
     jest.clearAllMocks();
     role = 'Administrador';
     status = 'ACTIVE';
+    subscriptionExpirationDate = null;
     listUsers.execute.mockResolvedValue({
       data: [],
       total: 0,
@@ -86,11 +93,16 @@ describe('UsersController (e2e)', () => {
     updateUser.execute.mockResolvedValue({ ...user, fullName: 'Nombre Nuevo' });
     changeUserRole.execute.mockResolvedValue(user);
     activateUser.execute.mockResolvedValue(user);
-    deactivateUser.execute.mockImplementation(() => {
-      status = 'INACTIVE';
-      return Promise.resolve({ ...user, id: 1, status });
+    deactivateUser.execute.mockImplementation((id: number, actorId: number) => {
+      if (id === actorId) return Promise.reject(new SelfDeactivationError());
+      return Promise.resolve({ ...user, id, status: 'INACTIVE' });
     });
     unlockUser.execute.mockResolvedValue(user);
+    updateSubscriptionExpiration.execute.mockResolvedValue({
+      ...user,
+      role: { ...user.role, name: 'Subscription_L1' },
+      subscriptionExpirationDate: new Date('2027-01-01T00:00:00.000Z'),
+    });
 
     const module = await Test.createTestingModule({ imports: [UsersModule] })
       .overrideProvider(PrismaService)
@@ -113,6 +125,8 @@ describe('UsersController (e2e)', () => {
       .useValue(deactivateUser)
       .overrideProvider(UnlockUserUseCase)
       .useValue(unlockUser)
+      .overrideProvider(UpdateSubscriptionExpirationUseCase)
+      .useValue(updateSubscriptionExpiration)
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(
@@ -161,6 +175,89 @@ describe('UsersController (e2e)', () => {
       .get('/users/not-a-number')
       .set('Authorization', await authorization())
       .expect(400);
+  });
+
+  it('returns current authenticated user for GET /users/me', async () => {
+    await request(app.getHttpServer())
+      .get('/users/me')
+      .set('Authorization', await authorization())
+      .expect(200);
+    expect(getUser.execute).toHaveBeenCalledWith(1);
+    await request(app.getHttpServer()).get('/users/me').expect(401);
+  });
+
+  it('allows a current Subscription_L1 user at GET /users/me and rejects expiration', async () => {
+    role = 'Subscription_L1';
+    subscriptionExpirationDate = new Date(Date.now() + 60_000);
+    await request(app.getHttpServer())
+      .get('/users/me')
+      .set('Authorization', await authorization())
+      .expect(200);
+
+    subscriptionExpirationDate = new Date(Date.now() - 1);
+    await request(app.getHttpServer())
+      .get('/users/me')
+      .set('Authorization', await authorization())
+      .expect(403);
+  });
+
+  it('routes independent status and subscription expiration updates for administrators', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/2/is-active')
+      .set('Authorization', await authorization())
+      .send({ isActive: true })
+      .expect(200);
+    expect(activateUser.execute).toHaveBeenCalledWith(
+      2,
+      1,
+      auditContextWithIpAddress,
+    );
+
+    await request(app.getHttpServer())
+      .patch('/users/2/is-active')
+      .set('Authorization', await authorization())
+      .send({ isActive: false })
+      .expect(200);
+    expect(deactivateUser.execute).toHaveBeenCalledWith(
+      2,
+      1,
+      auditContextWithIpAddress,
+    );
+
+    await request(app.getHttpServer())
+      .patch('/users/2/subscription-expiration')
+      .set('Authorization', await authorization())
+      .send({ subscriptionExpirationDate: '2027-01-01T00:00:00.000Z' })
+      .expect(200);
+    expect(updateSubscriptionExpiration.execute).toHaveBeenCalledWith(
+      2,
+      new Date('2027-01-01T00:00:00.000Z'),
+      1,
+      auditContextWithIpAddress,
+    );
+
+    await request(app.getHttpServer())
+      .patch('/users/2/subscription-expiration')
+      .set('Authorization', await authorization())
+      .send({ subscriptionExpirationDate: 'not-a-date' })
+      .expect(400);
+  });
+
+  it('denies Subscription_L1 status and expiration management', async () => {
+    role = 'Subscription_L1';
+    subscriptionExpirationDate = new Date(Date.now() + 60_000);
+    const token = await authorization();
+
+    await request(app.getHttpServer())
+      .patch('/users/2/is-active')
+      .set('Authorization', token)
+      .send({ isActive: false })
+      .expect(403);
+    await request(app.getHttpServer())
+      .patch('/users/2/subscription-expiration')
+      .set('Authorization', token)
+      .send({ subscriptionExpirationDate: '2027-01-01T00:00:00.000Z' })
+      .expect(403);
   });
 
   it('accepts an allowed update and rejects invalid or prohibited fields', async () => {
@@ -235,15 +332,11 @@ describe('UsersController (e2e)', () => {
       .expect(403);
   });
 
-  it('invalidates a previously issued JWT after deactivation', async () => {
+  it('rejects self-deactivation through legacy endpoint', async () => {
     const token = await authorization();
     await request(app.getHttpServer())
       .patch('/users/1/deactivate')
       .set('Authorization', token)
-      .expect(200);
-    await request(app.getHttpServer())
-      .get('/users')
-      .set('Authorization', token)
-      .expect(401);
+      .expect(409);
   });
 });

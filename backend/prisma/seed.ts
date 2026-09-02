@@ -6,7 +6,8 @@ import { PrismaClient } from '../generated/prisma/client';
 const INITIAL_ROLES = [
   {
     name: 'Administrador',
-    description: 'Gestiona la configuración y administración general del sistema.',
+    description:
+      'Gestiona la configuración y administración general del sistema.',
   },
   {
     name: 'Tesorero',
@@ -19,6 +20,10 @@ const INITIAL_ROLES = [
   {
     name: 'Vecino/Afiliado',
     description: 'Accede a las funciones disponibles para vecinos y afiliados.',
+  },
+  {
+    name: 'Subscription_L1',
+    description: 'Acceso de suscripción de nivel 1.',
   },
 ] as const;
 
@@ -35,7 +40,9 @@ function requiredEnvironmentVariable(name: string): string {
 async function main(): Promise<void> {
   const connectionString = requiredEnvironmentVariable('DATABASE_URL');
   const adminName = requiredEnvironmentVariable('ADMIN_NAME');
-  const adminIdentification = requiredEnvironmentVariable('ADMIN_IDENTIFICATION');
+  const adminIdentification = requiredEnvironmentVariable(
+    'ADMIN_IDENTIFICATION',
+  );
   const adminEmail = requiredEnvironmentVariable('ADMIN_EMAIL');
   const adminPassword = requiredEnvironmentVariable('ADMIN_PASSWORD');
 
@@ -60,7 +67,9 @@ async function main(): Promise<void> {
 
     const [userWithEmail, userWithIdentification] = await Promise.all([
       prisma.user.findUnique({ where: { email: adminEmail } }),
-      prisma.user.findUnique({ where: { identification: adminIdentification } }),
+      prisma.user.findUnique({
+        where: { identification: adminIdentification },
+      }),
     ]);
 
     if (userWithEmail || userWithIdentification) {

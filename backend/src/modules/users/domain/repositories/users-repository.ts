@@ -43,6 +43,7 @@ export interface UserCreateData {
   address?: string;
   passwordHash: string;
   status: UserStatus;
+  subscriptionExpirationDate: Date | null;
   roleId: number;
   personId: number;
 }
@@ -90,7 +91,9 @@ export interface UsersRepository {
   getPasswordHash(id: number): Promise<string | null>;
   updateProfile(id: number, data: UserUpdateData): Promise<User>;
   updateStatus(id: number, status: UserStatus): Promise<User>;
+  updateSubscriptionExpirationDate(id: number, value: Date): Promise<User>;
   updateRole(id: number, roleId: number): Promise<User>;
   resetTemporaryLock(id: number): Promise<User>;
   countActiveAdministrators(excludeUserId: number): Promise<number>;
+  countAdministrators(): Promise<number>;
 }
