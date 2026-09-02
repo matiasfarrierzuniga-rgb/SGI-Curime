@@ -16,6 +16,7 @@
     "db:seed": "prisma db seed --config prisma.config.ts",
     "db:reconcile-persons": "tsx prisma/reconcile-persons.ts",
     "db:link-person-identities": "tsx prisma/link-person-identities.ts",
+    "db:reconcile-legacy-user": "tsx prisma/reconcile-legacy-user.ts",
     "db:reset-admin-password": "tsx prisma/reset-admin-password.ts",
     "email:test": "tsx src/modules/notifications/infrastructure/scripts/send-test-email.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
