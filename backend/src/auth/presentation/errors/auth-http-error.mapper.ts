@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthApplicationError } from '../../application/errors/auth.errors';
@@ -11,6 +12,8 @@ export function toAuthHttpError(error: AuthApplicationError) {
     case 'UNAUTHORIZED':
     case 'CURRENT_PASSWORD_INCORRECT':
       return new UnauthorizedException(error.message);
+    case 'SUBSCRIPTION_EXPIRED':
+      return new ForbiddenException(error.message);
     case 'PASSWORDS_DO_NOT_MATCH':
     case 'INVALID_ACTIVATION_TOKEN':
     case 'ACTIVATION_TOKEN_EXPIRED':

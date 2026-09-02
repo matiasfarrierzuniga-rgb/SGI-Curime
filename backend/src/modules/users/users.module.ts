@@ -11,7 +11,10 @@ import { GetUserUseCase } from './application/use-cases/get-user.use-case';
 import { ListUsersUseCase } from './application/use-cases/list-users.use-case';
 import { UnlockUserUseCase } from './application/use-cases/unlock-user.use-case';
 import { UpdateUserUseCase } from './application/use-cases/update-user.use-case';
+import { UpdateSubscriptionExpirationUseCase } from './application/use-cases/update-subscription-expiration.use-case';
 import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
+import { RegisterAdministratorUseCase } from './application/use-cases/register-administrator.use-case';
+import { OptionalJwtAuthGuard } from '../../auth/presentation/guards/optional-jwt-auth.guard';
 import { USERS_REPOSITORY } from './domain/repositories/users-repository';
 import { AuditServiceAdapter } from './infrastructure/audit/audit-service.adapter';
 import { PrismaUsersRepository } from './infrastructure/prisma-users.repository';
@@ -33,11 +36,14 @@ import { RegistrationController } from './presentation/controllers/registration.
     ListUsersUseCase,
     GetUserUseCase,
     UpdateUserUseCase,
+    UpdateSubscriptionExpirationUseCase,
     ChangeUserRoleUseCase,
     ActivateUserUseCase,
     DeactivateUserUseCase,
     UnlockUserUseCase,
     RegisterUserUseCase,
+    RegisterAdministratorUseCase,
+    OptionalJwtAuthGuard,
   ],
 })
 export class UsersModule {}

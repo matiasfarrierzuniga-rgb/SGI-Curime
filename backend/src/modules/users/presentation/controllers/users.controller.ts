@@ -21,9 +21,12 @@ import { GetUserUseCase } from '../../application/use-cases/get-user.use-case';
 import { ListUsersUseCase } from '../../application/use-cases/list-users.use-case';
 import { UnlockUserUseCase } from '../../application/use-cases/unlock-user.use-case';
 import { UpdateUserUseCase } from '../../application/use-cases/update-user.use-case';
+import { UpdateSubscriptionExpirationUseCase } from '../../application/use-cases/update-subscription-expiration.use-case';
 import { ChangeRoleDto } from '../dto/change-role.dto';
 import { QueryUsersDto } from '../dto/query-users.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { UpdateIsActiveDto } from '../dto/update-is-active.dto';
+import { UpdateSubscriptionExpirationDto } from '../dto/update-subscription-expiration.dto';
 import { toUserResponse } from '../mappers/user-response.mapper';
 import { toHttpError } from '../mappers/users-error.mapper';
 
@@ -39,6 +42,7 @@ export class UsersController {
     private readonly activateUser: ActivateUserUseCase,
     private readonly deactivateUser: DeactivateUserUseCase,
     private readonly unlockUser: UnlockUserUseCase,
+    private readonly updateSubscriptionExpiration: UpdateSubscriptionExpirationUseCase,
   ) {}
 
   @Get()
@@ -54,10 +58,49 @@ export class UsersController {
     });
   }
 
+  @Get('me')
+  @Roles()
+  me(@Req() req: Request & { user: AuthenticatedUser }) {
+    return this.run(async () => {
+      return toUserResponse(await this.getUser.execute(req.user.id));
+    });
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.run(async () => {
       const user = await this.getUser.execute(id);
+      return toUserResponse(user);
+    });
+  }
+
+  @Patch(':id/is-active')
+  updateIsActive(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateIsActiveDto,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
+    return this.run(async () => {
+      const user = dto.isActive
+        ? await this.activateUser.execute(id, req.user.id, this.context(req))
+        : await this.deactivateUser.execute(id, req.user.id, this.context(req));
+      return toUserResponse(user);
+    });
+  }
+
+  @Patch(':id/subscription-expiration')
+  updateSubscriptionExpirationDate(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSubscriptionExpirationDto,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
+    return this.run(async () => {
+      const user = await this.updateSubscriptionExpiration.execute(
+        id,
+        new Date(dto.subscriptionExpirationDate),
+        req.user.id,
+        this.context(req),
+      );
       return toUserResponse(user);
     });
   }

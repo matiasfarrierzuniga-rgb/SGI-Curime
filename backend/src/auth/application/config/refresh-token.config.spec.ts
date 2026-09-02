@@ -11,7 +11,11 @@ describe('refresh cookie policy', () => {
   afterEach(() => jest.useRealTimers());
 
   it('uses configured TTL for a new login cookie', () => {
-    expect(getRefreshCookiePolicy().options.maxAge).toBe(3_600_000);
+    expect(getRefreshCookiePolicy().options).toMatchObject({
+      maxAge: 3_600_000,
+      path: '/',
+      httpOnly: true,
+    });
   });
 
   it('caps a rotated cookie at remaining absolute session lifetime', () => {

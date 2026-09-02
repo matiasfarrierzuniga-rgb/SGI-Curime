@@ -38,6 +38,7 @@ const userSelect = {
   phone: true,
   address: true,
   status: true,
+  subscriptionExpirationDate: true,
   lockedAt: true,
   roleId: true,
   role: {
@@ -66,6 +67,7 @@ function toUser(user: SafeUser): User {
     phone: user.phone,
     address: user.address,
     status: user.status as DomainUserStatus,
+    subscriptionExpirationDate: user.subscriptionExpirationDate,
     lockedAt: user.lockedAt,
     roleId: user.roleId,
     role: user.role,
@@ -245,6 +247,18 @@ export class PrismaUsersRepository implements UsersRepository {
     return toUser(user);
   }
 
+  async updateSubscriptionExpirationDate(
+    id: number,
+    value: Date,
+  ): Promise<User> {
+    const user = await this.db.user.update({
+      where: { id },
+      data: { subscriptionExpirationDate: value },
+      select: userSelect,
+    });
+    return toUser(user);
+  }
+
   async updateRole(id: number, roleId: number): Promise<User> {
     const user = await this.db.user.update({
       where: { id },
@@ -271,6 +285,10 @@ export class PrismaUsersRepository implements UsersRepository {
         role: { name: ADMIN_ROLE },
       },
     });
+  }
+
+  async countAdministrators(): Promise<number> {
+    return this.db.user.count({ where: { role: { name: ADMIN_ROLE } } });
   }
 
   private toWhere(query: UserQuery): Prisma.UserWhereInput {

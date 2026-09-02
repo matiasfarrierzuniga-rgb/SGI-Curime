@@ -2,6 +2,7 @@ import { AuditAction } from '../../../../audit/audit-actions';
 import { UserStatus } from '../../domain/entities/user';
 import { AccountAlreadyInactiveError } from '../../domain/errors/account-already-inactive.error';
 import { LastAdministratorError } from '../../domain/errors/last-administrator.error';
+import { SelfDeactivationError } from '../../domain/errors/self-deactivation.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
 import type { UsersRepository } from '../../domain/repositories/users-repository';
 import { DeactivateUserUseCase } from './deactivate-user.use-case';
@@ -69,6 +70,13 @@ describe('DeactivateUserUseCase', () => {
       LastAdministratorError,
     );
     expect(repository.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it('does not let an administrator deactivate themselves', async () => {
+    await expect(useCase.execute(1, 1)).rejects.toBeInstanceOf(
+      SelfDeactivationError,
+    );
+    expect(repository.withTransaction).not.toHaveBeenCalled();
   });
 
   it('deactivates the user and records an audit event', async () => {
