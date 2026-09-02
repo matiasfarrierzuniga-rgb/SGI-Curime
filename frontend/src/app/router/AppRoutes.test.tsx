@@ -111,10 +111,11 @@ describe('AppRoutes capability deep links', () => {
     expect(await screen.findByText('No hay eventos registrados')).toBeInTheDocument()
   })
 
-  it('denies users without event management capability', async () => {
+  it('redirects users without event management capability to personal area', async () => {
     renderRoute('/app/events', 'Vecino/Afiliado')
 
-    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Eventos' })).not.toBeInTheDocument()
   })
 
   it('redirects unprivileged deep-links to the personal area', async () => {
@@ -156,10 +157,10 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
   })
 
-  it('redirects basic authenticated users from /admin/users to 403', async () => {
+  it('redirects basic authenticated users from /admin/users to personal area', async () => {
     renderRoute('/admin/users', 'Vecino/Afiliado')
 
-    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Administración de usuarios' })).not.toBeInTheDocument()
   })
 
@@ -185,10 +186,10 @@ describe('AppRoutes capability deep links', () => {
     expect(affiliatesService.list).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 20 }))
   })
 
-  it('redirects authenticated users without affiliate capability to 403', async () => {
+  it('redirects authenticated users without affiliate capability to personal area', async () => {
     renderRoute('/app/admin/affiliates', 'Vecino/Afiliado')
 
-    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
     expect(screen.queryByText('No hay afiliados')).not.toBeInTheDocument()
   })
 
@@ -207,10 +208,10 @@ describe('AppRoutes capability deep links', () => {
     expect(httpGet).toHaveBeenCalledWith('/affiliate-requests', { params: expect.objectContaining({ page: 1, limit: 20 }) })
   })
 
-  it('redirects users without requests capability to 403', async () => {
+  it('redirects users without requests capability to personal area', async () => {
     renderRoute('/app/admin/requests', 'Vecino/Afiliado')
 
-    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Solicitudes de afiliación' })).not.toBeInTheDocument()
   })
 
