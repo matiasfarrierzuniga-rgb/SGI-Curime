@@ -233,6 +233,15 @@
 }
 
 @layer components {
+  .public-main,
+  .public-main :target {
+    scroll-margin-top: calc(var(--size-header-mobile) + var(--spacing-ui-md));
+  }
+
+  .public-menu-toggle {
+    display: inline-flex;
+  }
+
   .public-container {
     width: 100%;
     max-width: var(--container-max);
@@ -257,6 +266,7 @@
     font-size: var(--text-heading-1);
     font-weight: 400;
     line-height: var(--text-heading-1--line-height);
+    overflow-wrap: anywhere;
     text-wrap: balance;
   }
 
@@ -277,6 +287,15 @@
   }
 
   @media (min-width: 1024px) {
+    .public-menu-toggle {
+      display: none;
+    }
+
+    .public-main,
+    .public-main :target {
+      scroll-margin-top: calc(var(--size-header-desktop) + var(--spacing-ui-md));
+    }
+
     .public-container {
       padding-inline: 2rem;
     }

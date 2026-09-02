@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
 import { LandingPage } from '@/features/public-site'
 import { PublicEventsPage } from '@/features/events'
@@ -31,6 +31,10 @@ function renderPublic(path = '/') {
 }
 
 describe('portal público', () => {
+  beforeEach(() => {
+    vi.stubGlobal('scrollTo', vi.fn())
+  })
+
   it('muestra la landing y navega al inicio de sesión', () => {
     const { container } = renderPublic()
     expect(container.querySelector('h1')).toHaveTextContent(/información, participación y servicios/i)
@@ -78,7 +82,12 @@ describe('portal público', () => {
 
   it('incluye un enlace para saltar al contenido principal', () => {
     renderPublic()
-    expect(screen.getByRole('link', { name: /saltar al contenido/i })).toHaveAttribute('href', '#public-content')
+    const skipLink = screen.getByRole('link', { name: /saltar al contenido/i })
+
+    expect(skipLink).toHaveAttribute('href', '#public-content')
+    expect(screen.getByRole('main')).toHaveAttribute('tabindex', '-1')
+    fireEvent.click(skipLink)
+    expect(screen.getByRole('main')).toHaveFocus()
   })
 
   it('muestra transparencia con enlace a información autorizada', () => {
