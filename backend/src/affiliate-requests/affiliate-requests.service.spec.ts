@@ -1,4 +1,5 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '../../generated/prisma/client';
 import { PersonLogicalIdentityRaceError } from '../identity/runtime-person-resolver.service';
 import { AuditAction } from '../audit/audit-actions';
 import { AffiliateRequestsService } from './affiliate-requests.service';
@@ -6,6 +7,7 @@ import { AffiliateRequestsService } from './affiliate-requests.service';
 describe('AffiliateRequestsService', () => {
   const pending = {
     id: 10,
+    personId: 5,
     fullName: 'Persona Afiliada',
     identificationType: 'NATIONAL' as const,
     identification: '123456789',
@@ -29,6 +31,7 @@ describe('AffiliateRequestsService', () => {
     affiliateRequest: {
       create: jest.fn(),
       findFirst: jest.fn(),
+      findUnique: jest.fn(),
       updateMany: jest.fn(),
       findUniqueOrThrow: jest.fn(),
     },
@@ -57,6 +60,7 @@ describe('AffiliateRequestsService', () => {
     prisma.affiliate.findFirst.mockResolvedValue(null);
     tx.affiliate.findFirst.mockResolvedValue(null);
     tx.affiliateRequest.findFirst.mockResolvedValue(null);
+    tx.affiliateRequest.findUnique.mockResolvedValue(pending);
     prisma.affiliateRequest.findUnique.mockResolvedValue(pending);
     tx.affiliateRequest.create.mockResolvedValue(pending);
     prisma.affiliateRequest.updateMany.mockResolvedValue({ count: 1 });
@@ -199,11 +203,22 @@ describe('AffiliateRequestsService', () => {
       }),
     );
     expect(tx.affiliate.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+      data: {
+        personId: pending.personId,
+        fullName: pending.fullName,
         identification: pending.identification,
+        identificationType: pending.identificationType,
+        birthDate: pending.birthDate,
+        gender: pending.gender,
+        phoneCountryCode: pending.phoneCountryCode,
+        phoneNationalNumber: pending.phoneNationalNumber,
         email: pending.email,
-      }),
+        address: pending.address,
+        occupation: pending.occupation,
+        workplace: pending.workplace,
+      },
     });
+    expect(personResolver.resolveWithinTransaction).not.toHaveBeenCalled();
     expect(result.affiliate.id).toBe(20);
     expect(result.affiliate.status).toBe('ACTIVE');
     expect(audit.log).toHaveBeenNthCalledWith(
@@ -259,10 +274,12 @@ describe('AffiliateRequestsService', () => {
   });
 
   it('does not process an already reviewed request through approve or reject', async () => {
-    prisma.affiliateRequest.findUnique.mockResolvedValue({
+    const rejectedRequest = {
       ...pending,
       status: 'REJECTED',
-    });
+    };
+    prisma.affiliateRequest.findUnique.mockResolvedValue(rejectedRequest);
+    tx.affiliateRequest.findUnique.mockResolvedValue(rejectedRequest);
     await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
       ConflictException,
     );
@@ -293,13 +310,40 @@ describe('AffiliateRequestsService', () => {
   });
 
   it('rejects approval when the affiliate already exists', async () => {
-    prisma.affiliate.findFirst.mockResolvedValue({ id: 20 });
+    tx.affiliate.findFirst.mockResolvedValue({ id: 20 });
 
     await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
       ConflictException,
     );
 
-    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(tx.affiliate.create).not.toHaveBeenCalled();
+  });
+
+  it('blocks a legacy request without personId without identity fallback', async () => {
+    tx.affiliateRequest.findUnique.mockResolvedValue({
+      ...pending,
+      personId: null,
+    });
+
+    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(tx.affiliate.findFirst).not.toHaveBeenCalled();
+    expect(tx.affiliate.create).not.toHaveBeenCalled();
+    expect(personResolver.resolveWithinTransaction).not.toHaveBeenCalled();
+  });
+
+  it('maps Affiliate personId unique races to a conflict', async () => {
+    prisma.$transaction.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('unique race', {
+        code: 'P2002',
+        clientVersion: '7.9.1',
+      }),
+    );
+
+    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
   });
 
   it('propagates affiliate creation failure without emitting post-transaction audit events', async () => {
