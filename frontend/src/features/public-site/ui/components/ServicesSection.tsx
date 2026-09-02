@@ -15,7 +15,7 @@ const upcomingServices = [
 
 export function ServicesSection() {
   return (
-    <section aria-labelledby="services-title" className="public-section border-t border-brand-soft/35 bg-brand-ivory">
+    <section aria-labelledby="services-title" className="public-section border-t border-soft-sage/70 bg-brand-ivory">
       <div className="public-container">
         <header className="mx-auto max-w-3xl text-center">
           <p className="public-eyebrow text-brand-primary">
@@ -33,9 +33,9 @@ export function ServicesSection() {
           {portalLinks.map(({ icon: Icon, title, text, to }) => (
             <article
               key={title}
-              className="flex h-full flex-col items-center rounded-xl border border-brand-soft/35 bg-card-white p-6 text-center transition-colors hover:border-brand-soft lg:p-7"
+              className="flex h-full flex-col items-center rounded-xl border border-soft-sage bg-card-white p-6 text-center transition-colors hover:border-sage lg:p-7"
             >
-              <span className="grid size-14 place-items-center rounded-full bg-brand-ivory text-brand-deep">
+              <span className="grid size-14 place-items-center rounded-full bg-warm-ivory text-brand-deep">
                 <Icon className="size-6" aria-hidden="true" />
               </span>
               <h3 className="mt-5 font-heading text-heading-3 font-normal text-brand-ink">{title}</h3>
@@ -50,11 +50,11 @@ export function ServicesSection() {
             </article>
           ))}
         </div>
-        <div className="mx-auto mt-10 max-w-3xl border-t border-brand-soft/35 pt-8 md:mt-12">
+        <div className="mx-auto mt-10 max-w-3xl border-t border-soft-sage pt-8 md:mt-12">
           <p className="public-eyebrow text-center text-brand-primary">En preparación</p>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {upcomingServices.map(({ icon: Icon, title, text }) => (
-              <article key={title} className="grid grid-cols-[auto_1fr] gap-4 rounded-xl border border-brand-soft/35 bg-brand-soft/10 p-5">
+              <article key={title} className="grid grid-cols-[auto_1fr] gap-4 rounded-xl border border-soft-sage bg-soft-sage/35 p-5">
                 <span className="grid size-12 place-items-center rounded-full bg-brand-ivory text-brand-deep">
                   <Icon className="size-5" aria-hidden="true" />
                 </span>

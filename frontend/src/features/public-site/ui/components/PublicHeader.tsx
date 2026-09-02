@@ -49,7 +49,7 @@ export function PublicHeader() {
           aria-label={open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
           aria-expanded={open}
           aria-controls={id}
-          className="inline-flex size-11 items-center justify-center rounded-md border border-brand-deep/50 text-sm font-semibold text-brand-deep transition-colors hover:bg-brand-soft/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary lg:hidden"
+          className="inline-flex size-11 items-center justify-center rounded-md border border-brand-deep/50 text-sm font-semibold text-brand-deep transition-colors hover:bg-brand-soft/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:hidden"
         >
           {open ? 'Cerrar' : 'Menú'}
         </button>
@@ -64,7 +64,7 @@ export function PublicHeader() {
               to={item.to}
               end={item.to === '/'}
               onClick={close}
-              className="relative flex min-h-11 items-center px-3 text-base font-medium text-brand-deep transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary lg:min-h-0 lg:px-0 lg:py-2 lg:text-sm xl:text-base aria-[current=page]:font-semibold aria-[current=page]:after:absolute aria-[current=page]:after:bottom-0 aria-[current=page]:after:left-0 aria-[current=page]:after:h-0.5 aria-[current=page]:after:w-7 aria-[current=page]:after:bg-brand-accent"
+              className="relative flex min-h-11 items-center px-3 text-base font-medium text-brand-deep transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:min-h-0 lg:px-0 lg:py-2 lg:text-sm xl:text-base aria-[current=page]:font-semibold aria-[current=page]:after:absolute aria-[current=page]:after:bottom-0 aria-[current=page]:after:left-0 aria-[current=page]:after:h-0.5 aria-[current=page]:after:w-7 aria-[current=page]:after:bg-brand-accent"
             >
               {item.label}
             </NavLink>
@@ -72,14 +72,14 @@ export function PublicHeader() {
           <Link
             to={accessTo}
             onClick={close}
-            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-md bg-brand-primary px-5 font-semibold text-brand-ivory transition-colors hover:bg-brand-brown focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary lg:hidden"
+            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-md bg-brand-accent px-5 font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:hidden"
           >
             {accessLabel}
           </Link>
         </nav>
         <Link
           to={accessTo}
-          className="hidden min-h-12 justify-self-end rounded-md bg-brand-primary px-4 text-sm font-semibold text-brand-ivory transition-colors hover:bg-brand-brown focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary lg:inline-flex lg:items-center lg:justify-center xl:px-6 xl:text-base"
+          className="hidden min-h-12 justify-self-end rounded-md bg-brand-accent px-4 text-sm font-semibold text-brand-deep transition-colors hover:bg-brand-accent/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep lg:inline-flex lg:items-center lg:justify-center xl:px-6 xl:text-base"
         >
           {accessLabel}
         </Link>
