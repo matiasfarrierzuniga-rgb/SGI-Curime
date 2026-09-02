@@ -29,11 +29,21 @@ export class EventsController {
 
   @Patch(':id/review')
   @RequireCapabilities('pub.events.manage')
-  submitForReview(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) { return this.service.submitForReview(id, req.user.id, this.context(req)); }
+  submitForReview(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthRequest,
+  ) {
+    return this.service.submitForReview(id, req.user.id, this.context(req));
+  }
 
   @Patch(':id/draft')
   @RequireCapabilities('pub.events.manage')
-  returnToDraft(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) { return this.service.returnToDraft(id, req.user.id, this.context(req)); }
+  returnToDraft(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthRequest,
+  ) {
+    return this.service.returnToDraft(id, req.user.id, this.context(req));
+  }
 
   @Patch(':id/archive')
   @RequireCapabilities('pub.events.publish')
@@ -50,5 +60,7 @@ export class PublicEventsController {
   findAll() { return this.service.findPublic(); }
 
   @Get(':publicId')
-  findOne(@Param('publicId') publicId: string) { return this.service.findPublicByPublicId(publicId); }
+  findOne(@Param('publicId') publicId: string) {
+    return this.service.findPublicByPublicId(publicId);
+  }
 }

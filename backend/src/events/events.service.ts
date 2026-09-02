@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client';
 import { PublicationStatus } from '../../generated/prisma/enums';
 import { AuditAction } from '../audit/audit-actions';
@@ -130,7 +134,11 @@ export class EventsService {
     );
   }
 
-  async submitForReview(id: number, actorId: number, context: AuditContext = {}) {
+  async submitForReview(
+    id: number,
+    actorId: number,
+    context: AuditContext = {},
+  ) {
     return this.transitionPublication(
       id,
       PublicationStatus.REVIEW,
