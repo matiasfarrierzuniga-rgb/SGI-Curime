@@ -87,6 +87,20 @@ describe('portal público', () => {
     expect(screen.getByRole('link', { name: /ir a transparencia/i })).toHaveAttribute('href', '/transparencia')
   })
 
+  it('conserva la jerarquía de la Golden Home', () => {
+    const { container } = renderPublic()
+    const headings = Array.from(container.querySelectorAll('main h1, main h2')).map((heading) => heading.textContent)
+
+    expect(container.querySelectorAll('main h1')).toHaveLength(1)
+    expect(headings).toEqual([
+      'Información, participación y servicios para Curime',
+      'Encuentre lo que necesita',
+      'Información pública, con claridad y responsabilidad',
+      'Un pueblo unido, un futuro compartido',
+      '¿Ya tiene acceso al Sistema de Gestión Integral?',
+    ])
+  })
+
   it('muestra rutas comunitarias reales y futuras opciones no interactivas', () => {
     renderPublic()
     expect(screen.getByRole('heading', { name: /encuentre lo que necesita/i })).toBeInTheDocument()

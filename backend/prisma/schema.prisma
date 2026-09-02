@@ -79,6 +79,66 @@ model Role {
   users User[]
 }
 
+model Person {
+  id                       Int                 @id @default(autoincrement())
+  firstName                String?
+  firstSurname             String?
+  secondSurname            String?
+  legacyFullName           String?
+  identification           String?
+  identificationType       IdentificationType?
+  normalizedIdentification String?
+  birthDate                DateTime?
+  email                    String?
+  phoneCountryCode         String?
+  phoneNationalNumber      String?
+  address                  String?
+
+  user                          User?
+  affiliate                     Affiliate?
+  userRequests                  UserRequest[]
+  affiliateRequests             AffiliateRequest[]
+  reconciliationManifestEntries IdentityReconciliationManifest[] @relation("ManifestSelectedPerson")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([identificationType, normalizedIdentification])
+}
+
+model IdentityReconciliationManifest {
+  id                         Int                 @id @default(autoincrement())
+  manifestVersion            String
+  normalizationVersion       String
+  decisionVersion            String
+  sourceModel                String
+  sourceId                   Int
+  sourceFingerprint          String
+  rawIdentification          String?
+  identificationType         IdentificationType?
+  normalizedIdentification   String?
+  identityClusterKey         String?
+  classification             String
+  selectedPersonId           Int?
+  personCreationAllowed      Boolean
+  conflictCodes              Json
+  nameReconciliationRequired Boolean
+  reviewRequired             Boolean
+  sourceSnapshot             Json
+  reviewedAt                 DateTime?
+  reviewedBy                 String?
+
+  selectedPerson Person? @relation("ManifestSelectedPerson", fields: [selectedPersonId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([normalizationVersion, decisionVersion, sourceModel, sourceId])
+  @@index([identityClusterKey])
+  @@index([classification, reviewRequired])
+  @@index([selectedPersonId])
+}
+
 model User {
   id                  Int                 @id @default(autoincrement())
   fullName            String
@@ -99,8 +159,12 @@ model User {
   roleId Int
   role   Role @relation(fields: [roleId], references: [id])
 
+  personId Int?    @unique
+  person   Person? @relation(fields: [personId], references: [id], onDelete: Restrict)
+
   activationTokens          AccountActivationToken[]
   passwordResetTokens       PasswordResetToken[]
+  sessions                  Session[]
   auditLogs                 AuditLog[]
   reviewedAffiliateRequests AffiliateRequest[]       @relation("AffiliateRequestReviewer")
   reviewedJustifications    AbsenceJustification[]   @relation("JustificationReviewer")
@@ -111,6 +175,21 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id               Int       @id @default(autoincrement())
+  refreshTokenHash String    @unique
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  revocationReason String?
+  createdAt        DateTime  @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model AuditLog {
@@ -178,12 +257,16 @@ model UserRequest {
   reviewedAt      DateTime?
   reviewedById    Int?
 
+  personId Int?
+  person   Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([identification])
   @@index([email])
   @@index([status])
+  @@index([personId])
 }
 
 model Affiliate {
@@ -203,6 +286,9 @@ model Affiliate {
   affiliateType       String?
   affiliationDate     DateTime            @default(now())
   status              AffiliateStatus     @default(ACTIVE)
+
+  personId Int?    @unique
+  person   Person? @relation(fields: [personId], references: [id], onDelete: Restrict)
 
   attendances    AssemblyAttendance[]
   justifications AbsenceJustification[]
@@ -235,6 +321,9 @@ model AffiliateRequest {
   reviewedById    Int?
   reviewedBy      User?     @relation("AffiliateRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
+  personId Int?
+  person   Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -242,6 +331,7 @@ model AffiliateRequest {
   @@index([email])
   @@index([status])
   @@index([reviewedById])
+  @@index([personId])
 }
 
 model Assembly {

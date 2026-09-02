@@ -6,6 +6,7 @@ import {
   AUDIT_PORT,
   type AuditContext,
   type AuditPort,
+  recordAuditBestEffort,
 } from '../ports/audit.port';
 import {
   AUTH_REPOSITORY,
@@ -67,18 +68,31 @@ export class ResetPasswordUseCase {
 
     const passwordHash = await this.hasher.hash(password);
 
-    await this.repository.withTransaction(async (tx) => {
-      const claimed = await tx.claimResetToken(resetToken.id, now);
-      if (!claimed) {
-        throw new AuthApplicationError(
-          'RESET_TOKEN_NO_LONGER_VALID',
-          'Reset token is no longer valid',
-        );
-      }
-      await tx.setUserPassword(resetToken.userId, passwordHash);
-    });
+    const revokedSessions = await this.repository.withTransaction(
+      async (tx) => {
+        const claimed = await tx.claimResetToken(resetToken.id, now);
+        if (!claimed) {
+          throw new AuthApplicationError(
+            'RESET_TOKEN_NO_LONGER_VALID',
+            'Reset token is no longer valid',
+          );
+        }
+        await tx.setUserPassword(resetToken.userId, passwordHash);
+        return tx.revokeUserSessions(resetToken.userId, 'password-reset');
+      },
+    );
+    if (revokedSessions > 0) {
+      await recordAuditBestEffort(this.audit, {
+        userId: resetToken.userId,
+        action: AuditAction.SESSION_REVOKED,
+        module: 'AUTH',
+        entityType: 'User',
+        entityId: resetToken.userId,
+        ...context,
+      });
+    }
 
-    await this.audit?.record({
+    await recordAuditBestEffort(this.audit, {
       userId: resetToken.userId,
       action: AuditAction.PASSWORD_RESET,
       module: 'AUTH',

@@ -5,11 +5,16 @@ import type { EventPayload } from '../model/events.types'
 export const eventsKeys = {
   all: ['events'] as const,
   public: () => [...eventsKeys.all, 'public'] as const,
+  publicDetail: (publicId: string) => [...eventsKeys.public(), publicId] as const,
   admin: () => [...eventsKeys.all, 'admin'] as const,
 }
 
 export function usePublicEvents() {
   return useQuery({ queryKey: eventsKeys.public(), queryFn: eventsApi.listPublic })
+}
+
+export function usePublicEvent(publicId: string) {
+  return useQuery({ queryKey: eventsKeys.publicDetail(publicId), queryFn: () => eventsApi.getPublic(publicId), enabled: Boolean(publicId) })
 }
 
 export function useAdminEvents() {
@@ -23,6 +28,8 @@ export function useEventMutations() {
     create: useMutation({ mutationFn: (payload: EventPayload) => eventsApi.create(payload), onSuccess: invalidate }),
     update: useMutation({ mutationFn: ({ id, payload }: { id: number; payload: EventPayload }) => eventsApi.update(id, payload), onSuccess: invalidate }),
     publish: useMutation({ mutationFn: eventsApi.publish, onSuccess: invalidate }),
+    submitForReview: useMutation({ mutationFn: eventsApi.submitForReview, onSuccess: invalidate }),
+    returnToDraft: useMutation({ mutationFn: eventsApi.returnToDraft, onSuccess: invalidate }),
     archive: useMutation({ mutationFn: eventsApi.archive, onSuccess: invalidate }),
   }
 }

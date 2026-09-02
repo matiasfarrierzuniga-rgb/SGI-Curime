@@ -5,6 +5,9 @@ export const eventsApi = {
   async listPublic() {
     return (await httpClient.get<PublicEvent[]>('/public/events')).data
   },
+  async getPublic(publicId: string) {
+    return (await httpClient.get<PublicEvent>(`/public/events/${publicId}`)).data
+  },
   async listAdmin() {
     return (await httpClient.get<AdminEvent[]>('/events')).data
   },
@@ -16,6 +19,12 @@ export const eventsApi = {
   },
   async publish(id: number) {
     return (await httpClient.patch<AdminEvent>(`/events/${id}/publish`)).data
+  },
+  async submitForReview(id: number) {
+    return (await httpClient.patch<AdminEvent>(`/events/${id}/review`)).data
+  },
+  async returnToDraft(id: number) {
+    return (await httpClient.patch<AdminEvent>(`/events/${id}/draft`)).data
   },
   async archive(id: number) {
     return (await httpClient.patch<AdminEvent>(`/events/${id}/archive`)).data

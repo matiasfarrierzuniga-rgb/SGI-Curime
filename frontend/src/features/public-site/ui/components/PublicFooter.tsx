@@ -40,7 +40,7 @@ export function PublicFooter() {
             <p className="mt-3 text-sm text-brand-ivory/75">{site.location}</p>
           </div>
           <nav aria-label="Contacto">
-            <h3 className="font-heading text-heading-3 font-semibold text-brand-accent">Contacto</h3>
+            <h3 className="font-heading text-heading-3 font-semibold text-brand-ivory">Contacto</h3>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
                 <a aria-label="Enviar correo a ADI Curime" className="inline-flex min-h-11 items-center break-all rounded-sm text-brand-ivory/80 hover:text-brand-accent" href={`mailto:${site.email}`} style={footerLinkStyle}>
@@ -60,7 +60,7 @@ export function PublicFooter() {
             </ul>
           </nav>
           <nav aria-label="Enlaces rápidos">
-            <h3 className="font-heading text-heading-3 font-semibold text-brand-accent">Enlaces rápidos</h3>
+            <h3 className="font-heading text-heading-3 font-semibold text-brand-ivory">Enlaces rápidos</h3>
             <ul className="mt-4 space-y-2 text-sm">
               {site.nav.filter((item) =>
                 ['/nosotros', '/comunidad', '/servicios', '/transparencia', '/contacto'].includes(item.to),
@@ -74,7 +74,7 @@ export function PublicFooter() {
             </ul>
           </nav>
           <nav aria-label="Acceso al sistema">
-            <h3 className="font-heading text-heading-3 font-semibold text-brand-accent">Sistema</h3>
+            <h3 className="font-heading text-heading-3 font-semibold text-brand-ivory">Sistema</h3>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
                 <Link className="rounded-sm text-brand-ivory/80 hover:text-brand-accent" to={isAuthenticated ? '/app' : '/login'} style={footerLinkStyle}>

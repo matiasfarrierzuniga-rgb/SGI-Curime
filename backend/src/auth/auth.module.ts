@@ -6,18 +6,25 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { ActivateAccountUseCase } from './application/use-cases/activate-account.use-case';
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
+import { LogoutUseCase } from './application/use-cases/logout.use-case';
+import { RefreshSessionUseCase } from './application/use-cases/refresh-session.use-case';
 import { RequestPasswordResetUseCase } from './application/use-cases/request-password-reset.use-case';
 import { ResetPasswordUseCase } from './application/use-cases/reset-password.use-case';
 import { AUDIT_PORT } from './application/ports/audit.port';
 import { AUTH_REPOSITORY } from './application/ports/auth-repository.port';
 import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
 import { PASSWORD_RESET_DELIVERY_PORT } from './application/ports/password-reset-delivery.port';
+import { SESSION_REPOSITORY } from './application/ports/session-repository.port';
 import { TOKEN_SERVICE } from './application/ports/token-service.port';
+import { REFRESH_TOKEN_SERVICE } from './application/ports/refresh-token.port';
+import { SessionService } from './application/services/session.service';
 import { AuditServiceAdapter } from './infrastructure/audit/audit-service.adapter';
 import { PrismaAuthRepository } from './infrastructure/persistence/prisma-auth.repository';
+import { PrismaSessionRepository } from './infrastructure/persistence/prisma-session.repository';
 import { PasswordResetTokenDeliveryService } from './infrastructure/password-reset-token-delivery.service';
 import { BcryptPasswordHasher } from './infrastructure/security/bcrypt-password-hasher';
 import { JwtTokenService } from './infrastructure/security/jwt-token-service';
+import { RefreshTokenService } from './infrastructure/security/refresh-token.service';
 import { AuthController } from './presentation/controllers/auth.controller';
 import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
 import { CapabilityGuard } from './presentation/guards/capability.guard';
@@ -57,22 +64,28 @@ import { JwtStrategy } from './presentation/strategies/jwt.strategy';
   controllers: [AuthController],
   providers: [
     { provide: AUTH_REPOSITORY, useClass: PrismaAuthRepository },
+    { provide: SESSION_REPOSITORY, useClass: PrismaSessionRepository },
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
     { provide: TOKEN_SERVICE, useClass: JwtTokenService },
+    { provide: REFRESH_TOKEN_SERVICE, useClass: RefreshTokenService },
     { provide: AUDIT_PORT, useClass: AuditServiceAdapter },
     {
       provide: PASSWORD_RESET_DELIVERY_PORT,
       useClass: PasswordResetTokenDeliveryService,
     },
     LoginUseCase,
+    LogoutUseCase,
+    RefreshSessionUseCase,
     ActivateAccountUseCase,
     RequestPasswordResetUseCase,
     ResetPasswordUseCase,
     ChangePasswordUseCase,
+    SessionService,
     JwtStrategy,
     JwtAuthGuard,
     CapabilityGuard,
     RolesGuard,
   ],
+  exports: [PASSWORD_HASHER],
 })
 export class AuthModule {}

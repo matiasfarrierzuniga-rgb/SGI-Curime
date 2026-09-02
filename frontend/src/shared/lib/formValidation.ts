@@ -33,6 +33,11 @@ export const fullNameError = (value: string) =>
     ? ''
     : 'Ingrese un nombre válido usando letras, espacios, apóstrofes o guiones.'
 
+export const structuredNameError = (value: string, required = true) => {
+  if (!value.trim()) return required ? 'Este campo es obligatorio.' : ''
+  return fullNameError(value)
+}
+
 export const normalizeEmail = (value: string) => value.trim().toLowerCase()
 export const normalizeText = (value: string) => value.trim()
 

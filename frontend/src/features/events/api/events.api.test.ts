@@ -15,13 +15,25 @@ describe('eventsApi', () => {
     expect(httpClient.get).toHaveBeenCalledWith('/public/events')
   })
 
+  it('gets a public event by its public identifier', async () => {
+    vi.mocked(httpClient.get).mockResolvedValue({ data: {} })
+
+    await eventsApi.getPublic('event-1')
+
+    expect(httpClient.get).toHaveBeenCalledWith('/public/events/event-1')
+  })
+
   it('uses explicit publication commands', async () => {
     vi.mocked(httpClient.patch).mockResolvedValue({ data: { id: 3 } })
 
     await eventsApi.publish(3)
+    await eventsApi.submitForReview(3)
+    await eventsApi.returnToDraft(3)
     await eventsApi.archive(3)
 
     expect(httpClient.patch).toHaveBeenCalledWith('/events/3/publish')
+    expect(httpClient.patch).toHaveBeenCalledWith('/events/3/review')
+    expect(httpClient.patch).toHaveBeenCalledWith('/events/3/draft')
     expect(httpClient.patch).toHaveBeenCalledWith('/events/3/archive')
   })
 })

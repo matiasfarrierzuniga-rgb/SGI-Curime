@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EventStatus, PublicationStatus } from '../../generated/prisma/enums';
 import { AuditAction } from '../audit/audit-actions';
 import { EventsService } from './events.service';
@@ -21,8 +21,10 @@ const event = {
 
 describe('EventsService', () => {
   const prisma = {
+    $transaction: jest.fn(),
     event: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -31,7 +33,12 @@ describe('EventsService', () => {
   const audit = { log: jest.fn() };
   const service = new EventsService(prisma as never, audit as never);
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    prisma.$transaction.mockImplementation(
+      (operation: (tx: typeof prisma) => Promise<unknown>) => operation(prisma),
+    );
+  });
 
   it.each([PublicationStatus.INTERNAL, PublicationStatus.DRAFT, PublicationStatus.REVIEW, PublicationStatus.ARCHIVED])(
     'hides %s events from public responses',
@@ -61,15 +68,29 @@ describe('EventsService', () => {
     }]);
   });
 
-  it('publishes a cancelled event without changing its business status', async () => {
-    prisma.event.findUnique.mockResolvedValue({ ...event, status: EventStatus.CANCELLED });
+  it('publishes reviewed content without changing its business status', async () => {
+    prisma.event.findUnique.mockResolvedValue({
+      ...event,
+      status: EventStatus.CANCELLED,
+      publicationStatus: PublicationStatus.REVIEW,
+    });
     prisma.event.update.mockResolvedValue({ ...event, status: EventStatus.CANCELLED, publicationStatus: PublicationStatus.PUBLISHED });
 
     const result = await service.publish(event.id, 3);
 
     expect(result.status).toBe(EventStatus.CANCELLED);
     expect(prisma.event.update).toHaveBeenCalledWith(expect.objectContaining({ data: { publicationStatus: PublicationStatus.PUBLISHED } }));
-    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ action: AuditAction.EVENT_PUBLISHED, userId: 3 }));
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.EVENT_PUBLISHED,
+        userId: 3,
+        details: {
+          from: PublicationStatus.REVIEW,
+          to: PublicationStatus.PUBLISHED,
+        },
+      }),
+      expect.anything(),
+    );
   });
 
   it('rejects an end date before its start date', async () => {
@@ -78,11 +99,117 @@ describe('EventsService', () => {
   });
 
   it('archives through AuditService', async () => {
-    prisma.event.findUnique.mockResolvedValue(event);
+    prisma.event.findUnique.mockResolvedValue({
+      ...event,
+      publicationStatus: PublicationStatus.PUBLISHED,
+    });
     prisma.event.update.mockResolvedValue({ ...event, publicationStatus: PublicationStatus.ARCHIVED });
 
     await service.archive(event.id, 3);
 
-    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ action: AuditAction.EVENT_ARCHIVED, userId: 3 }));
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.EVENT_ARCHIVED,
+        userId: 3,
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('returns a published event by its public identifier', async () => {
+    prisma.event.findFirst.mockResolvedValue({
+      ...event,
+      publicationStatus: PublicationStatus.PUBLISHED,
+    });
+
+    await expect(service.findPublicByPublicId(event.publicId)).resolves.toEqual(
+      {
+        publicId: event.publicId,
+        title: event.title,
+        summary: event.summary,
+        description: event.description,
+        startAt: event.startAt,
+        endAt: event.endAt,
+        location: event.location,
+        status: event.status,
+      },
+    );
+    expect(prisma.event.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          publicId: event.publicId,
+          publicationStatus: PublicationStatus.PUBLISHED,
+        },
+      }),
+    );
+  });
+
+  it.each([
+    PublicationStatus.DRAFT,
+    PublicationStatus.REVIEW,
+    PublicationStatus.ARCHIVED,
+  ])(
+    'does not reveal a %s event through the public detail contract',
+    async () => {
+      prisma.event.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.findPublicByPublicId(event.publicId),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    },
+  );
+
+  it('does not reveal an unknown public identifier', async () => {
+    prisma.event.findFirst.mockResolvedValue(null);
+
+    await expect(
+      service.findPublicByPublicId('unknown-id'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('submits draft content for review and records the transition', async () => {
+    prisma.event.findUnique.mockResolvedValue(event);
+    prisma.event.update.mockResolvedValue({
+      ...event,
+      publicationStatus: PublicationStatus.REVIEW,
+    });
+
+    await service.submitForReview(event.id, 3);
+
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.EVENT_SUBMITTED_FOR_REVIEW,
+        details: {
+          from: PublicationStatus.DRAFT,
+          to: PublicationStatus.REVIEW,
+        },
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('denies direct publication from draft', async () => {
+    prisma.event.findUnique.mockResolvedValue(event);
+
+    await expect(service.publish(event.id, 3)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(prisma.event.update).not.toHaveBeenCalled();
+  });
+
+  it('does not suppress publication audit failures', async () => {
+    prisma.event.findUnique.mockResolvedValue({
+      ...event,
+      publicationStatus: PublicationStatus.REVIEW,
+    });
+    prisma.event.update.mockResolvedValue({
+      ...event,
+      publicationStatus: PublicationStatus.PUBLISHED,
+    });
+    audit.log.mockRejectedValue(new Error('audit unavailable'));
+
+    await expect(service.publish(event.id, 3)).rejects.toThrow(
+      'audit unavailable',
+    );
   });
 });

@@ -20,23 +20,35 @@ describe('LoginUseCase', () => {
     clearLockout: jest.fn(),
     recordFailedLogin: jest.fn(),
     recordLoginSuccess: jest.fn(),
+    recordLoginSuccessAndCreateSession: jest.fn(),
   };
   const hasher = { hash: jest.fn(), compare: jest.fn() };
   const tokens = { sign: jest.fn() };
+  const refreshTokens = { generate: jest.fn(), hash: jest.fn() };
   const audit = { record: jest.fn() };
   let useCase: LoginUseCase;
 
   beforeAll(() => {
     process.env.MAX_LOGIN_ATTEMPTS = '5';
     process.env.ACCOUNT_LOCKOUT_MINUTES = '30';
+    process.env.REFRESH_TOKEN_TTL = '3600';
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new LoginUseCase(repository as never, hasher, tokens, audit);
+    useCase = new LoginUseCase(
+      repository as never,
+      hasher,
+      tokens,
+      refreshTokens,
+      audit,
+    );
     repository.findCredentialsByEmail.mockResolvedValue(account);
     hasher.compare.mockResolvedValue(true);
     tokens.sign.mockResolvedValue('signed-token');
+    refreshTokens.generate.mockReturnValue('raw-refresh-token');
+    refreshTokens.hash.mockReturnValue('refresh-hash');
+    repository.recordLoginSuccessAndCreateSession.mockResolvedValue(undefined);
     repository.recordFailedLogin.mockResolvedValue(false);
   });
 
@@ -136,7 +148,7 @@ describe('LoginUseCase', () => {
     });
   });
 
-  it('signs a token, records the login and audits on success', async () => {
+  it('signs a token, persists only the refresh hash, and audits on success', async () => {
     const result = await useCase.execute('admin@example.com', 'secret', {
       ipAddress: '127.0.0.1',
     });
@@ -146,7 +158,11 @@ describe('LoginUseCase', () => {
       email: 'admin@example.com',
       role: 'Administrador',
     });
-    expect(repository.recordLoginSuccess).toHaveBeenCalledWith(1);
+    expect(repository.recordLoginSuccessAndCreateSession).toHaveBeenCalledWith(
+      1,
+      'refresh-hash',
+      expect.any(Date),
+    );
     expect(audit.record).toHaveBeenCalledWith({
       userId: 1,
       action: AuditAction.LOGIN_SUCCESS,
@@ -157,6 +173,7 @@ describe('LoginUseCase', () => {
     });
     expect(result).toEqual({
       accessToken: 'signed-token',
+      refreshToken: 'raw-refresh-token',
       user: {
         id: 1,
         fullName: 'Admin',
@@ -165,5 +182,18 @@ describe('LoginUseCase', () => {
         role: 'Administrador',
       },
     });
+  });
+
+  it('delivers login credentials when the post-commit audit fails', async () => {
+    audit.record.mockRejectedValueOnce(new Error('audit unavailable'));
+
+    await expect(
+      useCase.execute('admin@example.com', 'secret'),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        accessToken: 'signed-token',
+        refreshToken: 'raw-refresh-token',
+      }),
+    );
   });
 });

@@ -112,6 +112,26 @@ export class PrismaAuthRepository implements AuthRepository {
     });
   }
 
+  async recordLoginSuccessAndCreateSession(
+    id: number,
+    refreshTokenHash: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    await this.db.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.session.create({
+        data: { userId: id, refreshTokenHash, expiresAt },
+      });
+      await tx.user.update({
+        where: { id },
+        data: {
+          failedLoginAttempts: 0,
+          lockedAt: null,
+          lastLoginAt: new Date(),
+        },
+      });
+    });
+  }
+
   async invalidateAndCreateResetToken(
     userId: number,
     tokenHash: string,
@@ -193,6 +213,13 @@ function toAuthTransaction(tx: Prisma.TransactionClient): AuthTransaction {
         where: { id: userId },
         data: { passwordHash, failedLoginAttempts: 0, lockedAt: null },
       });
+    },
+    async revokeUserSessions(userId: number, reason: string): Promise<number> {
+      const revoked = await tx.session.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date(), revocationReason: reason },
+      });
+      return revoked.count;
     },
   };
 }

@@ -15,6 +15,7 @@ export interface AuditEvent extends AuditContext {
   entityId?: string | number;
   details?: unknown;
 }
+type AuditLogClient = Pick<PrismaService, 'auditLog'>;
 const sensitive = /password|token|jwt|secret|database_url|admin_password/i;
 
 export function sanitizeAuditDetails(
@@ -54,8 +55,8 @@ export function sanitizeAuditDetails(
 @Injectable()
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
-  log(event: AuditEvent) {
-    return this.prisma.auditLog.create({
+  log(event: AuditEvent, client: AuditLogClient = this.prisma) {
+    return client.auditLog.create({
       data: {
         ...event,
         entityId: event.entityId?.toString(),

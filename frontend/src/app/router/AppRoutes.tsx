@@ -2,7 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
 import { AffiliatesPage } from '@/features/affiliates'
-import { EventsManagementPage, PublicEventsPage } from '@/features/events'
+import { EventsManagementPage, PublicEventDetailPage, PublicEventsPage } from '@/features/events'
 import { AffiliateRequestsPage } from '@/features/affiliate-requests'
 import { AccessLayout } from '@/app/layouts/AccessLayout'
 import { ErpLayout } from '@/app/layouts/ErpLayout'
@@ -10,7 +10,7 @@ import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProfilePage } from '@/pages/ProfilePage'
-import { RegisterPage } from '@/features/user-requests'
+import { RegisterPage } from '@/features/auth'
 import { TokenPasswordPage } from '@/features/auth'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
 import { UserRequestsPage } from '@/pages/admin/UserRequestsPage'
@@ -39,6 +39,7 @@ export function AppRoutes() {
         <Route path="/noticias" element={<NewsPage />} />
         <Route path="/noticias/:slug" element={<NewsDetailPage />} />
         <Route path="/eventos" element={<PublicEventsPage />} />
+        <Route path="/eventos/:publicId" element={<PublicEventDetailPage />} />
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/transparencia" element={<TransparencyPage />} />
         <Route path="/contacto" element={<ContactPage />} />
