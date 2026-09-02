@@ -1,19 +1,99 @@
 services:
   postgres:
     image: postgres:17
-    container_name: sgi_curime_postgres
     restart: unless-stopped
 
     environment:
-      POSTGRES_USER: sgi_user
-      POSTGRES_PASSWORD: sgi_password
-      POSTGRES_DB: sgi_curime
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
 
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
 
     volumes:
       - sgi_curime_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+
+    restart: unless-stopped
+
+    environment:
+      PORT: 3000
+
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DIRECT_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+
+      FRONTEND_URL: ${FRONTEND_URL}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL}
+
+      ADMIN_NAME: ${ADMIN_NAME}
+      ADMIN_IDENTIFICATION: ${ADMIN_IDENTIFICATION}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-2592000}
+      REFRESH_COOKIE_NAME: ${REFRESH_COOKIE_NAME:-sgi_refresh}
+      REFRESH_COOKIE_SAME_SITE: ${REFRESH_COOKIE_SAME_SITE:-lax}
+
+      ACTIVATION_TOKEN_TTL_HOURS: ${ACTIVATION_TOKEN_TTL_HOURS}
+      MAX_LOGIN_ATTEMPTS: ${MAX_LOGIN_ATTEMPTS}
+      ACCOUNT_LOCKOUT_MINUTES: ${ACCOUNT_LOCKOUT_MINUTES}
+      PASSWORD_RESET_TOKEN_TTL_MINUTES: ${PASSWORD_RESET_TOKEN_TTL_MINUTES}
+
+      PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS: ${PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS}
+      PUBLIC_REQUEST_RATE_LIMIT_MAX: ${PUBLIC_REQUEST_RATE_LIMIT_MAX}
+
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER}
+      EMAIL_SEND_ENABLED: ${EMAIL_SEND_ENABLED}
+      EMAIL_FROM: ${EMAIL_FROM}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO}
+      GMAIL_USER: ${GMAIL_USER}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    command: >
+      sh -c " npx prisma migrate deploy --config prisma.config.ts && npm run db:seed && npm run start:prod "
+
+    healthcheck:
+      test: [ "CMD", "node", "-e", "fetch('http://localhost:3000/').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+
+    restart: unless-stopped
+
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   sgi_curime_postgres_data:
