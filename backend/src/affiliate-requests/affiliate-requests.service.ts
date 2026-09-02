@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -7,6 +8,10 @@ import {
 import { Prisma, RequestStatus } from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
+import {
+  PersonLogicalIdentityRaceError,
+  RuntimePersonResolverService,
+} from '../identity/runtime-person-resolver.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAffiliateRequestDto } from './dto/create-affiliate-request.dto';
 import { QueryAffiliateRequestsDto } from './dto/query-affiliate-requests.dto';
@@ -38,13 +43,54 @@ const select = {
 export class AffiliateRequestsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly personResolver: RuntimePersonResolverService,
     @Optional() private readonly audit?: AuditService,
   ) {}
   async create(dto: CreateAffiliateRequestDto, context: AuditContext = {}) {
-    await this.assertNoDuplicates(dto.identification, dto.email);
-    const created = await this.prisma.affiliateRequest.create({
-      data: { ...dto, status: 'PENDING' },
-      select,
+    const created = await this.withPersonFirstTransaction(async (tx) => {
+      const resolution = await this.personResolver.resolveWithinTransaction(
+        dto,
+        tx,
+      );
+      if (resolution.status === 'IDENTITY_INCOMPLETE') {
+        throw new BadRequestException('Invalid affiliation identity');
+      }
+      if (resolution.status === 'INVALID_IDENTIFICATION') {
+        throw new BadRequestException('Invalid affiliation identity');
+      }
+      if (resolution.status === 'INVALID_STRUCTURED_NAME') {
+        throw new BadRequestException('Invalid affiliation identity');
+      }
+      if (
+        resolution.status === 'IDENTITY_CONFLICT' ||
+        resolution.status === 'IDENTITY_DUPLICATE_CORRUPTION' ||
+        resolution.status === 'MANUAL_REVIEW_REQUIRED'
+      ) {
+        throw new ConflictException('Unable to process affiliation request');
+      }
+
+      const personId = resolution.person.id;
+      await this.assertNoAffiliateByPerson(tx, personId, dto.email);
+      await this.assertNoPendingRequest(tx, personId, dto.email);
+      return tx.affiliateRequest.create({
+        data: {
+          fullName: deriveFullName(dto),
+          identification: dto.identification,
+          identificationType: dto.identificationType,
+          birthDate: dto.birthDate,
+          gender: dto.gender,
+          phoneCountryCode: dto.phoneCountryCode,
+          phoneNationalNumber: dto.phoneNationalNumber,
+          email: dto.email,
+          address: dto.address,
+          occupation: dto.occupation,
+          workplace: dto.workplace,
+          affiliationReason: dto.affiliationReason,
+          personId,
+          status: 'PENDING',
+        },
+        select,
+      });
     });
     await this.audit?.log({
       action: AuditAction.AFFILIATE_REQUEST_CREATED,
@@ -189,13 +235,34 @@ export class AffiliateRequestsService {
       );
     return item;
   }
-  private async assertNoDuplicates(identification: string, email?: string) {
-    await this.assertNoAffiliate(identification, email);
-    const duplicate = await this.prisma.affiliateRequest.findFirst({
+  private async withPersonFirstTransaction<T>(
+    work: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        return await this.prisma.$transaction(work, {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        });
+      } catch (error) {
+        if (!isRetriableConflict(error)) throw error;
+        if (attempt === maxAttempts) {
+          throw new ConflictException('Unable to process affiliation request');
+        }
+      }
+    }
+    throw new Error('Affiliate request transaction retry exhausted.');
+  }
+  private async assertNoPendingRequest(
+    tx: Prisma.TransactionClient,
+    personId: number,
+    email?: string,
+  ) {
+    const duplicate = await tx.affiliateRequest.findFirst({
       where: {
         status: 'PENDING',
         OR: [
-          { identification },
+          { personId },
           ...(email
             ? [{ email: { equals: email, mode: 'insensitive' as const } }]
             : []),
@@ -204,7 +271,26 @@ export class AffiliateRequestsService {
       select: { id: true },
     });
     if (duplicate)
-      throw new ConflictException('A pending affiliate request already exists');
+      throw new ConflictException('Unable to process affiliation request');
+  }
+  private async assertNoAffiliateByPerson(
+    tx: Prisma.TransactionClient,
+    personId: number,
+    email?: string | null,
+  ) {
+    const duplicate = await tx.affiliate.findFirst({
+      where: {
+        OR: [
+          { personId },
+          ...(email
+            ? [{ email: { equals: email, mode: 'insensitive' as const } }]
+            : []),
+        ],
+      },
+      select: { id: true },
+    });
+    if (duplicate)
+      throw new ConflictException('Unable to process affiliation request');
   }
   private async assertNoAffiliate(
     identification: string,
@@ -224,4 +310,18 @@ export class AffiliateRequestsService {
     if (duplicate)
       throw new ConflictException('Affiliate is already registered');
   }
+}
+
+function deriveFullName(dto: CreateAffiliateRequestDto): string {
+  return [dto.firstName, dto.firstSurname, dto.secondSurname]
+    .filter((part): part is string => Boolean(part))
+    .join(' ');
+}
+
+function isRetriableConflict(error: unknown): boolean {
+  return (
+    error instanceof PersonLogicalIdentityRaceError ||
+    (error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2034')
+  );
 }

@@ -1,4 +1,5 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { PersonLogicalIdentityRaceError } from '../identity/runtime-person-resolver.service';
 import { AuditAction } from '../audit/audit-actions';
 import { AffiliateRequestsService } from './affiliate-requests.service';
 
@@ -26,15 +27,15 @@ describe('AffiliateRequestsService', () => {
   };
   const tx = {
     affiliateRequest: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
       updateMany: jest.fn(),
       findUniqueOrThrow: jest.fn(),
     },
-    affiliate: { create: jest.fn() },
+    affiliate: { create: jest.fn(), findFirst: jest.fn() },
   };
   const prisma = {
     affiliateRequest: {
-      create: jest.fn(),
-      findFirst: jest.fn(),
       findUnique: jest.fn(),
       updateMany: jest.fn(),
     },
@@ -44,14 +45,20 @@ describe('AffiliateRequestsService', () => {
     ),
   };
   const audit = { log: jest.fn() };
-  const service = new AffiliateRequestsService(prisma as never, audit as never);
+  const personResolver = { resolveWithinTransaction: jest.fn() };
+  const service = new AffiliateRequestsService(
+    prisma as never,
+    personResolver as never,
+    audit as never,
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.affiliate.findFirst.mockResolvedValue(null);
-    prisma.affiliateRequest.findFirst.mockResolvedValue(null);
+    tx.affiliate.findFirst.mockResolvedValue(null);
+    tx.affiliateRequest.findFirst.mockResolvedValue(null);
     prisma.affiliateRequest.findUnique.mockResolvedValue(pending);
-    prisma.affiliateRequest.create.mockResolvedValue(pending);
+    tx.affiliateRequest.create.mockResolvedValue(pending);
     prisma.affiliateRequest.updateMany.mockResolvedValue({ count: 1 });
     tx.affiliateRequest.updateMany.mockResolvedValue({ count: 1 });
     tx.affiliateRequest.findUniqueOrThrow.mockResolvedValue({
@@ -61,11 +68,17 @@ describe('AffiliateRequestsService', () => {
     });
     tx.affiliate.create.mockResolvedValue({ id: 20, status: 'ACTIVE' });
     audit.log.mockResolvedValue({ id: 1 });
+    personResolver.resolveWithinTransaction.mockResolvedValue({
+      status: 'PERSON_CREATED',
+      person: { id: 5 },
+      profileEnrichmentRequired: false,
+    });
   });
 
   it('creates only a pending request', async () => {
     await service.create({
-      fullName: pending.fullName,
+      firstName: 'Persona',
+      firstSurname: 'Afiliada',
       identificationType: pending.identificationType,
       identification: pending.identification,
       birthDate: pending.birthDate,
@@ -73,19 +86,60 @@ describe('AffiliateRequestsService', () => {
       address: pending.address,
       affiliationReason: pending.affiliationReason,
     });
-    expect(prisma.affiliateRequest.create).toHaveBeenCalledWith(
+    expect(tx.affiliateRequest.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ status: 'PENDING' }),
+        data: {
+          fullName: 'Persona Afiliada',
+          identification: pending.identification,
+          identificationType: pending.identificationType,
+          birthDate: pending.birthDate,
+          gender: undefined,
+          phoneCountryCode: undefined,
+          phoneNationalNumber: undefined,
+          email: pending.email,
+          address: pending.address,
+          occupation: undefined,
+          workplace: undefined,
+          affiliationReason: pending.affiliationReason,
+          personId: 5,
+          status: 'PENDING',
+        },
       }),
     );
+    expect(personResolver.resolveWithinTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ firstName: 'Persona' }),
+      tx,
+    );
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: 'Serializable',
+    });
     expect(tx.affiliate.create).not.toHaveBeenCalled();
   });
 
+  it('retries the whole Person-first transaction after a logical identity race', async () => {
+    prisma.$transaction.mockRejectedValueOnce(
+      new PersonLogicalIdentityRaceError(),
+    );
+
+    await service.create({
+      firstName: 'Persona',
+      firstSurname: 'Afiliada',
+      identificationType: pending.identificationType,
+      identification: pending.identification,
+      birthDate: pending.birthDate,
+      address: pending.address,
+      affiliationReason: pending.affiliationReason,
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+  });
+
   it('rejects duplicates already present in the affiliate registry', async () => {
-    prisma.affiliate.findFirst.mockResolvedValue({ id: 2 });
+    tx.affiliate.findFirst.mockResolvedValue({ id: 2 });
     await expect(
       service.create({
-        fullName: pending.fullName,
+        firstName: 'Persona',
+        firstSurname: 'Afiliada',
         identificationType: pending.identificationType,
         identification: pending.identification,
         birthDate: pending.birthDate,
@@ -97,10 +151,11 @@ describe('AffiliateRequestsService', () => {
   });
 
   it('rejects a pending duplicate by identification or email', async () => {
-    prisma.affiliateRequest.findFirst.mockResolvedValue({ id: 3 });
+    tx.affiliateRequest.findFirst.mockResolvedValue({ id: 3 });
     await expect(
       service.create({
-        fullName: pending.fullName,
+        firstName: 'Persona',
+        firstSurname: 'Afiliada',
         identificationType: pending.identificationType,
         identification: pending.identification,
         birthDate: pending.birthDate,
@@ -109,6 +164,26 @@ describe('AffiliateRequestsService', () => {
         affiliationReason: pending.affiliationReason,
       }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('rejects structured identity conflicts without creating a request', async () => {
+    personResolver.resolveWithinTransaction.mockResolvedValue({
+      status: 'IDENTITY_CONFLICT',
+      conflictFields: ['firstName'],
+    });
+
+    await expect(
+      service.create({
+        firstName: 'Persona',
+        firstSurname: 'Afiliada',
+        identificationType: pending.identificationType,
+        identification: pending.identification,
+        birthDate: pending.birthDate,
+        address: pending.address,
+        affiliationReason: pending.affiliationReason,
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(tx.affiliateRequest.create).not.toHaveBeenCalled();
   });
 
   it('approves atomically and creates an Affiliate, not a User', async () => {
@@ -156,9 +231,13 @@ describe('AffiliateRequestsService', () => {
       rejectionReason: 'Documentación incompleta',
       reviewedById: 1,
     };
-    prisma.affiliateRequest.findUnique.mockResolvedValueOnce(pending).mockResolvedValueOnce(rejected);
+    prisma.affiliateRequest.findUnique
+      .mockResolvedValueOnce(pending)
+      .mockResolvedValueOnce(rejected);
 
-    await expect(service.reject(10, rejected.rejectionReason, 1)).resolves.toEqual(rejected);
+    await expect(
+      service.reject(10, rejected.rejectionReason, 1),
+    ).resolves.toEqual(rejected);
 
     expect(prisma.affiliateRequest.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -187,15 +266,17 @@ describe('AffiliateRequestsService', () => {
     await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
       ConflictException,
     );
-    await expect(service.reject(10, 'Documentación incompleta', 1)).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    await expect(
+      service.reject(10, 'Documentación incompleta', 1),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('prevents duplicate processing when the approval claim affects no request', async () => {
     tx.affiliateRequest.updateMany.mockResolvedValue({ count: 0 });
 
-    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
 
     expect(tx.affiliate.create).not.toHaveBeenCalled();
     expect(audit.log).not.toHaveBeenCalled();
@@ -204,7 +285,9 @@ describe('AffiliateRequestsService', () => {
   it('prevents duplicate processing when the rejection claim affects no request', async () => {
     prisma.affiliateRequest.updateMany.mockResolvedValue({ count: 0 });
 
-    await expect(service.reject(10, 'Documentación incompleta', 1)).rejects.toBeInstanceOf(ConflictException);
+    await expect(
+      service.reject(10, 'Documentación incompleta', 1),
+    ).rejects.toBeInstanceOf(ConflictException);
 
     expect(audit.log).not.toHaveBeenCalled();
   });
@@ -212,7 +295,9 @@ describe('AffiliateRequestsService', () => {
   it('rejects approval when the affiliate already exists', async () => {
     prisma.affiliate.findFirst.mockResolvedValue({ id: 20 });
 
-    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
 
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
