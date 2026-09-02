@@ -11,6 +11,7 @@ export interface AuthTransaction {
   activateUser(userId: number, passwordHash: string): Promise<boolean>;
   claimResetToken(tokenId: number, now: Date): Promise<boolean>;
   setUserPassword(userId: number, passwordHash: string): Promise<void>;
+  revokeUserSessions(userId: number, reason: string): Promise<number>;
 }
 
 export interface AuthRepository {
@@ -21,6 +22,11 @@ export interface AuthRepository {
   recordFailedLogin(id: number, maxAttempts: number): Promise<boolean>;
   clearLockout(id: number): Promise<void>;
   recordLoginSuccess(id: number): Promise<void>;
+  recordLoginSuccessAndCreateSession(
+    id: number,
+    refreshTokenHash: string,
+    expiresAt: Date,
+  ): Promise<void>;
   invalidateAndCreateResetToken(
     userId: number,
     tokenHash: string,

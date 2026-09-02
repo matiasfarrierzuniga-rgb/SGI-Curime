@@ -9,7 +9,7 @@ describe('getErpNavigation', () => {
   it('shows implemented administrative areas to administrators', () => {
     expect(labels('Administrador')).toEqual([
       { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Gestión administrativa', items: [{ label: 'Usuarios', children: undefined }, { label: 'Solicitudes', children: undefined }] },
+      { label: 'Gestión administrativa', items: [{ label: 'Usuarios', children: undefined }, { label: 'Afiliados', children: undefined }, { label: 'Solicitudes de afiliación', children: undefined }, { label: 'Eventos', children: undefined }] },
       { label: 'Operación', items: [{ label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Información', items: [{ label: 'Bitácora', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
@@ -23,7 +23,7 @@ describe('getErpNavigation', () => {
       { label: 'Operación', items: [{ label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
-    expect(JSON.stringify(result)).not.toMatch(/Usuarios|Solicitudes|Bitácora/)
+    expect(JSON.stringify(result)).not.toMatch(/Usuarios|Afiliados|Solicitudes de afiliación|Bitácora/)
   })
 
   it('does not expose ERP dashboard navigation to personal roles', () => {
@@ -31,5 +31,23 @@ describe('getErpNavigation', () => {
     expect(labels('Vecino/Afiliado')).toEqual([{ label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] }])
     expect(labels('Tesorero')).toEqual([{ label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] }])
     expect(labels('Rol desconocido')).toEqual([])
+  })
+
+  it('assigns affiliate navigation to the affiliate read capability', () => {
+    const affiliates = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Afiliados')
+
+    expect(affiliates).toMatchObject({ path: '/app/admin/affiliates', capability: 'adm.affiliates.read' })
+  })
+
+  it('assigns affiliate requests navigation to its canonical route and capability', () => {
+    const requests = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Solicitudes de afiliación')
+
+    expect(requests).toMatchObject({ path: '/app/admin/requests', capability: 'adm.requests.read' })
+  })
+
+  it('assigns event navigation to its management capability', () => {
+    const events = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Eventos')
+
+    expect(events).toMatchObject({ path: '/app/events', capability: 'pub.events.manage' })
   })
 })

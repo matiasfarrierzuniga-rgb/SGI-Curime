@@ -10,7 +10,7 @@ Governance for the `app / features / shared` architecture. These rules are enfor
 | `src/app`  | Bootstrap providers, router composition, layouts, global status pages |
 | `src/features/<domain>` | Domain API access, models, hooks, UI screens, route contributions |
 | `src/shared` | Domain-neutral HTTP client, UI primitives, lib utilities, session storage, security policy, test setup |
-| Legacy roots (`pages/`, `services/`, `types/`, `components/`, `content/`) | Transitional only; code migrates feature by feature |
+| Legacy roots (`pages/`, `services/`, `types/`, `components/`, `content/`) | `NO_NEW_CODE`; migrate feature by feature |
 
 ## Dependency direction (enforced)
 
@@ -18,7 +18,13 @@ Governance for the `app / features / shared` architecture. These rules are enfor
 - `feature -> app`: forbidden
 - `feature -> other feature`: only through the target's `index.ts` public API
 - `app -> feature`: only through the feature's `index.ts`
-- Tests (`*.test.*`) may import or mock internals; they are exempt from the scan
+- Tests must respect feature public APIs and must not import or mock feature internals
+
+## Legacy zones
+
+`src/pages`, `src/services`, `src/types`, and `src/components` are legacy zones. New code must not be added there.
+
+Allowed exceptions: urgent bug fixes, security fixes, temporary compatibility work, or an explicit module migration. Document the exception in its pull request.
 
 ## Feature structure
 
@@ -80,10 +86,11 @@ Institutional palette (Curime / Nicoya / Guanacaste):
 
 ### Typography
 
-- **DM Sans** is the single typeface for the complete platform: public portal,
-  authentication, ERP, modules, forms, tables, dialogs and reports.
-- `--font-sans` is the primary family and `--font-heading` is its semantic heading
-  alias. Both resolve to DM Sans so hierarchy never depends on switching typefaces.
+- **DM Sans** is the interface typeface for public portal, authentication, ERP,
+  modules, forms, tables, dialogs and reports. **DM Serif Display** is reserved for
+  display headings.
+- `--font-sans` is the primary family and `--font-heading` is the semantic display
+  heading family. Body hierarchy must not depend on switching typefaces.
 - The responsive semantic scale is defined in `src/tailwind.css`: `display`,
   `heading-1`, `heading-2`, `heading-3`, `body-large`, `body`, `body-small`,
   `label`, `caption` and `navigation`. Use the corresponding `text-*` utility or
@@ -92,7 +99,8 @@ Institutional palette (Curime / Nicoya / Guanacaste):
   navigation use 500–600. Use size, weight, line height, spacing and color to
   establish hierarchy.
 - Font loading lives only in `index.html`, uses `display=swap`, and requests the
-  weights actually used by the interface: 400, 500, 600 and 700.
+  weights actually used by the interface: DM Sans 400, 500, 600, 700 and DM Serif
+  Display 400.
 - The product may use at most two approved families. Do not introduce another
   family, remote font request, `@font-face`, or component-level `font-family`
   without an explicit design-system decision and documented performance reason.

@@ -18,10 +18,13 @@ describe('shared security access policy', () => {
       'adm.requests.read',
       'aud.logs.read',
       'inv.inventory.read',
+      'pub.events.manage',
+      'pub.events.publish',
     ])
     expect(ACCESS_ROLE_CAPABILITIES.Administrador).toEqual(ACCESS_CAPABILITIES)
     expect(hasCapability('Administrador', 'adm.requests.read')).toBe(true)
     expect(hasCapability('Administrador', 'aud.logs.read')).toBe(true)
+    expect(hasCapability('Administrador', 'pub.events.publish')).toBe(true)
   })
 
   it('denies known capabilities not granted to a role', () => {

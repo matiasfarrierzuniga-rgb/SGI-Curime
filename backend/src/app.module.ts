@@ -19,6 +19,8 @@ import { InventoryMovementsModule } from './inventory-movements/inventory-moveme
 import { InventoryLoansModule } from './inventory-loans/inventory-loans.module';
 import { InventoryAlertsModule } from './inventory-alerts/inventory-alerts.module';
 import { InventoryReportsModule } from './inventory-reports/inventory-reports.module';
+import { EventsModule } from './events/events.module';
+import { IdentityModule } from './identity/identity.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { InventoryReportsModule } from './inventory-reports/inventory-reports.mo
     InventoryLoansModule,
     InventoryAlertsModule,
     InventoryReportsModule,
+    EventsModule,
+    IdentityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -18,6 +18,8 @@ describe('AuthController error boundary', () => {
         Parameters<LoginUseCase['execute']>
       >(),
     };
+    const refreshSessionUseCase = { execute: jest.fn() };
+    const logoutUseCase = { execute: jest.fn() };
     const activateAccountUseCase = {
       execute: jest.fn<
         ReturnType<ActivateAccountUseCase['execute']>,
@@ -36,6 +38,8 @@ describe('AuthController error boundary', () => {
     return {
       controller: new AuthController(
         loginUseCase as never,
+        refreshSessionUseCase as never,
+        logoutUseCase as never,
         activateAccountUseCase as never,
         requestPasswordResetUseCase as never,
         resetPasswordUseCase as never,

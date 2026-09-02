@@ -10,12 +10,14 @@ import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import { PASSWORD_RESET_DELIVERY_PORT } from '../src/auth/application/ports/password-reset-delivery.port';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createHash } from 'crypto';
+import cookieParser from 'cookie-parser';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
 process.env.MAX_LOGIN_ATTEMPTS = '3';
 process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
 process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES = '30';
+process.env.REFRESH_TOKEN_TTL = '3600';
 
 type TestUser = {
   id: number;
@@ -66,6 +68,15 @@ describe('AuthController (e2e)', () => {
       }
     | undefined;
   let deliveredToken: string | undefined;
+  let sessions: Array<{
+    id: number;
+    userId: number;
+    refreshTokenHash: string;
+    createdAt: Date;
+    expiresAt: Date;
+    revokedAt: Date | null;
+    revocationReason: string | null;
+  }>;
 
   const prismaMock = {
     user: {
@@ -77,6 +88,12 @@ describe('AuthController (e2e)', () => {
       updateMany: jest.fn(),
       create: jest.fn(),
     },
+    session: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      updateMany: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
 
@@ -84,6 +101,24 @@ describe('AuthController (e2e)', () => {
     return request(app.getHttpServer())
       .post('/auth/login')
       .send({ email, password });
+  }
+
+  function refreshCookie(response: {
+    headers: Record<string, string | string[] | undefined>;
+  }) {
+    const setCookie = response.headers['set-cookie'];
+    const cookie = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+    if (!cookie) throw new Error('Expected refresh cookie');
+    return cookie.split(';', 1)[0];
+  }
+
+  function refreshSetCookie(response: {
+    headers: Record<string, string | string[] | undefined>;
+  }): string {
+    const setCookie = response.headers['set-cookie'];
+    const cookie = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+    if (!cookie) throw new Error('Expected refresh cookie');
+    return cookie;
   }
 
   beforeEach(async () => {
@@ -101,6 +136,7 @@ describe('AuthController (e2e)', () => {
     };
     resetTokenRecord = undefined;
     deliveredToken = undefined;
+    sessions = [];
 
     prismaMock.user.findUnique.mockImplementation(
       ({ where }: { where: { email?: string; id?: number } }) => {
@@ -166,6 +202,56 @@ describe('AuthController (e2e)', () => {
         return Promise.resolve(resetTokenRecord);
       },
     );
+    prismaMock.session.create.mockImplementation(
+      ({ data }: { data: (typeof sessions)[number] }) => {
+        const record = {
+          id: sessions.length + 1,
+          createdAt: new Date(),
+          revokedAt: null,
+          revocationReason: null,
+          ...data,
+        };
+        sessions.push(record);
+        return Promise.resolve(record);
+      },
+    );
+    prismaMock.session.findUnique.mockImplementation(
+      ({ where }: { where: { id?: number; refreshTokenHash?: string } }) =>
+        Promise.resolve(
+          sessions.find(
+            (session) =>
+              (where.id === undefined || session.id === where.id) &&
+              (where.refreshTokenHash === undefined ||
+                session.refreshTokenHash === where.refreshTokenHash),
+          ) ?? null,
+        ),
+    );
+    prismaMock.session.updateMany.mockImplementation(
+      ({
+        where,
+        data,
+      }: {
+        where: Record<string, unknown>;
+        data: Record<string, unknown>;
+      }) => {
+        const matched = sessions.filter((session) => {
+          if (where.id !== undefined && session.id !== where.id) return false;
+          if (where.userId !== undefined && session.userId !== where.userId)
+            return false;
+          if (
+            where.refreshTokenHash !== undefined &&
+            session.refreshTokenHash !== where.refreshTokenHash
+          )
+            return false;
+          if (where.revokedAt === null && session.revokedAt !== null)
+            return false;
+          const expiresAt = where.expiresAt as { gt?: Date } | undefined;
+          return !expiresAt?.gt || session.expiresAt > expiresAt.gt;
+        });
+        matched.forEach((session) => Object.assign(session, data));
+        return Promise.resolve({ count: matched.length });
+      },
+    );
     prismaMock.$transaction.mockImplementation(
       (callback: (tx: typeof prismaMock) => unknown) => callback(prismaMock),
     );
@@ -187,6 +273,7 @@ describe('AuthController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
@@ -216,6 +303,97 @@ describe('AuthController (e2e)', () => {
       role: 'Administrador',
     });
     expect(body.user.passwordHash).toBeUndefined();
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('HttpOnly')]),
+    );
+    expect(sessions).toHaveLength(1);
+    const rawRefresh = decodeURIComponent(
+      refreshCookie(response).split('=')[1],
+    );
+    expect(sessions[0].refreshTokenHash).toBe(
+      createHash('sha256').update(rawRefresh).digest('hex'),
+    );
+  });
+
+  it('rotates the refresh cookie once and rejects the old credential', async () => {
+    const loginResponse = await login().expect(200);
+    const firstCookie = refreshCookie(loginResponse);
+    const refresh = () =>
+      request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('Origin', 'http://localhost:5173')
+        .set('Cookie', firstCookie);
+
+    const response = await refresh().expect(200);
+    expect(loginResponseBody(loginResponse).accessToken).toEqual(
+      expect.any(String),
+    );
+    expect(loginResponseBody(response).accessToken).toEqual(expect.any(String));
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('HttpOnly')]),
+    );
+    await refresh().expect(401);
+  });
+
+  it('limits a rotated cookie to the remaining absolute session lifetime', async () => {
+    const loginResponse = await login().expect(200);
+    sessions[0].expiresAt = new Date(Date.now() + 10 * 60_000);
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', refreshCookie(loginResponse))
+      .expect(200);
+    const maxAge = Number(
+      /Max-Age=(\d+)/.exec(refreshSetCookie(response))?.[1],
+    );
+
+    expect(maxAge).toBeGreaterThanOrEqual(598);
+    expect(maxAge).toBeLessThanOrEqual(600);
+  });
+
+  it('does not emit a replacement cookie for an expired session', async () => {
+    const loginResponse = await login().expect(200);
+    sessions[0].expiresAt = new Date(Date.now() - 1);
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', refreshCookie(loginResponse))
+      .expect(401);
+
+    expect(response.headers['set-cookie']).toBeUndefined();
+  });
+
+  it('denies cookie-authenticated refresh from an untrusted origin', async () => {
+    const loginResponse = await login().expect(200);
+
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Origin', 'https://untrusted.example')
+      .set('Cookie', refreshCookie(loginResponse))
+      .expect(403);
+  });
+
+  it('logs out by refresh cookie even without an access token', async () => {
+    const loginResponse = await login().expect(200);
+    const cookie = refreshCookie(loginResponse);
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', cookie)
+      .expect(200);
+
+    expect(response.body).toEqual({ message: 'Logged out' });
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('sgi_refresh=;')]),
+    );
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', cookie)
+      .expect(401);
   });
 
   it('rejects an incorrect password', async () => {

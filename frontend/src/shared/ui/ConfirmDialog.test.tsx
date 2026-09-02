@@ -1,2 +1,76 @@
-import { fireEvent, render, screen } from '@testing-library/react'; import { describe, expect, it, vi } from 'vitest'; import { ConfirmDialog } from './ConfirmDialog'; import { ToastProvider, useToast } from './Toast'
-describe('UI dialogs and toasts', () => { it('opens accessibly, confirms, cancels, and closes with Escape', () => { const confirm = vi.fn(), close = vi.fn(); render(<ConfirmDialog title="Eliminar" message="¿Continuar?" onClose={close} onConfirm={confirm} />); expect(screen.getByRole('dialog', { name: 'Eliminar' })).toHaveAttribute('aria-modal', 'true'); fireEvent.click(screen.getByRole('button', { name: 'Confirmar' })); expect(confirm).toHaveBeenCalledOnce(); fireEvent.click(screen.getByRole('button', { name: 'Cancelar' })); fireEvent.keyDown(document, { key: 'Escape' }); expect(close).toHaveBeenCalledTimes(2) }); it('disables controls while loading', () => { render(<ConfirmDialog title="Eliminar" message="x" busy onClose={vi.fn()} onConfirm={vi.fn()} />); expect(screen.getByRole('button', { name: 'Procesando…' })).toBeDisabled(); expect(screen.getByRole('dialog')).toHaveAttribute('aria-busy', 'true') }); it('shows success and error toasts and allows closing them', () => { const Demo = () => { const { notify } = useToast(); return <><button onClick={() => notify('Guardado', 'success')}>ok</button><button onClick={() => notify('Falló', 'error')}>bad</button></> }; render(<ToastProvider><Demo /></ToastProvider>); fireEvent.click(screen.getByText('ok')); fireEvent.click(screen.getByText('bad')); expect(screen.getByRole('status')).toHaveTextContent('Guardado'); expect(screen.getByRole('alert')).toHaveTextContent('Falló'); fireEvent.click(screen.getAllByLabelText('Cerrar notificación')[0]); expect(screen.queryByText('Guardado')).not.toBeInTheDocument() }) })
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { ConfirmDialog } from './ConfirmDialog'
+import { ToastProvider, useToast } from './Toast'
+
+describe('UI dialogs and toasts', () => {
+  it('opens accessibly, confirms, cancels, and closes with Escape', () => {
+    const confirm = vi.fn()
+    const close = vi.fn()
+    render(<ConfirmDialog title="Eliminar" message="¿Continuar?" onClose={close} onConfirm={confirm} />)
+
+    expect(screen.getByRole('dialog', { name: 'Eliminar' })).toHaveAttribute('aria-modal', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
+    expect(confirm).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(close).toHaveBeenCalledTimes(2)
+  })
+
+  it('contains focus for Tab, Shift+Tab, and focus outside the dialog', () => {
+    render(<><button type="button">Fuera</button><ConfirmDialog title="Eliminar" message="¿Continuar?" onClose={vi.fn()} onConfirm={vi.fn()} /></>)
+    const dialog = screen.getByRole('dialog')
+    const close = screen.getByRole('button', { name: 'Cerrar diálogo' })
+    const confirm = screen.getByRole('button', { name: 'Confirmar' })
+
+    confirm.focus()
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(document.activeElement).toBe(close)
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(confirm)
+    dialog.focus()
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(confirm)
+    screen.getByRole('button', { name: 'Fuera' }).focus()
+    expect(document.activeElement).toBe(dialog)
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(document.activeElement).toBe(close)
+  })
+
+  it('does not reset focus on a normal rerender', () => {
+    const view = render(<ConfirmDialog title="Eliminar" message="¿Continuar?" onClose={vi.fn()} onConfirm={vi.fn()} />)
+    const confirm = screen.getByRole('button', { name: 'Confirmar' })
+    confirm.focus()
+
+    view.rerender(<ConfirmDialog title="Eliminar" message="¿Continuar?" onClose={vi.fn()} onConfirm={vi.fn()} />)
+
+    expect(document.activeElement).toBe(confirm)
+  })
+
+  it('disables controls while loading and blocks Escape', () => {
+    const close = vi.fn()
+    const view = render(<ConfirmDialog title="Eliminar" message="x" onClose={close} onConfirm={vi.fn()} />)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(close).toHaveBeenCalledOnce()
+
+    view.rerender(<ConfirmDialog title="Eliminar" message="x" busy onClose={close} onConfirm={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Procesando…' })).toBeDisabled()
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-busy', 'true')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(close).toHaveBeenCalledOnce()
+  })
+
+  it('shows success and error toasts and allows closing them', () => {
+    const Demo = () => {
+      const { notify } = useToast()
+      return <><button onClick={() => notify('Guardado', 'success')}>ok</button><button onClick={() => notify('Falló', 'error')}>bad</button></>
+    }
+    render(<ToastProvider><Demo /></ToastProvider>)
+    fireEvent.click(screen.getByText('ok'))
+    fireEvent.click(screen.getByText('bad'))
+    expect(screen.getByRole('status')).toHaveTextContent('Guardado')
+    expect(screen.getByRole('alert')).toHaveTextContent('Falló')
+    fireEvent.click(screen.getAllByLabelText('Cerrar notificación')[0])
+    expect(screen.queryByText('Guardado')).not.toBeInTheDocument()
+  })
+})

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../audit/audit-actions';
 import { AuthApplicationError } from '../errors/auth.errors';
+import { getRefreshTokenTtlSeconds } from '../config/refresh-token.config';
 import type { AuthenticatedUser } from '../../domain/entities/auth-user';
 import {
   getAccountLockoutPolicy,
@@ -10,6 +11,7 @@ import {
   AUDIT_PORT,
   type AuditContext,
   type AuditPort,
+  recordAuditBestEffort,
 } from '../ports/audit.port';
 import {
   AUTH_REPOSITORY,
@@ -20,9 +22,14 @@ import {
   type PasswordHasher,
 } from '../ports/password-hasher.port';
 import { TOKEN_SERVICE, type TokenService } from '../ports/token-service.port';
+import {
+  REFRESH_TOKEN_SERVICE,
+  type RefreshTokenPort,
+} from '../ports/refresh-token.port';
 
 export interface LoginResult {
   accessToken: string;
+  refreshToken: string;
   user: AuthenticatedUser;
 }
 
@@ -37,6 +44,8 @@ export class LoginUseCase {
     private readonly hasher: PasswordHasher,
     @Inject(TOKEN_SERVICE)
     private readonly tokens: TokenService,
+    @Inject(REFRESH_TOKEN_SERVICE)
+    private readonly refreshTokens: RefreshTokenPort,
     @Optional() @Inject(AUDIT_PORT) private readonly audit?: AuditPort,
   ) {}
 
@@ -115,8 +124,14 @@ export class LoginUseCase {
       email: account.email,
       role: account.roleName,
     });
-    await this.repository.recordLoginSuccess(account.id);
-    await this.audit?.record({
+    const refreshToken = this.refreshTokens.generate();
+    const expiresAt = new Date(Date.now() + getRefreshTokenTtlSeconds() * 1000);
+    await this.repository.recordLoginSuccessAndCreateSession(
+      account.id,
+      this.refreshTokens.hash(refreshToken),
+      expiresAt,
+    );
+    await recordAuditBestEffort(this.audit, {
       userId: account.id,
       action: AuditAction.LOGIN_SUCCESS,
       module: 'AUTH',
@@ -127,6 +142,7 @@ export class LoginUseCase {
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: account.id,
         fullName: account.fullName,

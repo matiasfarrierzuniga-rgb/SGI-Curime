@@ -1,6 +1,9 @@
 import { Route, Routes } from 'react-router-dom'
 import { ManagementRoute, ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
+import { AffiliatesPage } from '@/features/affiliates'
+import { EventsManagementPage, PublicEventDetailPage, PublicEventsPage } from '@/features/events'
+import { AffiliateRequestsPage } from '@/features/affiliate-requests'
 import { AccessLayout } from '@/app/layouts/AccessLayout'
 import { ErpLayout } from '@/app/layouts/ErpLayout'
 import { AccountLayout } from '@/app/layouts/AccountLayout'
@@ -8,7 +11,7 @@ import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProfilePage } from '@/pages/ProfilePage'
-import { RegisterPage } from '@/features/user-requests'
+import { RegisterPage } from '@/features/auth'
 import { TokenPasswordPage } from '@/features/auth'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
 import { UserRequestsPage } from '@/pages/admin/UserRequestsPage'
@@ -22,7 +25,7 @@ import { InventoryMovementsPage } from '@/pages/inventory/InventoryMovementsPage
 import { InventoryReportsPage } from '@/pages/inventory/InventoryReportsPage'
 import { ForbiddenPage } from '@/pages/ForbiddenPage'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
-import { AboutPage, CommunityPage, ContactPage, EventsPage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '@/pages/public/PublicPages'
+import { AboutPage, CommunityPage, ContactPage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from '@/pages/public/PublicPages'
 import { AffiliationPage } from '@/pages/public/AffiliationPage'
 import { LandingPage } from '@/features/public-site'
 import { AppHomePage } from '@/pages/erp/AppHomePage'
@@ -37,7 +40,8 @@ export function AppRoutes() {
         <Route path="/comunidad" element={<CommunityPage />} />
         <Route path="/noticias" element={<NewsPage />} />
         <Route path="/noticias/:slug" element={<NewsDetailPage />} />
-        <Route path="/eventos" element={<EventsPage />} />
+        <Route path="/eventos" element={<PublicEventsPage />} />
+        <Route path="/eventos/:publicId" element={<PublicEventDetailPage />} />
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/transparencia" element={<TransparencyPage />} />
         <Route path="/contacto" element={<ContactPage />} />
@@ -68,14 +72,17 @@ export function AppRoutes() {
             <Route path="/app/roles" element={<ErpPlaceholderPage title="Roles" />} />
           </Route>
           <Route element={<RoleRoute capability="adm.affiliates.read" />}>
-            <Route path="/app/admin/affiliates" element={<ErpPlaceholderPage title="Afiliados" />} />
+            <Route path="/app/admin/affiliates" element={<AffiliatesPage />} />
           </Route>
           <Route element={<RoleRoute capability="adm.requests.read" />}>
-            <Route path="/app/admin/requests" element={<ErpPlaceholderPage title="Solicitudes" />} />
+            <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
           </Route>
           <Route element={<RoleRoute capability="aud.logs.read" />}>
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+          </Route>
+          <Route element={<RoleRoute capability="pub.events.manage" />}>
+            <Route path="/app/events" element={<EventsManagementPage />} />
           </Route>
           <Route element={<RoleRoute capability="inv.inventory.read" />}>
             <Route path="/inventory" element={<InventoryDashboardPage />} />
