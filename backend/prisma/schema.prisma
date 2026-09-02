@@ -94,13 +94,47 @@ model Person {
   phoneNationalNumber      String?
   address                  String?
 
-  user              User?
-  affiliate         Affiliate?
-  userRequests      UserRequest[]
-  affiliateRequests AffiliateRequest[]
+  user                          User?
+  affiliate                     Affiliate?
+  userRequests                  UserRequest[]
+  affiliateRequests             AffiliateRequest[]
+  reconciliationManifestEntries IdentityReconciliationManifest[] @relation("ManifestSelectedPerson")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model IdentityReconciliationManifest {
+  id                         Int                 @id @default(autoincrement())
+  manifestVersion            String
+  normalizationVersion       String
+  decisionVersion            String
+  sourceModel                String
+  sourceId                   Int
+  sourceFingerprint          String
+  rawIdentification          String?
+  identificationType         IdentificationType?
+  normalizedIdentification   String?
+  identityClusterKey         String?
+  classification             String
+  selectedPersonId           Int?
+  personCreationAllowed      Boolean
+  conflictCodes              Json
+  nameReconciliationRequired Boolean
+  reviewRequired             Boolean
+  sourceSnapshot             Json
+  reviewedAt                 DateTime?
+  reviewedBy                 String?
+
+  selectedPerson Person? @relation("ManifestSelectedPerson", fields: [selectedPersonId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([normalizationVersion, decisionVersion, sourceModel, sourceId])
+  @@index([identityClusterKey])
+  @@index([classification, reviewRequired])
+  @@index([selectedPersonId])
 }
 
 model User {
