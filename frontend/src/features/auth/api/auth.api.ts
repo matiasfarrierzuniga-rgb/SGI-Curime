@@ -4,8 +4,10 @@ import type { AuthenticatedUser, LoginCredentials, LoginResponse, PasswordWithCo
 
 export const authService = {
   async register(payload: RegisterUser) { return (await httpClient.post<RegisteredUser>('/register', payload)).data },
-  async login(payload: LoginCredentials) { return (await httpClient.post<LoginResponse>('/auth/login', payload)).data },
-  async me() { return (await httpClient.get<AuthenticatedUser>('/auth/me')).data },
+  async login(payload: LoginCredentials) { return (await httpClient.post<LoginResponse>('/login', payload)).data },
+  async refresh() { return (await httpClient.post<{ accessToken: string }>('/refresh')).data },
+  async logout() { return (await httpClient.post<ApiMessage>('/logout')).data },
+  async me() { return (await httpClient.get<AuthenticatedUser>('/users/me')).data },
   async activate(payload: PasswordWithConfirmation) { return (await httpClient.post<ApiMessage>('/auth/activate-account', payload)).data },
   async forgotPassword(email: string) { return (await httpClient.post<ApiMessage>('/auth/forgot-password', { email })).data },
   async resetPassword(payload: PasswordWithConfirmation) { return (await httpClient.post<ApiMessage>('/auth/reset-password', payload)).data },
