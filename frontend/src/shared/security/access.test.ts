@@ -26,6 +26,38 @@ describe('shared security access policy', () => {
     expect(hasCapability('Administrador', 'pub.events.publish')).toBe(true)
   })
 
+  it('grants capabilities to role objects by name', () => {
+    expect(
+      hasCapability(
+        { name: 'Administrador' },
+        'usr.users.read',
+      ),
+    ).toBe(true)
+    expect(
+      hasCapability(
+        { name: 'Gestor de Inventario' },
+        'inv.inventory.read',
+      ),
+    ).toBe(true)
+  })
+
+  it('denies capabilities for unknown role objects (default deny)', () => {
+    expect(
+      hasCapability(
+        { name: 'Secretaría' },
+        'adm.affiliates.read',
+      ),
+    ).toBe(false)
+    expect(
+      hasCapability(
+        { name: 'Gestor de Inventario' },
+        'usr.users.read',
+      ),
+    ).toBe(false)
+    expect(hasCapability({}, 'usr.profile.read')).toBe(false)
+    expect(hasCapability({ name: null }, 'usr.profile.read')).toBe(false)
+  })
+
   it('denies known capabilities not granted to a role', () => {
     expect(hasCapability('Gestor de Inventario', 'usr.users.read')).toBe(false)
     expect(hasCapability(null, 'usr.profile.read')).toBe(false)

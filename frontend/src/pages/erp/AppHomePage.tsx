@@ -3,6 +3,7 @@ import { ArrowRight, Boxes, ClipboardList, FileClock, Package, TriangleAlert, Us
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { hasCapability } from '@/shared/security/access'
+import { getRoleName } from '@/shared/security/roles'
 import { inventoryReportsService } from '@/services/inventoryReportsService'
 import type { InventoryReportSummary } from '@/types/inventory'
 import { Badge } from '@/shared/ui/badge'
@@ -18,8 +19,9 @@ const quickActions = [
 
 export function AppHomePage() {
   const { user } = useAuth()
-  const canViewInventory = hasCapability(user?.role, 'inv.inventory.read')
-  const actions = quickActions.filter((action) => hasCapability(user?.role, action.capability))
+  const roleName = getRoleName(user?.role)
+  const canViewInventory = hasCapability(roleName, 'inv.inventory.read')
+  const actions = quickActions.filter((action) => hasCapability(roleName, action.capability))
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
   const [loading, setLoading] = useState(canViewInventory)
   const [summaryUnavailable, setSummaryUnavailable] = useState(false)
@@ -44,7 +46,7 @@ export function AppHomePage() {
           <h1 className="mt-2 font-heading text-heading-1 font-bold text-brand-ink">{firstName ? `Hola, ${firstName}` : 'Área de gestión'}</h1>
           <p className="mt-2 max-w-2xl text-foreground-muted">Resumen de las áreas disponibles para tu trabajo en SGI-Curime.</p>
         </div>
-        {user?.role && <Badge variant="secondary" className="w-fit">{user.role}</Badge>}
+        {roleName && <Badge variant="secondary" className="w-fit">{roleName}</Badge>}
       </header>
 
       {canViewInventory && (

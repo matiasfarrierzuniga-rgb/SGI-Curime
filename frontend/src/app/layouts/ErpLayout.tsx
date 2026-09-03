@@ -3,6 +3,7 @@ import { ExternalLink, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from 'lucid
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { getErpNavigation, type ErpNavigationItem } from '@/app/navigation/erpNavigation'
+import { getRoleName } from '@/shared/security/roles'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/ui/sheet'
@@ -11,7 +12,8 @@ export function ErpLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const navigation = getErpNavigation(user?.role)
+  const roleName = getRoleName(user?.role)
+  const navigation = getErpNavigation(roleName)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tabletCollapsed, setTabletCollapsed] = useState(true)
 
@@ -57,7 +59,7 @@ export function ErpLayout() {
           </div>
           <div className="min-w-0 text-right">
             <p className="max-w-40 truncate text-sm font-semibold text-brand-ink sm:max-w-64">{user?.fullName}</p>
-            {user?.role && <Badge variant="secondary" className="mt-1">{user.role}</Badge>}
+            {roleName && <Badge variant="secondary" className="mt-1">{roleName}</Badge>}
           </div>
         </div>
       </header>
