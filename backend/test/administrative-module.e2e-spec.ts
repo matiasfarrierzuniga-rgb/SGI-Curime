@@ -92,7 +92,8 @@ describe('Administrative affiliate requests (e2e)', () => {
     await request(app.getHttpServer())
       .post('/affiliate-requests')
       .send({
-        fullName: '  Persona Afiliada  ',
+        firstName: '  Persona  ',
+        firstSurname: ' Afiliada ',
         identificationType: 'NATIONAL',
         identification: '123456789',
         birthDate: '1990-01-01',
@@ -103,7 +104,8 @@ describe('Administrative affiliate requests (e2e)', () => {
       .expect(201);
     expect(service.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        fullName: 'Persona Afiliada',
+        firstName: 'Persona',
+        firstSurname: 'Afiliada',
         email: 'persona@example.com',
       }),
       expect.objectContaining({ ipAddress: expect.any(String) }),
@@ -112,7 +114,8 @@ describe('Administrative affiliate requests (e2e)', () => {
 
   it('accepts DIMEX and rejects malformed identity/contact data', async () => {
     const base = {
-      fullName: 'Persona Afiliada',
+      firstName: 'Persona',
+      firstSurname: 'Afiliada',
       birthDate: '1990-01-01',
       address: 'Curime',
       affiliationReason: 'Participar',
@@ -145,6 +148,20 @@ describe('Administrative affiliate requests (e2e)', () => {
       .expect(400);
   });
 
+  it('rejects client-supplied fullName', async () => {
+    await request(app.getHttpServer())
+      .post('/affiliate-requests')
+      .send({
+        fullName: 'Persona Afiliada',
+        identificationType: 'NATIONAL',
+        identification: '123456789',
+        birthDate: '1990-01-01',
+        address: 'Curime',
+        affiliationReason: 'Participar',
+      })
+      .expect(400);
+  });
+
   it('returns 409 for a duplicate affiliate request', async () => {
     service.create.mockRejectedValueOnce(
       new ConflictException('No se puede procesar la solicitud'),
@@ -152,7 +169,8 @@ describe('Administrative affiliate requests (e2e)', () => {
     await request(app.getHttpServer())
       .post('/affiliate-requests')
       .send({
-        fullName: 'Persona Afiliada',
+        firstName: 'Persona',
+        firstSurname: 'Afiliada',
         birthDate: '1990-01-01',
         address: 'Curime',
         affiliationReason: 'Participar',
@@ -164,7 +182,8 @@ describe('Administrative affiliate requests (e2e)', () => {
 
   it('returns 429 after the affiliate public request limit', async () => {
     const body = {
-      fullName: 'Persona Afiliada',
+      firstName: 'Persona',
+      firstSurname: 'Afiliada',
       birthDate: '1990-01-01',
       address: 'Curime',
       affiliationReason: 'Participar',

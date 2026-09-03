@@ -1,29 +1,31 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { affiliateRequestsService } from '../../services/affiliateRequestsService'
 import { getErrorMessage } from '@/shared/lib/errors'
-import { digitsOnly, emailError, fullNameError, identificationError, identificationMaxLength, normalizeEmail, normalizeText, phoneError, phoneNationalMaxLength, type IdentificationType } from '@/shared/lib/formValidation'
+import { digitsOnly, emailError, identificationError, identificationMaxLength, normalizeEmail, normalizeText, phoneError, phoneNationalMaxLength, structuredNameError, type IdentificationType } from '@/shared/lib/formValidation'
 import { Breadcrumbs, PublicPageHeader, SectionContainer, Seo } from '../../components/public/PublicComponents'
 
-const blank = { fullName: '', identificationType: 'NATIONAL' as IdentificationType, identification: '', birthDate: '', gender: '', phoneCountryCode: '+506', phoneNationalNumber: '', email: '', address: '', occupation: '', workplace: '', affiliationReason: '' }
+const blank = { firstName: '', firstSurname: '', secondSurname: '', identificationType: 'NATIONAL' as IdentificationType, identification: '', birthDate: '', gender: '', phoneCountryCode: '+506', phoneNationalNumber: '', email: '', address: '', occupation: '', workplace: '', affiliationReason: '' }
 
 export function AffiliationPage() {
   const [form, setForm] = useState(blank); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [success, setSuccess] = useState(false); const [errors, setErrors] = useState<Record<string, string>>({}); const submitting = useRef(false)
   function validate() {
-    const next = { fullName: fullNameError(form.fullName), identification: identificationError(form.identificationType, form.identification), phoneNationalNumber: phoneError(form.phoneCountryCode, form.phoneNationalNumber), email: form.email ? emailError(form.email) : '' }
+    const next = { firstName: structuredNameError(form.firstName), firstSurname: structuredNameError(form.firstSurname), secondSurname: structuredNameError(form.secondSurname, false), identification: identificationError(form.identificationType, form.identification), phoneNationalNumber: phoneError(form.phoneCountryCode, form.phoneNationalNumber), email: form.email ? emailError(form.email) : '' }
     setErrors(next); return !Object.values(next).some(Boolean)
   }
   async function submit(e: FormEvent) {
     e.preventDefault(); if (submitting.current || !validate()) return
     submitting.current = true; setBusy(true); setError('')
     try {
-      await affiliateRequestsService.create({ fullName: normalizeText(form.fullName), identificationType: form.identificationType, identification: form.identification, birthDate: new Date(`${form.birthDate}T12:00:00`).toISOString(), address: normalizeText(form.address), affiliationReason: normalizeText(form.affiliationReason), ...(normalizeText(form.gender) ? { gender: normalizeText(form.gender) } : {}), ...(form.phoneNationalNumber ? { phoneCountryCode: form.phoneCountryCode, phoneNationalNumber: form.phoneNationalNumber } : {}), ...(normalizeText(form.email) ? { email: normalizeEmail(form.email) } : {}), ...(normalizeText(form.occupation) ? { occupation: normalizeText(form.occupation) } : {}), ...(normalizeText(form.workplace) ? { workplace: normalizeText(form.workplace) } : {}) })
+      await affiliateRequestsService.create({ firstName: normalizeText(form.firstName), firstSurname: normalizeText(form.firstSurname), identificationType: form.identificationType, identification: form.identification, birthDate: new Date(`${form.birthDate}T12:00:00`).toISOString(), address: normalizeText(form.address), affiliationReason: normalizeText(form.affiliationReason), ...(normalizeText(form.secondSurname) ? { secondSurname: normalizeText(form.secondSurname) } : {}), ...(normalizeText(form.gender) ? { gender: normalizeText(form.gender) } : {}), ...(form.phoneNationalNumber ? { phoneCountryCode: form.phoneCountryCode, phoneNationalNumber: form.phoneNationalNumber } : {}), ...(normalizeText(form.email) ? { email: normalizeEmail(form.email) } : {}), ...(normalizeText(form.occupation) ? { occupation: normalizeText(form.occupation) } : {}), ...(normalizeText(form.workplace) ? { workplace: normalizeText(form.workplace) } : {}) })
       setSuccess(true); setForm(blank)
     } catch (caught) { setError(getErrorMessage(caught, 'No fue posible enviar la solicitud.')) }
     finally { submitting.current = false; setBusy(false) }
   }
   const set = (field: keyof typeof blank, value: string) => setForm({ ...form, [field]: value })
   return <><Seo title="Solicitud de afiliación" description="Solicite su afiliación a la ADI Curime."/><PublicPageHeader title="Solicitud de afiliación" intro="Complete sus datos para que la Asociación revise su solicitud."/><Breadcrumbs current="Afiliación"/><SectionContainer><div className="public-form card">{success && <p className="message success" role="status">Solicitud enviada correctamente. La ADI revisará la información.</p>}{error && <p className="message error" role="alert">{error}</p>}<form className="form-grid" onSubmit={submit} noValidate>
-    <label>Nombre completo<input required minLength={2} maxLength={150} autoComplete="name" value={form.fullName} onChange={e => set('fullName', e.target.value)} onBlur={validate}/>{errors.fullName && <span className="field-error" role="alert">{errors.fullName}</span>}</label>
+    <label>Nombre<input required minLength={2} maxLength={150} autoComplete="given-name" value={form.firstName} onChange={e => set('firstName', e.target.value)} onBlur={validate}/>{errors.firstName && <span className="field-error" role="alert">{errors.firstName}</span>}</label>
+    <label>Primer apellido<input required minLength={2} maxLength={150} autoComplete="family-name" value={form.firstSurname} onChange={e => set('firstSurname', e.target.value)} onBlur={validate}/>{errors.firstSurname && <span className="field-error" role="alert">{errors.firstSurname}</span>}</label>
+    <label>Segundo apellido (opcional)<input minLength={2} maxLength={150} autoComplete="additional-name" value={form.secondSurname} onChange={e => set('secondSurname', e.target.value)} onBlur={validate}/>{errors.secondSurname && <span className="field-error" role="alert">{errors.secondSurname}</span>}</label>
     <label>Tipo de identificación<select value={form.identificationType} onChange={e => setForm({ ...form, identificationType: e.target.value as IdentificationType, identification: '' })}><option value="NATIONAL">Nacional</option><option value="DIMEX">DIMEX</option></select></label>
     <label>Número de identificación<input type="text" inputMode="numeric" required maxLength={identificationMaxLength(form.identificationType)} value={form.identification} onChange={e => set('identification', digitsOnly(e.target.value, identificationMaxLength(form.identificationType)))} onBlur={validate}/>{errors.identification && <span className="field-error" role="alert">{errors.identification}</span>}</label>
     <label>Fecha de nacimiento<input required type="date" max={new Date().toISOString().slice(0, 10)} value={form.birthDate} onChange={e => set('birthDate', e.target.value)}/></label><label>Género (opcional)<input maxLength={30} value={form.gender} onChange={e => set('gender', e.target.value)}/></label>
