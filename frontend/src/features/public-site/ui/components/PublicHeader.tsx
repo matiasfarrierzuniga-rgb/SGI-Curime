@@ -24,9 +24,12 @@ export function PublicHeader() {
         menuButtonRef.current?.focus()
       }
     }
+
     window.addEventListener('keydown', escape)
+
     return () => window.removeEventListener('keydown', escape)
   }, [open])
+
   const close = () => setOpen(false)
   const accessTo = isAuthenticated ? '/app' : '/login'
   const accessLabel = isAuthenticated ? 'Ir al panel' : 'Iniciar sesión'
@@ -47,17 +50,23 @@ export function PublicHeader() {
             className="absolute top-1/2 block h-auto w-full -translate-y-1/2"
           />
         </Link>
+
         <button
           ref={menuButtonRef}
           type="button"
           onClick={() => setOpen(!open)}
-          aria-label={open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+          aria-label={
+            open
+              ? 'Cerrar menú de navegación'
+              : 'Abrir menú de navegación'
+          }
           aria-expanded={open}
           aria-controls={id}
           className="public-menu-toggle size-11 items-center justify-center rounded-control border border-primary text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring"
         >
           {open ? 'Cerrar' : 'Menú'}
         </button>
+
         <nav
           id={id}
           aria-label="Navegación pública"
@@ -74,7 +83,9 @@ export function PublicHeader() {
               {item.label}
             </NavLink>
           ))}
+
           <Button
+            nativeButton={false}
             render={<Link to={accessTo} />}
             onClick={close}
             size="sm"
@@ -83,7 +94,9 @@ export function PublicHeader() {
             {accessLabel}
           </Button>
         </nav>
+
         <Button
+          nativeButton={false}
           render={<Link to={accessTo} />}
           size="sm"
           className="hidden justify-self-end lg:inline-flex"
