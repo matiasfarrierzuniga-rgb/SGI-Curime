@@ -4,7 +4,7 @@ import { authService } from '../api/auth.api'
 import type { AuthenticatedUser, LoginCredentials, StoredSession } from './auth.types'
 import { sessionStorageService } from '@/shared/session/sessionStorage'
 
-interface AuthValue { user: AuthenticatedUser | null; token: string | null; isAuthenticated: boolean; isLoading: boolean; login: (data: LoginCredentials) => Promise<AuthenticatedUser>; logout: () => void }
+interface AuthValue { user: AuthenticatedUser | null; token: string | null; isAuthenticated: boolean; isLoading: boolean; login: (data: LoginCredentials) => Promise<AuthenticatedUser>; logout: () => Promise<void> }
 const AuthContext = createContext<AuthValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -13,14 +13,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthenticatedUser | null>(stored?.user ?? null)
   const [token, setToken] = useState<string | null>(stored?.token ?? null)
   const [isLoading, setIsLoading] = useState(Boolean(stored?.token))
-  const logout = useCallback(() => { sessionStorageService.clear(); queryClient.clear(); setUser(null); setToken(null) }, [queryClient])
+  const clearLocalSession = useCallback(() => {
+    sessionStorageService.clear()
+    queryClient.clear()
+    setUser(null)
+    setToken(null)
+  }, [queryClient])
+  const logout = useCallback(async () => {
+    try { await authService.logout() }
+    catch { /* Local cleanup must not depend on logout response. */ }
+    finally { clearLocalSession() }
+  }, [clearLocalSession])
 
   useEffect(() => {
-    const unauthorized = () => logout()
+    const unauthorized = () => clearLocalSession()
+    const tokenRefreshed = (event: Event) => setToken((event as CustomEvent<string>).detail)
     window.addEventListener('auth:unauthorized', unauthorized)
-    if (stored?.token) authService.me().then(fresh => { setUser(fresh); sessionStorageService.set({ token: stored.token, user: fresh }) }).catch(logout).finally(() => setIsLoading(false))
-    return () => window.removeEventListener('auth:unauthorized', unauthorized)
-  }, [logout, stored?.token])
+    window.addEventListener('auth:token-refreshed', tokenRefreshed)
+    if (stored?.token) authService.me().then(fresh => { setUser(fresh); sessionStorageService.set({ token: stored.token, user: fresh }) }).catch(clearLocalSession).finally(() => setIsLoading(false))
+    return () => { window.removeEventListener('auth:unauthorized', unauthorized); window.removeEventListener('auth:token-refreshed', tokenRefreshed) }
+  }, [clearLocalSession, stored?.token])
 
   const login = async (credentials: LoginCredentials) => {
     const session = await authService.login(credentials)

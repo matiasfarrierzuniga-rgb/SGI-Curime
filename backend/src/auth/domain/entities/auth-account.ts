@@ -8,6 +8,7 @@ export interface AuthAccount {
   failedLoginAttempts: number;
   lastLoginAt: Date | null;
   roleName: string;
+  subscriptionExpirationDate: Date | null;
 }
 
 export interface ActivationToken {

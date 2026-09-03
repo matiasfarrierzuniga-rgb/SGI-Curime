@@ -34,6 +34,7 @@ function toAuthAccount(user: AccountRow): AuthAccount {
     failedLoginAttempts: user.failedLoginAttempts,
     lastLoginAt: user.lastLoginAt,
     roleName: user.role.name,
+    subscriptionExpirationDate: user.subscriptionExpirationDate,
   };
 }
 

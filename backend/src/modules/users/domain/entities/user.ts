@@ -22,6 +22,7 @@ export interface User {
   phone: string | null;
   address: string | null;
   status: UserStatus;
+  subscriptionExpirationDate: Date | null;
   lockedAt: Date | null;
   roleId: number;
   role: UserRole;

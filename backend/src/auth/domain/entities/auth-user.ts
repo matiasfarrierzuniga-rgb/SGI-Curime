@@ -4,4 +4,5 @@ export interface AuthenticatedUser {
   email: string;
   status: string;
   role: string;
+  subscriptionExpirationDate?: Date;
 }

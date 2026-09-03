@@ -1,7 +1,9 @@
 import './helpers/configure-auth-env';
 process.env.REFRESH_TOKEN_TTL = '3600';
+process.env.PUBLIC_REQUEST_RATE_LIMIT_MAX = '1000';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '../generated/prisma/client';
 import * as bcrypt from 'bcrypt';
 import request from 'supertest';
@@ -15,9 +17,18 @@ describe('RegistrationController Person-first (e2e)', () => {
   let app: INestApplication<App>;
   let createdUserData: Record<string, unknown> | undefined;
   let createdPersonData: Record<string, unknown> | undefined;
+  let jwt: JwtService;
+  let administratorCount = 0;
+  let authenticatedUser: Record<string, unknown> | undefined;
   const role = {
     id: 5,
     name: 'Subscription_L1',
+    description: null,
+    isActive: true,
+  };
+  const administratorRole = {
+    id: 1,
+    name: 'Administrador',
     description: null,
     isActive: true,
   };
@@ -33,6 +44,7 @@ describe('RegistrationController Person-first (e2e)', () => {
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      count: jest.fn(),
     },
     role: { findUnique: jest.fn() },
     userRequest: { create: jest.fn() },
@@ -56,14 +68,29 @@ describe('RegistrationController Person-first (e2e)', () => {
     jest.clearAllMocks();
     createdUserData = undefined;
     createdPersonData = undefined;
+    administratorCount = 0;
+    authenticatedUser = undefined;
     prisma.$transaction.mockImplementation(
       (work: (client: typeof prisma) => Promise<unknown>) =>
         work({ ...prisma }),
     );
     prisma.$queryRaw.mockResolvedValue([{ locked: 1 }]);
     prisma.user.findFirst.mockResolvedValue(null);
-    prisma.user.findUnique.mockResolvedValue(null);
-    prisma.role.findUnique.mockResolvedValue(role);
+    prisma.user.findUnique.mockImplementation(
+      ({ where }: { where: { id?: number } }) =>
+        Promise.resolve(
+          where.id === 1 && authenticatedUser ? authenticatedUser : null,
+        ),
+    );
+    prisma.user.count.mockImplementation(() =>
+      Promise.resolve(administratorCount),
+    );
+    prisma.role.findUnique.mockImplementation(
+      ({ where }: { where: { name: string } }) =>
+        Promise.resolve(
+          where.name === 'Administrador' ? administratorRole : role,
+        ),
+    );
     prisma.person.findMany.mockResolvedValue([]);
     prisma.person.create.mockImplementation(
       ({ data }: { data: Record<string, unknown> }) => {
@@ -82,7 +109,7 @@ describe('RegistrationController Person-first (e2e)', () => {
           phone: null,
           address: data.address ?? null,
           lockedAt: null,
-          role,
+          role: data.roleId === administratorRole.id ? administratorRole : role,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -108,6 +135,7 @@ describe('RegistrationController Person-first (e2e)', () => {
         forbidNonWhitelisted: true,
       }),
     );
+    jwt = module.get(JwtService);
     await app.init();
   });
 
@@ -141,6 +169,9 @@ describe('RegistrationController Person-first (e2e)', () => {
       roleId: 5,
       personId: 12,
     });
+    const expiration = createdUserData?.subscriptionExpirationDate as Date;
+    expect(expiration).toBeInstanceOf(Date);
+    expect(expiration.getUTCFullYear()).toBe(new Date().getUTCFullYear() + 1);
     expect(
       await bcrypt.compare(
         validBody.password,
@@ -272,6 +303,65 @@ describe('RegistrationController Person-first (e2e)', () => {
       fullName: 'Persona Usuaria Prueba',
     });
     expect(prisma.session.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('bootstraps first Admin publicly, then enforces administrator authentication', async () => {
+    const first = await request(app.getHttpServer())
+      .post('/admin/register')
+      .send(validBody)
+      .expect(201);
+    expect(createdPersonData).toBeDefined();
+    expect(createdUserData).toMatchObject({
+      status: 'ACTIVE',
+      roleId: administratorRole.id,
+      subscriptionExpirationDate: null,
+    });
+    expect(first.body).toMatchObject({ role: { name: 'Administrador' } });
+
+    administratorCount = 1;
+    await request(app.getHttpServer())
+      .post('/admin/register')
+      .send({ ...validBody, email: 'second@example.com' })
+      .expect(401);
+
+    authenticatedUser = {
+      id: 1,
+      fullName: 'Subscription',
+      email: 'subscription@example.com',
+      status: 'ACTIVE',
+      passwordHash: 'hash',
+      lockedAt: null,
+      failedLoginAttempts: 0,
+      lastLoginAt: null,
+      role: { name: 'Subscription_L1' },
+      subscriptionExpirationDate: new Date(Date.now() + 60_000),
+    };
+    const subscriptionToken = await jwt.signAsync({
+      sub: 1,
+      email: authenticatedUser.email,
+      role: 'Subscription_L1',
+    });
+    await request(app.getHttpServer())
+      .post('/admin/register')
+      .set('Authorization', `Bearer ${subscriptionToken}`)
+      .send({ ...validBody, email: 'third@example.com' })
+      .expect(403);
+
+    authenticatedUser = {
+      ...authenticatedUser,
+      role: { name: 'Administrador' },
+      subscriptionExpirationDate: null,
+    };
+    const adminToken = await jwt.signAsync({
+      sub: 1,
+      email: authenticatedUser.email,
+      role: 'Administrador',
+    });
+    await request(app.getHttpServer())
+      .post('/admin/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...validBody, email: 'fourth@example.com' })
+      .expect(201);
   });
 
   function register(override: Record<string, unknown> = {}) {

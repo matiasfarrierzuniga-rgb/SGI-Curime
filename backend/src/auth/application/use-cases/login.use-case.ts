@@ -7,6 +7,7 @@ import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
 } from '../../domain/policies/account-lockout.policy';
+import { isSubscriptionExpired } from '../../domain/policies/subscription-expiration.policy';
 import {
   AUDIT_PORT,
   type AuditContext,
@@ -119,6 +120,18 @@ export class LoginUseCase {
       );
     }
 
+    if (
+      isSubscriptionExpired(
+        account.roleName,
+        account.subscriptionExpirationDate,
+      )
+    ) {
+      throw new AuthApplicationError(
+        'SUBSCRIPTION_EXPIRED',
+        'Subscription has expired',
+      );
+    }
+
     const accessToken = await this.tokens.sign({
       sub: account.id,
       email: account.email,
@@ -143,13 +156,27 @@ export class LoginUseCase {
     return {
       accessToken,
       refreshToken,
-      user: {
-        id: account.id,
-        fullName: account.fullName,
-        email: account.email,
-        status: account.status,
-        role: account.roleName,
-      },
+      user: toAuthenticatedUser(account),
     };
   }
+}
+
+function toAuthenticatedUser(account: {
+  id: number;
+  fullName: string;
+  email: string;
+  status: string;
+  roleName: string;
+  subscriptionExpirationDate: Date | null;
+}): AuthenticatedUser {
+  return {
+    id: account.id,
+    fullName: account.fullName,
+    email: account.email,
+    status: account.status,
+    role: account.roleName,
+    ...(account.subscriptionExpirationDate
+      ? { subscriptionExpirationDate: account.subscriptionExpirationDate }
+      : {}),
+  };
 }

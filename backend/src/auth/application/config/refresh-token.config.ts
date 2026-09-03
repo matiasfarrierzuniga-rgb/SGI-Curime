@@ -39,7 +39,7 @@ export function getRefreshCookiePolicy(expiresAt?: Date): RefreshCookiePolicy {
     name,
     options: {
       httpOnly: true,
-      path: '/auth',
+      path: '/',
       secure,
       sameSite,
       maxAge,

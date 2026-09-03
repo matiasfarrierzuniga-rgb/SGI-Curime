@@ -28,6 +28,7 @@ import { ChangePasswordDto } from '../dto/change-password.dto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { LoginDto } from '../dto/login.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { toAuthHttpError } from '../errors/auth-http-error.mapper';
@@ -35,7 +36,7 @@ import { assertCookieRequestOrigin } from '../security/cookie-origin.policy';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
-@Controller('auth')
+@Controller()
 export class AuthController {
   constructor(
     private readonly loginUseCase: LoginUseCase,
@@ -47,7 +48,7 @@ export class AuthController {
     private readonly changePasswordUseCase: ChangePasswordUseCase,
   ) {}
 
-  @Post('login')
+  @Post(['auth/login', 'login'])
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
@@ -62,21 +63,26 @@ export class AuthController {
       ),
     );
     this.setRefreshCookie(response, result.refreshToken);
-    return { accessToken: result.accessToken, user: result.user };
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      user: result.user,
+    };
   }
 
-  @Post('refresh')
+  @Post(['auth/refresh', 'refresh'])
   @HttpCode(HttpStatus.OK)
   async refresh(
+    @Body() dto: RefreshTokenDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    assertCookieRequestOrigin(request);
+    const refreshToken = refreshTokenFrom(request, dto);
+    if (refreshTokenFromCookie(request, getRefreshCookiePolicy().name)) {
+      assertCookieRequestOrigin(request);
+    }
     const result = await this.handle(() =>
-      this.refreshSessionUseCase.execute(
-        refreshCookieFrom(request, getRefreshCookiePolicy().name),
-        this.context(request),
-      ),
+      this.refreshSessionUseCase.execute(refreshToken, this.context(request)),
     );
     if (result.sessionExpiresAt.getTime() <= Date.now()) {
       throw new UnauthorizedException('Unauthorized');
@@ -86,20 +92,27 @@ export class AuthController {
       result.refreshToken,
       result.sessionExpiresAt,
     );
-    return { accessToken: result.accessToken };
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    };
   }
 
-  @Post('logout')
+  @Post(['auth/logout', 'logout'])
   @HttpCode(HttpStatus.OK)
   async logout(
+    @Body() dto: RefreshTokenDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    assertCookieRequestOrigin(request);
     const policy = getRefreshCookiePolicy();
+    const refreshToken = refreshTokenFrom(request, dto);
+    if (refreshTokenFromCookie(request, policy.name)) {
+      assertCookieRequestOrigin(request);
+    }
     try {
       return await this.logoutUseCase.execute(
-        refreshCookieFrom(request, policy.name),
+        refreshToken,
         this.context(request),
       );
     } finally {
@@ -110,7 +123,7 @@ export class AuthController {
     }
   }
 
-  @Post('activate-account')
+  @Post('auth/activate-account')
   @HttpCode(HttpStatus.OK)
   activateAccount(@Body() dto: ActivateAccountDto, @Req() request: Request) {
     return this.handle(() =>
@@ -123,7 +136,7 @@ export class AuthController {
     );
   }
 
-  @Post('forgot-password')
+  @Post('auth/forgot-password')
   @HttpCode(HttpStatus.OK)
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.handle(() =>
@@ -131,7 +144,7 @@ export class AuthController {
     );
   }
 
-  @Post('reset-password')
+  @Post('auth/reset-password')
   @HttpCode(HttpStatus.OK)
   resetPassword(@Body() dto: ResetPasswordDto, @Req() request: Request) {
     return this.handle(() =>
@@ -144,7 +157,7 @@ export class AuthController {
     );
   }
 
-  @Patch('change-password')
+  @Patch('auth/change-password')
   @UseGuards(JwtAuthGuard)
   changePassword(
     @Req() request: AuthenticatedRequest,
@@ -161,13 +174,13 @@ export class AuthController {
     );
   }
 
-  @Get('me')
+  @Get('auth/me')
   @UseGuards(JwtAuthGuard)
   me(@Req() request: AuthenticatedRequest): AuthenticatedUser {
     return request.user;
   }
 
-  @Get('admin-test')
+  @Get('auth/admin-test')
   @Roles('Administrador')
   @UseGuards(JwtAuthGuard, RolesGuard)
   adminTest() {
@@ -202,7 +215,20 @@ export class AuthController {
   }
 }
 
-function refreshCookieFrom(request: Request, name: string): string | undefined {
+function refreshTokenFrom(
+  request: Request,
+  dto: RefreshTokenDto,
+): string | undefined {
+  return (
+    refreshTokenFromCookie(request, getRefreshCookiePolicy().name) ??
+    dto.refreshToken
+  );
+}
+
+function refreshTokenFromCookie(
+  request: Request,
+  name: string,
+): string | undefined {
   const cookies: unknown = request.cookies;
   if (!cookies || typeof cookies !== 'object') return undefined;
   const value = (cookies as Record<string, unknown>)[name];
