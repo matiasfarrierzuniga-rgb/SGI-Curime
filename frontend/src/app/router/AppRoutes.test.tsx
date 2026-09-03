@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -44,6 +44,7 @@ function renderRoute(path: string, role: string | null) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.spyOn(authService, 'logout').mockResolvedValue({ message: 'Logged out' })
   vi.spyOn(usersService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
   vi.spyOn(affiliatesService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
   vi.mocked(rolesService.listActive).mockResolvedValue([])
@@ -145,7 +146,7 @@ describe('AppRoutes capability deep links', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
 
     expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
-    expect(localStorage.getItem('sgi-curime-session')).toBeNull()
+    await waitFor(() => expect(localStorage.getItem('sgi-curime-session')).toBeNull())
 
     sessionView.unmount()
     const appView = renderRoute('/app', null)
