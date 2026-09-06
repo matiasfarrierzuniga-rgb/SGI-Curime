@@ -21,6 +21,7 @@ const navigation: readonly ErpNavigationSection[] = [
       { label: 'Afiliados', path: '/app/admin/affiliates', capability: 'adm.affiliates.read', icon: Handshake },
       { label: 'Solicitudes de afiliación', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
       { label: 'Eventos', path: '/app/events', capability: 'pub.events.manage', icon: CalendarDays },
+      { label: 'Reservas', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarDays },
     ],
   },
   {

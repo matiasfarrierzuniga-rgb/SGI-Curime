@@ -19,6 +19,10 @@ export const ACCESS_CAPABILITIES = [
   'inv.inventory.read',
   'pub.events.manage',
   'pub.events.publish',
+  'res.reservations.read',
+  'res.reservations.approve',
+  'res.reservations.reject',
+  'res.reservations.cancel',
 ] as const
 
 export type AccessCapability =
