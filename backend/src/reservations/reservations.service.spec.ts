@@ -5,8 +5,10 @@ import {
 } from '@nestjs/common';
 import {
   Prisma,
+  FinancialChargeStatus,
   ReservableResourceStatus,
   ReservationStatus,
+  ResourcePricingType,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReservationsService } from './reservations.service';
@@ -90,6 +92,9 @@ describe('ReservationsService', () => {
     event: {
       findUnique: jest.fn(),
     },
+    financialCharge: {
+      create: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
   let service: ReservationsService;
@@ -127,6 +132,13 @@ describe('ReservationsService', () => {
       updatedAt: startAt,
     });
     prisma.event.findUnique.mockResolvedValue({ id: 2 });
+    prisma.financialCharge.create.mockResolvedValue({
+      id: 1,
+      reservationId: 1,
+      amount: new Prisma.Decimal('0'),
+      currency: 'CRC',
+      status: FinancialChargeStatus.PENDING,
+    });
   });
 
   it('lists active reservable resources only', async () => {
@@ -452,6 +464,7 @@ describe('ReservationsService', () => {
       await expect(service.approve(1, 99)).rejects.toBeInstanceOf(
         ConflictException,
       );
+      expect(prisma.financialCharge.create).not.toHaveBeenCalled();
     });
 
     it('rejects approve for REJECTED status', async () => {
@@ -511,6 +524,156 @@ describe('ReservationsService', () => {
           isolationLevel:
             Prisma.TransactionIsolationLevel.Serializable,
         },
+      );
+    });
+
+    function mockFreeResource() {
+      prisma.reservableResource.findUnique.mockResolvedValue({
+        id: 1,
+        status: ReservableResourceStatus.ACTIVE,
+        pricingType: ResourcePricingType.FREE,
+        price: null,
+      });
+    }
+
+    function mockFixedResource(price: Prisma.Decimal | null) {
+      prisma.reservableResource.findUnique.mockResolvedValue({
+        id: 1,
+        status: ReservableResourceStatus.ACTIVE,
+        pricingType: ResourcePricingType.FIXED,
+        price,
+      });
+    }
+
+    function mockPendingReservation() {
+      prisma.reservation.findUnique.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.PENDING }),
+      );
+      prisma.reservation.findFirst.mockResolvedValue(null);
+      prisma.reservation.update.mockResolvedValue(
+        makeReservation({
+          status: ReservationStatus.APPROVED,
+          approvedAt: new Date('2030-01-02T00:00:00.000Z'),
+          approvedById: 7,
+        }),
+      );
+    }
+
+    it('FREE: approves without creating a FinancialCharge', async () => {
+      mockFreeResource();
+      mockPendingReservation();
+
+      const result = await service.approve(1, 7);
+
+      expect(result.status).toBe(ReservationStatus.APPROVED);
+      expect(result.approvedAt).toEqual(new Date('2030-01-02T00:00:00.000Z'));
+      expect(result.approvedById).toBe(7);
+      expect(prisma.financialCharge.create).not.toHaveBeenCalled();
+    });
+
+    it('FIXED: approves and creates a single snapshot charge', async () => {
+      const price = new Prisma.Decimal('2500');
+      mockFixedResource(price);
+      mockPendingReservation();
+      prisma.financialCharge.create.mockResolvedValue({
+        id: 10,
+        reservationId: 1,
+        amount: price,
+        currency: 'CRC',
+        status: FinancialChargeStatus.PENDING,
+      });
+
+      const result = await service.approve(1, 7);
+
+      expect(result.status).toBe(ReservationStatus.APPROVED);
+      expect(prisma.financialCharge.create).toHaveBeenCalledTimes(1);
+      const data = prisma.financialCharge.create.mock.calls[0][0].data;
+      expect(data.reservationId).toBe(1);
+      expect(data.amount.toString()).toBe('2500');
+      expect(data.currency).toBeUndefined();
+      expect(data.status).toBeUndefined();
+    });
+
+    it.each([
+      ['null', null],
+      ['zero', new Prisma.Decimal('0')],
+      ['negative', new Prisma.Decimal('-100')],
+    ] as const)(
+      'FIXED with $s price blocks approval without persisting',
+      async (_label, price) => {
+        mockFixedResource(price);
+        prisma.reservation.findUnique.mockResolvedValue(
+          makeReservation({ status: ReservationStatus.PENDING }),
+        );
+        prisma.reservation.findFirst.mockResolvedValue(null);
+
+        await expect(service.approve(1, 7)).rejects.toBeInstanceOf(
+          ConflictException,
+        );
+        expect(prisma.reservation.update).not.toHaveBeenCalled();
+        expect(prisma.financialCharge.create).not.toHaveBeenCalled();
+      },
+    );
+
+    it('creates the charge inside the serializable transaction', async () => {
+      mockFixedResource(new Prisma.Decimal('1200'));
+      mockPendingReservation();
+
+      await service.approve(1, 7);
+
+      expect(prisma.$transaction).toHaveBeenCalledWith(
+        expect.any(Function),
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        },
+      );
+      expect(prisma.financialCharge.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries on serialization failure and still creates a single charge', async () => {
+      const error = new Prisma.PrismaClientKnownRequestError(
+        'Serialization failure',
+        { code: 'P2034', clientVersion: '7.9.1' },
+      );
+      prisma.$transaction
+        .mockRejectedValueOnce(error)
+        .mockRejectedValueOnce(error)
+        .mockImplementation((workOrArray: unknown) =>
+          typeof workOrArray === 'function'
+            ? workOrArray(prisma)
+            : workOrArray,
+        );
+      mockFixedResource(new Prisma.Decimal('1200'));
+      mockPendingReservation();
+
+      const result = await service.approve(1, 7);
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(3);
+      expect(result.status).toBe(ReservationStatus.APPROVED);
+      expect(prisma.financialCharge.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('maps an unexpected charge unique violation to a conflict', async () => {
+      mockFixedResource(new Prisma.Decimal('1200'));
+      prisma.reservation.findUnique.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.PENDING }),
+      );
+      prisma.reservation.findFirst.mockResolvedValue(null);
+      prisma.reservation.update.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.APPROVED }),
+      );
+      const error = new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint',
+        {
+          code: 'P2002',
+          clientVersion: '7.9.1',
+          meta: { target: ['reservationId'] },
+        },
+      );
+      prisma.financialCharge.create.mockRejectedValue(error);
+
+      await expect(service.approve(1, 7)).rejects.toBeInstanceOf(
+        ConflictException,
       );
     });
   });

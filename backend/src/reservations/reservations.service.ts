@@ -1,5 +1,10 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, ReservableResourceStatus, ReservationStatus } from '../../generated/prisma/client';
+import {
+  Prisma,
+  ReservableResourceStatus,
+  ReservationStatus,
+  ResourcePricingType,
+} from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { QueryReservationAvailabilityDto } from './dto/query-reservation-availability.dto';
@@ -63,7 +68,7 @@ const adminReservationSelect = {
 
 type ReservationTransaction = Pick<
   Prisma.TransactionClient,
-  'reservableResource' | 'reservation' | 'event'
+  'reservableResource' | 'reservation' | 'event' | 'financialCharge'
 >;
 
 @Injectable()
@@ -190,7 +195,26 @@ export class ReservationsService {
         );
       }
 
-      return tx.reservation.update({
+      const resource = await tx.reservableResource.findUnique({
+        where: { id: reservation.resourceId },
+        select: { id: true, pricingType: true, price: true },
+      });
+      if (!resource) {
+        throw new NotFoundException('Reservable resource not found');
+      }
+
+      let chargeAmount: Prisma.Decimal | undefined;
+      if (resource.pricingType === ResourcePricingType.FIXED) {
+        const fixedPrice = resource.price;
+        if (fixedPrice === null || fixedPrice.toNumber() <= 0) {
+          throw new ConflictException(
+            'Reservable resource has invalid fixed pricing',
+          );
+        }
+        chargeAmount = fixedPrice;
+      }
+
+      const approved = await tx.reservation.update({
         where: { id },
         data: {
           status: ReservationStatus.APPROVED,
@@ -199,6 +223,26 @@ export class ReservationsService {
         },
         select: adminReservationSelect,
       });
+
+      if (chargeAmount !== undefined) {
+        try {
+          await tx.financialCharge.create({
+            data: {
+              reservationId: reservation.id,
+              amount: chargeAmount,
+            },
+          });
+        } catch (error) {
+          if (isChargeUniqueConstraintViolation(error)) {
+            throw new ConflictException(
+              'Reservation already has a financial charge',
+            );
+          }
+          throw error;
+        }
+      }
+
+      return approved;
     });
   }
 
@@ -338,5 +382,19 @@ function isSerializationConflict(error: unknown): boolean {
   return (
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === 'P2034'
+  );
+}
+
+function isChargeUniqueConstraintViolation(error: unknown): boolean {
+  if (
+    !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+    error.code !== 'P2002'
+  ) {
+    return false;
+  }
+  const target = error.meta?.target;
+  return (
+    Array.isArray(target) &&
+    target.some((entry) => String(entry) === 'reservationId')
   );
 }
