@@ -50,9 +50,9 @@ describe('direct RegisterPage', () => {
       email: 'ana@example.com',
       phoneCountryCode: undefined,
       phoneNationalNumber: undefined,
-      address: undefined,
       password: 'Secure12345',
     }))
+    expect(vi.mocked(authService.register).mock.calls[0]?.[0]).not.toHaveProperty('address')
     expect(await screen.findByText(/Ya puede iniciar sesión/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
     expect(localStorage).toHaveLength(0)
@@ -75,7 +75,7 @@ describe('direct RegisterPage', () => {
     render(<MemoryRouter><RegisterPage /></MemoryRouter>)
 
     fillIdentityStep()
-    expect(screen.getByRole('heading', { name: 'Contacto' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Cuenta' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Atrás/ }))
 
     expect(screen.getByLabelText(/^Nombre$/)).toHaveValue('Ana María')
