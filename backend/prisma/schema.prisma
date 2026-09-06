@@ -42,6 +42,20 @@ enum EventStatus {
   COMPLETED
 }
 
+enum ReservableResourceStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ReservationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  CONFIRMED
+  COMPLETED
+}
+
 enum PublicationStatus {
   INTERNAL
   DRAFT
@@ -173,6 +187,8 @@ model User {
   inventoryMovements        InventoryMovement[]
   inventoryLoansCreated     InventoryLoan[]          @relation("LoanCreator")
   inventoryLoansReceived    InventoryLoan[]          @relation("LoanReceiver")
+  requestedReservations     Reservation[]            @relation("ReservationRequester")
+  approvedReservations      Reservation[]            @relation("ReservationApprover")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -365,11 +381,58 @@ model Event {
   location          String?
   status            EventStatus       @default(SCHEDULED)
   publicationStatus PublicationStatus @default(DRAFT)
+  reservations      Reservation[]
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
   @@index([publicationStatus, startAt])
   @@index([startAt])
+}
+
+model ReservableResource {
+  id          Int                      @id @default(autoincrement())
+  name        String
+  description String?
+  location    String?
+  capacity    Int?
+  status      ReservableResourceStatus @default(ACTIVE)
+
+  reservations Reservation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Reservation {
+  id                 Int               @id @default(autoincrement())
+  startAt            DateTime
+  endAt              DateTime
+  purpose            String
+  estimatedAttendees Int?
+  notes              String?
+  status             ReservationStatus @default(PENDING)
+  approvedAt         DateTime?
+  rejectionReason    String?
+  cancelledAt        DateTime?
+
+  resourceId      Int
+  resource        ReservableResource @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+  requesterUserId Int
+  requester       User               @relation("ReservationRequester", fields: [requesterUserId], references: [id], onDelete: Restrict)
+  approvedById    Int?
+  approvedBy      User?              @relation("ReservationApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  eventId         Int?
+  event           Event?             @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requesterUserId])
+  @@index([eventId])
+  @@index([status])
+  @@index([resourceId, startAt, endAt])
 }
 
 model AssemblyAttendance {
