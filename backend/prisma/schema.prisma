@@ -56,6 +56,25 @@ enum ReservationStatus {
   COMPLETED
 }
 
+enum FinancialChargeStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  SINPE_MOVIL
+  OTHER
+}
+
 enum PublicationStatus {
   INTERNAL
   DRAFT
@@ -189,6 +208,7 @@ model User {
   inventoryLoansReceived    InventoryLoan[]          @relation("LoanReceiver")
   requestedReservations     Reservation[]            @relation("ReservationRequester")
   approvedReservations      Reservation[]            @relation("ReservationApprover")
+  recordedPayments          Payment[]                @relation("PaymentRecorder")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -425,6 +445,7 @@ model Reservation {
   approvedBy      User?              @relation("ReservationApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   eventId         Int?
   event           Event?             @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  financialCharge FinancialCharge?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -433,6 +454,46 @@ model Reservation {
   @@index([eventId])
   @@index([status])
   @@index([resourceId, startAt, endAt])
+}
+
+model FinancialCharge {
+  id           Int                   @id @default(autoincrement())
+  reservationId Int                  @unique
+  amount       Decimal               @db.Decimal(14, 2)
+  currency     String                @default("CRC")
+  status       FinancialChargeStatus @default(PENDING)
+  dueAt        DateTime?
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  payments    Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Payment {
+  id           Int           @id @default(autoincrement())
+  chargeId     Int
+  amount       Decimal       @db.Decimal(14, 2)
+  status       PaymentStatus @default(PENDING)
+  method       PaymentMethod
+  reference    String?
+  paidAt       DateTime?
+  recordedById Int?
+
+  charge     FinancialCharge @relation(fields: [chargeId], references: [id], onDelete: Restrict)
+  recordedBy User?           @relation("PaymentRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chargeId])
+  @@index([status])
+  @@index([recordedById])
+  @@index([createdAt])
 }
 
 model AssemblyAttendance {
