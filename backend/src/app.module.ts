@@ -22,6 +22,7 @@ import { InventoryReportsModule } from './inventory-reports/inventory-reports.mo
 import { EventsModule } from './events/events.module';
 import { IdentityModule } from './identity/identity.module';
 import { ReservationsModule } from './reservations/reservations.module';
+import { FinancialModule } from './financial/financial.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ReservationsModule } from './reservations/reservations.module';
     EventsModule,
     IdentityModule,
     ReservationsModule,
+    FinancialModule,
   ],
   controllers: [AppController],
   providers: [AppService],

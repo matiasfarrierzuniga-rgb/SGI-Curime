@@ -13,12 +13,15 @@ export const CAPABILITIES = [
   'res.reservations.approve',
   'res.reservations.reject',
   'res.reservations.cancel',
+  'fin.charges.read',
+  'fin.payments.record',
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
 
 const ROLE_ADMIN = 'Administrador';
 const ROLE_INVENTORY_MANAGER = 'Gestor de Inventario';
+const ROLE_TREASURER = 'Tesorero';
 
 export const ROLE_CAPABILITIES: Readonly<Record<string, readonly Capability[]>> = {
   [ROLE_ADMIN]: CAPABILITIES,
@@ -27,6 +30,7 @@ export const ROLE_CAPABILITIES: Readonly<Record<string, readonly Capability[]>> 
     'usr.profile.read',
     'inv.inventory.read',
   ],
+  [ROLE_TREASURER]: ['fin.charges.read', 'fin.payments.record'],
 };
 
 export function hasCapability(role: string | undefined, capability: string): boolean {
