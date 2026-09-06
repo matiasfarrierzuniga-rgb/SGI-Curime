@@ -47,6 +47,11 @@ enum ReservableResourceStatus {
   INACTIVE
 }
 
+enum ResourcePricingType {
+  FREE
+  FIXED
+}
+
 enum ReservationStatus {
   PENDING
   APPROVED
@@ -416,6 +421,8 @@ model ReservableResource {
   location    String?
   capacity    Int?
   status      ReservableResourceStatus @default(ACTIVE)
+  pricingType ResourcePricingType      @default(FREE)
+  price       Decimal?                 @db.Decimal(14, 2)
 
   reservations Reservation[]
 
