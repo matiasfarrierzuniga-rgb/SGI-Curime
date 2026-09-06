@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   Prisma,
+  FinancialChargeStatus,
   ReservableResourceStatus,
   ReservationStatus,
   ResourcePricingType,
@@ -266,21 +267,42 @@ export class ReservationsService {
   }
 
   async cancel(id: number) {
-    const reservation = await this.prisma.reservation.findUnique({
-      where: { id },
-      select: { id: true, status: true },
-    });
-    if (!reservation) throw new NotFoundException('Reservation not found');
+    return this.withSerializableTransaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({
+        where: { id },
+        select: { id: true, status: true },
+      });
+      if (!reservation) throw new NotFoundException('Reservation not found');
 
-    assertReservationTransition(reservation.status, ReservationStatus.CANCELLED);
+      assertReservationTransition(
+        reservation.status,
+        ReservationStatus.CANCELLED,
+      );
 
-    return this.prisma.reservation.update({
-      where: { id },
-      data: {
-        status: ReservationStatus.CANCELLED,
-        cancelledAt: new Date(),
-      },
-      select: adminReservationSelect,
+      const charge = await tx.financialCharge.findUnique({
+        where: { reservationId: reservation.id },
+        select: { id: true, status: true },
+      });
+      if (charge?.status === FinancialChargeStatus.PAID) {
+        throw new ConflictException(
+          'Paid reservation requires financial reconciliation before cancellation',
+        );
+      }
+      if (charge?.status === FinancialChargeStatus.PENDING) {
+        await tx.financialCharge.update({
+          where: { id: charge.id },
+          data: { status: FinancialChargeStatus.CANCELLED },
+        });
+      }
+
+      return tx.reservation.update({
+        where: { id },
+        data: {
+          status: ReservationStatus.CANCELLED,
+          cancelledAt: new Date(),
+        },
+        select: adminReservationSelect,
+      });
     });
   }
 

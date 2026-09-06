@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  FinancialChargeStatus,
   Prisma,
   FinancialChargeStatus,
   ReservableResourceStatus,
@@ -94,6 +95,13 @@ describe('ReservationsService', () => {
     },
     financialCharge: {
       create: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    payment: {
+      create: jest.fn(),
+      update: jest.fn(),
     },
     $transaction: jest.fn(),
   };
@@ -132,6 +140,8 @@ describe('ReservationsService', () => {
       updatedAt: startAt,
     });
     prisma.event.findUnique.mockResolvedValue({ id: 2 });
+    prisma.financialCharge.findUnique.mockResolvedValue(null);
+    prisma.financialCharge.update.mockResolvedValue({ id: 1 });
     prisma.financialCharge.create.mockResolvedValue({
       id: 1,
       reservationId: 1,
@@ -743,6 +753,73 @@ describe('ReservationsService', () => {
 
       expect(result.status).toBe(ReservationStatus.CANCELLED);
       expect(result.cancelledAt).toBeDefined();
+      expect(prisma.financialCharge.update).not.toHaveBeenCalled();
+    });
+
+    it('cancels a pending charge with its reservation in the serializable transaction', async () => {
+      prisma.reservation.findUnique.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.APPROVED }),
+      );
+      prisma.financialCharge.findUnique.mockResolvedValue({
+        id: 4,
+        status: FinancialChargeStatus.PENDING,
+      });
+      prisma.reservation.update.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.CANCELLED }),
+      );
+
+      const result = await service.cancel(1);
+
+      expect(result.status).toBe(ReservationStatus.CANCELLED);
+      expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      });
+      expect(prisma.financialCharge.update).toHaveBeenCalledWith({
+        where: { id: 4 },
+        data: { status: FinancialChargeStatus.CANCELLED },
+      });
+      expect(prisma.financialCharge.delete).not.toHaveBeenCalled();
+      expect(prisma.payment.create).not.toHaveBeenCalled();
+      expect(prisma.payment.update).not.toHaveBeenCalled();
+      expect(prisma.reservation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: ReservationStatus.CANCELLED }),
+        }),
+      );
+    });
+
+    it('blocks cancellation before writes when the charge is paid', async () => {
+      prisma.reservation.findUnique.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.CONFIRMED }),
+      );
+      prisma.financialCharge.findUnique.mockResolvedValue({
+        id: 4,
+        status: FinancialChargeStatus.PAID,
+      });
+
+      await expect(service.cancel(1)).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.reservation.update).not.toHaveBeenCalled();
+      expect(prisma.financialCharge.update).not.toHaveBeenCalled();
+      expect(prisma.payment.create).not.toHaveBeenCalled();
+      expect(prisma.payment.update).not.toHaveBeenCalled();
+    });
+
+    it('allows cancellation with an already cancelled charge without updating it', async () => {
+      prisma.reservation.findUnique.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.APPROVED }),
+      );
+      prisma.financialCharge.findUnique.mockResolvedValue({
+        id: 4,
+        status: FinancialChargeStatus.CANCELLED,
+      });
+      prisma.reservation.update.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.CANCELLED }),
+      );
+
+      await expect(service.cancel(1)).resolves.toEqual(
+        expect.objectContaining({ status: ReservationStatus.CANCELLED }),
+      );
+      expect(prisma.financialCharge.update).not.toHaveBeenCalled();
     });
 
     it('transitions APPROVED to CANCELLED', async () => {
@@ -814,6 +891,75 @@ describe('ReservationsService', () => {
       await expect(service.cancel(999)).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+
+    it('retries after P2034 and blocks cancellation when payment wins', async () => {
+      const error = new Prisma.PrismaClientKnownRequestError(
+        'Serialization failure',
+        { code: 'P2034', clientVersion: '7.9.1' },
+      );
+      prisma.$transaction
+        .mockRejectedValueOnce(error)
+        .mockImplementation((workOrArray: unknown) =>
+          typeof workOrArray === 'function'
+            ? workOrArray(prisma)
+            : workOrArray,
+        );
+      prisma.reservation.findUnique.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.APPROVED }),
+      );
+      prisma.financialCharge.findUnique.mockResolvedValue({
+        id: 4,
+        status: FinancialChargeStatus.PAID,
+      });
+
+      await expect(service.cancel(1)).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+      expect(prisma.reservation.update).not.toHaveBeenCalled();
+      expect(prisma.financialCharge.update).not.toHaveBeenCalled();
+    });
+
+    it('retries after P2034 and cancels consistently when charge is cancelled', async () => {
+      const error = new Prisma.PrismaClientKnownRequestError(
+        'Serialization failure',
+        { code: 'P2034', clientVersion: '7.9.1' },
+      );
+      prisma.$transaction
+        .mockRejectedValueOnce(error)
+        .mockImplementation((workOrArray: unknown) =>
+          typeof workOrArray === 'function'
+            ? workOrArray(prisma)
+            : workOrArray,
+        );
+      prisma.reservation.findUnique.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.APPROVED }),
+      );
+      prisma.financialCharge.findUnique.mockResolvedValue({
+        id: 4,
+        status: FinancialChargeStatus.CANCELLED,
+      });
+      prisma.reservation.update.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.CANCELLED }),
+      );
+
+      await expect(service.cancel(1)).resolves.toEqual(
+        expect.objectContaining({ status: ReservationStatus.CANCELLED }),
+      );
+      expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+      expect(prisma.financialCharge.update).not.toHaveBeenCalled();
+    });
+
+    it('maps exhausted P2034 retries to conflict without reconciliation writes', async () => {
+      const error = new Prisma.PrismaClientKnownRequestError(
+        'Serialization failure',
+        { code: 'P2034', clientVersion: '7.9.1' },
+      );
+      prisma.$transaction.mockRejectedValue(error);
+
+      await expect(service.cancel(1)).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.$transaction).toHaveBeenCalledTimes(3);
+      expect(prisma.reservation.update).not.toHaveBeenCalled();
+      expect(prisma.financialCharge.update).not.toHaveBeenCalled();
     });
   });
 });
