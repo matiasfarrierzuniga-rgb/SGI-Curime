@@ -18,7 +18,7 @@ import { PhoneField } from '@/shared/ui/forms/PhoneField'
 import { authService } from '../api/auth.api'
 import type { RegisterUser } from '../model/auth.types'
 
-type RegisterForm = RegisterUser & { passwordConfirmation: string }
+type RegisterForm = Omit<RegisterUser, 'address'> & { passwordConfirmation: string }
 type RegisterErrors = Partial<Record<keyof RegisterForm, string>>
 type Step = 1 | 2 | 3
 
@@ -31,7 +31,6 @@ const initial: RegisterForm = {
   email: '',
   phoneCountryCode: '+506',
   phoneNationalNumber: '',
-  address: '',
   password: '',
   passwordConfirmation: '',
 }
@@ -39,7 +38,7 @@ const initial: RegisterForm = {
 const inputClass = 'min-h-12 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/15'
 const steps = [
   { id: 1 as Step, label: 'Datos' },
-  { id: 2 as Step, label: 'Contacto' },
+  { id: 2 as Step, label: 'Cuenta' },
   { id: 3 as Step, label: 'Seguridad' },
 ]
 
@@ -160,7 +159,6 @@ export function RegisterPage() {
         email: normalizeEmail(form.email),
         phoneCountryCode: form.phoneNationalNumber ? form.phoneCountryCode : undefined,
         phoneNationalNumber: form.phoneNationalNumber || undefined,
-        address: form.address ? normalizeText(form.address) || undefined : undefined,
         password: form.password,
       }
       await authService.register(payload)
@@ -257,8 +255,8 @@ export function RegisterPage() {
           <section className="grid gap-5" aria-labelledby="register-step-2-title">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-primary">Paso 2 de 3</p>
-              <h2 id="register-step-2-title" className="mt-1 font-heading text-2xl font-bold text-brand-deep">Contacto</h2>
-              <p className="mt-1 text-sm text-foreground-muted">Indique cómo podemos identificar su acceso y contactarle si es necesario.</p>
+              <h2 id="register-step-2-title" className="mt-1 font-heading text-2xl font-bold text-brand-deep">Cuenta</h2>
+              <p className="mt-1 text-sm text-foreground-muted">Indique su correo y teléfono para crear su acceso al SGI.</p>
             </div>
 
             <label className="grid gap-2 text-sm font-bold" htmlFor="register-email">Correo electrónico
@@ -277,9 +275,6 @@ export function RegisterPage() {
               }}
             />
 
-            <label className="grid gap-2 text-sm font-bold" htmlFor="address">Dirección <span className="font-normal text-foreground-muted">(opcional)</span>
-              <textarea id="address" className="min-h-24 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/15" maxLength={300} autoComplete="street-address" {...field('address')} />
-            </label>
           </section>
         )}
 
