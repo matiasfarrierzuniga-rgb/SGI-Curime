@@ -69,4 +69,40 @@ describe('CapabilityGuard', () => {
 
     expect(guard.canActivate(contextFor())).toBe(true);
   });
+
+  it('allows administrators to read reservations', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['res.reservations.read']);
+
+    expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
+  });
+
+  it('allows administrators to approve, reject, and cancel reservations', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue([
+        'res.reservations.approve',
+        'res.reservations.reject',
+        'res.reservations.cancel',
+      ]);
+
+    expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
+  });
+
+  it('denies inventory manager for reservation capabilities', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['res.reservations.read']);
+
+    expect(guard.canActivate(contextFor('Gestor de Inventario'))).toBe(false);
+  });
+
+  it('denies unknown role for reservation capabilities', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['res.reservations.approve']);
+
+    expect(guard.canActivate(contextFor('Tesorero'))).toBe(false);
+  });
 });

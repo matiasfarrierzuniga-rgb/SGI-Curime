@@ -3,6 +3,8 @@ import { Prisma, ReservableResourceStatus, ReservationStatus } from '../../gener
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { QueryReservationAvailabilityDto } from './dto/query-reservation-availability.dto';
+import { QueryReservationsDto } from './dto/query-reservations.dto';
+import { assertReservationTransition } from './reservation-transition.policy';
 
 const BLOCKING_STATUSES = [
   ReservationStatus.PENDING,
@@ -32,6 +34,29 @@ const reservationSelect = {
   estimatedAttendees: true,
   notes: true,
   status: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.ReservationSelect;
+
+const adminReservationSelect = {
+  id: true,
+  resourceId: true,
+  resource: { select: { id: true, name: true, location: true } },
+  requesterUserId: true,
+  requester: { select: { id: true, fullName: true, email: true } },
+  eventId: true,
+  event: { select: { id: true, title: true, startAt: true, endAt: true } },
+  startAt: true,
+  endAt: true,
+  purpose: true,
+  estimatedAttendees: true,
+  notes: true,
+  status: true,
+  approvedAt: true,
+  approvedById: true,
+  approvedBy: { select: { id: true, fullName: true, email: true } },
+  rejectionReason: true,
+  cancelledAt: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.ReservationSelect;
@@ -96,6 +121,125 @@ export class ReservationsService {
     });
   }
 
+  async findAll(query: QueryReservationsDto) {
+    const where: Prisma.ReservationWhereInput = {
+      status: query.status,
+      resourceId: query.resourceId,
+      startAt:
+        query.from || query.to
+          ? {
+              gte: query.from ? new Date(query.from) : undefined,
+              lte: query.to ? new Date(query.to) : undefined,
+            }
+          : undefined,
+    };
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.reservation.findMany({
+        where,
+        select: adminReservationSelect,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.reservation.count({ where }),
+    ]);
+    return { data, total, page, limit };
+  }
+
+  async findOne(id: number) {
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { id },
+      select: adminReservationSelect,
+    });
+    if (!reservation) throw new NotFoundException('Reservation not found');
+    return reservation;
+  }
+
+  async approve(id: number, actorId: number) {
+    return this.withSerializableTransaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          status: true,
+          resourceId: true,
+          startAt: true,
+          endAt: true,
+        },
+      });
+      if (!reservation) throw new NotFoundException('Reservation not found');
+      if (reservation.status !== ReservationStatus.PENDING) {
+        throw new ConflictException(
+          'Only pending reservations can be approved',
+        );
+      }
+
+      const conflict = await this.findBlockingReservationExcluding(
+        tx,
+        reservation.resourceId,
+        reservation.startAt,
+        reservation.endAt,
+        reservation.id,
+      );
+      if (conflict) {
+        throw new ConflictException(
+          'Resource is no longer available for this time slot',
+        );
+      }
+
+      return tx.reservation.update({
+        where: { id },
+        data: {
+          status: ReservationStatus.APPROVED,
+          approvedAt: new Date(),
+          approvedById: actorId,
+        },
+        select: adminReservationSelect,
+      });
+    });
+  }
+
+  async reject(id: number, rejectionReason: string, actorId: number) {
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { id },
+      select: { id: true, status: true },
+    });
+    if (!reservation) throw new NotFoundException('Reservation not found');
+
+    assertReservationTransition(reservation.status, ReservationStatus.REJECTED);
+
+    return this.prisma.reservation.update({
+      where: { id },
+      data: {
+        status: ReservationStatus.REJECTED,
+        rejectionReason,
+      },
+      select: adminReservationSelect,
+    });
+  }
+
+  async cancel(id: number) {
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { id },
+      select: { id: true, status: true },
+    });
+    if (!reservation) throw new NotFoundException('Reservation not found');
+
+    assertReservationTransition(reservation.status, ReservationStatus.CANCELLED);
+
+    return this.prisma.reservation.update({
+      where: { id },
+      data: {
+        status: ReservationStatus.CANCELLED,
+        cancelledAt: new Date(),
+      },
+      select: adminReservationSelect,
+    });
+  }
+
   private assertTimeRange(startAt: Date, endAt: Date) {
     if (endAt <= startAt) {
       throw new BadRequestException('End date must be after start date');
@@ -142,6 +286,25 @@ export class ReservationsService {
   ) {
     return client.reservation.findFirst({
       where: {
+        resourceId,
+        status: { in: [...BLOCKING_STATUSES] },
+        startAt: { lt: endAt },
+        endAt: { gt: startAt },
+      },
+      select: { id: true },
+    });
+  }
+
+  private findBlockingReservationExcluding(
+    client: Pick<ReservationTransaction, 'reservation'> | PrismaService,
+    resourceId: number,
+    startAt: Date,
+    endAt: Date,
+    excludeId: number,
+  ) {
+    return client.reservation.findFirst({
+      where: {
+        id: { not: excludeId },
         resourceId,
         status: { in: [...BLOCKING_STATUSES] },
         startAt: { lt: endAt },
