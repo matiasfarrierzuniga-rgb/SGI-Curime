@@ -10,11 +10,11 @@ import {
   normalizeEmail,
   normalizeText,
   phoneError,
-  phoneNationalMaxLength,
   structuredNameError,
   type IdentificationType,
 } from '@/shared/lib/formValidation'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
+import { PhoneField } from '@/shared/ui/forms/PhoneField'
 import { authService } from '../api/auth.api'
 import type { RegisterUser } from '../model/auth.types'
 
@@ -114,7 +114,9 @@ export function RegisterPage() {
     requestAnimationFrame(() => {
       const element = document.getElementById(id)
       element?.focus()
-      element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      if (element && typeof element.scrollIntoView === 'function') {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
     })
   }
 
@@ -264,21 +266,16 @@ export function RegisterPage() {
               {errors.email && <span id="register-email-error" className="field-error" role="alert">{errors.email}</span>}
             </label>
 
-            <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
-              <label className="grid content-start gap-2 text-sm font-bold" htmlFor="country-code">Código país
-                <select id="country-code" className={inputClass} value={form.phoneCountryCode ?? '+506'} onChange={(event) => setForm((current) => ({ ...current, phoneCountryCode: event.target.value, phoneNationalNumber: '' }))}>
-                  <option value="+506">🇨🇷 Costa Rica (+506)</option>
-                  <option value="+505">🇳🇮 Nicaragua (+505)</option>
-                  <option value="+507">🇵🇦 Panamá (+507)</option>
-                  <option value="+1">🇺🇸 EE. UU. / Canadá (+1)</option>
-                  <option value="+34">🇪🇸 España (+34)</option>
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm font-bold" htmlFor="phone-number">Número <span className="font-normal text-foreground-muted">(opcional)</span>
-                <input id="phone-number" className={inputClass} type="text" inputMode="numeric" autoComplete="tel-national" maxLength={phoneNationalMaxLength(form.phoneCountryCode ?? '')} aria-invalid={Boolean(errors.phoneNationalNumber)} aria-describedby={errors.phoneNationalNumber ? 'phone-error' : undefined} value={form.phoneNationalNumber ?? ''} onChange={(event) => { setForm((current) => ({ ...current, phoneNationalNumber: digitsOnly(event.target.value, phoneNationalMaxLength(form.phoneCountryCode ?? '')) })); if (errors.phoneNationalNumber) setErrors((current) => ({ ...current, phoneNationalNumber: '' })) }} />
-                {errors.phoneNationalNumber && <span id="phone-error" className="field-error" role="alert">{errors.phoneNationalNumber}</span>}
-              </label>
-            </div>
+            <PhoneField
+              id="phone-number"
+              label="Teléfono"
+              value={{ countryCode: form.phoneCountryCode, nationalNumber: form.phoneNationalNumber }}
+              error={errors.phoneNationalNumber}
+              onChange={({ countryCode, nationalNumber }) => {
+                setForm((current) => ({ ...current, phoneCountryCode: countryCode, phoneNationalNumber: nationalNumber }))
+                if (errors.phoneNationalNumber) setErrors((current) => ({ ...current, phoneNationalNumber: '' }))
+              }}
+            />
 
             <label className="grid gap-2 text-sm font-bold" htmlFor="address">Dirección <span className="font-normal text-foreground-muted">(opcional)</span>
               <textarea id="address" className="min-h-24 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/15" maxLength={300} autoComplete="street-address" {...field('address')} />

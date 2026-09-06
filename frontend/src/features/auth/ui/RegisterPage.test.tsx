@@ -104,6 +104,23 @@ describe('direct RegisterPage', () => {
     expect(vi.mocked(authService.register).mock.calls[0]?.[0]).not.toHaveProperty('passwordConfirmation')
   })
 
+  it('adapts international phone input to existing backend fields', async () => {
+    vi.mocked(authService.register).mockResolvedValue({} as never)
+    render(<MemoryRouter><RegisterPage /></MemoryRouter>)
+
+    fillIdentityStep()
+    fireEvent.change(screen.getByLabelText(/Correo electrónico/), { target: { value: 'ana@example.com' } })
+    fireEvent.change(screen.getByLabelText(/Teléfono/), { target: { value: '+50688881234' } })
+    fireEvent.click(screen.getByRole('button', { name: /Continuar/ }))
+    fillSecurityStep()
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+
+    await waitFor(() => expect(authService.register).toHaveBeenCalledWith(expect.objectContaining({
+      phoneCountryCode: '+506',
+      phoneNationalNumber: '88881234',
+    })))
+  })
+
   it('blocks passwords that do not satisfy the strong policy', () => {
     render(<MemoryRouter><RegisterPage /></MemoryRouter>)
 
