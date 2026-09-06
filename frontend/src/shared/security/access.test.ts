@@ -19,11 +19,27 @@ describe('shared security access policy', () => {
       'inv.inventory.read',
       'pub.events.manage',
       'pub.events.publish',
+      'res.reservations.read',
+      'res.reservations.approve',
+      'res.reservations.reject',
+      'res.reservations.cancel',
+      'fin.charges.read',
+      'fin.payments.record',
     ])
     expect(ACCESS_ROLE_CAPABILITIES.Administrador).toEqual(ACCESS_CAPABILITIES)
     expect(hasCapability('Administrador', 'adm.requests.read')).toBe(true)
     expect(hasCapability('Administrador', 'aud.logs.read')).toBe(true)
     expect(hasCapability('Administrador', 'pub.events.publish')).toBe(true)
+    expect(hasCapability('Administrador', 'res.reservations.cancel')).toBe(true)
+    expect(hasCapability('Administrador', 'fin.payments.record')).toBe(true)
+  })
+
+  it('grants financial capabilities to the treasurer', () => {
+    expect(ACCESS_ROLE_CAPABILITIES.Tesorero).toEqual(['fin.charges.read', 'fin.payments.record'])
+    expect(hasCapability('Tesorero', 'fin.charges.read')).toBe(true)
+    expect(hasCapability('Tesorero', 'fin.payments.record')).toBe(true)
+    expect(hasCapability('Tesorero', 'usr.users.read')).toBe(false)
+    expect(hasCapability('Tesorero', 'res.reservations.read')).toBe(false)
   })
 
   it('grants capabilities to role objects by name', () => {
@@ -60,6 +76,8 @@ describe('shared security access policy', () => {
 
   it('denies known capabilities not granted to a role', () => {
     expect(hasCapability('Gestor de Inventario', 'usr.users.read')).toBe(false)
+    expect(hasCapability('Gestor de Inventario', 'fin.charges.read')).toBe(false)
+    expect(hasCapability('Tesorero', 'adm.affiliates.read')).toBe(false)
     expect(hasCapability(null, 'usr.profile.read')).toBe(false)
   })
 
