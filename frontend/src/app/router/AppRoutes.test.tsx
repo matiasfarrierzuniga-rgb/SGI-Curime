@@ -55,6 +55,7 @@ beforeEach(() => {
     if (url === '/affiliate-requests') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/events') return Promise.resolve({ data: [] })
     if (url === '/public/events') return Promise.resolve({ data: [] })
+    if (url === '/financial/charges') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
   })
 })
@@ -226,5 +227,40 @@ describe('AppRoutes capability deep links', () => {
 
     expect(await screen.findByRole('heading', { name: 'Solicitudes de registro' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Solicitudes de afiliación' })).not.toBeInTheDocument()
+  })
+
+  it('redirects anonymous users from /app/financial to login', () => {
+    renderRoute('/app/financial', null)
+
+    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Financiero' })).not.toBeInTheDocument()
+  })
+
+  it('renders the real financial page for treasurers using the financial API', async () => {
+    renderRoute('/app/financial', 'Tesorero')
+
+    expect(await screen.findByRole('heading', { name: 'Financiero' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay cargos financieros')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/financial/charges', { params: expect.objectContaining({ page: 1, limit: 20 }) })
+  })
+
+  it('renders the real financial page for administrators', async () => {
+    renderRoute('/app/financial', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Financiero' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay cargos financieros')).toBeInTheDocument()
+  })
+
+  it('redirects users without financial capability to 403', async () => {
+    renderRoute('/app/financial', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByText('No hay cargos financieros')).not.toBeInTheDocument()
+  })
+
+  it('default-denies unknown roles from /app/financial', async () => {
+    renderRoute('/app/financial', 'Rol desconocido')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
 })

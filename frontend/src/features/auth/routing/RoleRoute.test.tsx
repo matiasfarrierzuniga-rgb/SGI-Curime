@@ -50,6 +50,24 @@ describe('RoleRoute', () => {
     expect(screen.getByText('Permitido')).toBeInTheDocument()
   })
 
+  it('renders reservation administration route for administrator capability', () => {
+    auth.user = { role: ROLE_ADMIN }
+    auth.isAuthenticated = true
+
+    renderRoute({ capability: 'res.reservations.read' })
+
+    expect(screen.getByText('Permitido')).toBeInTheDocument()
+  })
+
+  it('denies reservation administration route without reservation capability', () => {
+    auth.user = { role: ROLE_INVENTORY_MANAGER }
+    auth.isAuthenticated = true
+
+    renderRoute({ capability: 'res.reservations.read' })
+
+    expect(screen.getByText('/403')).toBeInTheDocument()
+  })
+
   it('redirects inventory manager from usr.users.read', () => {
     auth.user = { role: ROLE_INVENTORY_MANAGER }
     auth.isAuthenticated = true

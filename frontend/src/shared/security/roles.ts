@@ -1,5 +1,6 @@
 export const ROLE_ADMIN = 'Administrador'
 export const ROLE_INVENTORY_MANAGER = 'Gestor de Inventario'
+export const ROLE_TREASURER = 'Tesorero'
 
 export type RoleLike =
   | string

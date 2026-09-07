@@ -2,6 +2,7 @@ import {
   getRoleName,
   ROLE_ADMIN,
   ROLE_INVENTORY_MANAGER,
+  ROLE_TREASURER,
   type RoleLike,
 } from './roles'
 
@@ -18,7 +19,13 @@ export const ACCESS_CAPABILITIES = [
   'aud.logs.read',
   'inv.inventory.read',
   'pub.events.manage',
-  'pub.events.publish',
+'pub.events.publish',
+  'res.reservations.read',
+  'res.reservations.approve',
+  'res.reservations.reject',
+  'res.reservations.cancel',
+  'fin.charges.read',
+  'fin.payments.record',
 ] as const
 
 export type AccessCapability =
@@ -34,6 +41,8 @@ export const ACCESS_ROLE_CAPABILITIES: Readonly<
     'usr.profile.read',
     'inv.inventory.read',
   ],
+
+  [ROLE_TREASURER]: ['fin.charges.read', 'fin.payments.record'],
 }
 
 export function hasCapability(
