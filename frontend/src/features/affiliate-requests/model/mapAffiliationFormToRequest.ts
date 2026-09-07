@@ -1,11 +1,10 @@
-import type { CreateAffiliateRequest } from '@/types/affiliateRequests'
 import type { AffiliationFormValues } from './affiliation.schema'
 
 function optional(value: string) {
   return value || undefined
 }
 
-export function mapAffiliationFormToRequest(form: AffiliationFormValues): CreateAffiliateRequest {
+export function mapAffiliationFormToRequest(form: AffiliationFormValues) {
   return {
     firstName: form.firstName,
     firstSurname: form.firstSurname,

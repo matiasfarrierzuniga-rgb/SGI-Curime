@@ -1,4 +1,3 @@
-```ts
 import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeftRight,
@@ -170,4 +169,3 @@ export function getErpNavigation(role: string | null | undefined): ErpNavigation
     return items.length > 0 ? [{ ...section, items }] : []
   })
 }
-```

@@ -1,4 +1,3 @@
-```ts
 import {
   getRoleName,
   ROLE_ADMIN,
@@ -82,4 +81,3 @@ export function hasAuthenticatedSessionCapability(
     capability === 'erp.dashboard.read'
   )
 }
-```
