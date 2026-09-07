@@ -2,7 +2,7 @@ import { Transform } from 'class-transformer';
 import { IsEnum, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { PaymentMethod } from '../../../generated/prisma/enums';
 
-const DECIMAL_AMOUNT_PATTERN = /^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/;
+const DECIMAL_AMOUNT_PATTERN = /^(?!0+(?:\.0{1,2})?$)(?:0|[1-9]\d*)(?:\.\d{1,2})?$/;
 
 export class RecordPaymentDto {
   @Transform(({ value }: { value: unknown }) =>

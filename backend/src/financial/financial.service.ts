@@ -14,6 +14,7 @@ const chargeListSelect = {
   amount: true,
   currency: true,
   status: true,
+  dueAt: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.FinancialChargeSelect;
@@ -61,7 +62,12 @@ export class FinancialService {
       }),
       this.prisma.financialCharge.count({ where }),
     ]);
-    return { data, total, page: query.page, limit: query.limit };
+    return {
+      data: data.map((charge) => this.withBalance(charge)),
+      total,
+      page: query.page,
+      limit: query.limit,
+    };
   }
 
   async findOne(id: number) {
@@ -70,7 +76,7 @@ export class FinancialService {
       select: chargeDetailSelect,
     });
     if (!charge) throw new NotFoundException('Financial charge not found');
-    return charge;
+    return this.withBalance(charge);
   }
 
   async recordPayment(id: number, dto: RecordPaymentDto, actorId: number) {
@@ -87,7 +93,8 @@ export class FinancialService {
       if (charge.currency !== 'CRC') {
         throw new ConflictException('Financial charge currency is not supported');
       }
-      if (!amount.equals(charge.amount)) {
+      const balance = this.balanceFor(charge.status, charge.amount);
+      if (!amount.equals(balance)) {
         throw new ConflictException('Payment amount must match financial charge amount');
       }
 
@@ -109,7 +116,7 @@ export class FinancialService {
         select: chargeListSelect,
       });
 
-      return { payment, charge: updatedCharge };
+      return { payment, charge: this.withBalance(updatedCharge) };
     });
   }
 
@@ -122,12 +129,28 @@ export class FinancialService {
         'Payment amount must be a valid decimal with up to two decimal places',
       );
     }
-    return new Prisma.Decimal(value);
+    const amount = new Prisma.Decimal(value);
+    if (amount.lte(0)) {
+      throw new BadRequestException('Payment amount must be greater than zero');
+    }
+    return amount;
   }
 
   private normalizeReference(reference: string | undefined): string | null {
     const normalized = reference?.trim();
     return normalized || null;
+  }
+
+  private withBalance<T extends { amount: Prisma.Decimal; status: FinancialChargeStatus }>(
+    charge: T,
+  ) {
+    return { ...charge, balance: this.balanceFor(charge.status, charge.amount) };
+  }
+
+  private balanceFor(status: FinancialChargeStatus, amount: Prisma.Decimal) {
+    return status === FinancialChargeStatus.PENDING
+      ? amount
+      : new Prisma.Decimal(0);
   }
 
   private async withSerializableTransaction<T>(

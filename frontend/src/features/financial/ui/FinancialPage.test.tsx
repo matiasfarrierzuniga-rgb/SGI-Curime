@@ -7,9 +7,9 @@ import { FinancialPage } from './FinancialPage'
 vi.mock('@/features/auth', () => ({ useAuth: vi.fn() }))
 vi.mock('../hooks/useFinancial', () => ({ useFinancialChargeDetail: vi.fn(), useFinancialChargesList: vi.fn(), useRecordPayment: vi.fn() }))
 
-const pending = { id: 4, reservationId: 9, amount: '15000.00', currency: 'CRC', status: 'PENDING', createdAt: '2030-01-01T10:00:00.000Z', updatedAt: '2030-01-01T10:00:00.000Z' } as const
-const paid = { ...pending, id: 5, reservationId: 10, amount: '200.00', status: 'PAID' } as const
-const cancelled = { ...pending, id: 6, reservationId: 11, amount: '50.00', status: 'CANCELLED' } as const
+const pending = { id: 4, reservationId: 9, amount: '15000.00', balance: '15000.00', currency: 'CRC', status: 'PENDING', dueAt: null, createdAt: '2030-01-01T10:00:00.000Z', updatedAt: '2030-01-01T10:00:00.000Z' } as const
+const paid = { ...pending, id: 5, reservationId: 10, amount: '200.00', balance: '0', status: 'PAID' } as const
+const cancelled = { ...pending, id: 6, reservationId: 11, amount: '50.00', balance: '0', status: 'CANCELLED' } as const
 const record = { isPending: false, mutateAsync: vi.fn() }
 
 describe('FinancialPage', () => {
@@ -63,19 +63,19 @@ describe('FinancialPage', () => {
 
   it('shows the record payment action only for pending charges with the capability', () => {
     render(<FinancialPage />)
-    expect(screen.getAllByRole('button', { name: 'Registrar pago' })).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: 'Registrar pago completo' })).toHaveLength(1)
   })
 
   it('allows the treasurer to record payments without checking role names', () => {
     vi.mocked(useAuth).mockReturnValue({ user: { role: 'Tesorero' } } as never)
     render(<FinancialPage />)
-    expect(screen.getAllByRole('button', { name: 'Registrar pago' })).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: 'Registrar pago completo' })).toHaveLength(1)
   })
 
   it('hides the record payment action without the capability', () => {
     vi.mocked(useAuth).mockReturnValue({ user: { role: 'Gestor de Inventario' } } as never)
     render(<FinancialPage />)
-    expect(screen.queryByRole('button', { name: 'Registrar pago' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Registrar pago completo' })).not.toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Ver detalle' })).toHaveLength(3)
   })
 
@@ -88,7 +88,7 @@ describe('FinancialPage', () => {
 
   it('opens the payment modal from a pending charge row', () => {
     render(<FinancialPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar pago' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar pago completo' }))
     expect(screen.getByRole('dialog', { name: /registrar pago · cargo #4/i })).toBeInTheDocument()
     expect(useRecordPayment).toHaveBeenCalled()
   })

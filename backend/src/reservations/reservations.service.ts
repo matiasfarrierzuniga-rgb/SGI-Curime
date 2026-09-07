@@ -128,14 +128,23 @@ export class ReservationsService {
   }
 
   async findAll(query: QueryReservationsDto) {
+    const from = query.from
+      ? this.costaRicaDayStart(query.from)
+      : undefined;
+    const toStart = query.to ? this.costaRicaDayStart(query.to) : undefined;
+    if (from && toStart && from > toStart) {
+      throw new BadRequestException('The from date must be before or equal to the to date');
+    }
     const where: Prisma.ReservationWhereInput = {
       status: query.status,
       resourceId: query.resourceId,
       startAt:
-        query.from || query.to
+        from || toStart
           ? {
-              gte: query.from ? new Date(query.from) : undefined,
-              lte: query.to ? new Date(query.to) : undefined,
+              gte: from,
+              lt: toStart
+                ? new Date(toStart.getTime() + 24 * 60 * 60 * 1000)
+                : undefined,
             }
           : undefined,
     };
@@ -182,6 +191,7 @@ export class ReservationsService {
           'Only pending reservations can be approved',
         );
       }
+      this.assertTimeRange(reservation.startAt, reservation.endAt);
 
       const conflict = await this.findBlockingReservationExcluding(
         tx,
@@ -198,10 +208,13 @@ export class ReservationsService {
 
       const resource = await tx.reservableResource.findUnique({
         where: { id: reservation.resourceId },
-        select: { id: true, pricingType: true, price: true },
+        select: { id: true, status: true, pricingType: true, price: true },
       });
       if (!resource) {
         throw new NotFoundException('Reservable resource not found');
+      }
+      if (resource.status !== ReservableResourceStatus.ACTIVE) {
+        throw new ConflictException('Reservable resource is inactive');
       }
 
       let chargeAmount: Prisma.Decimal | undefined;
@@ -248,21 +261,29 @@ export class ReservationsService {
   }
 
   async reject(id: number, rejectionReason: string, actorId: number) {
-    const reservation = await this.prisma.reservation.findUnique({
-      where: { id },
-      select: { id: true, status: true },
-    });
-    if (!reservation) throw new NotFoundException('Reservation not found');
+    return this.withSerializableTransaction(async (tx) => {
+      const result = await tx.reservation.updateMany({
+        where: { id, status: ReservationStatus.PENDING },
+        data: {
+          status: ReservationStatus.REJECTED,
+          rejectionReason,
+        },
+      });
+      if (result.count === 0) {
+        const reservation = await tx.reservation.findUnique({
+          where: { id },
+          select: { id: true },
+        });
+        if (!reservation) throw new NotFoundException('Reservation not found');
+        throw new ConflictException('Only pending reservations can be rejected');
+      }
 
-    assertReservationTransition(reservation.status, ReservationStatus.REJECTED);
-
-    return this.prisma.reservation.update({
-      where: { id },
-      data: {
-        status: ReservationStatus.REJECTED,
-        rejectionReason,
-      },
-      select: adminReservationSelect,
+      const rejected = await tx.reservation.findUnique({
+        where: { id },
+        select: adminReservationSelect,
+      });
+      if (!rejected) throw new NotFoundException('Reservation not found');
+      return rejected;
     });
   }
 
@@ -320,6 +341,17 @@ export class ReservationsService {
     if (duration > 12 * 60 * 60 * 1000) {
       throw new BadRequestException('Reservation duration cannot exceed twelve hours');
     }
+  }
+
+  private costaRicaDayStart(value: string) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      throw new BadRequestException('Reservation date filters must use YYYY-MM-DD');
+    }
+    const date = new Date(`${value}T00:00:00-06:00`);
+    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+      throw new BadRequestException('Reservation date filter is invalid');
+    }
+    return date;
   }
 
   private async requireActiveResource(

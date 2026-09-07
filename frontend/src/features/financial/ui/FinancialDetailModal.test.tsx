@@ -5,7 +5,7 @@ import { FinancialDetailModal } from './FinancialDetailModal'
 
 vi.mock('../hooks/useFinancial', () => ({ useFinancialChargeDetail: vi.fn() }))
 
-const charge = { id: 4, reservationId: 9, amount: '15000.00', currency: 'CRC', status: 'PENDING', createdAt: '2030-01-01T10:00:00.000Z', updatedAt: '2030-01-01T12:00:00.000Z' } as const
+const charge = { id: 4, reservationId: 9, amount: '15000.00', balance: '15000.00', currency: 'CRC', status: 'PENDING', dueAt: null, createdAt: '2030-01-01T10:00:00.000Z', updatedAt: '2030-01-01T12:00:00.000Z' } as const
 const payment = { id: 1, chargeId: 4, amount: '15000.00', status: 'CONFIRMED', method: 'BANK_TRANSFER', reference: 'REF-1', paidAt: '2030-01-02T09:00:00.000Z', recordedById: 2, createdAt: '2030-01-02T09:00:00.000Z' } as const
 
 describe('FinancialDetailModal', () => {
@@ -55,25 +55,25 @@ describe('FinancialDetailModal', () => {
   it('shows record button only for pending charges with capability', () => {
     vi.mocked(useFinancialChargeDetail).mockReturnValue({ isPending: false, isError: false, data: { ...charge, payments: [] } } as never)
     renderModal('Tesorero')
-    expect(screen.getByRole('button', { name: 'Registrar pago' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Registrar pago completo' })).toBeInTheDocument()
   })
 
   it('hides record button for paid charges', () => {
     vi.mocked(useFinancialChargeDetail).mockReturnValue({ isPending: false, isError: false, data: { ...charge, status: 'PAID', payments: [] } } as never)
     renderModal('Administrador')
-    expect(screen.queryByRole('button', { name: 'Registrar pago' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Registrar pago completo' })).not.toBeInTheDocument()
   })
 
   it('hides record button without the capability', () => {
     vi.mocked(useFinancialChargeDetail).mockReturnValue({ isPending: false, isError: false, data: { ...charge, payments: [] } } as never)
     renderModal('Gestor de Inventario')
-    expect(screen.queryByRole('button', { name: 'Registrar pago' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Registrar pago completo' })).not.toBeInTheDocument()
   })
 
   it('invokes onRecord with the charge', () => {
     const onRecord = vi.fn()
     render(<FinancialDetailModal id={4} role="Administrador" onClose={vi.fn()} onRecord={onRecord} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar pago' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar pago completo' }))
     expect(onRecord).toHaveBeenCalledWith(expect.objectContaining({ id: 4 }))
   })
 })

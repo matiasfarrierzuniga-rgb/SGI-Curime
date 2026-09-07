@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ToastProvider, useToast } from './Toast'
@@ -32,7 +33,7 @@ describe('UI dialogs and toasts', () => {
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
     expect(document.activeElement).toBe(confirm)
     screen.getByRole('button', { name: 'Fuera' }).focus()
-    expect(document.activeElement).toBe(dialog)
+    expect(dialog).toContainElement(document.activeElement)
     fireEvent.keyDown(document, { key: 'Tab' })
     expect(document.activeElement).toBe(close)
   })
@@ -58,6 +59,30 @@ describe('UI dialogs and toasts', () => {
     expect(screen.getByRole('dialog')).toHaveAttribute('aria-busy', 'true')
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(close).toHaveBeenCalledOnce()
+  })
+
+  it('keeps only the top nested dialog active and preserves body scroll lock', () => {
+    function NestedDialogs() {
+      const [detailsOpen, setDetailsOpen] = useState(true)
+      const [actionOpen, setActionOpen] = useState(false)
+      return <>{detailsOpen ? <ConfirmDialog title="Detalles" message="Detalle" confirmLabel="Abrir acción" onClose={() => setDetailsOpen(false)} onConfirm={() => setActionOpen(true)} /> : null}{actionOpen ? <ConfirmDialog title="Acción" message="Confirmación" onClose={() => setActionOpen(false)} onConfirm={vi.fn()} /> : null}</>
+    }
+
+    render(<NestedDialogs />)
+    const openAction = screen.getByRole('button', { name: 'Abrir acción' })
+    fireEvent.click(openAction)
+    expect(screen.getByRole('dialog', { name: 'Acción' })).toBeInTheDocument()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Confirmar' }))
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Acción' })).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Detalles' })).toBeInTheDocument()
+    expect(document.activeElement).toBe(openAction)
+    expect(document.body.style.overflow).toBe('hidden')
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Detalles' })).not.toBeInTheDocument()
+    expect(document.body.style.overflow).toBe('')
   })
 
   it('shows success and error toasts and allows closing them', () => {

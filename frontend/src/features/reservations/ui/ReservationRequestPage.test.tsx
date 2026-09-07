@@ -31,6 +31,22 @@ describe('ReservationRequestPage', () => {
 
   it('sets availability available when API returns available=true and resets on stale input', async () => { refetch.mockResolvedValue({ data: { available: true } }); render(<ReservationRequestPage />); fill(); fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i })); expect(await screen.findByText('Disponible.')).toBeInTheDocument(); expect(screen.getByRole('button', { name: 'Enviar solicitud' })).toBeEnabled(); fireEvent.change(screen.getByLabelText('Inicio'), { target: { value: '2030-01-01T11:00' } }); expect(screen.getByRole('button', { name: 'Enviar solicitud' })).toBeDisabled() })
 
+  it('ignores an availability response after inputs change, even when they return to the original values', async () => {
+    let resolveAvailability: (value: { data: { available: boolean } }) => void = () => undefined
+    refetch.mockReturnValue(new Promise(resolve => { resolveAvailability = resolve }))
+    render(<ReservationRequestPage />)
+    fill()
+
+    fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
+    await waitFor(() => expect(refetch).toHaveBeenCalled())
+    fireEvent.change(screen.getByLabelText('Inicio'), { target: { value: '2030-01-01T11:00' } })
+    fireEvent.change(screen.getByLabelText('Inicio'), { target: { value: future.start } })
+    resolveAvailability({ data: { available: true } })
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Enviar solicitud' })).toBeDisabled())
+    expect(screen.queryByText('Disponible.')).not.toBeInTheDocument()
+  })
+
   it('submits UTC payload without requester or status and resets on success', async () => { refetch.mockResolvedValue({ data: { available: true } }); mutateAsync.mockResolvedValue({}); render(<ReservationRequestPage />); fill(); fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i })); await screen.findByText('Disponible.'); fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' })); await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ resourceId: 1, startAt: '2030-01-01T16:00:00.000Z', endAt: '2030-01-01T18:00:00.000Z' }))); expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty('requesterUserId'); expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty('status'); expect(toast.success).toHaveBeenCalled(); expect(screen.getByLabelText('Motivo de la reserva')).toHaveValue(''); expect(screen.getByRole('button', { name: 'Enviar solicitud' })).toBeDisabled() })
 
   it('preserves form values and shows conflict feedback after 409 on create', async () => { refetch.mockResolvedValue({ data: { available: true } }); mutateAsync.mockRejectedValue({ response: { status: 409 } }); render(<ReservationRequestPage />); fill(); fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i })); await screen.findByText('Disponible.'); fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' })); expect(await screen.findByText('No disponible para este horario.')).toBeInTheDocument(); expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/ya no está disponible/i)); expect(screen.getByLabelText('Recurso reservable')).toHaveValue('1'); expect(screen.getByLabelText('Inicio')).toHaveValue(future.start); expect(screen.getByLabelText('Finalización')).toHaveValue(future.end); expect(screen.getByLabelText('Motivo de la reserva')).toHaveValue('Reunión vecinal') })

@@ -19,9 +19,9 @@ export function useRecordPayment() {
   ])
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: RecordPaymentInput }) => financialApi.recordPayment(id, payload),
-    onSuccess: (_, { id }) => void refresh(id),
+    onSuccess: (_, { id }) => refresh(id),
     onError: (error, { id }) => {
-      if (axios.isAxiosError(error) && error.response?.status === 409) void refresh(id)
+      if (axios.isAxiosError(error) && error.response?.status === 409) return refresh(id)
     },
   })
 }

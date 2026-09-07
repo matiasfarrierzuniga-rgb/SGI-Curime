@@ -6,7 +6,7 @@ import { useFinancialChargeDetail, useFinancialChargesList, useRecordPayment } f
 
 vi.mock('../api/financial.api', () => ({ financialApi: { listCharges: vi.fn(), getCharge: vi.fn(), recordPayment: vi.fn() } }))
 
-const charge = { id: 4, reservationId: 9, amount: '15000.00', currency: 'CRC', status: 'PENDING', createdAt: '2030-01-01T10:00:00.000Z', updatedAt: '2030-01-01T10:00:00.000Z' } as const
+const charge = { id: 4, reservationId: 9, amount: '15000.00', balance: '15000.00', currency: 'CRC', status: 'PENDING', dueAt: null, createdAt: '2030-01-01T10:00:00.000Z', updatedAt: '2030-01-01T10:00:00.000Z' } as const
 
 function renderHarness() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -32,13 +32,13 @@ describe('useRecordPayment', () => {
 
   it('invalidates list and detail so the refreshed UI reflects PAID after success', async () => {
     vi.mocked(financialApi.getCharge).mockResolvedValue({ ...charge, payments: [] } as never)
-    vi.mocked(financialApi.recordPayment).mockResolvedValue({ payment: {}, charge: { ...charge, status: 'PAID' } } as never)
+    vi.mocked(financialApi.recordPayment).mockResolvedValue({ payment: {}, charge: { ...charge, status: 'PAID', balance: '0' } } as never)
     renderHarness()
     await waitFor(() => expect(screen.getByTestId('list-count')).toHaveTextContent('1'))
     expect(screen.getByTestId('detail-status')).toHaveTextContent('PENDING')
     expect(financialApi.listCharges).toHaveBeenCalledTimes(1)
     expect(financialApi.getCharge).toHaveBeenCalledTimes(1)
-    vi.mocked(financialApi.getCharge).mockResolvedValue({ ...charge, status: 'PAID', payments: [] } as never)
+    vi.mocked(financialApi.getCharge).mockResolvedValue({ ...charge, status: 'PAID', balance: '0', payments: [] } as never)
     fireEvent.click(screen.getByRole('button', { name: 'pay' }))
     await waitFor(() => expect(financialApi.listCharges).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(financialApi.getCharge).toHaveBeenCalledTimes(2))
@@ -67,7 +67,7 @@ describe('useRecordPayment', () => {
   it('does not mutate reservations when recording a payment', async () => {
     const payment = { id: 1, chargeId: 4, amount: '15000.00', status: 'CONFIRMED', method: 'CASH', reference: null, paidAt: '2030-01-02T09:00:00.000Z', recordedById: 2, createdAt: '2030-01-02T09:00:00.000Z' } as const
     vi.mocked(financialApi.getCharge).mockResolvedValue({ ...charge, payments: [] } as never)
-    vi.mocked(financialApi.recordPayment).mockResolvedValue({ payment, charge: { ...charge, status: 'PAID' } } as never)
+    vi.mocked(financialApi.recordPayment).mockResolvedValue({ payment, charge: { ...charge, status: 'PAID', balance: '0' } } as never)
     renderHarness()
     fireEvent.click(screen.getByRole('button', { name: 'pay' }))
     await waitFor(() => expect(financialApi.recordPayment).toHaveBeenCalledTimes(1))

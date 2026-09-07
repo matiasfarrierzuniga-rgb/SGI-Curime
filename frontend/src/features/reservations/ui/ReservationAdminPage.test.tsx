@@ -41,11 +41,23 @@ describe('ReservationAdminPage', () => {
   it('sends server filters, resets page on filter change, and uses server pagination', () => {
     render(<ReservationAdminPage />)
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'APPROVED' } })
-    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', page: 1, limit: 20 }))
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', page: 1, limit: 20 }), true)
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
-    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', page: 2, limit: 20 }))
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', page: 2, limit: 20 }), true)
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
-    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith({ page: 1, limit: 20 })
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith({ page: 1, limit: 20 }, true)
+  })
+
+  it('blocks an inverted date range without querying it', () => {
+    render(<ReservationAdminPage />)
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2030-01-02' } })
+    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2030-01-01' } })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('La fecha desde debe ser anterior o igual a la fecha hasta.')
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(
+      expect.objectContaining({ from: '2030-01-02', to: '2030-01-01' }),
+      false,
+    )
   })
 
   it('opens authoritative detail query', () => {

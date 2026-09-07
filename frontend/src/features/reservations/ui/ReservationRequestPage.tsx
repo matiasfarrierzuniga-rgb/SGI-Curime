@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -8,11 +8,15 @@ import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { useCreateReservation, useReservableResources, useReservationAvailability } from '../hooks/useReservations'
+import type { CreateReservationRequest } from '../model/reservations.types'
 
 type Values = { resourceId: string; startAt: string; endAt: string; purpose: string; estimatedAttendees: string; notes: string }
+type AvailabilityInput = Pick<CreateReservationRequest, 'resourceId' | 'startAt' | 'endAt'>
 const blank: Values = { resourceId: '', startAt: '', endAt: '', purpose: '', estimatedAttendees: '', notes: '' }
 const localCostaRica = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
 function toUtc(value: string) { if (!localCostaRica.test(value)) return null; const date = new Date(`${value}:00-06:00`); return Number.isNaN(date.getTime()) ? null : date }
+function availabilityInput(values: Pick<Values, 'resourceId' | 'startAt' | 'endAt'>): AvailabilityInput | null { const startAt = toUtc(values.startAt); const endAt = toUtc(values.endAt); if (!values.resourceId || !startAt || !endAt) return null; return { resourceId: Number(values.resourceId), startAt: startAt.toISOString(), endAt: endAt.toISOString() } }
+function sameAvailabilityInput(left: AvailabilityInput | null, right: AvailabilityInput | null) { return left?.resourceId === right?.resourceId && left?.startAt === right?.startAt && left?.endAt === right?.endAt }
 const schema = z.object({ resourceId: z.string().min(1, 'Seleccione un recurso.'), startAt: z.string().min(1, 'Indique hora de inicio.'), endAt: z.string().min(1, 'Indique hora de finalización.'), purpose: z.string().trim().min(1, 'Indique el motivo.').max(1000), estimatedAttendees: z.string(), notes: z.string().max(5000) }).superRefine((value, ctx) => {
   const start = toUtc(value.startAt); const end = toUtc(value.endAt)
   if (!start || !end) return
@@ -24,13 +28,15 @@ const schema = z.object({ resourceId: z.string().min(1, 'Seleccione un recurso.'
 })
 
 export function ReservationRequestPage() {
-  const resources = useReservableResources(); const create = useCreateReservation(); const [availability, setAvailability] = useState<'idle' | 'available' | 'unavailable' | 'error'>('idle')
+  const resources = useReservableResources(); const create = useCreateReservation(); const [availability, setAvailability] = useState<'idle' | 'available' | 'unavailable' | 'error'>('idle'); const [checkedInput, setCheckedInput] = useState<AvailabilityInput | null>(null)
+  const availabilityGeneration = useRef(0)
   const form = useForm<Values>({ defaultValues: blank, resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange', shouldFocusError: true })
-  const values = form.watch(); const validInput = Boolean(values.resourceId && toUtc(values.startAt) && toUtc(values.endAt) && !form.formState.errors.startAt && !form.formState.errors.endAt)
-  const availabilityQuery = useReservationAvailability(validInput ? { resourceId: Number(values.resourceId), startAt: toUtc(values.startAt)!.toISOString(), endAt: toUtc(values.endAt)!.toISOString() } : null)
-  const resetAvailability = () => setAvailability('idle')
-  async function checkAvailability() { const valid = await form.trigger(['resourceId', 'startAt', 'endAt']); if (!valid) return; resetAvailability(); try { const result = await availabilityQuery.refetch(); if (result.isError) { setAvailability('error'); return } setAvailability(result.data?.available ? 'available' : 'unavailable') } catch { setAvailability('error') } }
-  async function submit(value: Values) { if (availability !== 'available' || create.isPending) return; try { await create.mutateAsync({ resourceId: Number(value.resourceId), startAt: toUtc(value.startAt)!.toISOString(), endAt: toUtc(value.endAt)!.toISOString(), purpose: value.purpose.trim(), ...(value.estimatedAttendees ? { estimatedAttendees: Number(value.estimatedAttendees) } : {}), ...(value.notes.trim() ? { notes: value.notes.trim() } : {}) }); form.reset(blank); setAvailability('idle'); toast.success('Solicitud de reserva enviada correctamente.') } catch (error) { if ((error as { response?: { status?: number } }).response?.status === 409) { setAvailability('unavailable'); toast.error('El recurso ya no está disponible. Consulte nuevamente la disponibilidad.') } else toast.error(getErrorMessage(error, 'No fue posible enviar la solicitud de reserva.')) } }
+  const values = form.watch(); const input = availabilityInput(values); const validInput = Boolean(input && !form.formState.errors.startAt && !form.formState.errors.endAt)
+  const availabilityQuery = useReservationAvailability(validInput ? input : null)
+  const resetAvailability = () => { availabilityGeneration.current += 1; setAvailability('idle'); setCheckedInput(null) }
+  const isCurrentAvailability = availability === 'available' && sameAvailabilityInput(checkedInput, input)
+  async function checkAvailability() { const valid = await form.trigger(['resourceId', 'startAt', 'endAt']); const requestedInput = availabilityInput(form.getValues()); if (!valid || !requestedInput) return; resetAvailability(); const requestGeneration = availabilityGeneration.current; try { const result = await availabilityQuery.refetch(); if (requestGeneration !== availabilityGeneration.current || !sameAvailabilityInput(requestedInput, availabilityInput(form.getValues()))) return; if (result.isError) { setAvailability('error'); return } setCheckedInput(requestedInput); setAvailability(result.data?.available ? 'available' : 'unavailable') } catch { if (requestGeneration === availabilityGeneration.current && sameAvailabilityInput(requestedInput, availabilityInput(form.getValues()))) setAvailability('error') } }
+  async function submit(value: Values) { const submissionInput = availabilityInput(value); if (!isCurrentAvailability || !sameAvailabilityInput(checkedInput, submissionInput) || create.isPending || !submissionInput) return; try { await create.mutateAsync({ ...submissionInput, purpose: value.purpose.trim(), ...(value.estimatedAttendees ? { estimatedAttendees: Number(value.estimatedAttendees) } : {}), ...(value.notes.trim() ? { notes: value.notes.trim() } : {}) }); form.reset(blank); resetAvailability(); toast.success('Solicitud de reserva enviada correctamente.') } catch (error) { if ((error as { response?: { status?: number } }).response?.status === 409) { resetAvailability(); setAvailability('unavailable'); toast.error('El recurso ya no está disponible. Consulte nuevamente la disponibilidad.') } else toast.error(getErrorMessage(error, 'No fue posible enviar la solicitud de reserva.')) } }
   if (resources.isPending) return <LoadingState label="Cargando recursos reservables..." />
   if (resources.isError) return <ErrorState title="No fue posible cargar recursos" message={getErrorMessage(resources.error)} />
   const field = (name: keyof Values) => ({ 'aria-invalid': Boolean(form.formState.errors[name]), 'aria-describedby': form.formState.errors[name] ? `${name}-error` : undefined })
@@ -42,6 +48,6 @@ export function ReservationRequestPage() {
     <label htmlFor="reservation-purpose">Motivo de la reserva</label><textarea id="reservation-purpose" maxLength={1000} {...field('purpose')} {...form.register('purpose')}/>{form.formState.errors.purpose && <span id="purpose-error" role="alert" className="field-error">{form.formState.errors.purpose.message}</span>}
     <label htmlFor="reservation-attendees">Asistentes estimados (opcional)</label><input id="reservation-attendees" type="number" min="1" {...field('estimatedAttendees')} {...form.register('estimatedAttendees')}/>{form.formState.errors.estimatedAttendees && <span id="estimatedAttendees-error" role="alert" className="field-error">{form.formState.errors.estimatedAttendees.message}</span>}
     <label htmlFor="reservation-notes">Notas (opcional)</label><textarea id="reservation-notes" maxLength={5000} {...field('notes')} {...form.register('notes')}/>{form.formState.errors.notes && <span id="notes-error" role="alert" className="field-error">{form.formState.errors.notes.message}</span>}
-    <button className="primary" disabled={create.isPending || availability !== 'available'}>{create.isPending ? 'Enviando…' : 'Enviar solicitud'}</button>
+    <button className="primary" disabled={create.isPending || !isCurrentAvailability}>{create.isPending ? 'Enviando…' : 'Enviar solicitud'}</button>
   </fieldset></form></section>
 }

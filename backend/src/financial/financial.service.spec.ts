@@ -97,6 +97,7 @@ describe('FinancialService', () => {
       }),
     );
     expect(result).toEqual(expect.objectContaining({ total: 1, page: 2, limit: 10 }));
+    expect(result.data[0].balance).toEqual(new Prisma.Decimal('2500.00'));
   });
 
   it('returns charge detail with operational payment fields', async () => {
@@ -115,6 +116,7 @@ describe('FinancialService', () => {
         recordedById: 7,
       }),
     );
+    expect(result.balance).toEqual(new Prisma.Decimal('2500.00'));
   });
 
   it('throws 404 for an unknown charge detail', async () => {
@@ -122,6 +124,17 @@ describe('FinancialService', () => {
 
     await expect(service.findOne(999)).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it.each([FinancialChargeStatus.PAID, FinancialChargeStatus.CANCELLED])(
+    'derives zero balance for a %s charge',
+    async (status) => {
+      prisma.financialCharge.findUnique.mockResolvedValue(charge({ status }));
+
+      await expect(service.findOne(1)).resolves.toEqual(
+        expect.objectContaining({ balance: new Prisma.Decimal(0) }),
+      );
+    },
+  );
 
   it('records an exact manual payment and settles its charge atomically', async () => {
     const result = await service.recordPayment(
@@ -152,6 +165,7 @@ describe('FinancialService', () => {
       }),
     );
     expect(result.charge.status).toBe(FinancialChargeStatus.PAID);
+    expect(result.charge.balance).toEqual(new Prisma.Decimal('0'));
   });
 
   it('normalizes an empty reference to null', async () => {
@@ -167,6 +181,13 @@ describe('FinancialService', () => {
   });
 
   it.each(['abc', '1.234', '-1', ''])('rejects malformed amount %j', async (amount) => {
+    await expect(
+      service.recordPayment(1, { amount, method: PaymentMethod.CASH }, 7),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.payment.create).not.toHaveBeenCalled();
+  });
+
+  it.each(['0', '0.00'])('rejects zero amount %s', async (amount) => {
     await expect(
       service.recordPayment(1, { amount, method: PaymentMethod.CASH }, 7),
     ).rejects.toBeInstanceOf(BadRequestException);
