@@ -15,6 +15,8 @@ describe('shared security access policy', () => {
       'usr.profile.read',
       'adm.affiliates.read',
       'adm.requests.read',
+      'adm.justifications.read',
+      'abs.justifications.read',
       'aud.logs.read',
       'inv.inventory.read',
       'pub.events.manage',

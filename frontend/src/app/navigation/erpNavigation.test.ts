@@ -9,7 +9,17 @@ describe('getErpNavigation', () => {
   it('shows implemented administrative areas to administrators', () => {
     expect(labels('Administrador')).toEqual([
       { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Gestión administrativa', items: [{ label: 'Usuarios', children: undefined }, { label: 'Afiliados', children: undefined }, { label: 'Solicitudes de afiliación', children: undefined }, { label: 'Eventos', children: undefined }, { label: 'Reservas', children: undefined }, { label: 'Financiero', children: undefined }] },
+
+     { label: 'Gestión administrativa', items: [
+  { label: 'Usuarios', children: undefined },
+  { label: 'Afiliados', children: undefined },
+  { label: 'Solicitudes de afiliación', children: undefined },
+  { label: 'Justificaciones de ausencia', children: undefined },
+  { label: 'Eventos', children: undefined },
+  { label: 'Reservas', children: undefined },
+  { label: 'Financiero', children: undefined }
+] },
+
       { label: 'Operación', items: [{ label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Información', items: [{ label: 'Bitácora', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
@@ -39,7 +49,7 @@ describe('getErpNavigation', () => {
   it('shows only session-wide navigation to other authenticated roles', () => {
     expect(labels('Vecino/Afiliado')).toEqual([
       { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
+      { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }, { label: 'Justificar ausencia', children: undefined }, { label: 'Mis justificaciones', children: undefined }] },
     ])
   })
 

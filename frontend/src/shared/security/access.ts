@@ -1,3 +1,4 @@
+```ts
 import {
   getRoleName,
   ROLE_ADMIN,
@@ -16,10 +17,12 @@ export const ACCESS_CAPABILITIES = [
   'usr.profile.read',
   'adm.affiliates.read',
   'adm.requests.read',
+  'adm.justifications.read',
+  'abs.justifications.read',
   'aud.logs.read',
   'inv.inventory.read',
   'pub.events.manage',
-'pub.events.publish',
+  'pub.events.publish',
   'res.reservations.read',
   'res.reservations.approve',
   'res.reservations.reject',
@@ -42,7 +45,16 @@ export const ACCESS_ROLE_CAPABILITIES: Readonly<
     'inv.inventory.read',
   ],
 
-  [ROLE_TREASURER]: ['fin.charges.read', 'fin.payments.record'],
+  [ROLE_TREASURER]: [
+    'fin.charges.read',
+    'fin.payments.record',
+  ],
+
+  'Vecino/Afiliado': [
+    'erp.dashboard.read',
+    'usr.profile.read',
+    'abs.justifications.read',
+  ],
 }
 
 export function hasCapability(
@@ -70,3 +82,4 @@ export function hasAuthenticatedSessionCapability(
     capability === 'erp.dashboard.read'
   )
 }
+```
