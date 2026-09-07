@@ -15,6 +15,8 @@ export const CAPABILITIES = [
   'res.reservations.cancel',
   'fin.charges.read',
   'fin.payments.record',
+  'fin.movements.read',
+  'fin.movements.create',
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -23,17 +25,27 @@ const ROLE_ADMIN = 'Administrador';
 const ROLE_INVENTORY_MANAGER = 'Gestor de Inventario';
 const ROLE_TREASURER = 'Tesorero';
 
-export const ROLE_CAPABILITIES: Readonly<Record<string, readonly Capability[]>> = {
+export const ROLE_CAPABILITIES: Readonly<
+  Record<string, readonly Capability[]>
+> = {
   [ROLE_ADMIN]: CAPABILITIES,
   [ROLE_INVENTORY_MANAGER]: [
     'erp.dashboard.read',
     'usr.profile.read',
     'inv.inventory.read',
   ],
-  [ROLE_TREASURER]: ['fin.charges.read', 'fin.payments.record'],
+  [ROLE_TREASURER]: [
+    'fin.charges.read',
+    'fin.payments.record',
+    'fin.movements.read',
+    'fin.movements.create',
+  ],
 };
 
-export function hasCapability(role: string | undefined, capability: string): boolean {
+export function hasCapability(
+  role: string | undefined,
+  capability: string,
+): boolean {
   return (
     CAPABILITIES.includes(capability as Capability) &&
     role !== undefined &&

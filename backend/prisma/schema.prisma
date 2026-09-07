@@ -80,6 +80,17 @@ enum PaymentMethod {
   OTHER
 }
 
+enum FinancialMovementType {
+  INCOME
+  EXPENSE
+}
+
+enum FinancialMovementSource {
+  MANUAL
+  RESERVATION_PAYMENT
+  DONATION
+}
+
 enum PublicationStatus {
   INTERNAL
   DRAFT
@@ -214,6 +225,7 @@ model User {
   requestedReservations     Reservation[]            @relation("ReservationRequester")
   approvedReservations      Reservation[]            @relation("ReservationApprover")
   recordedPayments          Payment[]                @relation("PaymentRecorder")
+  recordedFinancialMovements FinancialMovement[]      @relation("FinancialMovementRecorder")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -501,6 +513,29 @@ model Payment {
   @@index([status])
   @@index([recordedById])
   @@index([createdAt])
+}
+
+model FinancialMovement {
+  id           Int                     @id @default(autoincrement())
+  type         FinancialMovementType
+  source       FinancialMovementSource @default(MANUAL)
+  amount       Decimal                 @db.Decimal(14, 2)
+  currency     String                  @default("CRC")
+  description  String
+  reference    String?
+  occurredAt   DateTime
+  sourceId     Int?
+  recordedById Int?
+
+  recordedBy User? @relation("FinancialMovementRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([occurredAt])
+  @@index([type, occurredAt])
+  @@index([source, sourceId])
+  @@index([recordedById])
 }
 
 model AssemblyAttendance {
