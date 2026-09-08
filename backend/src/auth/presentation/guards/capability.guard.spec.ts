@@ -9,7 +9,13 @@ function contextFor(role?: string): ExecutionContext {
     switchToHttp: () => ({
       getRequest: () => ({
         user: role
-          ? { id: 1, fullName: 'Test User', email: 'test@example.com', status: 'ACTIVE', role }
+          ? {
+              id: 1,
+              fullName: 'Test User',
+              email: 'test@example.com',
+              status: 'ACTIVE',
+              role,
+            }
           : undefined,
       }),
     }),
@@ -23,7 +29,9 @@ describe('CapabilityGuard', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('allows a known role with required capability', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.users.read']);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['usr.users.read']);
 
     expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
   });
@@ -37,21 +45,29 @@ describe('CapabilityGuard', () => {
   });
 
   it('denies a known role without required capability', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.users.read']);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['usr.users.read']);
 
     expect(guard.canActivate(contextFor('Gestor de Inventario'))).toBe(false);
   });
 
   it('denies an unknown role and unknown capability', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.users.read']);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['usr.users.read']);
     expect(guard.canActivate(contextFor('Unknown'))).toBe(false);
 
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['unknown.capability']);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['unknown.capability']);
     expect(guard.canActivate(contextFor('Administrador'))).toBe(false);
   });
 
   it('denies missing authenticated user for protected capability', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.users.read']);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['usr.users.read']);
 
     expect(guard.canActivate(contextFor())).toBe(false);
   });
@@ -121,5 +137,16 @@ describe('CapabilityGuard', () => {
       .mockReturnValue(['fin.payments.record']);
 
     expect(guard.canActivate(contextFor('Gestor de Inventario'))).toBe(false);
+  });
+
+  it('allows only administrators and treasurers to read and create financial movements', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['fin.movements.read', 'fin.movements.create']);
+
+    expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
+    expect(guard.canActivate(contextFor('Tesorero'))).toBe(true);
+    expect(guard.canActivate(contextFor('Gestor de Inventario'))).toBe(false);
+    expect(guard.canActivate(contextFor('Vecino/Afiliado'))).toBe(false);
   });
 });

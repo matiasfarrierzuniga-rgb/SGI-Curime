@@ -28,6 +28,8 @@ export const ACCESS_CAPABILITIES = [
   'res.reservations.cancel',
   'fin.charges.read',
   'fin.payments.record',
+  'fin.movements.read',
+  'fin.movements.create',
 ] as const
 
 export type AccessCapability =
@@ -47,6 +49,8 @@ export const ACCESS_ROLE_CAPABILITIES: Readonly<
   [ROLE_TREASURER]: [
     'fin.charges.read',
     'fin.payments.record',
+    'fin.movements.read',
+    'fin.movements.create',
   ],
 
   'Vecino/Afiliado': [

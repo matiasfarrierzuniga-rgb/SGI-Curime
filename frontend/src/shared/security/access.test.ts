@@ -27,6 +27,8 @@ describe('shared security access policy', () => {
       'res.reservations.cancel',
       'fin.charges.read',
       'fin.payments.record',
+      'fin.movements.read',
+      'fin.movements.create',
     ])
     expect(ACCESS_ROLE_CAPABILITIES.Administrador).toEqual(ACCESS_CAPABILITIES)
     expect(hasCapability('Administrador', 'adm.requests.read')).toBe(true)
@@ -34,12 +36,20 @@ describe('shared security access policy', () => {
     expect(hasCapability('Administrador', 'pub.events.publish')).toBe(true)
     expect(hasCapability('Administrador', 'res.reservations.cancel')).toBe(true)
     expect(hasCapability('Administrador', 'fin.payments.record')).toBe(true)
+    expect(hasCapability('Administrador', 'fin.movements.create')).toBe(true)
   })
 
   it('grants financial capabilities to the treasurer', () => {
-    expect(ACCESS_ROLE_CAPABILITIES.Tesorero).toEqual(['fin.charges.read', 'fin.payments.record'])
+    expect(ACCESS_ROLE_CAPABILITIES.Tesorero).toEqual([
+      'fin.charges.read',
+      'fin.payments.record',
+      'fin.movements.read',
+      'fin.movements.create',
+    ])
     expect(hasCapability('Tesorero', 'fin.charges.read')).toBe(true)
     expect(hasCapability('Tesorero', 'fin.payments.record')).toBe(true)
+    expect(hasCapability('Tesorero', 'fin.movements.read')).toBe(true)
+    expect(hasCapability('Tesorero', 'fin.movements.create')).toBe(true)
     expect(hasCapability('Tesorero', 'usr.users.read')).toBe(false)
     expect(hasCapability('Tesorero', 'res.reservations.read')).toBe(false)
   })
@@ -79,6 +89,8 @@ describe('shared security access policy', () => {
   it('denies known capabilities not granted to a role', () => {
     expect(hasCapability('Gestor de Inventario', 'usr.users.read')).toBe(false)
     expect(hasCapability('Gestor de Inventario', 'fin.charges.read')).toBe(false)
+    expect(hasCapability('Gestor de Inventario', 'fin.movements.read')).toBe(false)
+    expect(hasCapability('Vecino/Afiliado', 'fin.movements.create')).toBe(false)
     expect(hasCapability('Tesorero', 'adm.affiliates.read')).toBe(false)
     expect(hasCapability(null, 'usr.profile.read')).toBe(false)
   })
