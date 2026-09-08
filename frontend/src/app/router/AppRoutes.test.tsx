@@ -56,6 +56,8 @@ beforeEach(() => {
     if (url === '/events') return Promise.resolve({ data: [] })
     if (url === '/public/events') return Promise.resolve({ data: [] })
     if (url === '/financial/charges') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
+    if (url === '/financial/movements') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
+    if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
     throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
   })
 })
@@ -260,6 +262,20 @@ describe('AppRoutes capability deep links', () => {
 
   it('default-denies unknown roles from /app/financial', async () => {
     renderRoute('/app/financial', 'Rol desconocido')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+  })
+
+  it('preserves the financial movements route for treasurers', async () => {
+    renderRoute('/app/financial/movements', 'Tesorero')
+
+    expect(await screen.findByRole('heading', { name: 'Movimientos financieros' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay movimientos financieros')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/financial/movements', { params: expect.objectContaining({ page: 1, limit: 20 }) })
+  })
+
+  it('denies financial movements to users without its read capability', async () => {
+    renderRoute('/app/financial/movements', 'Vecino/Afiliado')
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })

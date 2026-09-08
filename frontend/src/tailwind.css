@@ -89,7 +89,7 @@
   --color-status-neutral-surface: #f2eadf;
 
   --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-heading: "DM Serif Display", ui-serif, Georgia, serif;
+    --font-heading: "DM Serif Display", ui-serif, Georgia, serif;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -287,10 +287,6 @@
   }
 
   @media (min-width: 1024px) {
-    .public-menu-toggle {
-      display: none;
-    }
-
     .public-main,
     .public-main :target {
       scroll-margin-top: calc(var(--size-header-desktop) + var(--spacing-ui-md));
@@ -308,6 +304,12 @@
 
     .public-section {
       padding-block: 5rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .public-menu-toggle {
+      display: none;
     }
   }
 }

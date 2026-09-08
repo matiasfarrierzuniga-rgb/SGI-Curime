@@ -37,7 +37,7 @@ describe('portal público', () => {
 
   it('muestra la landing y navega al inicio de sesión', () => {
     const { container } = renderPublic()
-    expect(container.querySelector('h1')).toHaveTextContent(/información, participación y servicios/i)
+    expect(container.querySelector('h1')).toHaveTextContent(/curime, más cerca de su comunidad/i)
     expect(document.title).toBe('Portal comunitario | ADI Curime')
     expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toMatch(/portal comunitario/i)
 
@@ -102,7 +102,7 @@ describe('portal público', () => {
 
     expect(container.querySelectorAll('main h1')).toHaveLength(1)
     expect(headings).toEqual([
-      'Información, participación y servicios para Curime',
+      'Curime, más cerca de su comunidad',
       'Encuentre lo que necesita',
       'Información pública, con claridad y responsabilidad',
       'Un pueblo unido, un futuro compartido',
