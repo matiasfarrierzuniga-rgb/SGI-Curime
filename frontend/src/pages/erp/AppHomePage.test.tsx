@@ -19,7 +19,7 @@ describe('AppHomePage', () => {
     expect(screen.getByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
     expect(await screen.findByText('Artículos activos')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Gestionar usuarios/ })).toHaveAttribute('href', '/admin/users')
-    expect(screen.getByRole('link', { name: /Revisar solicitudes/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Revisar solicitudes/ })).toHaveAttribute('href', '/app/admin/requests')
     expect(screen.getByRole('link', { name: /Consultar bitácora/ })).toHaveAttribute('href', '/admin/audit-logs')
   })
 
