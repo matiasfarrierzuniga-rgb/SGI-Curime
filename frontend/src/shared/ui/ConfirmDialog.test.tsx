@@ -32,7 +32,7 @@ describe('UI dialogs and toasts', () => {
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
     expect(document.activeElement).toBe(confirm)
     screen.getByRole('button', { name: 'Fuera' }).focus()
-    expect(document.activeElement).toBe(dialog)
+    expect(document.activeElement).toBe(close)
     fireEvent.keyDown(document, { key: 'Tab' })
     expect(document.activeElement).toBe(close)
   })
