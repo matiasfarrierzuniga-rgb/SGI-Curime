@@ -28,3 +28,50 @@ export type PaginatedFinancialCharges = { data: FinancialCharge[]; total: number
 export type RecordPaymentInput = { amount: string; method: PaymentMethod; reference?: string }
 export const FINANCIAL_CHARGE_STATUSES: readonly FinancialChargeStatus[] = ['PENDING', 'PAID', 'CANCELLED']
 export const PAYMENT_METHODS: readonly PaymentMethod[] = ['CASH', 'BANK_TRANSFER', 'SINPE_MOVIL', 'OTHER']
+
+export type FinancialMovementType = 'INCOME' | 'EXPENSE'
+export type FinancialMovementSource = 'MANUAL' | 'RESERVATION_PAYMENT' | 'DONATION'
+export type FinancialMovement = {
+  id: number
+  type: FinancialMovementType
+  source: FinancialMovementSource
+  amount: string
+  currency: string
+  description: string
+  reference: string | null
+  occurredAt: string
+  sourceId: number | null
+  recordedById: number | null
+  createdAt: string
+  updatedAt: string
+}
+export type FinancialMovementDetail = FinancialMovement & {
+  recordedBy: { id: number; fullName: string } | null
+}
+export type CreateFinancialMovementInput = {
+  type: FinancialMovementType
+  amount: string
+  description: string
+  reference?: string
+  occurredAt: string
+}
+export type FinancialMovementListFilters = {
+  type?: FinancialMovementType
+  dateFrom?: string
+  dateTo?: string
+  page?: number
+  limit?: number
+}
+export type FinancialMovementListResponse = {
+  data: FinancialMovement[]
+  total: number
+  page: number
+  limit: number
+}
+export type FinancialMovementSummary = {
+  currency: string
+  totalIncome: string
+  totalExpenses: string
+  balance: string
+}
+export const FINANCIAL_MOVEMENT_TYPES: readonly FinancialMovementType[] = ['INCOME', 'EXPENSE']

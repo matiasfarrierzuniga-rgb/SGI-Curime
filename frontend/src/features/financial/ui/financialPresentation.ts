@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { getErrorMessage } from '@/shared/lib/errors'
-import type { FinancialChargeStatus, PaymentMethod, PaymentStatus } from '../model/financial.types'
+import type { FinancialChargeStatus, FinancialMovementSource, FinancialMovementType, PaymentMethod, PaymentStatus } from '../model/financial.types'
 
 export function financialChargeStatusLabel(status: FinancialChargeStatus) {
   return { PENDING: 'Pendiente', PAID: 'Pagado', CANCELLED: 'Cancelado' }[status]
@@ -44,4 +44,12 @@ export function getFinancialErrorMessage(error: unknown, fallback = 'Ocurrió un
     if (status === 409) return 'El cargo ya no está disponible para registrar el pago. Su estado fue actualizado.'
   }
   return getErrorMessage(error, fallback)
+}
+
+export function financialMovementTypeLabel(type: FinancialMovementType) {
+  return { INCOME: 'Ingreso', EXPENSE: 'Egreso' }[type]
+}
+
+export function financialMovementSourceLabel(source: FinancialMovementSource) {
+  return { MANUAL: 'Manual', RESERVATION_PAYMENT: 'Pago de reserva', DONATION: 'Donación' }[source]
 }
