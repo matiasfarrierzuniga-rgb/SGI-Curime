@@ -121,6 +121,8 @@ describe('ReservationsService', () => {
     prisma.reservableResource.findUnique.mockResolvedValue({
       id: 1,
       status: ReservableResourceStatus.ACTIVE,
+      pricingType: ResourcePricingType.FIXED,
+      price: new Prisma.Decimal('25000'),
     });
     prisma.reservableResource.findMany.mockResolvedValue([]);
     prisma.reservation.findFirst.mockResolvedValue(null);
@@ -633,47 +635,52 @@ describe('ReservationsService', () => {
       );
     }
 
-    it('FREE: approves without creating a FinancialCharge', async () => {
+    it('rejects FREE resources without approving or creating a FinancialCharge', async () => {
       mockFreeResource();
       mockPendingReservation();
 
-      const result = await service.approve(1, 7);
-
-      expect(result.status).toBe(ReservationStatus.APPROVED);
-      expect(result.approvedAt).toEqual(new Date('2030-01-02T00:00:00.000Z'));
-      expect(result.approvedById).toBe(7);
+      await expect(service.approve(1, 7)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(prisma.reservation.update).not.toHaveBeenCalled();
       expect(prisma.financialCharge.create).not.toHaveBeenCalled();
     });
 
-    it('FIXED: approves and creates a single snapshot charge', async () => {
-      const price = new Prisma.Decimal('2500');
-      mockFixedResource(price);
-      mockPendingReservation();
-      prisma.financialCharge.create.mockResolvedValue({
-        id: 10,
-        reservationId: 1,
-        amount: price,
-        currency: 'CRC',
-        status: FinancialChargeStatus.PENDING,
-      });
+    it.each([
+      ['Salón Comunal', '25000'],
+      ['Cancha Multiuso', '10000'],
+    ])(
+      'FIXED %s approves and creates a charge with its resource price',
+      async (_name, value) => {
+        const price = new Prisma.Decimal(value);
+        mockFixedResource(price);
+        mockPendingReservation();
+        prisma.financialCharge.create.mockResolvedValue({
+          id: 10,
+          reservationId: 1,
+          amount: price,
+          currency: 'CRC',
+          status: FinancialChargeStatus.PENDING,
+        });
 
-      const result = await service.approve(1, 7);
+        const result = await service.approve(1, 7);
 
-      expect(result.status).toBe(ReservationStatus.APPROVED);
-      expect(prisma.financialCharge.create).toHaveBeenCalledTimes(1);
-      const data = prisma.financialCharge.create.mock.calls[0][0].data;
-      expect(data.reservationId).toBe(1);
-      expect(data.amount.toString()).toBe('2500');
-      expect(data.currency).toBeUndefined();
-      expect(data.status).toBeUndefined();
-    });
+        expect(result.status).toBe(ReservationStatus.APPROVED);
+        expect(prisma.financialCharge.create).toHaveBeenCalledTimes(1);
+        const data = prisma.financialCharge.create.mock.calls[0][0].data;
+        expect(data.reservationId).toBe(1);
+        expect(data.amount.toString()).toBe(value);
+        expect(data.currency).toBeUndefined();
+        expect(data.status).toBeUndefined();
+      },
+    );
 
     it.each([
       ['null', null],
       ['zero', new Prisma.Decimal('0')],
       ['negative', new Prisma.Decimal('-100')],
     ] as const)(
-      'FIXED with $s price blocks approval without persisting',
+      'FIXED with $s price blocks approval while reservation remains pending',
       async (_label, price) => {
         mockFixedResource(price);
         prisma.reservation.findUnique.mockResolvedValue(

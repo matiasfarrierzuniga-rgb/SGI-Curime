@@ -10,7 +10,7 @@ describe('getErpNavigation', () => {
     expect(labels('Administrador')).toEqual([
       { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
       { label: 'Gestión administrativa', items: [{ label: 'Usuarios', children: undefined }, { label: 'Afiliados', children: undefined }, { label: 'Solicitudes de afiliación', children: undefined }, { label: 'Eventos', children: undefined }, { label: 'Reservas', children: undefined }, { label: 'Financiero', children: undefined }] },
-      { label: 'Operación', items: [{ label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Información', items: [{ label: 'Bitácora', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
@@ -20,7 +20,7 @@ describe('getErpNavigation', () => {
     const result = labels('Gestor de Inventario')
     expect(result).toEqual([
       { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Operación', items: [{ label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
     expect(JSON.stringify(result)).not.toMatch(/Usuarios|Afiliados|Solicitudes de afiliación|Reservas|Financiero|Bitácora/)
@@ -31,14 +31,16 @@ describe('getErpNavigation', () => {
     expect(result).toEqual([
       { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
       { label: 'Gestión administrativa', items: [{ label: 'Financiero', children: undefined }] },
+      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
     expect(JSON.stringify(result)).not.toMatch(/Usuarios|Afiliados|Solicitudes de afiliación|Eventos|Reservas|Inventario|Bitácora/)
   })
 
-  it('shows only session-wide navigation to other authenticated roles', () => {
+  it('shows session-wide navigation and reservation requests to other authenticated roles', () => {
     expect(labels('Vecino/Afiliado')).toEqual([
       { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
+      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
   })
@@ -65,6 +67,15 @@ describe('getErpNavigation', () => {
     const reservations = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Reservas')
 
     expect(reservations).toMatchObject({ path: '/app/reservations', capability: 'res.reservations.read' })
+  })
+
+  it('exposes reservation requests independently from administrative reservations', () => {
+    const requests = getErpNavigation('Vecino/Afiliado').flatMap((section) => section.items).find((item) => item.label === 'Solicitar reserva')
+    const reservations = getErpNavigation('Vecino/Afiliado').flatMap((section) => section.items).find((item) => item.label === 'Reservas')
+
+    expect(requests).toMatchObject({ path: '/app/reservations/new' })
+    expect(requests?.capability).toBeUndefined()
+    expect(reservations).toBeUndefined()
   })
 
   it('assigns financial navigation to its read capability', () => {

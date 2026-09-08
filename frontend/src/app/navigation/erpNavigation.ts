@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { ArrowLeftRight, Boxes, CalendarDays, ChartNoAxesCombined, ClipboardList, FileClock, Handshake, Home, Package, Tags, TriangleAlert, UserRound, Users, Wallet } from 'lucide-react'
+import { ArrowLeftRight, Boxes, CalendarCheck, CalendarDays, CalendarPlus, ChartNoAxesCombined, ClipboardList, FileClock, Handshake, Home, Package, Tags, TriangleAlert, UserRound, Users, Wallet } from 'lucide-react'
 import { hasAuthenticatedSessionCapability, hasCapability, type AccessCapability } from '@/shared/security/access'
 
 export type ErpNavigationItem = {
@@ -21,24 +21,27 @@ const navigation: readonly ErpNavigationSection[] = [
       { label: 'Afiliados', path: '/app/admin/affiliates', capability: 'adm.affiliates.read', icon: Handshake },
       { label: 'Solicitudes de afiliación', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
       { label: 'Eventos', path: '/app/events', capability: 'pub.events.manage', icon: CalendarDays },
-      { label: 'Reservas', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarDays },
+      { label: 'Reservas', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarCheck },
       { label: 'Financiero', path: '/app/financial', capability: 'fin.charges.read', icon: Wallet },
     ],
   },
   {
     label: 'Operación',
-    items: [{
-      label: 'Inventario', path: '/inventory', capability: 'inv.inventory.read', icon: Boxes,
-      children: [
-        { label: 'Resumen', path: '/inventory', icon: Boxes },
-        { label: 'Artículos', path: '/inventory/items', icon: Package },
-        { label: 'Categorías', path: '/inventory/categories', icon: Tags },
-        { label: 'Movimientos', path: '/inventory/movements', icon: ArrowLeftRight },
-        { label: 'Préstamos', path: '/inventory/loans', icon: Handshake },
-        { label: 'Alertas', path: '/inventory/alerts', icon: TriangleAlert },
-        { label: 'Reportes', path: '/inventory/reports', icon: ChartNoAxesCombined },
-      ],
-    }],
+    items: [
+      { label: 'Solicitar reserva', path: '/app/reservations/new', icon: CalendarPlus },
+      {
+        label: 'Inventario', path: '/inventory', capability: 'inv.inventory.read', icon: Boxes,
+        children: [
+          { label: 'Resumen', path: '/inventory', icon: Boxes },
+          { label: 'Artículos', path: '/inventory/items', icon: Package },
+          { label: 'Categorías', path: '/inventory/categories', icon: Tags },
+          { label: 'Movimientos', path: '/inventory/movements', icon: ArrowLeftRight },
+          { label: 'Préstamos', path: '/inventory/loans', icon: Handshake },
+          { label: 'Alertas', path: '/inventory/alerts', icon: TriangleAlert },
+          { label: 'Reportes', path: '/inventory/reports', icon: ChartNoAxesCombined },
+        ],
+      },
+    ],
   },
   { label: 'Información', items: [{ label: 'Bitácora', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: FileClock }] },
   { label: 'Cuenta', items: [{ label: 'Mi perfil', path: '/profile', capability: 'usr.profile.read', icon: UserRound }] },

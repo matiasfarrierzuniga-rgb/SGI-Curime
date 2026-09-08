@@ -237,6 +237,6 @@ describe('Affiliate detail and edit', () => {
     fireEvent.click(screen.getByRole('button', { name: confirmLabel }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(message)
-    expect(screen.getByRole('button', { name: confirmLabel })).toBeEnabled()
+    expect(screen.getByRole('button', { name: actionLabel })).toBeEnabled()
   })
 })
