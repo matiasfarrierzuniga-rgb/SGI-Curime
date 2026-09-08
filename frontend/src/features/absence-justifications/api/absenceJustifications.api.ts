@@ -18,11 +18,7 @@ type AssemblyOption = {
 type AffiliateAbsenceJustificationPayload = {
   assemblyId: number
   reason: string
-  attachment?: {
-    originalName?: string
-    mimeType?: string
-    size?: number
-  }
+  attachment?: File
 }
 
 export const absenceJustificationsService = {
@@ -35,11 +31,18 @@ export const absenceJustificationsService = {
   async getEvidence(id: number) {
     return (await httpClient.get<Pick<AbsenceJustification, 'attachmentUrl'>>(`/absence-justifications/${id}/evidence`)).data
   },
+  async getEvidenceFile(id: number) {
+    return (await httpClient.get<Blob>(`/absence-justifications/${id}/evidence/file`, { responseType: 'blob' })).data
+  },
   async listAssemblies() {
     return (await httpClient.get<{ data: AssemblyOption[] }>('/assemblies', { params: { page: 1, limit: 100 } })).data
   },
   async createForAffiliate(affiliateId: number, payload: AffiliateAbsenceJustificationPayload) {
-    return (await httpClient.post<AbsenceJustification>(`/affiliates/${affiliateId}/absence-justifications`, payload)).data
+    const formData = new FormData()
+    formData.append('assemblyId', String(payload.assemblyId))
+    formData.append('reason', payload.reason)
+    if (payload.attachment) formData.append('attachment', payload.attachment)
+    return (await httpClient.post<AbsenceJustification>(`/affiliates/${affiliateId}/absence-justifications`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })).data
   },
   async approve(id: number, payload?: ReviewAbsenceJustificationPayload) {
     return (await httpClient.patch<AbsenceJustification>(`/absence-justifications/${id}/approve`, payload)).data

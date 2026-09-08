@@ -27,7 +27,9 @@ export class AssembliesController {
   @Post() create(@Body() dto: CreateAssemblyDto, @Req() req: AuthRequest) {
     return this.service.create(dto, req.user.id, this.context(req));
   }
-  @Get() findAll(@Query() q: QueryAssembliesDto) {
+  @Get()
+  @Roles('Administrador', 'Vecino/Afiliado')
+  findAll(@Query() q: QueryAssembliesDto) {
     return this.service.findAll(q);
   }
   @Get(':id') findOne(@Param('id', ParseIntPipe) id: number) {

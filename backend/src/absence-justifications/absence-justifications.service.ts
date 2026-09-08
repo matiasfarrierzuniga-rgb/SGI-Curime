@@ -6,6 +6,10 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import { access, mkdir, unlink, writeFile } from 'node:fs/promises';
+import { extname, join } from 'node:path';
 import { JustificationStatus, Prisma } from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
@@ -14,6 +18,24 @@ import {
   CreateJustificationDto,
   QueryJustificationsDto,
 } from './dto/justification.dto';
+
+type UploadedJustificationFile = {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+};
+
+const allowedEvidenceMimeTypes = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+]);
+const allowedEvidenceExtensions = new Set(['.pdf', '.jpg', '.jpeg', '.png']);
+const evidenceDirectory = join(
+  process.env.UPLOAD_DIR ?? join(process.cwd(), 'uploads'),
+  'justifications',
+);
 const select = {
   id: true,
   reason: true,
@@ -45,7 +67,7 @@ export class AbsenceJustificationsService {
     actorId: number,
     context: AuditContext = {},
   ) {
-    const [assembly, affiliate, existing] = await Promise.all([
+    const [assembly, affiliate, attendance, existing] = await Promise.all([
       this.prisma.assembly.findUnique({
         where: { id: assemblyId },
         select: { id: true },
@@ -53,6 +75,12 @@ export class AbsenceJustificationsService {
       this.prisma.affiliate.findUnique({
         where: { id: dto.affiliateId },
         select: { id: true },
+      }),
+      this.prisma.assemblyAttendance.findUnique({
+        where: {
+          assemblyId_affiliateId: { assemblyId, affiliateId: dto.affiliateId },
+        },
+        select: { status: true },
       }),
       this.prisma.absenceJustification.findUnique({
         where: {
@@ -63,6 +91,11 @@ export class AbsenceJustificationsService {
     ]);
     if (!assembly) throw new NotFoundException('Assembly not found');
     if (!affiliate) throw new NotFoundException('Affiliate not found');
+    if (attendance?.status !== 'ABSENT') {
+      throw new ConflictException(
+        'The affiliate must be marked as absent before registering a justification.',
+      );
+    }
     if (existing)
       throw new ConflictException(
         'A justification already exists for this affiliate and assembly',
@@ -85,14 +118,8 @@ export class AbsenceJustificationsService {
   async registerFromAffiliate(
     assemblyId: number,
     affiliateId: number,
-    payload: {
-      reason: string;
-      attachment?: {
-        originalName?: string;
-        mimeType?: string;
-        size?: number;
-      };
-    },
+    payload: { reason: string },
+    file: UploadedJustificationFile | undefined,
     actorId: number,
     context: AuditContext = {},
   ) {
@@ -103,21 +130,14 @@ export class AbsenceJustificationsService {
       );
     }
 
-    if (payload.attachment) {
-      const { originalName, mimeType, size } = payload.attachment;
-      if (!originalName || !mimeType || !size) {
-        throw new BadRequestException(
-          'Attachment details are incomplete. Please provide a valid file name, type, and size.',
-        );
-      }
-      const validMime = [
-        'application/pdf',
-        'image/jpeg',
-        'image/png',
-        'image/jpg',
-      ].includes(mimeType.toLowerCase());
-      const validExtension = /\.(pdf|jpg|jpeg|png)$/i.test(originalName);
-      const validSize = size > 0 && size <= 5 * 1024 * 1024;
+    if (file) {
+      const validMime = allowedEvidenceMimeTypes.has(
+        file.mimetype.toLowerCase(),
+      );
+      const validExtension = allowedEvidenceExtensions.has(
+        extname(file.originalname).toLowerCase(),
+      );
+      const validSize = file.size > 0 && file.size <= 5 * 1024 * 1024;
       if (!validMime || !validExtension || !validSize) {
         throw new BadRequestException(
           'The attachment is invalid. Allowed formats: PDF, JPG, JPEG, PNG; maximum size 5 MB.',
@@ -160,34 +180,49 @@ export class AbsenceJustificationsService {
       );
     }
 
-    const item = await this.prisma.absenceJustification.create({
-      data: {
-        assemblyId,
-        affiliateId,
-        reason,
-        status: 'PENDING',
-        attachmentOriginalName: payload.attachment?.originalName,
-        attachmentMimeType: payload.attachment?.mimeType,
-        attachmentSize: payload.attachment?.size,
-      },
-      select,
-    });
+    let storedFileName: string | undefined;
+    try {
+      if (file) {
+        await mkdir(evidenceDirectory, { recursive: true });
+        storedFileName = `${randomUUID()}${extname(file.originalname).toLowerCase()}`;
+        await writeFile(join(evidenceDirectory, storedFileName), file.buffer, {
+          flag: 'wx',
+        });
+      }
 
-    await this.audit?.log({
-      userId: actorId,
-      action: AuditAction.JUSTIFICATION_CREATED,
-      module: 'ABSENCE_JUSTIFICATIONS',
-      entityType: 'AbsenceJustification',
-      entityId: item.id,
-      details: {
-        assemblyId,
-        affiliateId,
-        hasAttachment: Boolean(payload.attachment),
-      },
-      ...context,
-    });
+      const item = await this.prisma.absenceJustification.create({
+        data: {
+          assemblyId,
+          affiliateId,
+          reason,
+          status: 'PENDING',
+          attachmentOriginalName: file?.originalname,
+          attachmentMimeType: file?.mimetype,
+          attachmentSize: file?.size,
+          attachmentUrl: storedFileName,
+        },
+        select,
+      });
 
-    return item;
+      await this.audit?.log({
+        userId: actorId,
+        action: AuditAction.JUSTIFICATION_CREATED,
+        module: 'ABSENCE_JUSTIFICATIONS',
+        entityType: 'AbsenceJustification',
+        entityId: item.id,
+        details: { assemblyId, affiliateId, hasAttachment: Boolean(file) },
+        ...context,
+      });
+
+      return item;
+    } catch (error) {
+      if (storedFileName) {
+        await unlink(join(evidenceDirectory, storedFileName)).catch(
+          () => undefined,
+        );
+      }
+      throw error;
+    }
   }
   async findAll(q: QueryJustificationsDto) {
     const where = {
@@ -271,6 +306,26 @@ export class AbsenceJustificationsService {
 
     return item;
   }
+
+  async getEvidenceFile(id: number, actor: { id: number; role: string }) {
+    const item = await this.getEvidence(id, actor);
+    if (!item.attachmentUrl) {
+      throw new NotFoundException('Evidence file not found');
+    }
+
+    const fileName = item.attachmentUrl.replace(/[^a-zA-Z0-9._-]/g, '');
+    const filePath = join(evidenceDirectory, fileName);
+    await access(filePath).catch(() => {
+      throw new NotFoundException('Evidence file not found');
+    });
+
+    return {
+      stream: createReadStream(filePath),
+      mimeType: item.attachmentMimeType ?? 'application/octet-stream',
+      fileName: item.attachmentOriginalName ?? fileName,
+    };
+  }
+
   private async requirePending(id: number) {
     const item = await this.prisma.absenceJustification.findUnique({
       where: { id },
@@ -302,7 +357,8 @@ export class AbsenceJustificationsService {
         data: {
           status,
           decisionNote: note || null,
-          rejectionReason: status === JustificationStatus.REJECTED ? note || null : null,
+          rejectionReason:
+            status === JustificationStatus.REJECTED ? note || null : null,
           reviewedAt: new Date(),
           reviewedById: actorId,
         },
@@ -311,6 +367,20 @@ export class AbsenceJustificationsService {
         throw new ConflictException('Justification has already been resolved');
 
       if (status === JustificationStatus.APPROVED) {
+        const attendance = await tx.assemblyAttendance.findUnique({
+          where: {
+            assemblyId_affiliateId: {
+              assemblyId: item.assemblyId,
+              affiliateId: item.affiliateId,
+            },
+          },
+          select: { status: true },
+        });
+        if (attendance?.status !== 'ABSENT') {
+          throw new ConflictException(
+            'The attendance record must remain absent before approving the justification.',
+          );
+        }
         await tx.assemblyAttendance.upsert({
           where: {
             assemblyId_affiliateId: {

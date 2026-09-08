@@ -94,8 +94,11 @@ export function AbsenceJustificationsPage() {
         setError('La evidencia no tiene un documento disponible.')
         return
       }
-      if (evidenceWindow) evidenceWindow.location.href = evidence.attachmentUrl
-      else window.location.href = evidence.attachmentUrl
+      const file = await absenceJustificationsService.getEvidenceFile(id)
+      const objectUrl = URL.createObjectURL(file)
+      if (evidenceWindow) evidenceWindow.location.href = objectUrl
+      else window.location.href = objectUrl
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
     } catch (reason) {
       evidenceWindow?.close()
       setError(getErrorMessage(reason, 'No fue posible consultar la evidencia.'))

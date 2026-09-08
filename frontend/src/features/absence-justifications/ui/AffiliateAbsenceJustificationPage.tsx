@@ -112,13 +112,7 @@ export function AffiliateAbsenceJustificationPage() {
       const payload = {
         assemblyId,
         reason,
-        attachment: selectedFile
-          ? {
-              originalName: selectedFile.name,
-              mimeType: selectedFile.type || inferMimeType(selectedFile.name),
-              size: selectedFile.size,
-            }
-          : undefined,
+        attachment: selectedFile ?? undefined,
       }
 
       await absenceJustificationsService.createForAffiliate(user.id, payload)
