@@ -204,15 +204,13 @@ export class ReservationsService {
         throw new NotFoundException('Reservable resource not found');
       }
 
-      let chargeAmount: Prisma.Decimal | undefined;
-      if (resource.pricingType === ResourcePricingType.FIXED) {
-        const fixedPrice = resource.price;
-        if (fixedPrice === null || fixedPrice.toNumber() <= 0) {
-          throw new ConflictException(
-            'Reservable resource has invalid fixed pricing',
-          );
-        }
-        chargeAmount = fixedPrice;
+      const price = resource.price;
+      if (
+        resource.pricingType !== ResourcePricingType.FIXED ||
+        price === null ||
+        price.toNumber() <= 0
+      ) {
+        throw new ConflictException('Reservable resource has invalid pricing');
       }
 
       const approved = await tx.reservation.update({
@@ -225,22 +223,20 @@ export class ReservationsService {
         select: adminReservationSelect,
       });
 
-      if (chargeAmount !== undefined) {
-        try {
-          await tx.financialCharge.create({
-            data: {
-              reservationId: reservation.id,
-              amount: chargeAmount,
-            },
-          });
-        } catch (error) {
-          if (isChargeUniqueConstraintViolation(error)) {
-            throw new ConflictException(
-              'Reservation already has a financial charge',
-            );
-          }
-          throw error;
+      try {
+        await tx.financialCharge.create({
+          data: {
+            reservationId: reservation.id,
+            amount: price,
+          },
+        });
+      } catch (error) {
+        if (isChargeUniqueConstraintViolation(error)) {
+          throw new ConflictException(
+            'Reservation already has a financial charge',
+          );
         }
+        throw error;
       }
 
       return approved;

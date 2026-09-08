@@ -2,7 +2,9 @@ import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeftRight,
   Boxes,
+  CalendarCheck,
   CalendarDays,
+  CalendarPlus,
   ChartNoAxesCombined,
   ClipboardList,
   FileCheck2,
@@ -78,7 +80,7 @@ const navigation: readonly ErpNavigationSection[] = [
         label: 'Reservas',
         path: '/app/reservations',
         capability: 'res.reservations.read',
-        icon: CalendarDays,
+        icon: CalendarCheck,
       },
       {
         label: 'Financiero',
@@ -91,6 +93,11 @@ const navigation: readonly ErpNavigationSection[] = [
   {
     label: 'Operación',
     items: [
+      {
+        label: 'Solicitar reserva',
+        path: '/app/reservations/new',
+        icon: CalendarPlus,
+      },
       {
         label: 'Inventario',
         path: '/inventory',

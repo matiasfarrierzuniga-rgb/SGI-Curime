@@ -1,7 +1,11 @@
 import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import {
+  PrismaClient,
+  ReservableResourceStatus,
+  ResourcePricingType,
+} from '../generated/prisma/client';
 
 const INITIAL_ROLES = [
   {
@@ -24,6 +28,59 @@ const INITIAL_ROLES = [
   {
     name: 'Subscription_L1',
     description: 'Acceso de suscripción de nivel 1.',
+  },
+] as const;
+
+const INITIAL_RESERVABLE_RESOURCES = [
+  {
+    name: 'Salón Comunal',
+    description:
+      'Espacio para reuniones, talleres, asambleas y actividades comunitarias.',
+    location: 'Centro de Curime',
+    capacity: 120,
+    status: ReservableResourceStatus.ACTIVE,
+    pricingType: ResourcePricingType.FIXED,
+    price: '25000.00',
+  },
+  {
+    name: 'Plaza de Deportes',
+    description:
+      'Espacio abierto para actividades deportivas y eventos comunitarios.',
+    location: 'Curime',
+    capacity: 300,
+    status: ReservableResourceStatus.ACTIVE,
+    pricingType: ResourcePricingType.FIXED,
+    price: '15000.00',
+  },
+  {
+    name: 'Cancha Multiuso',
+    description:
+      'Cancha para fútbol sala, baloncesto y actividades recreativas.',
+    location: 'Área comunal de Curime',
+    capacity: 80,
+    status: ReservableResourceStatus.ACTIVE,
+    pricingType: ResourcePricingType.FIXED,
+    price: '10000.00',
+  },
+  {
+    name: 'Sala de Reuniones',
+    description:
+      'Espacio para reuniones de junta, comités y capacitaciones pequeñas.',
+    location: 'Salón Comunal de Curime',
+    capacity: 20,
+    status: ReservableResourceStatus.ACTIVE,
+    pricingType: ResourcePricingType.FIXED,
+    price: '5000.00',
+  },
+  {
+    name: 'Kiosco Comunal',
+    description:
+      'Recurso temporalmente fuera de servicio para validar filtrado de recursos inactivos.',
+    location: 'Curime',
+    capacity: 30,
+    status: ReservableResourceStatus.INACTIVE,
+    pricingType: ResourcePricingType.FIXED,
+    price: '5000.00',
   },
 ] as const;
 
@@ -60,6 +117,24 @@ async function main(): Promise<void> {
         }),
       ),
     );
+
+    for (const resource of INITIAL_RESERVABLE_RESOURCES) {
+      const existing = await prisma.reservableResource.findFirst({
+        where: { name: resource.name },
+        select: { id: true },
+      });
+
+      if (existing) {
+        await prisma.reservableResource.update({
+          where: { id: existing.id },
+          data: resource,
+        });
+      } else {
+        await prisma.reservableResource.create({ data: resource });
+      }
+    }
+
+    console.log('Initial reservable resources were ensured successfully.');
 
     const administratorRole = await prisma.role.findUniqueOrThrow({
       where: { name: 'Administrador' },

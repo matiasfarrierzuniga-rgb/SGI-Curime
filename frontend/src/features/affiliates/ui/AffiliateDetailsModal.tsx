@@ -40,6 +40,7 @@ export function AffiliateDetailsModal({ id, onClose, onEdit }: AffiliateDetailsM
       setPendingAction(null)
     } catch (error) {
       setStatusError(getErrorMessage(error, 'No fue posible actualizar el estado del afiliado.'))
+      setPendingAction(null)
     } finally {
       statusRequestInFlight.current = false
     }

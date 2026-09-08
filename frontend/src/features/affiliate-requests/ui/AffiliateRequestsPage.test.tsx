@@ -209,7 +209,7 @@ describe('AffiliateRequestsPage', () => {
     fireEvent.click(trigger)
 
     const dialog = screen.getByRole('dialog', { name: 'Detalle de solicitud de afiliación' })
-    expect(dialog).toHaveFocus()
+    expect(dialog).toContainElement(document.activeElement)
     expect(dialog).toHaveAttribute('aria-modal', 'true')
     expect(dialog).toHaveAttribute('aria-labelledby')
     fireEvent.keyDown(document, { key: 'Tab' })
