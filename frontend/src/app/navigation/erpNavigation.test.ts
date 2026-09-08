@@ -15,12 +15,11 @@ describe('getErpNavigation', () => {
   { label: 'Afiliados', children: undefined },
   { label: 'Solicitudes de afiliación', children: undefined },
   { label: 'Justificaciones de ausencia', children: undefined },
-  { label: 'Eventos', children: undefined },
-  { label: 'Reservas', children: undefined },
-  { label: 'Financiero', children: undefined }
+  { label: 'Eventos', children: undefined }
 ] },
 
-      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }, { label: 'Reservas', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'Gestión financiera', items: [{ label: 'Financiero', children: undefined }, { label: 'Movimientos financieros', children: undefined }] },
       { label: 'Información', items: [{ label: 'Bitácora', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
@@ -40,8 +39,8 @@ describe('getErpNavigation', () => {
     const result = labels('Tesorero')
     expect(result).toEqual([
       { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Gestión administrativa', items: [{ label: 'Financiero', children: undefined }] },
       { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }] },
+      { label: 'Gestión financiera', items: [{ label: 'Financiero', children: undefined }, { label: 'Movimientos financieros', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
     expect(JSON.stringify(result)).not.toMatch(/Usuarios|Afiliados|Solicitudes de afiliación|Eventos|Reservas|Inventario|Bitácora/)
@@ -92,5 +91,12 @@ describe('getErpNavigation', () => {
     const financial = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Financiero')
 
     expect(financial).toMatchObject({ path: '/app/financial', capability: 'fin.charges.read' })
+  })
+
+  it('assigns financial movements navigation to its read capability', () => {
+    const movements = getErpNavigation('Tesorero').flatMap((section) => section.items).find((item) => item.label === 'Movimientos financieros')
+
+    expect(movements).toMatchObject({ path: '/app/financial/movements', capability: 'fin.movements.read' })
+    expect(getErpNavigation('Gestor de Inventario').flatMap((section) => section.items).find((item) => item.label === 'Movimientos financieros')).toBeUndefined()
   })
 })

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Boxes, ClipboardList, FileClock, Package, TriangleAlert, Users } from 'lucide-react'
+import { ArrowRight, Boxes, CalendarCheck, ClipboardList, FileClock, HandCoins, Package, TriangleAlert, Users, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { hasCapability } from '@/shared/security/access'
@@ -12,7 +12,10 @@ import { Skeleton } from '@/shared/ui/skeleton'
 
 const quickActions = [
   { label: 'Gestionar usuarios', description: 'Consultar y administrar cuentas.', path: '/admin/users', capability: 'usr.users.read', icon: Users },
-  { label: 'Revisar solicitudes', description: 'Atender solicitudes de registro.', path: '/admin/user-requests', capability: 'adm.requests.read', icon: ClipboardList },
+  { label: 'Revisar solicitudes', description: 'Atender solicitudes de afiliación.', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
+  { label: 'Gestionar reservas', description: 'Consultar y atender reservas comunitarias.', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarCheck },
+  { label: 'Cargos financieros', description: 'Consultar cargos y registrar pagos.', path: '/app/financial', capability: 'fin.charges.read', icon: Wallet },
+  { label: 'Movimientos financieros', description: 'Registrar y consultar ingresos y egresos.', path: '/app/financial/movements', capability: 'fin.movements.read', icon: HandCoins },
   { label: 'Abrir inventario', description: 'Ver existencias, préstamos y movimientos.', path: '/inventory', capability: 'inv.inventory.read', icon: Boxes },
   { label: 'Consultar bitácora', description: 'Revisar la actividad registrada.', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: FileClock },
 ] as const
@@ -40,10 +43,10 @@ export function AppHomePage() {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-end">
+        <header className="flex flex-col justify-between gap-5 border-b border-border pb-6 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-primary">Dashboard</p>
-          <h1 className="mt-2 font-heading text-heading-1 font-bold text-brand-ink">{firstName ? `Hola, ${firstName}` : 'Área de gestión'}</h1>
+          <h1 className="mt-2 font-heading text-heading-1 font-bold tracking-[-0.02em] text-brand-ink">{firstName ? `Hola, ${firstName}` : 'Área de gestión'}</h1>
           <p className="mt-2 max-w-2xl text-foreground-muted">Resumen de las áreas disponibles para tu trabajo en SGI-Curime.</p>
         </div>
         {roleName && <Badge variant="secondary" className="w-fit">{roleName}</Badge>}
@@ -72,7 +75,7 @@ export function AppHomePage() {
 
       <section aria-labelledby="quick-title">
         <h2 id="quick-title" className="text-xl font-bold text-brand-ink">Accesos rápidos</h2>
-        <p className="mt-1 text-sm text-foreground-muted">Atajos disponibles según los permisos de tu cuenta.</p>
+        <p className="mt-1 text-sm text-foreground-muted">Módulos disponibles según los permisos de tu cuenta.</p>
         {actions.length > 0 ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {actions.map((action) => {

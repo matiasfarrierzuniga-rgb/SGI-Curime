@@ -18,6 +18,7 @@ describe('ErpLayout', () => {
     expect(screen.getAllByText('Ana Pérez').length).toBeGreaterThan(0)
     expect(screen.getAllByRole('navigation', { name: 'Navegación del sistema' }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('link', { name: 'Dashboard' })[0]).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('navigation', { name: 'Ubicación actual' })).toHaveTextContent('Área de gestiónDashboard')
     expect(screen.getAllByRole('link', { name: 'Ver sitio público' })[0]).toHaveAttribute('href', '/')
     expect(screen.getAllByRole('main')).toHaveLength(1)
   })

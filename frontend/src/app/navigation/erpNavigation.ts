@@ -9,6 +9,7 @@ import {
   ClipboardList,
   FileCheck2,
   FileClock,
+  HandCoins,
   Handshake,
   Home,
   Package,
@@ -76,18 +77,6 @@ const navigation: readonly ErpNavigationSection[] = [
         capability: 'pub.events.manage',
         icon: CalendarDays,
       },
-      {
-        label: 'Reservas',
-        path: '/app/reservations',
-        capability: 'res.reservations.read',
-        icon: CalendarCheck,
-      },
-      {
-        label: 'Financiero',
-        path: '/app/financial',
-        capability: 'fin.charges.read',
-        icon: Wallet,
-      },
     ],
   },
   {
@@ -97,6 +86,12 @@ const navigation: readonly ErpNavigationSection[] = [
         label: 'Solicitar reserva',
         path: '/app/reservations/new',
         icon: CalendarPlus,
+      },
+      {
+        label: 'Reservas',
+        path: '/app/reservations',
+        capability: 'res.reservations.read',
+        icon: CalendarCheck,
       },
       {
         label: 'Inventario',
@@ -112,6 +107,23 @@ const navigation: readonly ErpNavigationSection[] = [
           { label: 'Alertas', path: '/inventory/alerts', icon: TriangleAlert },
           { label: 'Reportes', path: '/inventory/reports', icon: ChartNoAxesCombined },
         ],
+      },
+    ],
+  },
+  {
+    label: 'Gestión financiera',
+    items: [
+      {
+        label: 'Financiero',
+        path: '/app/financial',
+        capability: 'fin.charges.read',
+        icon: Wallet,
+      },
+      {
+        label: 'Movimientos financieros',
+        path: '/app/financial/movements',
+        capability: 'fin.movements.read',
+        icon: HandCoins,
       },
     ],
   },
