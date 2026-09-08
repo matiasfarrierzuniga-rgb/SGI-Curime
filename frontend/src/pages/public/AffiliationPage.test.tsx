@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { affiliationSchema, type AffiliationFormValues } from '@/features/affiliate-requests/model/affiliation.schema'
+import { affiliationSchema, type AffiliationFormValues } from '@/features/affiliate-requests'
 import { AffiliationPage } from './AffiliationPage'
 import { affiliateRequestsService } from '../../services/affiliateRequestsService'
 

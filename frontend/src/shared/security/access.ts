@@ -16,6 +16,8 @@ export const ACCESS_CAPABILITIES = [
   'usr.profile.read',
   'adm.affiliates.read',
   'adm.requests.read',
+  'adm.justifications.read',
+  'abs.justifications.read',
   'aud.logs.read',
   'inv.inventory.read',
   'pub.events.manage',
@@ -49,6 +51,12 @@ export const ACCESS_ROLE_CAPABILITIES: Readonly<
     'fin.payments.record',
     'fin.movements.read',
     'fin.movements.create',
+  ],
+
+  'Vecino/Afiliado': [
+    'erp.dashboard.read',
+    'usr.profile.read',
+    'abs.justifications.read',
   ],
 }
 

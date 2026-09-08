@@ -552,6 +552,8 @@ model AssemblyAttendance {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  justification AbsenceJustification?
+
   @@unique([assemblyId, affiliateId])
   @@index([assemblyId, status])
   @@index([affiliateId])
@@ -561,13 +563,20 @@ model AbsenceJustification {
   id              Int                 @id @default(autoincrement())
   reason          String
   status          JustificationStatus @default(PENDING)
+  decisionNote    String?
   rejectionReason String?
   reviewedAt      DateTime?
+
+  attachmentOriginalName String?
+  attachmentMimeType    String?
+  attachmentSize        Int?
+  attachmentUrl         String?
 
   assemblyId   Int
   assembly     Assembly  @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
   affiliateId  Int
   affiliate    Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  attendance   AssemblyAttendance @relation(fields: [assemblyId, affiliateId], references: [assemblyId, affiliateId], onDelete: Cascade)
   reviewedById Int?
   reviewedBy   User?     @relation("JustificationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 

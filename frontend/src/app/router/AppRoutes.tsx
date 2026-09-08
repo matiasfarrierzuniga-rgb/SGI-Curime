@@ -4,6 +4,7 @@ import { RoleRoute } from '@/features/auth'
 import { AffiliatesPage } from '@/features/affiliates'
 import { EventsManagementPage, PublicEventDetailPage, PublicEventsPage } from '@/features/events'
 import { AffiliateRequestsPage } from '@/features/affiliate-requests'
+import { AbsenceJustificationsPage, AffiliateAbsenceJustificationPage, AffiliateJustificationsPage } from '@/features/absence-justifications'
 import { AccessLayout } from '@/app/layouts/AccessLayout'
 import { ErpLayout } from '@/app/layouts/ErpLayout'
 import { ForgotPasswordPage } from '@/features/auth'
@@ -80,6 +81,13 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="adm.requests.read" />}>
             <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
+          </Route>
+          <Route element={<RoleRoute capability="adm.justifications.read" />}>
+            <Route path="/app/admin/absence-justifications" element={<AbsenceJustificationsPage />} />
+          </Route>
+          <Route element={<RoleRoute role="Vecino/Afiliado" />}>
+            <Route path="/app/affiliate/absence-justifications/new" element={<AffiliateAbsenceJustificationPage />} />
+            <Route path="/app/affiliate/justifications" element={<AffiliateJustificationsPage />} />
           </Route>
           <Route element={<RoleRoute capability="aud.logs.read" />}>
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
