@@ -6,7 +6,6 @@ import {
 import {
   FinancialChargeStatus,
   Prisma,
-  FinancialChargeStatus,
   ReservableResourceStatus,
   ReservationStatus,
   ResourcePricingType,
@@ -86,8 +85,10 @@ describe('ReservationsService', () => {
       findFirst: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       count: jest.fn(),
     },
     event: {
@@ -130,6 +131,10 @@ describe('ReservationsService', () => {
     prisma.reservation.findMany.mockResolvedValue([]);
     prisma.reservation.count.mockResolvedValue(0);
     prisma.reservation.update.mockResolvedValue(makeReservation());
+    prisma.reservation.updateMany.mockResolvedValue({ count: 1 });
+    prisma.reservation.findUniqueOrThrow.mockResolvedValue(makeReservation({
+      status: ReservationStatus.REJECTED,
+    }));
     prisma.reservation.create.mockResolvedValue({
       id: 1,
       ...createDto(),
@@ -351,25 +356,67 @@ describe('ReservationsService', () => {
       );
     });
 
-    it('filters by date range (from/to)', async () => {
+    it('uses Costa Rica day boundaries for a date range', async () => {
       prisma.reservation.findMany.mockResolvedValue([]);
       prisma.reservation.count.mockResolvedValue(0);
 
       await service.findAll({
-        from: '2030-01-01T00:00:00.000Z',
-        to: '2030-01-31T23:59:59.999Z',
+        from: '2030-01-01',
+        to: '2030-01-31',
       });
 
       expect(prisma.reservation.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             startAt: {
-              gte: new Date('2030-01-01T00:00:00.000Z'),
-              lte: new Date('2030-01-31T23:59:59.999Z'),
+              gte: new Date('2030-01-01T06:00:00.000Z'),
+              lt: new Date('2030-02-01T06:00:00.000Z'),
             },
           }),
         }),
       );
+    });
+
+    it('uses an exclusive next-day boundary when from and to are equal', async () => {
+      await service.findAll({ from: '2030-01-01', to: '2030-01-01' });
+
+      const where = prisma.reservation.findMany.mock.calls[0][0].where;
+      expect(where.startAt).toEqual({
+        gte: new Date('2030-01-01T06:00:00.000Z'),
+        lt: new Date('2030-01-02T06:00:00.000Z'),
+      });
+    });
+
+    it('supports only a from date without UTC day shift', async () => {
+      await service.findAll({ from: '2026-09-08' });
+
+      const where = prisma.reservation.findMany.mock.calls[0][0].where;
+      expect(where.startAt).toEqual({
+        gte: new Date('2026-09-08T06:00:00.000Z'),
+        lt: undefined,
+      });
+    });
+
+    it('supports only a to date with an exclusive boundary', async () => {
+      await service.findAll({ to: '2026-09-08' });
+
+      const where = prisma.reservation.findMany.mock.calls[0][0].where;
+      expect(where.startAt).toEqual({
+        gte: undefined,
+        lt: new Date('2026-09-09T06:00:00.000Z'),
+      });
+    });
+
+    it.each(['2030-02-30', '2030-01-01T00:00:00.000Z'])('rejects invalid calendar filter %s', async (from) => {
+      await expect(service.findAll({ from })).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('rejects a reversed date range', async () => {
+      await expect(
+        service.findAll({ from: '2030-01-02', to: '2030-01-01' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('does not expose sensitive user data', async () => {
@@ -582,6 +629,22 @@ describe('ReservationsService', () => {
       expect(prisma.financialCharge.create).not.toHaveBeenCalled();
     });
 
+    it('rejects an inactive resource without approving or creating a FinancialCharge', async () => {
+      prisma.reservableResource.findUnique.mockResolvedValue({
+        id: 1,
+        status: ReservableResourceStatus.INACTIVE,
+        pricingType: ResourcePricingType.FIXED,
+        price: new Prisma.Decimal('25000'),
+      });
+      mockPendingReservation();
+
+      await expect(service.approve(1, 7)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(prisma.reservation.update).not.toHaveBeenCalled();
+      expect(prisma.financialCharge.create).not.toHaveBeenCalled();
+    });
+
     it.each([
       ['Salón Comunal', '25000'],
       ['Cancha Multiuso', '10000'],
@@ -705,12 +768,22 @@ describe('ReservationsService', () => {
         status: ReservationStatus.REJECTED,
         rejectionReason: 'No hay espacio disponible',
       });
-      prisma.reservation.update.mockResolvedValue(rejected);
+      prisma.reservation.findUniqueOrThrow.mockResolvedValue(rejected);
 
       const result = await service.reject(1, 'No hay espacio disponible', 99);
 
       expect(result.status).toBe(ReservationStatus.REJECTED);
       expect(result.rejectionReason).toBe('No hay espacio disponible');
+      expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      });
+      expect(prisma.reservation.updateMany).toHaveBeenCalledWith({
+        where: { id: 1, status: ReservationStatus.PENDING },
+        data: {
+          status: ReservationStatus.REJECTED,
+          rejectionReason: 'No hay espacio disponible',
+        },
+      });
     });
 
     it('rejects reject for non-PENDING status', async () => {
@@ -721,7 +794,8 @@ describe('ReservationsService', () => {
 
       await expect(
         service.reject(1, 'Motivo', 99),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.reservation.updateMany).not.toHaveBeenCalled();
     });
 
     it('rejects reject for CONFIRMED status', async () => {
@@ -732,7 +806,7 @@ describe('ReservationsService', () => {
 
       await expect(
         service.reject(1, 'Motivo', 99),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(ConflictException);
     });
 
     it('throws 404 for nonexistent reservation', async () => {
@@ -741,6 +815,27 @@ describe('ReservationsService', () => {
       await expect(
         service.reject(999, 'Motivo', 99),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('does not overwrite a reservation changed concurrently after its pending read', async () => {
+      prisma.reservation.findUnique.mockResolvedValue(
+        makeReservation({ status: ReservationStatus.PENDING }),
+      );
+      prisma.reservation.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.reject(1, 'Motivo', 99),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(prisma.reservation.updateMany).toHaveBeenCalledWith({
+        where: { id: 1, status: ReservationStatus.PENDING },
+        data: {
+          status: ReservationStatus.REJECTED,
+          rejectionReason: 'Motivo',
+        },
+      });
+      expect(prisma.reservation.update).not.toHaveBeenCalled();
+      expect(prisma.reservation.findUniqueOrThrow).not.toHaveBeenCalled();
     });
   });
 

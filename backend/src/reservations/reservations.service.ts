@@ -18,6 +18,8 @@ const BLOCKING_STATUSES = [
   ReservationStatus.CONFIRMED,
 ] as const;
 
+const COSTA_RICA_DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 const resourceSelect = {
   id: true,
   name: true,
@@ -128,14 +130,22 @@ export class ReservationsService {
   }
 
   async findAll(query: QueryReservationsDto) {
+    const from = query.from ? parseCostaRicaDayStart(query.from) : undefined;
+    const to = query.to
+      ? parseCostaRicaExclusiveDayEnd(query.to)
+      : undefined;
+    if (from && to && from >= to) {
+      throw new BadRequestException('From date must be before or equal to to date');
+    }
+
     const where: Prisma.ReservationWhereInput = {
       status: query.status,
       resourceId: query.resourceId,
       startAt:
-        query.from || query.to
+        from || to
           ? {
-              gte: query.from ? new Date(query.from) : undefined,
-              lte: query.to ? new Date(query.to) : undefined,
+              gte: from,
+              lt: to,
             }
           : undefined,
     };
@@ -198,10 +208,13 @@ export class ReservationsService {
 
       const resource = await tx.reservableResource.findUnique({
         where: { id: reservation.resourceId },
-        select: { id: true, pricingType: true, price: true },
+        select: { id: true, status: true, pricingType: true, price: true },
       });
       if (!resource) {
         throw new NotFoundException('Reservable resource not found');
+      }
+      if (resource.status !== ReservableResourceStatus.ACTIVE) {
+        throw new ConflictException('Reservable resource is inactive');
       }
 
       const price = resource.price;
@@ -244,21 +257,31 @@ export class ReservationsService {
   }
 
   async reject(id: number, rejectionReason: string, actorId: number) {
-    const reservation = await this.prisma.reservation.findUnique({
-      where: { id },
-      select: { id: true, status: true },
-    });
-    if (!reservation) throw new NotFoundException('Reservation not found');
+    return this.withSerializableTransaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({
+        where: { id },
+        select: { id: true, status: true },
+      });
+      if (!reservation) throw new NotFoundException('Reservation not found');
+      if (reservation.status !== ReservationStatus.PENDING) {
+        throw new ConflictException('Only pending reservations can be rejected');
+      }
 
-    assertReservationTransition(reservation.status, ReservationStatus.REJECTED);
+      const result = await tx.reservation.updateMany({
+        where: { id, status: ReservationStatus.PENDING },
+        data: {
+          status: ReservationStatus.REJECTED,
+          rejectionReason,
+        },
+      });
+      if (result.count === 0) {
+        throw new ConflictException('Only pending reservations can be rejected');
+      }
 
-    return this.prisma.reservation.update({
-      where: { id },
-      data: {
-        status: ReservationStatus.REJECTED,
-        rejectionReason,
-      },
-      select: adminReservationSelect,
+      return tx.reservation.findUniqueOrThrow({
+        where: { id },
+        select: adminReservationSelect,
+      });
     });
   }
 
@@ -415,4 +438,40 @@ function isChargeUniqueConstraintViolation(error: unknown): boolean {
     Array.isArray(target) &&
     target.some((entry) => String(entry) === 'reservationId')
   );
+}
+
+function parseCostaRicaDayStart(value: string): Date {
+  const parts = parseCostaRicaCalendarDay(value);
+  return new Date(
+    Date.UTC(parts.year, parts.month - 1, parts.day, 6, 0, 0, 0),
+  );
+}
+
+function parseCostaRicaExclusiveDayEnd(value: string): Date {
+  const parts = parseCostaRicaCalendarDay(value);
+  return new Date(
+    Date.UTC(parts.year, parts.month - 1, parts.day + 1, 6, 0, 0, 0),
+  );
+}
+
+function parseCostaRicaCalendarDay(value: string) {
+  const match = COSTA_RICA_DAY_PATTERN.exec(value);
+  if (!match) {
+    throw new BadRequestException('Date filters must use YYYY-MM-DD format');
+  }
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const parsed = new Date(Date.UTC(year, month - 1, day, 6, 0, 0, 0));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    throw new BadRequestException('Date filters must contain valid calendar dates');
+  }
+
+  return { year, month, day };
 }
