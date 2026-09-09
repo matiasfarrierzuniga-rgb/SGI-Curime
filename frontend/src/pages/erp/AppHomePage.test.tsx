@@ -21,6 +21,9 @@ describe('AppHomePage', () => {
     expect(screen.getByRole('link', { name: /Gestionar usuarios/ })).toHaveAttribute('href', '/admin/users')
     expect(screen.getByRole('link', { name: /Revisar solicitudes/ })).toHaveAttribute('href', '/app/admin/requests')
     expect(screen.getByRole('link', { name: /Consultar bitácora/ })).toHaveAttribute('href', '/admin/audit-logs')
+    expect(screen.getByRole('link', { name: /Solicitar afiliación/ })).toHaveAttribute('href', '/afiliacion')
+    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/app/reservations/new')
+    expect(screen.queryByText(/Módulo en desarrollo/i)).not.toBeInTheDocument()
   })
 
   it('does not expose administrative actions to inventory managers', async () => {
@@ -31,10 +34,12 @@ describe('AppHomePage', () => {
     expect(screen.queryByRole('link', { name: /Gestionar usuarios|Revisar solicitudes|Consultar bitácora/ })).not.toBeInTheDocument()
   })
 
-  it('shows a clean empty state when a role has no operational quick actions', () => {
+  it('shows available community services when a role has no administrative actions', () => {
     auth.user = { fullName: 'María Solano', role: 'Vecino/Afiliado' }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
-    expect(screen.getByText('No hay tareas pendientes disponibles.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Solicitar afiliación/ })).toHaveAttribute('href', '/afiliacion')
+    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/app/reservations/new')
+    expect(screen.queryByRole('link', { name: /Gestionar usuarios|Revisar solicitudes|Consultar bitácora/ })).not.toBeInTheDocument()
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
   })
 })

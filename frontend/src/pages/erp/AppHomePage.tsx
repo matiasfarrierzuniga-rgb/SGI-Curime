@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Boxes, CalendarCheck, ClipboardList, FileClock, HandCoins, Package, TriangleAlert, Users, Wallet } from 'lucide-react'
+import { ArrowRight, Boxes, CalendarCheck, CalendarPlus, ClipboardList, FileClock, HandCoins, Handshake, Package, TriangleAlert, Users, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { hasCapability } from '@/shared/security/access'
@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Skeleton } from '@/shared/ui/skeleton'
 
 const quickActions = [
+  { label: 'Solicitar afiliación', description: 'Inicie una solicitud de afiliación a la comunidad.', path: '/afiliacion', icon: Handshake },
+  { label: 'Solicitar una reserva', description: 'Solicite el uso de un espacio comunitario.', path: '/app/reservations/new', icon: CalendarPlus },
   { label: 'Gestionar usuarios', description: 'Consultar y administrar cuentas.', path: '/admin/users', capability: 'usr.users.read', icon: Users },
   { label: 'Revisar solicitudes', description: 'Atender solicitudes de afiliación.', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
   { label: 'Gestionar reservas', description: 'Consultar y atender reservas comunitarias.', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarCheck },
@@ -24,7 +26,7 @@ export function AppHomePage() {
   const { user } = useAuth()
   const roleName = getRoleName(user?.role)
   const canViewInventory = hasCapability(roleName, 'inv.inventory.read')
-  const actions = quickActions.filter((action) => hasCapability(roleName, action.capability))
+  const actions = quickActions.filter((action) => !('capability' in action) || hasCapability(roleName, action.capability))
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
   const [loading, setLoading] = useState(canViewInventory)
   const [summaryUnavailable, setSummaryUnavailable] = useState(false)
@@ -75,7 +77,7 @@ export function AppHomePage() {
 
       <section aria-labelledby="quick-title">
         <h2 id="quick-title" className="text-xl font-bold text-brand-ink">Accesos rápidos</h2>
-        <p className="mt-1 text-sm text-foreground-muted">Módulos disponibles según los permisos de tu cuenta.</p>
+        <p className="mt-1 text-sm text-foreground-muted">Servicios y tareas disponibles para su cuenta.</p>
         {actions.length > 0 ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {actions.map((action) => {

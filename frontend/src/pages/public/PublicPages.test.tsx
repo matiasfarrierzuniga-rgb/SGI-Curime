@@ -32,7 +32,35 @@ function renderPublic(path = '/') {
 
 describe('portal público', () => {
   beforeEach(() => {
+    authState.isAuthenticated = false
     vi.stubGlobal('scrollTo', vi.fn())
+  })
+
+  it('muestra servicios disponibles y orienta a visitantes antes de reservar', () => {
+    renderPublic('/servicios')
+
+    const affiliation = screen.getByRole('heading', { name: 'Afiliación' }).closest('article')!
+    expect(within(affiliation).getByText('Disponible')).toBeVisible()
+    expect(within(affiliation).getByRole('link', { name: 'Solicitar afiliación' })).toHaveAttribute('href', '/afiliacion')
+
+    const reservations = screen.getByRole('heading', { name: 'Reservas' }).closest('article')!
+    expect(within(reservations).getByText('Disponible')).toBeVisible()
+    expect(within(reservations).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
+    expect(within(reservations).getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
+
+    expect(screen.getByRole('heading', { name: 'Crear una cuenta' })).toBeVisible()
+    expect(screen.getByText('Cree su cuenta para acceder a los servicios digitales disponibles.')).toBeVisible()
+    expect(screen.getAllByText('Próximamente')).toHaveLength(3)
+  })
+
+  it('permite reservar y oculta la creación de cuenta cuando hay sesión', () => {
+    authState.isAuthenticated = true
+    renderPublic('/servicios')
+
+    expect(screen.getByRole('link', { name: 'Solicitar una reserva' })).toHaveAttribute('href', '/app/reservations/new')
+    expect(screen.queryByRole('heading', { name: 'Crear una cuenta' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Cree su cuenta para acceder a los servicios digitales disponibles.')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Próximamente')).toHaveLength(3)
   })
 
   it('muestra la landing y navega al inicio de sesión', () => {

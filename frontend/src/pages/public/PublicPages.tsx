@@ -15,7 +15,6 @@ import {
 } from "../../components/public/PublicComponents";
 import { useAuth } from "@/features/auth";
 import { ContactForm } from "@/features/public-site";
-import { canManageInventory, isAdmin } from "@/shared/security/roles";
 
 const pendingBlocks = [
   "Quiénes somos",
@@ -122,34 +121,44 @@ export function NewsDetailPage() {
   );
 }
 export function ServicesPage() {
+  const { isAuthenticated } = useAuth();
+  const serviceActions = {
+    affiliation: [{ label: "Solicitar afiliación", to: "/afiliacion" }],
+    reservations: isAuthenticated
+      ? [{ label: "Solicitar una reserva", to: "/app/reservations/new" }]
+      : [
+          { label: "Iniciar sesión", to: "/login" },
+          { label: "Crear una cuenta", to: "/register" },
+        ],
+    volunteering: [],
+    entrepreneurship: [],
+    donations: [],
+  } as const;
+
   return (
     <>
       <Seo title="Servicios" description="Servicios digitales de ADI Curime." />
       <PublicPageHeader
         title="Servicios"
-        intro="Servicios que se habilitarán gradualmente dentro del SGI-Curime."
+        intro="Conozca los servicios disponibles para la comunidad."
       />
       <Breadcrumbs current="Servicios" />
       <SectionContainer>
         <div className="card-grid">
           {services.map((item) => (
-            <ServiceCard key={item.key} service={item} />
+            <ServiceCard key={item.key} service={item} enabled={moduleAvailability[item.key].enabled} actions={serviceActions[item.key]} />
           ))}
-          <article className="service-card">
-            <StatusBadge
-              status={
-                moduleAvailability.userRegistration.enabled
-                  ? "disponible"
-                  : "próximamente"
-              }
-            />
-            <h3>Solicitud de cuenta</h3>
-            <p>
-              Solicite acceso para utilizar las funcionalidades disponibles del
-              SGI.
-            </p>
-            <Link to="/register">Solicitar cuenta</Link>
-          </article>
+          {!isAuthenticated && moduleAvailability.userRegistration.enabled && (
+            <article className="service-card">
+              <StatusBadge status="disponible" />
+              <h3>Crear una cuenta</h3>
+              <p>Cree su cuenta para acceder a los servicios digitales disponibles.</p>
+              <div className="actions">
+                <Link className="button button-small" to="/register">Crear una cuenta</Link>
+                <Link className="button button-small button-ghost" to="/login">Iniciar sesión</Link>
+              </div>
+            </article>
+          )}
         </div>
       </SectionContainer>
     </>
@@ -266,69 +275,6 @@ export function ContactPage() {
           <ContactForm />
         </div>
       </SectionContainer>
-    </>
-  );
-}
-export function AppHomePage() {
-  const { user } = useAuth();
-  const admin = isAdmin(user?.role);
-  const inventory = canManageInventory(user?.role);
-  return (
-    <>
-      <Seo
-        title="Área interna"
-        description="Entrada al área interna de SGI-Curime."
-      />
-      <section className="app-home">
-        <p className="eyebrow">SGI-Curime</p>
-        <h1>Bienvenido</h1>
-        <p>Acceda a las funciones disponibles para su cuenta.</p>
-        <div className="card-grid">
-          <Link className="app-link-card" to="/profile">
-            <h2>Perfil</h2>
-            <p>Consulte y actualice su información personal.</p>
-          </Link>
-          {admin && (
-            <>
-              <Link className="app-link-card" to="/admin/users">
-                <h2>Usuarios</h2>
-                <p>Administración de usuarios.</p>
-              </Link>
-              <Link className="app-link-card" to="/admin/user-requests">
-                <h2>Solicitudes</h2>
-                <p>Gestión de solicitudes de cuenta.</p>
-              </Link>
-              <Link className="app-link-card" to="/admin/audit-logs">
-                <h2>Bitácora</h2>
-                <p>Consulta de actividad administrativa.</p>
-              </Link>
-            </>
-          )}
-          {inventory && (
-            <>
-              <Link className="app-link-card" to="/inventory">
-                <h2>Inventario</h2>
-                <p>Panel general del módulo de inventario.</p>
-              </Link>
-              <Link className="app-link-card" to="/inventory/items">
-                <h2>Artículos</h2>
-                <p>Gestión de artículos y existencias.</p>
-              </Link>
-              <Link className="app-link-card" to="/inventory/loans">
-                <h2>Préstamos</h2>
-                <p>Registro y seguimiento de préstamos.</p>
-              </Link>
-            </>
-          )}
-          {services.slice(0, 3).map((item) => (
-            <article className="app-link-card disabled-card" key={item.key}>
-              <StatusBadge status="próximamente" />
-              <h2>{item.title}</h2>
-              <p>Módulo en desarrollo.</p>
-            </article>
-          ))}
-        </div>
-      </section>
     </>
   );
 }

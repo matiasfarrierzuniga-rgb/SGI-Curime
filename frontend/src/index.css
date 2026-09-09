@@ -42,6 +42,7 @@ button.danger { border-color: var(--color-danger); color: var(--color-danger); }
 button:disabled { opacity: .55; cursor: not-allowed; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
 .actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.status-disponible { background: var(--color-success-bg); color: var(--color-success); }
 .message { padding: .8rem; border-radius: 5px; margin: .75rem 0; }
 .error { background: #fdecec; color: #802323; }
 .success { background: #e8f6ec; color: #205f33; }
