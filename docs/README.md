@@ -18,6 +18,7 @@ Consulta `architecture/` para entender cómo está construido el sistema.
 
 Documentos vigentes o en proceso de consolidación:
 
+- [`architecture/overview.md`](./architecture/overview.md): vista general vigente de la arquitectura.
 - `architecture/frontend-as-is.md`: fotografía del frontend; será consolidada en una fuente vigente sin contenido histórico contradictorio.
 - `architecture/backend-as-is.md`: fotografía del backend; requiere actualización con dominios de Sprint 2.
 - `architecture/frontend-slice-rules.md`: reglas de organización y dependencias del frontend.
@@ -94,7 +95,7 @@ Un área puede considerarse documentada cuando:
 | Área | Estado |
 | --- | --- |
 | README principal | 🟢 Actualizado en la base documental |
-| Arquitectura general | 🟡 En consolidación |
+| Arquitectura general | 🟢 `architecture/overview.md` creado y vigente |
 | Arquitectura frontend | 🟡 En consolidación |
 | Arquitectura backend | 🟡 En consolidación |
 | Autorización | 🟢 Base existente |
