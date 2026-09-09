@@ -16,11 +16,11 @@ La regla principal es simple: la documentación debe explicar el sistema que rea
 
 Consulta `architecture/` para entender cómo está construido el sistema.
 
-Documentos vigentes o en proceso de consolidación:
+Documentos vigentes:
 
 - [`architecture/overview.md`](./architecture/overview.md): vista general vigente de la arquitectura.
-- `architecture/frontend-as-is.md`: fotografía del frontend; será consolidada en una fuente vigente sin contenido histórico contradictorio.
-- `architecture/backend-as-is.md`: fotografía del backend; requiere actualización con dominios de Sprint 2.
+- [`architecture/frontend-as-is.md`](./architecture/frontend-as-is.md): arquitectura frontend actual, incluyendo vertical slices, `shared/`, routing y límites automatizados.
+- [`architecture/backend-as-is.md`](./architecture/backend-as-is.md): arquitectura backend actual, incluyendo módulos de Sprint 2 y la transición estructural del backend.
 - `architecture/frontend-slice-rules.md`: reglas de organización y dependencias del frontend.
 - `architecture/backend-layer-rules.md`: reglas arquitectónicas del backend.
 - `architecture/adr-001-public-content-governance.md`: decisión arquitectónica existente.
@@ -96,8 +96,8 @@ Un área puede considerarse documentada cuando:
 | --- | --- |
 | README principal | 🟢 Actualizado en la base documental |
 | Arquitectura general | 🟢 `architecture/overview.md` creado y vigente |
-| Arquitectura frontend | 🟡 En consolidación |
-| Arquitectura backend | 🟡 En consolidación |
+| Arquitectura frontend | 🟢 Snapshot histórico reemplazado por arquitectura vigente |
+| Arquitectura backend | 🟢 Snapshot de Sprint 1 reemplazado por arquitectura vigente |
 | Autorización | 🟢 Base existente |
 | ADRs | 🟢 Base existente |
 | Reservas | 🔴 Pendiente documento estable |
