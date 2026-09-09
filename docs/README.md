@@ -43,12 +43,9 @@ Documentos estables disponibles:
 - [`modules/financial.md`](./modules/financial.md): cargos, pagos, movimientos, resumen e integración con Reservas.
 - [`modules/affiliates.md`](./modules/affiliates.md): consulta, edición, estados, validaciones y auditoría de Afiliados.
 - [`modules/audit.md`](./modules/audit.md): trazabilidad, sanitización y consulta administrativa de Auditoría.
+- [`modules/donations.md`](./modules/donations.md): estado real de Donaciones, preparación existente y alcance todavía pendiente.
 
-Siguiente prioridad:
-
-1. Donaciones
-
-Cada documento de módulo debe distinguir entre funcionalidad implementada, trabajo en evolución y alcance planificado.
+Cada documento de módulo distingue entre funcionalidad implementada, trabajo en evolución y alcance planificado.
 
 ### Desarrollo
 
@@ -63,7 +60,11 @@ El flujo Git y las reglas de contribución continúan en [`../CONTRIBUTING.md`](
 
 ### Proyecto
 
-La documentación de sprints, roadmap y deuda técnica se consolidará bajo `project/` para separarla de la arquitectura del producto.
+Documentos consolidados:
+
+- [`project/sprint-2.md`](./project/sprint-2.md): resultado real de Sprint 2 por dominio, decisiones técnicas, integraciones y alcance pendiente.
+
+La documentación histórica de Sprint 1 continúa en `architecture/sprint-1-scope.md` hasta una futura reorganización histórica.
 
 ## Fuente de verdad
 
@@ -92,6 +93,8 @@ Esta diferencia se considera deuda de reconciliación y no debe ocultarse como s
 
 La configuración Docker oficial integrada en `main` es `compose.yaml`; un `docker-compose.dev.yml` no forma parte actualmente de la rama canónica.
 
+Donaciones permanece planificado/no implementado aunque su documentación de estado actual ya esté consolidada. Que el área documental esté en verde significa que su situación real está explicada correctamente, no que la funcionalidad exista.
+
 ## Definition of Done documental
 
 Un área puede considerarse documentada cuando:
@@ -117,8 +120,8 @@ Un área puede considerarse documentada cuando:
 | Financiero | 🟢 Documento estable creado |
 | Afiliados | 🟢 Documento estable creado |
 | Auditoría | 🟢 Documento estable creado |
-| Donaciones | 🔴 Pendiente documentación de estado real |
+| Donaciones | 🟢 Estado real documentado como planificado/no implementado |
 | Docker/desarrollo | 🟢 Guías reproducibles consolidadas |
 | Testing | 🟢 Estrategia y comandos consolidados |
 | Sprint 1 | 🟢 Base existente |
-| Sprint 2 | 🔴 Falta consolidación |
+| Sprint 2 | 🟢 Estado consolidado contra `main` |
