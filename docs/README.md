@@ -52,15 +52,14 @@ Cada documento de módulo debe distinguir entre funcionalidad implementada, trab
 
 ### Desarrollo
 
-La guía para trabajar con el repositorio se consolidará bajo `development/` e incluirá:
+Guías vigentes:
 
-- puesta en marcha local;
-- Docker;
-- variables de entorno;
-- estrategia y comandos de pruebas;
-- flujo de contribución.
+- [`development/getting-started.md`](./development/getting-started.md): puesta en marcha local con Docker o Node.
+- [`development/docker.md`](./development/docker.md): servicios, dependencias, healthchecks, persistencia y comandos Docker.
+- [`development/environment-variables.md`](./development/environment-variables.md): clasificación de variables, secretos y consumo por entorno.
+- [`development/testing.md`](./development/testing.md): estrategia de testing, comandos y validación por tipo de cambio.
 
-Mientras se completa esa consolidación, utiliza `CONTRIBUTING.md`, `.env.example`, `compose.yaml` y los `package.json` de frontend y backend como referencias operativas.
+El flujo Git y las reglas de contribución continúan en [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
 
 ### Proyecto
 
@@ -91,6 +90,8 @@ Backend: RolesGuard + Administrador
 
 Esta diferencia se considera deuda de reconciliación y no debe ocultarse como si la migración a capabilities estuviera terminada de extremo a extremo.
 
+La configuración Docker oficial integrada en `main` es `compose.yaml`; un `docker-compose.dev.yml` no forma parte actualmente de la rama canónica.
+
 ## Definition of Done documental
 
 Un área puede considerarse documentada cuando:
@@ -117,7 +118,7 @@ Un área puede considerarse documentada cuando:
 | Afiliados | 🟢 Documento estable creado |
 | Auditoría | 🟢 Documento estable creado |
 | Donaciones | 🔴 Pendiente documentación de estado real |
-| Docker/desarrollo | 🟡 Falta guía consolidada |
-| Testing | 🟡 Evidencia repartida |
+| Docker/desarrollo | 🟢 Guías reproducibles consolidadas |
+| Testing | 🟢 Estrategia y comandos consolidados |
 | Sprint 1 | 🟢 Base existente |
 | Sprint 2 | 🔴 Falta consolidación |
