@@ -37,17 +37,18 @@ Estos documentos no deben asumirse automáticamente como descripción del estado
 
 ### Módulos
 
-La documentación estable de dominios se consolidará progresivamente bajo `modules/`.
+Documentos estables disponibles:
 
-Prioridades actuales:
+- [`modules/reservations.md`](./modules/reservations.md): disponibilidad, ciclo de vida, concurrencia e integración financiera de Reservas.
+- [`modules/financial.md`](./modules/financial.md): cargos, pagos, movimientos, resumen e integración con Reservas.
 
-1. Reservas
-2. Financiero
-3. Afiliados
-4. Auditoría
-5. Donaciones
+Siguientes prioridades:
 
-Cada documento de módulo deberá distinguir entre funcionalidad implementada, trabajo en evolución y alcance planificado.
+1. Afiliados
+2. Auditoría
+3. Donaciones
+
+Cada documento de módulo debe distinguir entre funcionalidad implementada, trabajo en evolución y alcance planificado.
 
 ### Desarrollo
 
@@ -100,8 +101,8 @@ Un área puede considerarse documentada cuando:
 | Arquitectura backend | 🟢 Snapshot de Sprint 1 reemplazado por arquitectura vigente |
 | Autorización | 🟢 Base existente |
 | ADRs | 🟢 Base existente |
-| Reservas | 🔴 Pendiente documento estable |
-| Financiero | 🔴 Pendiente documento estable |
+| Reservas | 🟢 Documento estable creado |
+| Financiero | 🟢 Documento estable creado |
 | Afiliados | 🟡 Evidencia existente, falta consolidación |
 | Donaciones | 🔴 Pendiente documentación de estado real |
 | Docker/desarrollo | 🟡 Falta guía consolidada |
