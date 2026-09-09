@@ -80,6 +80,18 @@ enum PaymentMethod {
   OTHER
 }
 
+enum DonationStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum DonationMethod {
+  CASH
+  BANK_TRANSFER
+  SINPE_MOVIL
+  OTHER
+}
+
 enum FinancialMovementType {
   INCOME
   EXPENSE
@@ -226,6 +238,8 @@ model User {
   approvedReservations      Reservation[]            @relation("ReservationApprover")
   recordedPayments          Payment[]                @relation("PaymentRecorder")
   recordedFinancialMovements FinancialMovement[]      @relation("FinancialMovementRecorder")
+  recordedDonations         Donation[]               @relation("DonationRecorder")
+  cancelledDonations        Donation[]               @relation("DonationCanceller")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -528,6 +542,8 @@ model FinancialMovement {
   recordedById Int?
 
   recordedBy User? @relation("FinancialMovementRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+  originalDonation Donation? @relation("DonationOriginalMovement")
+  reversalDonation Donation? @relation("DonationReversalMovement")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -536,6 +552,41 @@ model FinancialMovement {
   @@index([type, occurredAt])
   @@index([source, sourceId])
   @@index([recordedById])
+}
+
+model Donation {
+  id                  Int            @id @default(autoincrement())
+  donorName           String?
+  donorIdentification String?
+  amount              Decimal        @db.Decimal(14, 2)
+  currency            String         @default("CRC")
+  method              DonationMethod
+  reference           String?
+  description         String?
+  receivedAt          DateTime
+  status              DonationStatus @default(CONFIRMED)
+
+  recordedById  Int
+  recordedBy    User  @relation("DonationRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+  cancelledById Int?
+  cancelledBy   User? @relation("DonationCanceller", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledAt   DateTime?
+  cancellationReason String?
+
+  originalMovementId Int?               @unique
+  originalMovement   FinancialMovement? @relation("DonationOriginalMovement", fields: [originalMovementId], references: [id], onDelete: Restrict)
+  reversalMovementId Int?               @unique
+  reversalMovement   FinancialMovement? @relation("DonationReversalMovement", fields: [reversalMovementId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([method])
+  @@index([receivedAt])
+  @@index([recordedById])
+  @@index([cancelledById])
+  @@index([status, receivedAt])
 }
 
 model AssemblyAttendance {

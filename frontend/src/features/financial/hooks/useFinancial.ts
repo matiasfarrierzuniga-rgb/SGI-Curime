@@ -13,6 +13,11 @@ export const financialKeys = {
   movementDetail: (id: number) => [...financialKeys.movements(), 'detail', id] as const,
   movementSummary: (filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) => [...financialKeys.movements(), 'summary', filters] as const,
 }
+
+export const financialMovementKeys = {
+  all: () => financialKeys.movements(),
+}
+
 export function useFinancialChargesList(filters: FinancialChargeListFilters) { return useQuery({ queryKey: financialKeys.chargeList(filters), queryFn: () => financialApi.listCharges(filters) }) }
 export function useFinancialChargeDetail(id: number | null) { return useQuery({ queryKey: financialKeys.chargeDetail(id ?? 0), queryFn: () => financialApi.getCharge(id!), enabled: id !== null }) }
 export function useFinancialMovementsList(filters: FinancialMovementListFilters) { return useQuery({ queryKey: financialKeys.movementList(filters), queryFn: () => financialApi.listMovements(filters) }) }
