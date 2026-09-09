@@ -1,13 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
-import { toast } from 'sonner'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { affiliationSchema, type AffiliationFormValues } from '@/features/affiliate-requests'
 import { AffiliationPage } from './AffiliationPage'
 import { affiliateRequestsService } from '../../services/affiliateRequestsService'
 
 vi.mock('../../services/affiliateRequestsService', () => ({ affiliateRequestsService: { create: vi.fn() } }))
-vi.mock('sonner', () => ({ Toaster: () => null, toast: { success: vi.fn(), error: vi.fn() } }))
 
 const validForm: AffiliationFormValues = {
   firstName: 'Ana', firstSurname: 'Pérez', secondSurname: '', identificationType: 'NATIONAL', identification: '123456789',
@@ -17,8 +15,6 @@ const validForm: AffiliationFormValues = {
 describe('AffiliationPage', () => {
   beforeEach(() => {
     vi.mocked(affiliateRequestsService.create).mockReset()
-    vi.mocked(toast.success).mockReset()
-    vi.mocked(toast.error).mockReset()
   })
 
   function fillRequiredFields() {
@@ -27,7 +23,7 @@ describe('AffiliationPage', () => {
     fireEvent.change(screen.getByLabelText('Número de identificación'), { target: { value: '123456789abc' } })
     fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: '1990-01-01' } })
     fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: ' Curime ' } })
-    fireEvent.change(screen.getByLabelText('Motivo para afiliarse'), { target: { value: ' Participar ' } })
+    fireEvent.change(screen.getByLabelText('¿Por qué desea afiliarse?'), { target: { value: ' Participar ' } })
   }
 
   function LocationProbe() {
@@ -93,25 +89,23 @@ describe('AffiliationPage', () => {
     render(<MemoryRouter><AffiliationPage/></MemoryRouter>)
     fillRequiredFields()
     fireEvent.change(screen.getByLabelText('Segundo apellido (opcional)'), { target: { value: ' Mora ' } })
-    fireEvent.change(screen.getByLabelText('Género (opcional)'), { target: { value: 'Femenino' } })
     fireEvent.change(screen.getByLabelText('Teléfono (opcional)'), { target: { value: '+50688881234' } })
     fireEvent.change(screen.getByLabelText('Correo (opcional)'), { target: { value: ' ANA@EXAMPLE.COM ' } })
-    fireEvent.change(screen.getByLabelText('Ocupación (opcional)'), { target: { value: ' Docente ' } })
-    fireEvent.change(screen.getByLabelText('Lugar de trabajo (opcional)'), { target: { value: ' Escuela ' } })
 
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
 
     await waitFor(() => expect(affiliateRequestsService.create).toHaveBeenCalledWith({
       firstName: 'Ana', firstSurname: 'Pérez', secondSurname: 'Mora',
       identificationType: 'NATIONAL', identification: '123456789',
-      birthDate: new Date('1990-01-01T12:00:00').toISOString(), gender: 'Femenino',
+      birthDate: new Date('1990-01-01T12:00:00').toISOString(),
       phoneCountryCode: '+506', phoneNationalNumber: '88881234', email: 'ana@example.com',
-      address: 'Curime', occupation: 'Docente', workplace: 'Escuela', affiliationReason: 'Participar',
+      address: 'Curime', affiliationReason: 'Participar',
     }))
     expect(vi.mocked(affiliateRequestsService.create).mock.calls[0][0]).not.toHaveProperty('fullName')
     expect(vi.mocked(affiliateRequestsService.create).mock.calls[0][0]).not.toHaveProperty('affiliateType')
-    expect(toast.success).toHaveBeenCalledWith('Solicitud enviada correctamente. La ADI revisará la información.')
-    expect(screen.getByLabelText('Nombre')).toHaveValue('')
+    expect(await screen.findByRole('heading', { name: 'Recibimos su solicitud' })).toBeInTheDocument()
+    expect(screen.getByText(/no necesita enviar otra solicitud/i)).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Enviar solicitud' })).not.toBeInTheDocument()
   })
 
   it('omits blank optional second surname and safely shows conflicts', async () => {
@@ -128,7 +122,7 @@ describe('AffiliationPage', () => {
     expect(vi.mocked(affiliateRequestsService.create).mock.calls[0][0]).not.toHaveProperty('secondSurname')
     expect(vi.mocked(affiliateRequestsService.create).mock.calls[0][0]).not.toHaveProperty('phoneCountryCode')
     expect(vi.mocked(affiliateRequestsService.create).mock.calls[0][0]).not.toHaveProperty('phoneNationalNumber')
-    expect(toast.error).toHaveBeenCalledWith('No se pudo completar la operación por un conflicto con los datos.')
+    expect(await screen.findByText(/ya existe una afiliación o una solicitud pendiente/i)).toBeVisible()
     expect(screen.getByLabelText('Nombre')).toHaveValue(' Ana ')
   })
 
@@ -145,11 +139,11 @@ describe('AffiliationPage', () => {
     fireEvent.click(button)
 
     await waitFor(() => expect(button).toBeDisabled())
-    expect(button).toHaveTextContent('Enviando…')
+    expect(button).toHaveTextContent('Enviando solicitud…')
     expect(affiliateRequestsService.create).toHaveBeenCalledTimes(1)
 
     release()
-    await waitFor(() => expect(toast.success).toHaveBeenCalled())
+    await screen.findByRole('heading', { name: 'Recibimos su solicitud' })
   })
 
   it('keeps successful affiliation public without creating a frontend session', async () => {
@@ -160,8 +154,25 @@ describe('AffiliationPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
 
-    await waitFor(() => expect(toast.success).toHaveBeenCalled())
+    await screen.findByRole('heading', { name: 'Recibimos su solicitud' })
     expect(localStorage.getItem('sgi-curime-session')).toBeNull()
+    expect(screen.getByTestId('location')).toHaveTextContent('/afiliacion')
+  })
+
+  afterEach(() => localStorage.removeItem('sgi-curime-session'))
+
+  it('explains what happens next and keeps the same public flow for authenticated visitors', async () => {
+    localStorage.setItem('sgi-curime-session', JSON.stringify({ token: 'token', user: { email: 'ana@example.com' } }))
+    vi.mocked(affiliateRequestsService.create).mockResolvedValue({} as never)
+    render(<MemoryRouter initialEntries={['/afiliacion']}><AffiliationPage/><LocationProbe/></MemoryRouter>)
+
+    expect(screen.getByText(/revisará la solicitud antes de aprobarla/i)).toBeVisible()
+    fillRequiredFields()
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
+
+    expect(await screen.findByText(/se comunicará con usted/i)).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Volver al inicio' })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: 'Contactar a la Asociación' })).toHaveAttribute('href', '/contacto')
     expect(screen.getByTestId('location')).toHaveTextContent('/afiliacion')
   })
 })

@@ -83,7 +83,7 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'Operación',
     items: [
       {
-        label: 'Solicitar reserva',
+        label: 'Solicitar una reserva',
         path: '/app/reservations/new',
         icon: CalendarPlus,
       },

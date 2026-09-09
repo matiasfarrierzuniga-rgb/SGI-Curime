@@ -61,7 +61,7 @@ export function ReservationAdminPage() {
   }
 
   return <section className="space-y-6">
-    <PageHeader context="Gestión administrativa" title="Reservas" description="Revise solicitudes y gestione las transiciones permitidas." />
+    <PageHeader context="Gestión administrativa" title="Reservas" description="Revise las solicitudes y actualice su estado." />
     <form className="grid gap-4 rounded-xl border border-border bg-surface p-4 md:grid-cols-5" onSubmit={event => event.preventDefault()}>
       <FilterSelect label="Estado" value={filters.status ?? ''} onChange={value => updateFilter({ status: value ? value as ReservationStatus : undefined })}><option value="">Todos los estados</option>{statuses.map(status => <option key={status} value={status}>{reservationStatusLabel(status)}</option>)}</FilterSelect>
       <FilterSelect label="Recurso" value={filters.resourceId?.toString() ?? ''} onChange={value => updateFilter({ resourceId: value ? Number(value) : undefined })}><option value="">Todos los recursos</option>{resources.data?.map(resource => <option key={resource.id} value={resource.id}>{resource.name}</option>)}</FilterSelect>
@@ -80,7 +80,7 @@ export function ReservationAdminPage() {
     </> : null}
     {selectedId !== null ? <ReservationDetailsModal id={selectedId} role={user?.role} busy={busy} onClose={() => setSelectedId(null)} onApprove={id => openAction('approve', id)} onReject={id => openAction('reject', id)} onCancel={id => openAction('cancel', id)} /> : null}
     {dialog?.type === 'reject' ? <Modal title="Rechazar reserva" onClose={closeAction} busy={busy}><form className="space-y-4" noValidate onSubmit={event => { event.preventDefault(); void runAction() }} aria-busy={busy}><label className="grid gap-2" htmlFor="rejection-reason">Motivo del rechazo<textarea id="rejection-reason" maxLength={1000} aria-invalid={Boolean(rejectForm.formState.errors.rejectionReason)} aria-describedby={rejectForm.formState.errors.rejectionReason ? 'rejection-reason-error' : undefined} {...rejectForm.register('rejectionReason')} /></label>{rejectForm.formState.errors.rejectionReason ? <p id="rejection-reason-error" role="alert">{rejectForm.formState.errors.rejectionReason.message}</p> : null}{actionError ? <p role="alert">{actionError}</p> : null}<div className="flex flex-wrap justify-end gap-2"><Button variant="outline" type="button" disabled={busy} onClick={closeAction}>Cancelar</Button><Button variant="destructive" type="submit" disabled={busy}>{busy ? 'Procesando...' : 'Rechazar reserva'}</Button></div></form></Modal> : null}
-    {dialog?.type === 'approve' ? <ConfirmDialog title="Aprobar reserva" message="Confirme la aprobación de esta reserva. El sistema verificará nuevamente la disponibilidad." confirmLabel="Aprobar" busy={busy} error={actionError} onConfirm={() => void runAction()} onClose={closeAction} /> : null}
+    {dialog?.type === 'approve' ? <ConfirmDialog title="Aprobar reserva" message="Confirme la aprobación de esta reserva. Se verificará nuevamente la disponibilidad. Aprobar no registra un pago." confirmLabel="Aprobar" busy={busy} error={actionError} onConfirm={() => void runAction()} onClose={closeAction} /> : null}
     {dialog?.type === 'cancel' ? <ConfirmDialog title="Cancelar reserva" message="Confirme la cancelación de esta reserva. Esta acción no puede deshacerse." confirmLabel="Cancelar reserva" danger busy={busy} error={actionError} onConfirm={() => void runAction()} onClose={closeAction} /> : null}
   </section>
 }
