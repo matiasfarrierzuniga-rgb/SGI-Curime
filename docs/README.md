@@ -41,12 +41,12 @@ Documentos estables disponibles:
 
 - [`modules/reservations.md`](./modules/reservations.md): disponibilidad, ciclo de vida, concurrencia e integración financiera de Reservas.
 - [`modules/financial.md`](./modules/financial.md): cargos, pagos, movimientos, resumen e integración con Reservas.
+- [`modules/affiliates.md`](./modules/affiliates.md): consulta, edición, estados, validaciones y auditoría de Afiliados.
+- [`modules/audit.md`](./modules/audit.md): trazabilidad, sanitización y consulta administrativa de Auditoría.
 
-Siguientes prioridades:
+Siguiente prioridad:
 
-1. Afiliados
-2. Auditoría
-3. Donaciones
+1. Donaciones
 
 Cada documento de módulo debe distinguir entre funcionalidad implementada, trabajo en evolución y alcance planificado.
 
@@ -80,6 +80,17 @@ Cuando exista una contradicción entre documentos y código, la prioridad de evi
 
 `openspec/` queda fuera de la iniciativa documental actual. Su contenido no se elimina ni reorganiza en esta fase, pero tampoco se utiliza como fuente vigente sin contrastarlo primero con el código actual.
 
+## Deudas transversales visibles
+
+La documentación vigente debe mostrar también las diferencias reales entre capas. Actualmente Afiliados y Auditoría presentan una autorización híbrida:
+
+```text
+Frontend: capabilities
+Backend: RolesGuard + Administrador
+```
+
+Esta diferencia se considera deuda de reconciliación y no debe ocultarse como si la migración a capabilities estuviera terminada de extremo a extremo.
+
 ## Definition of Done documental
 
 Un área puede considerarse documentada cuando:
@@ -99,11 +110,12 @@ Un área puede considerarse documentada cuando:
 | Arquitectura general | 🟢 `architecture/overview.md` creado y vigente |
 | Arquitectura frontend | 🟢 Snapshot histórico reemplazado por arquitectura vigente |
 | Arquitectura backend | 🟢 Snapshot de Sprint 1 reemplazado por arquitectura vigente |
-| Autorización | 🟢 Base existente |
+| Autorización | 🟢 Base existente; deuda híbrida documentada |
 | ADRs | 🟢 Base existente |
 | Reservas | 🟢 Documento estable creado |
 | Financiero | 🟢 Documento estable creado |
-| Afiliados | 🟡 Evidencia existente, falta consolidación |
+| Afiliados | 🟢 Documento estable creado |
+| Auditoría | 🟢 Documento estable creado |
 | Donaciones | 🔴 Pendiente documentación de estado real |
 | Docker/desarrollo | 🟡 Falta guía consolidada |
 | Testing | 🟡 Evidencia repartida |
