@@ -1,29 +1,53 @@
-# Backend AS-IS
+# Arquitectura backend vigente
 
-## Scope
+Estado: Vigente  
+Última revisión: 2026-09  
+Fuente primaria: código actual de `main`, configuración y pruebas del backend
 
-Baseline captured for Sprint 1 reference architecture work on branch `docs/phase-0-baseline`.
+## Propósito
 
-## Stack
+Este documento describe la arquitectura real del backend de SGI-Curime. Sustituye snapshots de Sprint 1 que ya no reflejan la incorporación de módulos más recientes ni la transición estructural actual.
 
-- Runtime: Node.js `v24.18.0` in current environment.
-- Framework: NestJS 11.
-- Language: TypeScript 5.7.
-- ORM: Prisma 7 with generated client output at `backend/generated/prisma`.
-- Database: PostgreSQL via `@prisma/adapter-pg`.
-- Auth: JWT through `@nestjs/jwt` and `passport-jwt`; passwords with `bcrypt`.
-- Tests: Jest unit tests and Jest e2e tests.
+## Stack actual
 
-## Current Module Shape
+- Node.js
+- NestJS 11
+- TypeScript 5.7
+- Prisma 7
+- PostgreSQL mediante `@prisma/adapter-pg`
+- JWT y Passport
+- bcrypt
+- class-validator + class-transformer
+- Jest para pruebas unitarias y e2e
+- Nodemailer para notificaciones por correo
 
-Backend is a NestJS modular monolith using feature folders directly under `backend/src/`:
+Las versiones concretas deben consultarse en `backend/package.json`.
+
+## Forma arquitectónica
+
+El backend es un monolito modular NestJS.
+
+Flujo común:
+
+```text
+HTTP Controller
+      ↓
+Nest Service / Application logic
+      ↓
+PrismaService
+      ↓
+PostgreSQL
+```
+
+Algunos módulos recientes están empezando a adoptar una separación más explícita por capas, mientras otros continúan con una estructura feature-folder tradicional.
+
+## Organización actual
+
+La estructura de `backend/src/` es híbrida:
 
 ```text
 backend/src/
 ├── auth/
-├── users/
-├── roles/
-├── prisma/
 ├── audit/
 ├── user-requests/
 ├── affiliate-requests/
@@ -33,215 +57,155 @@ backend/src/
 ├── sanctions/
 ├── admin-reports/
 ├── inventory-*/
+├── events/
+├── reservations/
+├── financial/
+├── identity/
+├── prisma/
+├── common/
+├── modules/
+│   ├── users/
+│   ├── roles/
+│   └── notifications/
 └── app.module.ts
 ```
 
-`backend/src/app.module.ts` imports all feature modules directly. No `backend/src/modules/` or layered folder layout exists yet.
+Por tanto, no debe afirmarse que todo el backend sigue una única convención física. La arquitectura está en transición.
 
-## Current Dependency Shape
+## `AppModule`
 
-Current common flow:
+`backend/src/app.module.ts` compone los principales módulos funcionales del sistema, entre ellos:
 
-```text
-HTTP Controller
-  ↓
-Nest Service
-  ↓
-PrismaService
-  ↓
-PostgreSQL
-```
+- Auth
+- Audit
+- User Requests
+- Users
+- Roles
+- Affiliate Requests
+- Affiliates
+- Assemblies
+- Absence Justifications
+- Sanctions
+- Admin Reports
+- Inventory
+- Events
+- Identity
+- Reservations
+- Financial
 
-Services currently mix application orchestration, business rules, Prisma queries, transactions, audit calls, and HTTP exceptions.
+Esto confirma que Reservas y Financiero forman parte del backend actual y no son solo alcance futuro.
 
-## Prisma Location
+## Bootstrap y middleware global
 
-- Prisma schema: `backend/prisma/schema.prisma`.
-- Prisma config: `backend/prisma.config.ts`.
-- Prisma service: `backend/src/prisma/prisma.service.ts`.
-- Generated client: `backend/generated/prisma` after `npx prisma generate --config prisma.config.ts`.
-- Datasource provider: PostgreSQL.
+`backend/src/main.ts` actualmente:
 
-Core models relevant to Sprint 1:
+- carga variables de entorno;
+- crea la aplicación NestJS;
+- habilita `cookie-parser`;
+- configura `ValidationPipe` global con `transform`, `whitelist` y `forbidNonWhitelisted`;
+- habilita CORS con origen frontend configurado y `credentials: true`;
+- habilita shutdown hooks;
+- escucha en `PORT` o `3000`.
 
-```text
-Role
-User
-AuditLog
-AccountActivationToken
-PasswordResetToken
-UserRequest
-```
+La presencia de cookies y CORS con credenciales forma parte de la arquitectura actual y reemplaza descripciones antiguas que afirmaban que no existían.
 
-## Users Current State
+## Persistencia
 
-Files:
+Prisma es la capa principal de acceso a PostgreSQL.
 
-```text
-backend/src/users/
-├── dto/
-├── users.controller.ts
-├── users.module.ts
-├── users.service.spec.ts
-└── users.service.ts
-```
+Ubicaciones relevantes:
 
-`UsersService` currently owns:
+- esquema: `backend/prisma/schema.prisma`
+- configuración: `backend/prisma.config.ts`
+- servicio de acceso: `backend/src/prisma/prisma.service.ts`
+- cliente generado: `backend/generated/prisma`
 
-- Prisma `UserWhereInput`, `UserSelect`, transactions, and unique constraint handling.
-- Filtering by name, email, identification, status, role, blocked state.
-- Pagination.
-- Safe user projection and blocked-state derivation.
-- User lookup and update.
-- Role change.
-- Activation/deactivation/unlock.
-- Administrator continuity rule.
-- Serializable transactions for demotion/deactivation safety.
-- Audit logging.
-- Nest HTTP exceptions.
+El script `postinstall` ejecuta `prisma generate --config prisma.config.ts`, por lo que la generación del cliente ya está integrada al ciclo de instalación.
 
-Critical rule present:
+## Autenticación y autorización
+
+La autenticación continúa bajo `backend/src/auth/` y utiliza JWT/Passport.
+
+La autorización actual incluye soporte por capabilities a través de componentes compartidos del módulo Auth, utilizados por controllers de dominios como Reservas y Financiero.
+
+El patrón habitual en rutas protegidas es:
 
 ```text
-The last active administrator cannot be deactivated or demoted
+JwtAuthGuard
+   ↓
+CapabilityGuard
+   ↓
+RequireCapabilities(...)
 ```
 
-Risk: this rule is currently private service logic coupled to Prisma transaction client and Nest exceptions.
+La documentación específica de autorización debe consultarse en `docs/architecture/authorization.md` cuando se consolide, junto con los ADR existentes.
 
-## Roles Current State
+## Reservas
 
-Files:
+Reservas vive bajo:
 
 ```text
-backend/src/roles/
-├── roles.controller.ts
-├── roles.module.ts
-├── roles.service.spec.ts
-└── roles.service.ts
+backend/src/reservations/
 ```
 
-`RolesService` directly queries Prisma for active roles:
+Incluye controller, service, DTOs, políticas y pruebas. El módulo implementa lógica de disponibilidad, creación y administración de reservas y utiliza guards/capabilities para proteger operaciones.
+
+Las reglas funcionales detalladas deben vivir en `docs/modules/reservations.md`.
+
+## Financiero
+
+Financiero vive bajo:
 
 ```text
-findActive -> prisma.role.findMany({ where: { isActive: true } })
+backend/src/financial/
 ```
 
-Roles module is small and good candidate to demonstrate minimal Layered Architecture ceremony.
+Incluye controllers, service, DTOs y pruebas para cargos, pagos y movimientos financieros.
 
-## Auth Current State
+Las reglas funcionales detalladas deben vivir en `docs/modules/financial.md`.
 
-Files:
+## Módulos con estructura más estratificada
+
+Bajo `backend/src/modules/` existen actualmente:
+
+- `users/`
+- `roles/`
+- `notifications/`
+
+Esto evidencia una transición hacia una organización más explícita por módulos y capas en ciertas áreas. No debe extrapolarse automáticamente esa estructura al resto del backend.
+
+## Validación y calidad
+
+Scripts principales disponibles en `backend/package.json`:
 
 ```text
-backend/src/auth/
-├── account-activation.service.ts
-├── account-lockout.policy.ts
-├── auth.controller.ts
-├── auth.service.ts
-├── decorators/
-├── dto/
-├── guards/
-├── interfaces/
-├── password-recovery.service.ts
-├── password-reset-token-delivery.service.ts
-└── strategies/
+npm run build
+npm run lint
+npm test
+npm run test:e2e
 ```
 
-`AuthService.login` current flow:
+Además existen scripts operativos para seed, reconciliación de identidad/personas y pruebas de correo.
 
-```text
-find user by email with role
- ↓
-reject missing / non-ACTIVE / missing passwordHash
- ↓
-reject temporary lock
- ↓
-reset expired lockout
- ↓
-bcrypt.compare password
- ↓
-on failure increment attempts and possibly lock account
- ↓
-sign JWT
- ↓
-reset failedLoginAttempts and lockedAt, update lastLoginAt
- ↓
-audit
- ↓
-return { accessToken, user }
-```
+Este documento describe la arquitectura y comandos disponibles, pero no fija resultados históricos como si fueran permanentes. Los resultados de test/build deben validarse en el momento correspondiente.
 
-Auth services currently depend directly on:
+## Estado de transición
 
-- `PrismaService`
-- `JwtService`
-- `bcrypt`
-- `AuditService`
-- Nest HTTP exceptions
+Riesgos y realidades actuales:
 
-`account-lockout.policy.ts` already contains policy-like logic, but it lives directly under `auth/`, not `domain/policies/`.
+- existen módulos con estructura tradicional y otros bajo `src/modules/`;
+- varios services todavía concentran lógica de aplicación, persistencia y excepciones HTTP;
+- la separación de dominio respecto de Prisma/NestJS no es uniforme;
+- la autorización por capabilities está extendida, pero debe seguir verificándose módulo por módulo;
+- la documentación de base de datos y módulos funcionales todavía debe consolidarse por separado.
 
-## HTTP Contracts To Preserve
+## Fuente relacionada
 
-Relevant Sprint 1 endpoints:
-
-```text
-POST  /auth/login
-POST  /auth/activate-account
-POST  /auth/forgot-password
-POST  /auth/reset-password
-PATCH /auth/change-password
-GET   /auth/me
-GET   /auth/admin-test
-
-GET   /users
-GET   /users/:id
-PATCH /users/:id
-PATCH /users/:id/role
-PATCH /users/:id/activate
-PATCH /users/:id/deactivate
-PATCH /users/:id/unlock
-
-GET   /roles
-```
-
-Auth/Users/Roles protected routes use `JwtAuthGuard`; admin routes also use `RolesGuard` with role name `Administrador`.
-
-## Tests Available
-
-- Unit tests under `backend/src/**/*.spec.ts`.
-- E2E tests under `backend/test/`.
-- Current full backend unit test result: 15 suites passed, 107 tests passed.
-- Current e2e result: 11 suites passed, 1 suite failed because `DATABASE_URL` is not configured for `app.e2e-spec.ts`.
-
-## Validation Results
-
-| Check | Result |
-| --- | --- |
-| `npm ci` | Passed; 4 npm audit vulnerabilities reported: 1 low, 3 high. |
-| `npx prisma generate --config prisma.config.ts` | Passed. |
-| `npm run build` | Passed. |
-| `npm test -- --runInBand` | Passed: 15 suites, 107 tests. |
-| `npx prisma validate --config prisma.config.ts` | Passed. |
-| `npx eslint "{src,apps,libs,test}/**/*.ts"` | Failed: 221 problems, mainly Prettier formatting and unsafe any lint rules. |
-| `npm run test:e2e -- --runInBand` | Failed: `app.e2e-spec.ts` requires `DATABASE_URL`; 11 suites passed, 1 failed. |
-| `docker compose config` | Passed. |
-| `docker compose up -d postgres` | Failed: Docker CLI exists, Docker daemon pipe unavailable. |
-
-## Pre-Existing Failures
-
-```text
-PRE-EXISTING FAILURE: backend lint has 221 issues before Sprint 1 refactor.
-PRE-EXISTING FAILURE: backend e2e full suite requires DATABASE_URL for app.e2e-spec.ts.
-PRE-EXISTING FAILURE: Docker daemon is not running, so PostgreSQL container cannot start.
-PRE-EXISTING RISK: npm audit reports 4 backend vulnerabilities.
-```
-
-## Architecture Risks
-
-- Domain concepts are not isolated from Prisma/NestJS yet.
-- Users business rules are coupled to `UsersService` and Prisma transaction client.
-- Auth login use case is coupled to `AuthService`, `PrismaService`, `JwtService`, `bcrypt`, and audit.
-- HTTP exceptions exist inside services rather than Presentation translation.
-- No architecture enforcement exists yet.
-- Backend lint baseline is red before refactor.
+- `backend/package.json`
+- `backend/src/main.ts`
+- `backend/src/app.module.ts`
+- `backend/src/modules/`
+- `backend/src/reservations/`
+- `backend/src/financial/`
+- `backend/prisma/schema.prisma`
+- `docs/architecture/backend-layer-rules.md`
