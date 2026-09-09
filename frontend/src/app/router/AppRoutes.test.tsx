@@ -58,6 +58,7 @@ beforeEach(() => {
     if (url === '/financial/charges') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
+    if (url === '/donations') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
   })
 })
@@ -236,6 +237,28 @@ describe('AppRoutes capability deep links', () => {
 
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Financiero' })).not.toBeInTheDocument()
+  })
+
+  it('redirects anonymous users from /app/donations to login', () => {
+    renderRoute('/app/donations', null)
+
+    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Donaciones' })).not.toBeInTheDocument()
+  })
+
+  it('renders donations for users with the donations read capability', async () => {
+    renderRoute('/app/donations', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Donaciones' })).toBeInTheDocument()
+    expect(await screen.findByText('No existen donaciones registradas')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/donations', { params: expect.objectContaining({ page: 1, limit: 20 }) })
+  })
+
+  it('redirects users without donations read capability to 403', async () => {
+    renderRoute('/app/donations', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Donaciones' })).not.toBeInTheDocument()
   })
 
   it('renders the real financial page for treasurers using the financial API', async () => {

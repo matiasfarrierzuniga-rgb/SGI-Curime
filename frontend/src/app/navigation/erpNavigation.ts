@@ -11,6 +11,7 @@ import {
   FileClock,
   HandCoins,
   Handshake,
+  HeartHandshake,
   Home,
   Package,
   Tags,
@@ -92,6 +93,12 @@ const navigation: readonly ErpNavigationSection[] = [
         path: '/app/reservations',
         capability: 'res.reservations.read',
         icon: CalendarCheck,
+      },
+      {
+        label: 'Donaciones',
+        path: '/app/donations',
+        capability: 'don.donations.read',
+        icon: HeartHandshake,
       },
       {
         label: 'Inventario',

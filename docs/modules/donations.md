@@ -1,144 +1,103 @@
 # Módulo de Donaciones
 
-Estado: Vigente como documentación de estado actual  
-Última revisión: 2026-09  
-Fuente primaria: código actual de `main`, esquema Prisma y configuración del frontend
+Estado: Implementado
+Última revisión: 2026-09
+Fuente primaria: `backend/src/donations/`, `frontend/src/features/donations/` y `backend/prisma/schema.prisma`
 
 ## Propósito
 
-Este documento describe el estado real de Donaciones en SGI-Curime. Actualmente Donaciones forma parte del alcance funcional previsto del sistema, pero no existe todavía como módulo funcional completo en `main`.
+Donaciones registra aportes recibidos dentro del ERP. Cada donación confirmada genera un movimiento financiero de origen `DONATION`; no usa `FinancialCharge` ni `Payment`.
 
-## Estado actual
+## Alcance implementado
 
-A septiembre de 2026:
-
-- no existe una vertical backend `backend/src/donations/`;
-- no existe una vertical frontend `frontend/src/features/donations/`;
-- no existe un modelo Prisma `Donation`;
-- no existen endpoints HTTP específicos de Donaciones;
-- no existe una ruta ERP específica de Donaciones;
-- no existe un flujo habilitado en el sitio público para registrar donaciones.
-
-Por tanto, Donaciones debe considerarse **planificado / no implementado** y no un módulo funcional terminado.
-
-## Preparación ya existente
-
-Aunque no existe el módulo funcional, el sistema contiene dos puntos de preparación relevantes.
-
-### 1. Integración prevista con Financiero
-
-El enum `FinancialMovementSource` incluye:
-
-```text
-MANUAL
-RESERVATION_PAYMENT
-DONATION
-```
-
-Esto reserva `DONATION` como posible origen de un movimiento financiero futuro.
-
-La presencia del enum no implica que exista todavía lógica de negocio que cree movimientos desde Donaciones.
-
-### 2. Sitio público
-
-`frontend/src/content/publicSiteContent.ts` contiene el servicio "Donaciones", pero su disponibilidad está deshabilitada:
-
-```text
-donations: { enabled: false }
-```
-
-Esto indica que la UI pública reconoce Donaciones como capacidad futura, pero no la expone como flujo operativo.
-
-## Arquitectura esperada cuando se implemente
-
-La implementación futura debería respetar la arquitectura vigente del proyecto.
-
-### Backend
-
-Dirección esperada:
-
-```text
-backend/src/donations/
-├── dto/
-├── donations.controller.ts
-├── donations.module.ts
-├── donations.service.ts
-└── pruebas
-```
-
-### Frontend
-
-Dirección esperada:
-
-```text
-frontend/src/features/donations/
-├── api/
-├── hooks/
-├── model/
-├── ui/
-└── index.ts
-```
-
-Esto es una guía de alineación arquitectónica, no evidencia de implementación existente.
-
-## Integración futura con Financiero
-
-Si Donaciones crea movimientos contables, la integración deberá definir explícitamente:
-
-```text
-Donación registrada
-      ↓
-FinancialMovement
-source = DONATION
-```
-
-Antes de implementar ese flujo deben quedar definidas al menos:
-
-- relación entre donación y movimiento financiero;
-- identidad del donante o anonimato permitido;
-- moneda soportada;
-- método de recepción;
-- referencia/comprobante;
-- estado o reversión de una donación;
-- auditoría;
-- capabilities;
-- reglas de privacidad de datos del donante.
-
-## No inferir del estado actual
-
-No debe asumirse que existen actualmente:
-
-- creación de donaciones;
-- listado de donaciones;
+- registrar donaciones, incluidas donaciones anónimas;
+- listado paginado con filtros por texto, estado, método y fechas;
 - detalle de donación;
-- recibos;
-- comprobantes adjuntos;
-- campañas o proyectos receptores;
-- donaciones recurrentes;
-- integración bancaria o SINPE;
-- generación automática de movimientos financieros;
-- endpoints públicos de donación.
+- edición de donaciones `CONFIRMED`;
+- cancelación con reversión financiera;
+- eliminación física excepcional y restringida;
+- auditoría de operaciones;
+- capabilities backend y frontend;
+- ruta y navegación ERP en `/app/donations`.
 
-## Criterio para considerar el módulo implementado
+No incluye recibos, adjuntos, campañas, pagos en línea, donaciones recurrentes ni flujo público.
 
-Donaciones podrá pasar de "planificado" a "implementado" cuando exista evidencia en `main` de un flujo mínimo coherente, incluyendo como mínimo:
+## Modelo e integración financiera
 
-1. persistencia o contrato de dominio;
-2. backend funcional;
-3. frontend o consumidor definido;
-4. autorización cuando aplique;
-5. pruebas del flujo principal;
-6. integración financiera documentada si genera movimientos;
-7. actualización de este documento.
+El modelo Prisma define `Donation`, `DonationStatus` y `DonationMethod`.
 
-## Relación con Sprint 2
+```text
+Donation CONFIRMED
+  -> original FinancialMovement
+     type = INCOME
+     source = DONATION
+     sourceId = donation.id
 
-Donaciones fue parte del objetivo planteado para Sprint 2, pero la fotografía actual de `main` no contiene el flujo funcional mínimo originalmente esperado. Este estado se refleja en `docs/project/sprint-2.md` como alcance pendiente y no como entrega completada.
+Donation CANCELLED
+  -> conserva original FinancialMovement (INCOME)
+  -> reversal FinancialMovement
+     type = EXPENSE
+     source = DONATION
+     sourceId = donation.id
+```
+
+La creación es atómica: persiste la donación `CONFIRMED`, crea movimiento original y enlaza `originalMovementId` en una misma transacción. Al editar `amount` o `receivedAt`, el movimiento original se valida y se mantiene sincronizado.
+
+## Reglas operativas
+
+### Cancelar no es eliminar
+
+Cancelación corresponde a una operación legítima que debe revertirse. Conserva la donación y su ingreso original, registra actor, fecha y motivo, y crea un único egreso compensatorio. Una donación cancelada no puede editarse ni cancelarse de nuevo.
+
+La cancelación se ejecuta en transacción serializable con reintentos ante conflicto de serialización.
+
+### Eliminación física restringida
+
+Eliminar corresponde solo a un registro ingresado por error. Requiere:
+
+- estado `CONFIRMED`;
+- `reversalMovementId = null`;
+- `originalMovementId` válido;
+- un único movimiento `DONATION` asociado, que debe ser el ingreso original;
+- ausencia de efectos financieros adicionales.
+
+Dentro de la misma transacción elimina primero `Donation` y luego su `FinancialMovement` original elegible. Donaciones canceladas, con reversión o con invariantes financieras rotas son rechazadas.
+
+## Autorización
+
+Capabilities canónicas:
+
+```text
+don.donations.read
+don.donations.create
+don.donations.update
+don.donations.cancel
+don.donations.delete
+```
+
+`Administrador` posee todas. `Tesorero` posee lectura, creación, edición y cancelación; no posee eliminación. Roles y capabilities desconocidos se rechazan por default deny.
+
+La ruta ERP `/app/donations` requiere `don.donations.read`. Navegación muestra `Donaciones` solo con esa capability. Backend continúa como autoridad final de autorización.
+
+## Auditoría
+
+Operaciones registran `DONATION_CREATED`, `DONATION_UPDATED`, `DONATION_CANCELLED` y `DONATION_DELETED`. Los detalles incluyen únicamente información operativa como monto, método, campos modificados e identificadores de movimientos; no almacenan identificación ni nombre del donante.
+
+## Frontend
+
+`DonationsPage` integra listado, filtros, paginación server-side, formularios modales de creación y edición, detalle, cancelación, eliminación, estados loading/error/empty, diseño responsive y capability gating.
+
+Las mutaciones invalidan listas y detalle de Donaciones según corresponda, además de la familia pública de query keys de movimientos financieros. Donaciones no importa internals de Financiero.
+
+## Deuda conocida
+
+Shared DatePicker integration deferred. El DatePicker compartido no existe en esta rama; se mantiene `datetime-local` hasta reconciliación posterior.
 
 ## Fuentes relacionadas
 
+- `backend/src/donations/`
 - `backend/prisma/schema.prisma`
-- `frontend/src/content/publicSiteContent.ts`
-- `frontend/src/features/financial/model/financial.types.ts`
-- `docs/modules/financial.md`
-- `docs/project/sprint-2.md`
+- `frontend/src/features/donations/`
+- `frontend/src/features/financial/`
+- `frontend/src/app/router/AppRoutes.tsx`
+- `frontend/src/app/navigation/erpNavigation.ts`
