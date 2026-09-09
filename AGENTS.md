@@ -2,11 +2,13 @@
 
 ## Purpose
 
-Coordinate the repository skills so that SGI-Curime keeps strong engineering discipline while also producing a polished, distinctive and modern frontend.
+Coordinate the repository skills so that SGI-Curime keeps its current technical architecture intact while raising the quality of the frontend substantially.
+
+The architecture is considered stable. The current improvement objective is **frontend UI/UX quality**, not architectural redesign.
 
 A technically correct interface that still looks unfinished is not considered complete when the task is explicitly visual.
 
-This file defines **which guidance leads**, **which guidance constrains**, and **how conflicts are resolved**. It does not replace the detailed skills or `frontend/CONVENTIONS.md`.
+This file defines which guidance leads, which guidance constrains, and how conflicts are resolved. It does not replace the detailed skills or `frontend/CONVENTIONS.md`.
 
 ---
 
@@ -17,7 +19,7 @@ Use the following precedence for repository work:
 1. The user's explicit task and scope.
 2. Authoritative backend contracts, domain rules and capability rules.
 3. This `AGENTS.md` for skill orchestration.
-4. `frontend/CONVENTIONS.md` for frontend architecture, tooling, design tokens and implementation conventions.
+4. `frontend/CONVENTIONS.md` for the existing frontend architecture, tooling, design tokens and implementation conventions.
 5. Relevant local SGI skills under `.agents/skills/`.
 6. External/global skills as specialists or reviewers when available.
 
@@ -27,61 +29,93 @@ Do not invent backend endpoints, domain states, capabilities, business rules, ro
 
 ---
 
-## Core invariant skills
+## Architecture is stable
 
-For code changes, always preserve the contracts defined by:
+Do not refactor, reorganize or redesign the existing frontend architecture unless the user explicitly asks for it or a change is strictly required to preserve correctness.
 
-- `sgi-development-foundation`
-- `sgi-frontend-architecture` when frontend structure or dependencies are affected
+Preserve:
 
-These are **engineering guardrails**, not creative directors.
+- `app -> features -> shared` dependency direction;
+- current feature boundaries;
+- TanStack Query server-state ownership;
+- existing routing and capability behavior;
+- established shared UI boundaries;
+- current backend/frontend contracts.
+
+`sgi-development-foundation`, `sgi-frontend-architecture` and `frontend/CONVENTIONS.md` act as **guardrails** that protect the current architecture.
+
+They are not the primary drivers of visual work.
 
 Interpret "prefer the smallest change" as:
 
-> Prefer the smallest behavioral and architectural change necessary to satisfy the task.
+> Avoid unnecessary behavioral, architectural and cross-module changes.
 
-It does **not** mean minimizing legitimate visual work when the task explicitly requests a redesign, visual refinement or UI polish.
-
-A visual task may substantially change composition, spacing, typography, responsive layout and presentation inside the approved scope while keeping behavior and architecture unchanged.
+It does **not** mean minimizing legitimate visual improvements inside the requested frontend scope.
 
 ---
 
-## Skill routing by task type
+## Primary objective for frontend work
 
-Do not treat every available skill as equally relevant to every task. Activate only the guidance needed for the current task.
+When the task is about frontend appearance, UI polish, interaction design, responsive behavior or visual quality, the agent should actively improve the interface rather than merely preserve the status quo.
 
-### Visual design, styling or UI polish
+The main areas of improvement are:
+
+- composition;
+- visual hierarchy;
+- typography;
+- spacing and rhythm;
+- layout proportions;
+- responsive behavior;
+- forms and field grouping;
+- buttons and action hierarchy;
+- tables and information density;
+- empty, loading, success and error states;
+- hover, focus, active and disabled states;
+- iconography;
+- dialogs, popovers and overlays;
+- clarity and consistency between modules;
+- perceived product quality.
+
+Frontend quality is part of the acceptance criteria for visual tasks.
+
+---
+
+## Skill routing for visual frontend work
+
+### Primary design authority
 
 Lead with:
 
 - `sgi-frontend-design`
 
-Complement, when available, with:
+This skill defines the SGI-Curime visual identity and should be the primary local design authority.
+
+### Visual refinement specialists
+
+When available, complement with:
 
 - `design-taste-frontend`
 - `improve-ui`
 - `ui-ux-pro-max` for critique or additional UX review
 
-Validate with:
+These skills may improve composition, hierarchy, density, proportions and interaction quality, but must remain inside SGI-Curime's established identity and technical boundaries.
+
+### Validation guardrails
+
+Validate the resulting interface with:
 
 - `sgi-responsive-accessibility`
 - `baseline-ui`
 
-For these tasks, visual quality is part of the acceptance criteria.
+These are reviewers and quality guardrails, not the product's creative directors.
 
-### Frontend architecture or refactoring
+Design first within SGI's identity; validate afterward for accessibility, consistency and UI quality.
 
-Lead with:
+---
 
-- `sgi-development-foundation`
-- `sgi-frontend-architecture`
-- `frontend/CONVENTIONS.md`
+## Forms and data-entry UX
 
-Use design skills only if the task also changes presentation.
-
-### Forms and data-entry UX
-
-Use:
+For forms, inputs, DatePicker, validation or submission UX, use:
 
 - `sgi-forms-validation`
 - `sgi-frontend-design`
@@ -89,26 +123,34 @@ Use:
 
 For visual refinement, also use `design-taste-frontend` and `improve-ui` when available.
 
-Form behavior, validation and backend contracts remain authoritative; visual improvement must not silently change business semantics.
+Preserve validation behavior and backend semantics while improving:
 
-### Dashboard, AppShell or navigation
+- grouping;
+- labels and supporting text;
+- field density;
+- input affordances;
+- date/time controls;
+- action placement;
+- inline errors;
+- loading/submission feedback;
+- mobile usability.
+
+---
+
+## Dashboard, AppShell and navigation
 
 Use `sgi-dashboard-ux` when the task affects:
 
 - dashboard composition;
-- ERP/AppShell;
+- ERP/AppShell presentation;
 - sidebar or topbar;
 - module grouping;
 - authenticated navigation;
 - capability/role visibility.
 
-Do not invoke it for isolated controls or unrelated feature screens when navigation is not part of the task.
+Keep the existing routing and authorization architecture intact while allowing substantial visual improvements to shell composition, navigation clarity and responsive behavior.
 
-### Motion and animation
-
-Use `fixing-motion-performance` only when animation already exists, is being introduced, or motion performance is explicitly part of the task.
-
-Motion must communicate state, hierarchy or spatial relationship. Avoid decorative animation without product value.
+Do not invoke this skill for isolated controls or unrelated feature screens when navigation is not part of the task.
 
 ---
 
@@ -128,7 +170,13 @@ Use it to detect:
 
 Do not let generic baseline recommendations erase SGI-Curime's established visual identity or force every interface into a neutral generic SaaS appearance.
 
-Design first within SGI's identity; then use baseline and accessibility guidance to validate the result.
+---
+
+## Motion
+
+Use `fixing-motion-performance` only when animation already exists, is being introduced, or motion performance is explicitly part of the task.
+
+Motion should communicate state, feedback or spatial relationship. Avoid animation that exists only as decoration.
 
 ---
 
@@ -168,23 +216,24 @@ Avoid:
 - decorative motion without purpose;
 - copying another product's visual identity literally.
 
-External references and prototypes may be used to study layout, hierarchy, spacing, density and interaction patterns while preserving SGI behavior, accessibility and branding constraints.
+External references and prototypes may be used to study layout, hierarchy, spacing, density, proportions and interaction patterns while preserving SGI behavior, accessibility and branding constraints.
 
 ---
 
-## Architecture versus visual freedom
+## Visual freedom inside a stable architecture
 
 Never confuse architectural stability with visual conservatism.
 
-For an explicitly visual task, the agent may improve substantially within the affected presentation scope:
+For an explicitly visual task, the agent may improve substantially inside the affected presentation scope:
 
-- DOM composition inside the presentation layer;
+- DOM composition within the existing feature/component boundary;
 - Tailwind utility composition;
-- spacing and rhythm;
+- spacing and visual rhythm;
 - typography and hierarchy;
 - responsive layouts;
 - field grouping;
 - buttons and action hierarchy;
+- tables and content density;
 - visual states;
 - icons;
 - supporting copy when it does not alter domain semantics;
@@ -208,15 +257,16 @@ Do not silently change:
 For frontend visual work:
 
 1. Inspect the current screen/component and nearby shared primitives before editing.
-2. Identify the visual problems and intended hierarchy.
-3. Determine which skills actually apply.
-4. Preserve behavior, contracts and feature boundaries.
-5. Implement the visual improvement to the depth requested by the task.
-6. Review desktop, tablet and mobile composition.
-7. Review relevant hover, focus, active, disabled, loading, empty and error states.
-8. Validate keyboard usability, semantics, contrast and focus behavior.
-9. Confirm consistency with design tokens and neighboring SGI screens.
-10. Report remaining visual debt separately instead of expanding scope silently.
+2. Identify the actual visual problems before proposing changes.
+3. Define the intended hierarchy, composition and responsive behavior.
+4. Determine only the skills relevant to that task.
+5. Preserve behavior, contracts and current architecture.
+6. Implement the visual improvement to the depth requested by the task.
+7. Review desktop, tablet and mobile composition.
+8. Review relevant hover, focus, active, disabled, loading, empty and error states.
+9. Validate keyboard usability, semantics, contrast and focus behavior.
+10. Confirm consistency with SGI design tokens and neighboring screens.
+11. Report remaining visual debt separately instead of expanding scope silently.
 
 Do not stop after superficial class changes if the requested visual problem remains unresolved.
 
@@ -227,15 +277,15 @@ Do not stop after superficial class changes if the requested visual problem rema
 An explicitly visual frontend task is complete only when:
 
 - requested behavior remains correct;
-- architecture and feature boundaries remain valid;
+- the existing architecture remains intact;
 - responsive behavior is intentional;
 - accessibility is preserved;
 - established design tokens are respected;
 - hierarchy is clearly improved;
 - spacing and alignment are coherent;
 - action priority is visually understandable;
-- interaction states are polished where relevant;
-- the result no longer looks like an unfinished generic template.
+- relevant interaction states are polished;
+- the result feels intentional and production-ready rather than like an unfinished generic template.
 
 Engineering correctness alone is not sufficient for a visual task.
 
@@ -253,8 +303,10 @@ Do not expand a visual task into unrelated fixes merely because validation revea
 
 ## Scope discipline
 
-Improve boldly **inside the requested scope** and conservatively **outside it**.
+Improve boldly **inside the requested frontend scope** and conservatively **outside it**.
 
-Do not redesign unrelated modules, migrate unrelated architecture or introduce new dependencies unless the task explicitly requires it.
+Do not redesign unrelated modules, refactor stable architecture or introduce new dependencies unless the task explicitly requires it.
 
-When a task is primarily visual, visual ambition is allowed and expected as long as behavior, accessibility, architecture and SGI's identity remain protected.
+The default goal for current frontend work is:
+
+> Preserve the architecture. Improve the experience. Raise the visual quality.
