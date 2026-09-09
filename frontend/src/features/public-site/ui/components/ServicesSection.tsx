@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, CalendarDays, FileText, Handshake, HeartHandshake, Store, UsersRound } from 'lucide-react'
+import { ArrowRight, CalendarDays, CalendarPlus, FileText, Handshake, HeartHandshake, Store, UsersRound } from 'lucide-react'
 
 const portalLinks = [
+  { icon: CalendarPlus, title: 'Reservas', text: 'Solicite el uso de un espacio comunitario.', to: '/app/reservations/new' },
   { icon: UsersRound, title: 'Comunidad', text: 'Conozca los espacios comunitarios de la Asociación.', to: '/comunidad' },
   { icon: Handshake, title: 'Afiliación', text: 'Inicie una gestión de afiliación comunitaria.', to: '/afiliacion' },
   { icon: FileText, title: 'Transparencia', text: 'Consulte información pública autorizada.', to: '/transparencia' },
@@ -29,7 +30,7 @@ export function ServicesSection() {
           </h2>
           <span aria-hidden="true" className="mx-auto mt-4 block h-1 w-16 rounded-full bg-brand-accent" />
         </header>
-        <div className="mt-10 grid gap-4 md:mt-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+        <div className="mt-10 grid gap-4 md:mt-12 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
           {portalLinks.map(({ icon: Icon, title, text, to }) => (
             <article
               key={title}
