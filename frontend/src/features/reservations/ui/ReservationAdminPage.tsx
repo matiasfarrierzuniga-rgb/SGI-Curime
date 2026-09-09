@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { useAuth } from '@/features/auth'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
+import { DatePicker } from '@/shared/ui/date-picker/DatePicker'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
@@ -65,8 +66,8 @@ export function ReservationAdminPage() {
     <form className="grid gap-4 rounded-xl border border-border bg-surface p-4 md:grid-cols-5" onSubmit={event => event.preventDefault()}>
       <FilterSelect label="Estado" value={filters.status ?? ''} onChange={value => updateFilter({ status: value ? value as ReservationStatus : undefined })}><option value="">Todos los estados</option>{statuses.map(status => <option key={status} value={status}>{reservationStatusLabel(status)}</option>)}</FilterSelect>
       <FilterSelect label="Recurso" value={filters.resourceId?.toString() ?? ''} onChange={value => updateFilter({ resourceId: value ? Number(value) : undefined })}><option value="">Todos los recursos</option>{resources.data?.map(resource => <option key={resource.id} value={resource.id}>{resource.name}</option>)}</FilterSelect>
-      <FilterInput label="Desde" type="date" value={filters.from ?? ''} onChange={value => updateFilter({ from: value || undefined })} />
-      <FilterInput label="Hasta" type="date" value={filters.to ?? ''} onChange={value => updateFilter({ to: value || undefined })} />
+      <FilterInput label="Desde" value={filters.from ?? ''} onChange={value => updateFilter({ from: value || undefined })} />
+      <FilterInput label="Hasta" value={filters.to ?? ''} onChange={value => updateFilter({ to: value || undefined })} />
       <div className="flex items-end"><Button variant="outline" type="button" onClick={() => setFilters(initialFilters)}>Limpiar filtros</Button></div>
     </form>
     {list.isPending ? <LoadingState label="Cargando reservas..." /> : null}
@@ -90,7 +91,7 @@ function FilterSelect({ label, value, onChange, children }: { label: string; val
   return <label className="grid gap-1 text-sm font-semibold" htmlFor={id}>{label}<select id={id} value={value} onChange={event => onChange(event.target.value)}>{children}</select></label>
 }
 
-function FilterInput({ label, type, value, onChange }: { label: string; type: 'date'; value: string; onChange: (value: string) => void }) {
+function FilterInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   const id = `reservation-filter-${label.toLowerCase()}`
-  return <label className="grid gap-1 text-sm font-semibold" htmlFor={id}>{label}<input id={id} type={type} value={value} onChange={event => onChange(event.target.value)} /></label>
+  return <label className="grid gap-1 text-sm font-semibold" htmlFor={id}>{label}<DatePicker id={id} value={value} onChange={onChange} /></label>
 }
