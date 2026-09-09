@@ -38,12 +38,16 @@ describe('ReservationAdminPage', () => {
     expect(screen.getByText('No hay reservas para estos filtros')).toBeInTheDocument()
   })
 
-  it('sends server filters, resets page on filter change, and uses server pagination', () => {
+  it('sends canonical server filters, resets page on filter change, and uses server pagination', () => {
     render(<ReservationAdminPage />)
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'APPROVED' } })
     expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', page: 1, limit: 20 }))
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '09/09/2026' } })
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', from: '2026-09-09', page: 1, limit: 20 }))
+    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '10/09/2026' } })
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', from: '2026-09-09', to: '2026-09-10', page: 1, limit: 20 }))
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
-    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', page: 2, limit: 20 }))
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', from: '2026-09-09', to: '2026-09-10', page: 2, limit: 20 }))
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
     expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith({ page: 1, limit: 20 })
   })

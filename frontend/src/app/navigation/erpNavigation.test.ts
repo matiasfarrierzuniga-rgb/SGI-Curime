@@ -18,7 +18,7 @@ describe('getErpNavigation', () => {
   { label: 'Eventos', children: undefined }
 ] },
 
-      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Reservas', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Reservas', children: undefined }, { label: 'Donaciones', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Gestión financiera', items: [{ label: 'Financiero', children: undefined }, { label: 'Movimientos financieros', children: undefined }] },
       { label: 'Información', items: [{ label: 'Bitácora', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
@@ -39,7 +39,7 @@ describe('getErpNavigation', () => {
     const result = labels('Tesorero')
     expect(result).toEqual([
       { label: 'General', items: [{ label: 'Inicio', children: undefined }] },
-      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }] },
+      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Donaciones', children: undefined }] },
       { label: 'Gestión financiera', items: [{ label: 'Financiero', children: undefined }, { label: 'Movimientos financieros', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
@@ -82,6 +82,13 @@ describe('getErpNavigation', () => {
     const reservations = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Reservas')
 
     expect(reservations).toMatchObject({ path: '/app/reservations', capability: 'res.reservations.read' })
+  })
+
+  it('assigns donations navigation to its read capability and canonical route', () => {
+    const donations = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Donaciones')
+
+    expect(donations).toMatchObject({ path: '/app/donations', capability: 'don.donations.read' })
+    expect(getErpNavigation('Vecino/Afiliado').flatMap((section) => section.items).find((item) => item.label === 'Donaciones')).toBeUndefined()
   })
 
   it('exposes reservation requests independently from administrative reservations', () => {

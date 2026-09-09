@@ -30,6 +30,11 @@ export const ACCESS_CAPABILITIES = [
   'fin.payments.record',
   'fin.movements.read',
   'fin.movements.create',
+  'don.donations.read',
+  'don.donations.create',
+  'don.donations.update',
+  'don.donations.cancel',
+  'don.donations.delete',
 ] as const
 
 export type AccessCapability =
@@ -51,6 +56,10 @@ export const ACCESS_ROLE_CAPABILITIES: Readonly<
     'fin.payments.record',
     'fin.movements.read',
     'fin.movements.create',
+    'don.donations.read',
+    'don.donations.create',
+    'don.donations.update',
+    'don.donations.cancel',
   ],
 
   'Vecino/Afiliado': [

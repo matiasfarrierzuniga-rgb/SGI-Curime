@@ -32,6 +32,7 @@ import { AppHomePage } from '@/pages/erp/AppHomePage'
 import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
 import { FinancialMovementsPage, FinancialPage } from '@/features/financial'
+import { DonationsPage } from '@/features/donations'
 export function AppRoutes() {
   return (
     <Routes>
@@ -60,8 +61,11 @@ export function AppRoutes() {
         <Route element={<ErpLayout />}>
           <Route path="/app" element={<AppHomePage />} />
           <Route path="/app/reservations/new" element={<ReservationRequestPage />} />
-<Route element={<RoleRoute capability="res.reservations.read" />}>
-            <Route path="/app/reservations" element={<ReservationAdminPage />} />
+           <Route element={<RoleRoute capability="res.reservations.read" />}>
+             <Route path="/app/reservations" element={<ReservationAdminPage />} />
+           </Route>
+          <Route element={<RoleRoute capability="don.donations.read" />}>
+            <Route path="/app/donations" element={<DonationsPage />} />
           </Route>
           <Route element={<RoleRoute capability="fin.charges.read" />}>
             <Route path="/app/financial" element={<FinancialPage />} />

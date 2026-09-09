@@ -23,6 +23,7 @@ import { EventsModule } from './events/events.module';
 import { IdentityModule } from './identity/identity.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { FinancialModule } from './financial/financial.module';
+import { DonationsModule } from './donations/donations.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { FinancialModule } from './financial/financial.module';
     IdentityModule,
     ReservationsModule,
     FinancialModule,
+    DonationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

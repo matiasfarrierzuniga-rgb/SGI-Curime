@@ -71,7 +71,7 @@ const financialMovementDetailSelect = {
 
 type FinancialTransaction = Pick<
   Prisma.TransactionClient,
-  'financialCharge' | 'payment'
+  'financialCharge' | 'payment' | 'financialMovement'
 >;
 
 @Injectable()
@@ -111,10 +111,17 @@ export class FinancialService {
 
   async recordPayment(id: number, dto: RecordPaymentDto, actorId: number) {
     const amount = this.parseAmount(dto.amount);
+    const reference = this.normalizeReference(dto.reference);
     return this.withSerializableTransaction(async (tx) => {
       const charge = await tx.financialCharge.findUnique({
         where: { id },
-        select: { id: true, amount: true, currency: true, status: true },
+        select: {
+          id: true,
+          reservationId: true,
+          amount: true,
+          currency: true,
+          status: true,
+        },
       });
       if (!charge) throw new NotFoundException('Financial charge not found');
       if (charge.status !== FinancialChargeStatus.PENDING) {
@@ -127,14 +134,15 @@ export class FinancialService {
         throw new ConflictException('Payment amount must match financial charge amount');
       }
 
+      const paidAt = new Date();
       const payment = await tx.payment.create({
         data: {
           chargeId: charge.id,
           amount,
           status: PaymentStatus.CONFIRMED,
           method: dto.method,
-          reference: this.normalizeReference(dto.reference),
-          paidAt: new Date(),
+          reference,
+          paidAt,
           recordedById: actorId,
         },
         select: paymentSelect,
@@ -143,6 +151,20 @@ export class FinancialService {
         where: { id: charge.id },
         data: { status: FinancialChargeStatus.PAID },
         select: chargeListSelect,
+      });
+      await tx.financialMovement.create({
+        data: {
+          type: FinancialMovementType.INCOME,
+          source: FinancialMovementSource.RESERVATION_PAYMENT,
+          sourceId: payment.id,
+          amount,
+          currency: charge.currency,
+          description: `Pago de reserva #${charge.reservationId}`,
+          reference,
+          occurredAt: paidAt,
+          recordedById: actorId,
+        },
+        select: financialMovementSelect,
       });
 
       return { payment, charge: updatedCharge };
