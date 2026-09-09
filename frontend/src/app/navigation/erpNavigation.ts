@@ -28,6 +28,7 @@ export type ErpNavigationItem = {
   icon?: LucideIcon
   children?: readonly ErpNavigationItem[]
   role?: string
+  excludedRole?: string
 }
 
 export type ErpNavigationSection = { label: string; items: readonly ErpNavigationItem[] }
@@ -37,10 +38,33 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'General',
     items: [
       {
-        label: 'Dashboard',
+        label: 'Inicio',
         path: '/app',
         capability: 'erp.dashboard.read',
         icon: Home,
+      },
+    ],
+  },
+  {
+    label: 'Comunidad',
+    items: [
+      {
+        label: 'Solicitar una reserva',
+        path: '/app/reservations/new',
+        role: 'Vecino/Afiliado',
+        icon: CalendarPlus,
+      },
+      {
+        label: 'Afiliación',
+        path: '/afiliacion',
+        role: 'Vecino/Afiliado',
+        icon: Handshake,
+      },
+      {
+        label: 'Eventos',
+        path: '/eventos',
+        role: 'Vecino/Afiliado',
+        icon: CalendarDays,
       },
     ],
   },
@@ -85,6 +109,7 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Solicitar una reserva',
         path: '/app/reservations/new',
+        excludedRole: 'Vecino/Afiliado',
         icon: CalendarPlus,
       },
       {
@@ -148,7 +173,7 @@ const navigation: readonly ErpNavigationSection[] = [
         icon: UserRound,
       },
       {
-        label: 'Justificar ausencia',
+        label: 'Enviar justificación',
         path: '/app/affiliate/absence-justifications/new',
         role: 'Vecino/Afiliado',
         icon: FileCheck2,
@@ -166,6 +191,7 @@ const navigation: readonly ErpNavigationSection[] = [
 function isVisible(item: ErpNavigationItem, role: string | null | undefined): boolean {
   return (
     (item.role === undefined || item.role === role) &&
+    item.excludedRole !== role &&
     (item.capability === undefined ||
       hasAuthenticatedSessionCapability(item.capability) ||
       hasCapability(role, item.capability))
