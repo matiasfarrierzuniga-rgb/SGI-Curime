@@ -37,18 +37,18 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-[var(--z-nav)] border-b border-border bg-brand-ivory/95 font-sans text-brand-deep backdrop-blur-sm">
-      <div className="public-container grid min-h-[4.5rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 lg:min-h-24 lg:grid-cols-[10rem_minmax(0,1fr)_auto] lg:gap-x-4">
+      <div className="public-container grid min-h-[4.5rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 lg:min-h-24 lg:grid-cols-[9rem_minmax(0,1fr)_auto] lg:gap-x-6 xl:grid-cols-[11rem_minmax(0,1fr)_auto] xl:gap-x-8">
         <Link
           to="/"
           aria-label="ADI Curime, inicio"
-            className="relative block h-12 w-36 shrink-0 overflow-hidden rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-14 sm:w-44 lg:h-16 lg:w-44 xl:h-[72px] xl:w-52"
+            className="flex h-12 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-14 sm:w-44 lg:h-14 lg:w-36 xl:h-16 xl:w-44 2xl:h-[72px] 2xl:w-52"
         >
           <img
             src="/brand/adi-curime-logo-horizontal-color.png"
             alt=""
             width="1448"
             height="1086"
-            className="absolute top-1/2 block h-auto w-full -translate-y-1/2"
+            className="block size-full object-contain"
           />
         </Link>
 
@@ -71,7 +71,7 @@ export function PublicHeader() {
         <nav
           id={id}
           aria-label="Navegación pública"
-          className={`${open ? 'flex' : 'hidden'} col-span-2 mt-2 w-full flex-col items-stretch rounded-surface border border-border bg-surface-muted p-2 shadow-surface lg:col-auto lg:mt-0 lg:flex lg:w-auto lg:flex-row lg:justify-self-center lg:gap-1 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none xl:gap-2 2xl:gap-4`}
+          className={`${open ? 'flex' : 'hidden'} col-span-2 mt-2 w-full flex-col items-stretch rounded-surface border border-border bg-surface-muted p-2 shadow-surface lg:col-auto lg:mt-0 lg:flex lg:w-auto lg:flex-row lg:justify-self-start lg:gap-1.5 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none xl:gap-2.5 2xl:gap-3`}
         >
           {site.nav.map((item) => (
             <NavLink
@@ -79,7 +79,7 @@ export function PublicHeader() {
               to={item.to}
               end={item.to === '/'}
               onClick={close}
-              className="relative flex min-h-11 items-center rounded-control px-3 text-base font-medium text-brand-deep transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:min-h-0 lg:px-1 lg:py-2 lg:text-[0.7rem] xl:text-xs 2xl:text-sm aria-[current=page]:font-semibold aria-[current=page]:after:absolute aria-[current=page]:after:bottom-0 aria-[current=page]:after:left-1 aria-[current=page]:after:h-0.5 aria-[current=page]:after:w-7 aria-[current=page]:after:bg-brand-accent"
+              className="relative flex min-h-11 items-center rounded-control px-3 text-base font-medium text-brand-deep transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:px-2 lg:py-2 lg:text-xs xl:px-2.5 xl:text-sm 2xl:px-3 aria-[current=page]:font-semibold aria-[current=page]:after:absolute aria-[current=page]:after:bottom-0 aria-[current=page]:after:left-2 aria-[current=page]:after:h-0.5 aria-[current=page]:after:w-7 aria-[current=page]:after:bg-brand-accent"
             >
               {item.label}
             </NavLink>
@@ -100,7 +100,7 @@ export function PublicHeader() {
           nativeButton={false}
           render={<Link to={accessTo} />}
           size="sm"
-          className="hidden justify-self-end lg:inline-flex"
+          className="hidden justify-self-end lg:inline-flex lg:px-4"
         >
           <LogIn className="size-4" aria-hidden="true" />{accessLabel}
         </Button>
