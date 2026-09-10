@@ -12,6 +12,11 @@ const account = {
   failedLoginAttempts: 0,
   lastLoginAt: null,
   roleName: 'Administrador',
+  roleId: 2,
+  roleIsActive: true,
+  hasPerson: true,
+  affiliateStatus: 'ACTIVE',
+  affiliateRoleId: 2,
   subscriptionExpirationDate: null,
 };
 
@@ -195,8 +200,34 @@ describe('LoginUseCase', () => {
         email: 'admin@example.com',
         status: 'ACTIVE',
         role: 'Administrador',
+        canAccessErp: true,
       },
     });
+  });
+
+  it.each([
+    [
+      'a general Subscription_L1 account',
+      {
+        roleId: 1,
+        roleName: 'Subscription_L1',
+        hasPerson: false,
+        affiliateStatus: null,
+        affiliateRoleId: null,
+      },
+    ],
+    ['an inactive affiliate', { affiliateStatus: 'INACTIVE' }],
+    ['an affiliate without a role', { affiliateRoleId: null }],
+    ['inconsistent user and affiliate roles', { roleId: 3 }],
+  ])('returns canAccessErp=false for %s', async (_label, overrides) => {
+    repository.findCredentialsByEmail.mockResolvedValueOnce({
+      ...account,
+      ...overrides,
+    });
+
+    await expect(
+      useCase.execute('admin@example.com', 'secret'),
+    ).resolves.toMatchObject({ user: { canAccessErp: false } });
   });
 
   it('delivers login credentials when the post-commit audit fails', async () => {

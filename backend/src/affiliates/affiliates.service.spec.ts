@@ -12,7 +12,9 @@ describe('AffiliatesService deactivation', () => {
     auditLog: { create: jest.fn() },
   };
   const prisma = {
-    $transaction: jest.fn((work: (client: typeof tx) => Promise<unknown>) => work(tx)),
+    $transaction: jest.fn((work: (client: typeof tx) => Promise<unknown>) =>
+      work(tx),
+    ),
   };
   const audit = { log: jest.fn() };
   let service: AffiliatesService;
@@ -37,22 +39,51 @@ describe('AffiliatesService deactivation', () => {
   });
 
   it('atomically inactivates the affiliate, keeps the user active, resets role, revokes sessions, and audits', async () => {
-    await expect(service.deactivate(4, 2)).resolves.toMatchObject({ status: 'INACTIVE' });
+    await expect(service.deactivate(4, 2)).resolves.toMatchObject({
+      status: 'INACTIVE',
+    });
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(tx.user.update).toHaveBeenCalledWith({ where: { id: 12 }, data: { roleId: 1 } });
+    expect(tx.user.update).toHaveBeenCalledWith({
+      where: { id: 12 },
+      data: { roleId: 1 },
+    });
     expect(tx.user.update.mock.calls[0][0].data).not.toHaveProperty('status');
-    expect(tx.session.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { userId: 12, revokedAt: null },
-      data: expect.objectContaining({ revocationReason: 'AFFILIATE_DEACTIVATED' }),
-    }));
-    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ entityId: 4 }), tx);
+    expect(tx.session.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 12, revokedAt: null },
+        data: expect.objectContaining({
+          revocationReason: 'AFFILIATE_DEACTIVATED',
+        }),
+      }),
+    );
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({ entityId: 4 }),
+      tx,
+    );
   });
 
   it.each([
     ['missing affiliate', null, NotFoundException],
-    ['inactive affiliate', { id: 4, status: 'INACTIVE', personId: 8, person: { user: { id: 12 } } }, ConflictException],
-    ['missing person', { id: 4, status: 'ACTIVE', personId: null, person: { user: null } }, ConflictException],
-    ['missing user', { id: 4, status: 'ACTIVE', personId: 8, person: { user: null } }, ConflictException],
+    [
+      'inactive affiliate',
+      { id: 4, status: 'INACTIVE', personId: 8, person: { user: { id: 12 } } },
+      ConflictException,
+    ],
+    [
+      'missing person',
+      { id: 4, status: 'ACTIVE', personId: null, person: { user: null } },
+      ConflictException,
+    ],
+    [
+      'missing person relation',
+      { id: 4, status: 'ACTIVE', personId: 8, person: null },
+      ConflictException,
+    ],
+    [
+      'missing user',
+      { id: 4, status: 'ACTIVE', personId: 8, person: { user: null } },
+      ConflictException,
+    ],
   ])('rejects %s before writes', async (_label, affiliate, error) => {
     tx.affiliate.findUnique.mockResolvedValueOnce(affiliate);
     await expect(service.deactivate(4, 2)).rejects.toBeInstanceOf(error);
@@ -61,7 +92,9 @@ describe('AffiliatesService deactivation', () => {
 
   it('rejects an unavailable general role before writes', async () => {
     tx.role.findUnique.mockResolvedValueOnce({ id: 1, isActive: false });
-    await expect(service.deactivate(4, 2)).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.deactivate(4, 2)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
     expect(tx.affiliate.update).not.toHaveBeenCalled();
   });
 
