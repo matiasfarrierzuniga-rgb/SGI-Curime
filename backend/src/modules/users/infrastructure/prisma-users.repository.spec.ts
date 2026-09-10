@@ -57,6 +57,22 @@ describe('PrismaUsersRepository registration methods', () => {
     expect(resolver.resolveWithinTransaction).toHaveBeenCalledWith(input, db);
   });
 
+  it('projects non-sensitive affiliation context for /users/me', async () => {
+    db.user.findUnique.mockResolvedValue({
+      person: {
+        affiliate: { id: 22, status: 'ACTIVE', roleId: 4 },
+        affiliateRequests: [{ status: 'APPROVED' }],
+      },
+    });
+
+    await expect(repository.findAffiliationContext(7)).resolves.toEqual({
+      affiliateId: 22,
+      affiliateStatus: 'ACTIVE',
+      affiliateRoleId: 4,
+      affiliateRequestStatus: 'APPROVED',
+    });
+  });
+
   it.each([
     [['email'], 'USER_EMAIL_RACE'],
     [['personId'], 'USER_PERSON_RACE'],

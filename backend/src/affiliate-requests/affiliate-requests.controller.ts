@@ -15,6 +15,7 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { CreateAffiliateRequestDto } from './dto/create-affiliate-request.dto';
+import { ApproveAffiliateRequestDto } from './dto/approve-affiliate-request.dto';
 import { QueryAffiliateRequestsDto } from './dto/query-affiliate-requests.dto';
 import { RejectAffiliateRequestDto } from './dto/review-affiliate-request.dto';
 import { AffiliateRequestsService } from './affiliate-requests.service';
@@ -22,11 +23,11 @@ type AuthRequest = Request & { user: AuthenticatedUser };
 @Controller('affiliate-requests')
 export class AffiliateRequestsController {
   constructor(private readonly service: AffiliateRequestsService) {}
-  @Post() @UseGuards(ThrottlerGuard) create(
+  @Post() @UseGuards(ThrottlerGuard, JwtAuthGuard) create(
     @Body() dto: CreateAffiliateRequestDto,
-    @Req() req: Request,
+    @Req() req: AuthRequest,
   ) {
-    return this.service.create(dto, this.context(req));
+    return this.service.create(dto, req.user.id, this.context(req));
   }
   @Get() @Roles('Administrador') @UseGuards(JwtAuthGuard, RolesGuard) findAll(
     @Query() query: QueryAffiliateRequestsDto,
@@ -42,8 +43,12 @@ export class AffiliateRequestsController {
   @Patch(':id/approve')
   @Roles('Administrador')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  approve(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
-    return this.service.approve(id, req.user.id, this.context(req));
+  approve(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ApproveAffiliateRequestDto,
+    @Req() req: AuthRequest,
+  ) {
+    return this.service.approve(id, dto.roleId, req.user.id, this.context(req));
   }
   @Patch(':id/reject')
   @Roles('Administrador')

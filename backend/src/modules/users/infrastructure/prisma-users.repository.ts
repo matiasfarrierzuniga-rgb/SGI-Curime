@@ -19,6 +19,7 @@ import { EmailAlreadyRegisteredError } from '../domain/errors/email-already-regi
 import {
   UserCreateData,
   UserPage,
+  UserAffiliationContext,
   UserQuery,
   UserUpdateData,
   UsersRepository,
@@ -155,6 +156,32 @@ export class PrismaUsersRepository implements UsersRepository {
       select: userSelect,
     });
     return user ? toUser(user) : null;
+  }
+
+  async findAffiliationContext(id: number): Promise<UserAffiliationContext> {
+    const account = await this.db.user.findUnique({
+      where: { id },
+      select: {
+        person: {
+          select: {
+            affiliate: { select: { id: true, status: true, roleId: true } },
+            affiliateRequests: {
+              select: { status: true },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+    const affiliate = account?.person?.affiliate;
+    return {
+      affiliateId: affiliate?.id ?? null,
+      affiliateStatus: affiliate?.status ?? null,
+      affiliateRoleId: affiliate?.roleId ?? null,
+      affiliateRequestStatus:
+        account?.person?.affiliateRequests[0]?.status ?? null,
+    };
   }
 
   async findByEmail(

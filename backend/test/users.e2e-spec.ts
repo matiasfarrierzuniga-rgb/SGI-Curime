@@ -36,7 +36,7 @@ describe('UsersController (e2e)', () => {
   let status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE';
   let subscriptionExpirationDate: Date | null = null;
   const listUsers = { execute: jest.fn() };
-  const getUser = { execute: jest.fn() };
+  const getUser = { execute: jest.fn(), executeWithAffiliation: jest.fn() };
   const updateUser = { execute: jest.fn() };
   const changeUserRole = { execute: jest.fn() };
   const activateUser = { execute: jest.fn() };
@@ -90,6 +90,15 @@ describe('UsersController (e2e)', () => {
       limit: 20,
     });
     getUser.execute.mockResolvedValue(user);
+    getUser.executeWithAffiliation.mockResolvedValue({
+      user,
+      affiliation: {
+        affiliateId: null,
+        affiliateStatus: null,
+        affiliateRoleId: null,
+        affiliateRequestStatus: 'PENDING',
+      },
+    });
     updateUser.execute.mockResolvedValue({ ...user, fullName: 'Nombre Nuevo' });
     changeUserRole.execute.mockResolvedValue(user);
     activateUser.execute.mockResolvedValue(user);
@@ -182,7 +191,7 @@ describe('UsersController (e2e)', () => {
       .get('/users/me')
       .set('Authorization', await authorization())
       .expect(200);
-    expect(getUser.execute).toHaveBeenCalledWith(1);
+    expect(getUser.executeWithAffiliation).toHaveBeenCalledWith(1);
     await request(app.getHttpServer()).get('/users/me').expect(401);
   });
 

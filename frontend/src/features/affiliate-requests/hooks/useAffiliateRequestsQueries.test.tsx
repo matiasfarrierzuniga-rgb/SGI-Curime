@@ -81,9 +81,9 @@ describe('affiliate request query foundation', () => {
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
     const { result } = renderHook(() => useAffiliateRequestMutations(), { wrapper })
 
-    await result.current.approve.mutateAsync(7)
+    await result.current.approve.mutateAsync({ id: 7, payload: { roleId: 4 } })
 
-    expect(affiliateRequestsApi.approve).toHaveBeenCalledWith(7)
+    expect(affiliateRequestsApi.approve).toHaveBeenCalledWith(7, { roleId: 4 })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: affiliateRequestsKeys.all })
     expect(invalidate).toHaveBeenCalledTimes(1)
   })

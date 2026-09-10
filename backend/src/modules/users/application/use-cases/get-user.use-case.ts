@@ -18,4 +18,10 @@ export class GetUserUseCase {
     if (!user) throw new UserNotFoundError();
     return user;
   }
+
+  async executeWithAffiliation(id: number) {
+    const user = await this.execute(id);
+    const affiliation = await this.repository.findAffiliationContext(id);
+    return { user, affiliation };
+  }
 }

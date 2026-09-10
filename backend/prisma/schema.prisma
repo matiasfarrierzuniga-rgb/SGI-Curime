@@ -137,7 +137,8 @@ model Role {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users User[]
+  users      User[]
+  affiliates Affiliate[]
 }
 
 model Person {
@@ -355,6 +356,10 @@ model Affiliate {
   affiliationDate     DateTime            @default(now())
   status              AffiliateStatus     @default(ACTIVE)
 
+  // Nullable for historical affiliates whose role cannot be inferred safely.
+  roleId Int?
+  role   Role? @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
   personId Int?    @unique
   person   Person? @relation(fields: [personId], references: [id], onDelete: Restrict)
 
@@ -365,6 +370,8 @@ model Affiliate {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([roleId])
 }
 
 model AffiliateRequest {
