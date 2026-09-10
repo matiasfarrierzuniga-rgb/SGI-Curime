@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronRight, ExternalLink, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
@@ -35,47 +36,60 @@ export function ErpLayout() {
   )
 
   return (
-    <div className="min-h-dvh bg-brand-ivory font-sans text-brand-ink">
+    <div className="min-h-dvh bg-surface-page font-sans text-foreground">
       <a className="skip-link" href="#erp-content">Saltar al contenido</a>
-      <header className="sticky top-0 z-30 border-b border-brand-sage/60 bg-white/95 shadow-sm backdrop-blur">
-        <div className={`flex min-h-16 items-center gap-3 px-4 sm:px-6 md:pr-8 xl:pl-[18rem] ${tabletCollapsed ? 'md:pl-24' : 'md:pl-[18rem]'}`}>
+      <header className="sticky top-0 z-30 border-b border-border bg-surface/95 shadow-sm backdrop-blur">
+        <div className={`grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 px-4 py-3 sm:px-6 md:flex md:min-h-18 md:gap-4 md:py-0 md:pr-8 xl:pr-10 ${tabletCollapsed ? 'md:pl-28 xl:pl-[18.5rem]' : 'md:pl-[18rem] xl:pl-[18.5rem]'}`}>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger render={<Button variant="outline" size="icon-lg" className="md:hidden" aria-label="Abrir navegación" />}>
+            <SheetTrigger render={<Button variant="outline" size="icon-lg" className="row-span-2 shadow-none md:hidden" aria-label="Abrir navegación" />}>
               <Menu aria-hidden="true" />
             </SheetTrigger>
-            <SheetContent side="left" className="w-[min(88vw,20rem)] bg-white p-0" aria-label="Navegación móvil">
+            <SheetContent side="left" className="w-[min(88vw,20rem)] bg-surface p-0" aria-label="Navegación móvil">
               <SheetHeader className="border-b border-border px-5 py-5">
-                <SheetTitle className="font-heading text-xl text-brand-deep">Navegación móvil</SheetTitle>
-                <SheetDescription>SGI-Curime · Área de gestión</SheetDescription>
+                <SheetTitle className="sr-only">Navegación de SGI-Curime</SheetTitle>
+                <div className="flex items-center gap-3 text-primary">
+                  <span aria-hidden="true" className="grid size-10 place-items-center rounded-full border border-primary/30 bg-primary/10 font-heading text-lg">C</span>
+                  <span>
+                    <strong className="block font-heading text-xl font-normal leading-none tracking-[0.04em]">CURIME</strong>
+                    <small className="mt-1 block text-[0.62rem] font-bold uppercase tracking-[0.13em] text-muted-foreground">Asociación de Desarrollo Integral</small>
+                  </span>
+                </div>
+                <SheetDescription className="mt-4 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Área de gestión</SheetDescription>
               </SheetHeader>
-              <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">{navigationContent}</div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">{navigationContent}</div>
             </SheetContent>
           </Sheet>
-          <Button type="button" variant="outline" size="icon-lg" className="hidden md:inline-flex xl:hidden" aria-label={tabletCollapsed ? 'Expandir navegación' : 'Contraer navegación'} aria-expanded={!tabletCollapsed} onClick={() => setTabletCollapsed((collapsed) => !collapsed)}>
+          <Button type="button" variant="outline" size="icon-lg" className="hidden shadow-none md:inline-flex xl:hidden" aria-label={tabletCollapsed ? 'Expandir navegación' : 'Contraer navegación'} aria-expanded={!tabletCollapsed} onClick={() => setTabletCollapsed((collapsed) => !collapsed)}>
             {tabletCollapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
           </Button>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 md:flex-1">
             <nav aria-label="Ubicación actual" className="flex min-w-0 items-center gap-1 text-xs text-foreground-muted">
-              <span className="shrink-0">Área de gestión</span><ChevronRight className="size-3 shrink-0" aria-hidden="true" /><span className="truncate font-semibold text-brand-deep" aria-current="page">{pageLabel}</span>
+              <span className="shrink-0">Área de gestión</span><ChevronRight className="size-3 shrink-0" aria-hidden="true" /><span className="truncate font-semibold text-foreground" aria-current="page">{pageLabel}</span>
             </nav>
             <p className="mt-1 hidden truncate text-xs text-foreground-muted sm:block">Asociación de Desarrollo Integral de Curime</p>
           </div>
-          <div className="min-w-0 text-right">
-            <p className="max-w-40 truncate text-sm font-semibold text-brand-ink sm:max-w-64">{user?.fullName}</p>
-            {roleName && <Badge variant="secondary" className="mt-1">{roleName}</Badge>}
+          <div className="col-start-2 min-w-0 border-t border-border-subtle pt-2 text-left md:col-auto md:shrink-0 md:border-t-0 md:pt-0 md:text-right">
+            <p className="max-w-full truncate text-sm font-semibold text-foreground md:max-w-64">{user?.fullName}</p>
+            {roleName && <Badge variant="outline" className="mt-1 max-w-full truncate">{roleName}</Badge>}
           </div>
         </div>
       </header>
 
-      <aside className={`fixed inset-y-0 left-0 z-40 hidden border-r border-brand-sage/60 bg-brand-deep text-brand-ivory transition-[width] motion-reduce:transition-none md:flex md:flex-col xl:w-64 ${tabletCollapsed ? 'md:w-20' : 'md:w-64'}`}>
-        <div className="border-b border-white/15 px-6 py-5">
-          <p className={`font-heading text-2xl ${tabletCollapsed ? 'md:text-center md:text-xl xl:text-left xl:text-2xl' : ''}`}><span className={tabletCollapsed ? 'md:hidden xl:inline' : ''}>SGI-Curime</span><span className={tabletCollapsed ? 'hidden md:inline xl:hidden' : 'hidden'} aria-hidden="true">SGI</span></p>
-          <p className={`mt-1 text-xs font-bold uppercase tracking-[0.12em] text-brand-accent ${tabletCollapsed ? 'md:sr-only xl:not-sr-only' : ''}`}>Área de gestión</p>
+      <aside className={`fixed inset-y-0 left-0 z-40 hidden border-r border-primary-foreground/15 bg-primary text-primary-foreground transition-[width] motion-safe:duration-200 motion-safe:ease-out motion-reduce:transition-none md:flex md:flex-col xl:w-64 ${tabletCollapsed ? 'md:w-20' : 'md:w-64'}`}>
+        <div className="border-b border-primary-foreground/15 px-3 py-5 xl:px-5">
+          <div className={`flex items-center gap-3 ${tabletCollapsed ? 'md:justify-center xl:justify-start' : ''}`}>
+            <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-full border border-primary-foreground/30 bg-primary-foreground/10 font-heading text-lg">C</span>
+            <span className={tabletCollapsed ? 'md:hidden xl:inline' : ''}>
+              <strong className="block font-heading text-xl font-normal leading-none tracking-[0.04em]">CURIME</strong>
+              <small className="mt-1 block text-[0.62rem] font-bold uppercase tracking-[0.13em] text-primary-foreground/80">Asociación de Desarrollo Integral</small>
+            </span>
+          </div>
+          <p className={`mt-4 text-xs font-bold uppercase tracking-[0.12em] text-primary-foreground/80 ${tabletCollapsed ? 'md:sr-only xl:not-sr-only' : ''}`}>Área de gestión</p>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [scrollbar-gutter:stable]"><ErpNavigation id="sidebar" currentPath={location.pathname} navigation={navigation} onNavigate={() => undefined} onLogout={closeSession} compact={tabletCollapsed} /></div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-3 [scrollbar-gutter:stable]"><ErpNavigation id="sidebar" currentPath={location.pathname} navigation={navigation} onNavigate={() => undefined} onLogout={closeSession} compact={tabletCollapsed} inverted /></div>
       </aside>
 
-      <main id="erp-content" className={`min-w-0 px-4 py-7 transition-[margin] motion-reduce:transition-none sm:px-6 md:px-8 xl:ml-64 xl:px-10 xl:py-9 ${tabletCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
+      <main id="erp-content" className={`min-w-0 px-4 py-7 transition-[margin] motion-safe:duration-200 motion-safe:ease-out motion-reduce:transition-none sm:px-6 md:px-8 xl:ml-64 xl:px-10 xl:py-9 ${tabletCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
         <div className="mx-auto w-full max-w-[1280px]"><Outlet /></div>
       </main>
     </div>
@@ -100,46 +114,68 @@ type NavigationProps = {
   onNavigate: () => void
   onLogout: () => void
   compact?: boolean
+  inverted?: boolean
 }
 
-function ErpNavigation({ id, currentPath, navigation, onNavigate, onLogout, compact = false }: NavigationProps) {
+function ErpNavigation({ id, currentPath, navigation, onNavigate, onLogout, compact = false, inverted = false }: NavigationProps) {
+  const [compactLabel, setCompactLabel] = useState<{ label: string; left: number; top: number } | null>(null)
+
+  const showCompactLabel = (label: string, target: HTMLElement) => {
+    const { right, top, height } = target.getBoundingClientRect()
+    setCompactLabel({ label, left: right + 8, top: top + height / 2 })
+  }
+
+  useEffect(() => {
+    if (!compactLabel) return
+
+    const hideCompactLabel = () => setCompactLabel(null)
+    window.addEventListener('scroll', hideCompactLabel, true)
+    window.addEventListener('resize', hideCompactLabel)
+
+    return () => {
+      window.removeEventListener('scroll', hideCompactLabel, true)
+      window.removeEventListener('resize', hideCompactLabel)
+    }
+  }, [compactLabel])
+
   return (
     <nav aria-label="Navegación del sistema" className="flex min-h-full flex-col">
-      <div className="space-y-5">
+      <div className="space-y-4">
         {navigation.map((section) => (
           <section key={section.label} aria-labelledby={`${id}-nav-${section.label.replace(/\s/g, '-').toLowerCase()}`}>
-            <h2 id={`${id}-nav-${section.label.replace(/\s/g, '-').toLowerCase()}`} className={`px-3 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-current opacity-65 ${compact ? 'md:sr-only xl:not-sr-only' : ''}`}>{section.label}</h2>
-            <ul className="mt-2 space-y-1">
-              {section.items.map((item) => <NavigationItem key={item.label} item={item} currentPath={currentPath} onNavigate={onNavigate} compact={compact} />)}
+            <h2 id={`${id}-nav-${section.label.replace(/\s/g, '-').toLowerCase()}`} className={`px-3 text-[0.68rem] font-bold uppercase tracking-[0.14em] ${inverted ? 'text-primary-foreground/80' : 'text-muted-foreground'} ${compact ? 'md:sr-only xl:not-sr-only' : ''}`}>{section.label}</h2>
+            <ul className="mt-1.5 space-y-1">
+              {section.items.map((item) => <NavigationItem key={item.label} item={item} currentPath={currentPath} onNavigate={onNavigate} compact={compact} inverted={inverted} onCompactLabel={showCompactLabel} onHideCompactLabel={() => setCompactLabel(null)} />)}
             </ul>
           </section>
         ))}
       </div>
-      <div className="mt-auto space-y-1 border-t border-current/15 pt-4">
-        <Link to="/" onClick={onNavigate} title={compact ? 'Ver sitio público' : undefined} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold text-current hover:bg-brand-soft/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent">
+      <div className={`mt-auto space-y-1 border-t pt-3 ${inverted ? 'border-primary-foreground/20' : 'border-border'}`}>
+        <Link to="/" onClick={onNavigate} onPointerEnter={(event) => compact && showCompactLabel('Ver sitio público', event.currentTarget)} onPointerLeave={() => setCompactLabel(null)} onFocus={(event) => compact && showCompactLabel('Ver sitio público', event.currentTarget)} onBlur={() => setCompactLabel(null)} className={`group/action relative flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-semibold transition-[background-color,color,box-shadow] motion-safe:duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 ${compact ? 'md:size-11 md:justify-center md:px-0 xl:min-h-11 xl:w-auto xl:justify-start xl:px-3' : ''} ${inverted ? 'text-primary-foreground hover:bg-primary-foreground/10 focus-visible:outline-primary-foreground' : 'text-foreground hover:bg-muted focus-visible:outline-ring'}`}>
           <ExternalLink className="size-4 shrink-0" aria-hidden="true" /> <span className={compact ? 'md:sr-only xl:not-sr-only' : ''}>Ver sitio público</span>
         </Link>
-        <button type="button" onClick={onLogout} title={compact ? 'Cerrar sesión' : undefined} className="flex min-h-11 w-full items-center gap-3 rounded-lg border-0 bg-transparent px-3 text-left text-sm font-semibold text-current hover:bg-brand-soft/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent">
+        <button type="button" onClick={onLogout} onPointerEnter={(event) => compact && showCompactLabel('Cerrar sesión', event.currentTarget)} onPointerLeave={() => setCompactLabel(null)} onFocus={(event) => compact && showCompactLabel('Cerrar sesión', event.currentTarget)} onBlur={() => setCompactLabel(null)} className={`group/action relative flex min-h-11 w-full items-center gap-3 rounded-control border-0 bg-transparent px-3 text-left text-sm font-semibold transition-[background-color,color,box-shadow] motion-safe:duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 ${compact ? 'md:size-11 md:justify-center md:px-0 xl:min-h-11 xl:w-auto xl:justify-start xl:px-3' : ''} ${inverted ? 'text-primary-foreground hover:bg-primary-foreground/10 focus-visible:outline-primary-foreground' : 'text-foreground hover:bg-muted focus-visible:outline-ring'}`}>
           <LogOut className="size-4 shrink-0" aria-hidden="true" /> <span className={compact ? 'md:sr-only xl:not-sr-only' : ''}>Cerrar sesión</span>
         </button>
       </div>
+      {compactLabel && createPortal(<span aria-hidden="true" className="pointer-events-none fixed z-[60] hidden max-w-48 -translate-y-1/2 rounded-md bg-surface px-2 py-1 text-xs font-semibold text-foreground shadow-md md:block xl:hidden" style={{ left: compactLabel.left, top: compactLabel.top }}>{compactLabel.label}</span>, document.body)}
     </nav>
   )
 }
 
-function NavigationItem({ item, currentPath, onNavigate, compact }: { item: ErpNavigationItem; currentPath: string; onNavigate: () => void; compact: boolean }) {
+function NavigationItem({ item, currentPath, onNavigate, compact, inverted, onCompactLabel, onHideCompactLabel }: { item: ErpNavigationItem; currentPath: string; onNavigate: () => void; compact: boolean; inverted: boolean; onCompactLabel: (label: string, target: HTMLElement) => void; onHideCompactLabel: () => void }) {
   const Icon = item.icon
   const groupActive = item.children?.some((child) => child.path === currentPath) ?? false
   return (
     <li>
       {item.path && (
-        <NavLink end={item.path === '/app' || item.path === '/inventory'} to={item.path} onClick={onNavigate} title={compact ? item.label : undefined} className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent ${(isActive || groupActive) ? 'bg-brand-accent text-brand-deep shadow-sm' : 'text-current hover:bg-brand-soft/20'}`}>
+        <NavLink end={item.path === '/app' || item.path === '/inventory'} to={item.path} onClick={onNavigate} onPointerEnter={(event) => compact && onCompactLabel(item.label, event.currentTarget)} onPointerLeave={onHideCompactLabel} onFocus={(event) => compact && onCompactLabel(item.label, event.currentTarget)} onBlur={onHideCompactLabel} className={({ isActive }) => `group/nav-item relative flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-semibold transition-[background-color,color,box-shadow] motion-safe:duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 ${compact ? 'md:size-11 md:justify-center md:px-0 xl:min-h-11 xl:w-auto xl:justify-start xl:px-3' : ''} ${(isActive || groupActive) ? 'bg-surface text-foreground shadow-sm' : inverted ? 'text-primary-foreground hover:bg-primary-foreground/10 focus-visible:outline-primary-foreground' : 'text-foreground hover:bg-muted focus-visible:outline-ring'}`}>
           {Icon && <Icon className="size-4 shrink-0" aria-hidden="true" />}<span className={compact ? 'md:sr-only xl:not-sr-only' : ''}>{item.label}</span>
         </NavLink>
       )}
       {item.children && groupActive && (
-        <ul className="ml-5 mt-1 space-y-1 border-l border-current/25 pl-3" aria-label={`Secciones de ${item.label}`}>
-          {item.children.map((child) => <NavigationItem key={child.path} item={child} currentPath={currentPath} onNavigate={onNavigate} compact={compact} />)}
+        <ul className={`mt-1 space-y-1 ${compact ? 'md:mx-auto md:w-11 md:border-0 md:p-0 xl:ml-5 xl:w-auto xl:border-l xl:border-primary-foreground/25 xl:pl-3' : 'ml-5 border-l border-border pl-3'}`} aria-label={`Secciones de ${item.label}`}>
+          {item.children.map((child) => <NavigationItem key={child.path} item={child} currentPath={currentPath} onNavigate={onNavigate} compact={compact} inverted={inverted} onCompactLabel={onCompactLabel} onHideCompactLabel={onHideCompactLabel} />)}
         </ul>
       )}
     </li>
