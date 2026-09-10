@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { site } from '@/content/publicSiteContent'
+import { CurimeBrandAccent } from '@/shared/ui/brand/CurimeBrandAccent'
 
 export function AboutSection() {
   return (
-    <section aria-labelledby="about-title" className="border-t border-brand-sage/70 bg-brand-ivory py-12 md:py-16 xl:py-20">
+    <section aria-labelledby="about-title" className="relative overflow-hidden border-t border-brand-sage/70 bg-brand-ivory py-12 md:py-16 xl:py-20">
+      <CurimeBrandAccent className="absolute -bottom-10 -left-6 hidden size-36 opacity-20 md:block md:size-44 lg:-left-4 lg:size-52" />
       <div className="public-container grid gap-9 md:grid-cols-[minmax(13rem,5fr)_minmax(0,7fr)] md:gap-12 lg:gap-20 xl:gap-28">
         <div className="max-w-lg">
           <p className="public-eyebrow text-brand-primary">

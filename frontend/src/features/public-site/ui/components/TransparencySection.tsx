@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Eye } from 'lucide-react'
+import { CurimeGrecaPattern } from '@/shared/ui/brand/CurimeGrecaPattern'
 
 export function TransparencySection() {
   return (
     <section aria-labelledby="transparency-title" className="relative isolate overflow-hidden bg-brand-deep py-12 text-brand-ivory md:py-16 xl:py-20">
-      <span aria-hidden="true" className="absolute -right-20 top-1/2 size-72 -translate-y-1/2 rounded-full border-[2rem] border-brand-sage/15" />
+      <CurimeGrecaPattern className="absolute inset-y-0 right-0 w-[70%] opacity-10 md:w-[56%] lg:w-[48%]" />
       <div className="public-container relative grid gap-9 md:gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-20">
         <div className="max-w-3xl">
           <div className="flex items-center gap-4">
