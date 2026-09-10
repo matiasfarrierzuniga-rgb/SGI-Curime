@@ -39,7 +39,7 @@ describe('shared security role policy', () => {
     expect(getRoleName(null)).toBeUndefined()
     expect(isAdmin({})).toBe(false)
     expect(canManageInventory(undefined)).toBe(false)
-    expect(homePathForRole(null)).toBe('/login')
+    expect(homePathForRole(null)).toBe('/servicios')
   })
 
   it('derives inventory access for admin and gestor only', () => {
@@ -50,9 +50,10 @@ describe('shared security role policy', () => {
   })
 
   it('routes post-login home by role', () => {
-    expect(homePathForRole('Administrador')).toBe('/app')
-    expect(homePathForRole({ name: 'Administrador' })).toBe('/app')
-    expect(homePathForRole('Gestor de Inventario')).toBe('/app')
-    expect(homePathForRole(undefined)).toBe('/login')
+    expect(homePathForRole('Administrador', true)).toBe('/app')
+    expect(homePathForRole({ name: 'Administrador' }, true)).toBe('/app')
+    expect(homePathForRole('Gestor de Inventario', true)).toBe('/app')
+    expect(homePathForRole('Administrador', false)).toBe('/servicios')
+    expect(homePathForRole(undefined)).toBe('/servicios')
   })
 })

@@ -68,7 +68,6 @@ export const ACCESS_ROLE_CAPABILITIES: Readonly<
     'abs.justifications.read',
   ],
 }
-
 export function hasCapability(
   role: RoleLike,
   capability: string,
@@ -83,14 +82,5 @@ export function hasCapability(
     ACCESS_ROLE_CAPABILITIES[roleName]?.includes(
       capability as AccessCapability,
     ) === true
-  )
-}
-
-export function hasAuthenticatedSessionCapability(
-  capability: string,
-): boolean {
-  return (
-    capability === 'usr.profile.read' ||
-    capability === 'erp.dashboard.read'
   )
 }

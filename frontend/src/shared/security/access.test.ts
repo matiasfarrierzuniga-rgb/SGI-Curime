@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   ACCESS_CAPABILITIES,
   ACCESS_ROLE_CAPABILITIES,
-  hasAuthenticatedSessionCapability,
   hasCapability,
 } from './access'
 
@@ -117,9 +116,4 @@ describe('shared security access policy', () => {
     expect(hasCapability('Administrador', '')).toBe(false)
   })
 
-  it('grants profile and dashboard access to authenticated sessions', () => {
-    expect(hasAuthenticatedSessionCapability('usr.profile.read')).toBe(true)
-    expect(hasAuthenticatedSessionCapability('erp.dashboard.read')).toBe(true)
-    expect(hasAuthenticatedSessionCapability('adm.affiliates.read')).toBe(false)
-  })
 })

@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Skeleton } from '@/shared/ui/skeleton'
 
 const internalQuickActions = [
-  { label: 'Solicitar una reserva', description: 'Solicite el uso de un espacio comunitario.', path: '/app/reservations/new', icon: CalendarPlus },
+  { label: 'Solicitar una reserva', description: 'Solicite el uso de un espacio comunitario.', path: '/servicios/reservas', icon: CalendarPlus },
   { label: 'Gestionar usuarios', description: 'Consultar y administrar cuentas.', path: '/admin/users', capability: 'usr.users.read', icon: Users },
   { label: 'Revisar solicitudes', description: 'Atender solicitudes de afiliación.', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
   { label: 'Gestionar reservas', description: 'Consultar y atender reservas comunitarias.', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarCheck },
@@ -22,7 +22,7 @@ const internalQuickActions = [
 ] as const
 
 const communityActions = [
-  { label: 'Solicitar una reserva', description: 'Pida el uso de un espacio comunitario.', path: '/app/reservations/new', icon: CalendarPlus },
+  { label: 'Solicitar una reserva', description: 'Pida el uso de un espacio comunitario.', path: '/servicios/reservas', icon: CalendarPlus },
   { label: 'Enviar justificación', description: 'Justifique una ausencia a una asamblea.', path: '/app/affiliate/absence-justifications/new', icon: FileCheck2 },
   { label: 'Mis justificaciones', description: 'Revise el estado de lo que ha enviado.', path: '/app/affiliate/justifications', icon: ClipboardList },
 ] as const

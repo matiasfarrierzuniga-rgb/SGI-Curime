@@ -10,7 +10,10 @@ const userRow = {
   lockedAt: null,
   failedLoginAttempts: 0,
   lastLoginAt: null,
-  role: { name: 'Administrador' },
+  roleId: 2,
+  role: { name: 'Administrador', isActive: true },
+  person: { affiliate: { status: 'ACTIVE', roleId: 2 } },
+  subscriptionExpirationDate: null,
 };
 
 const activationTokenRow = {
@@ -81,10 +84,16 @@ describe('PrismaAuthRepository', () => {
       failedLoginAttempts: 0,
       lastLoginAt: null,
       roleName: 'Administrador',
+      roleId: 2,
+      roleIsActive: true,
+      hasPerson: true,
+      affiliateStatus: 'ACTIVE',
+      affiliateRoleId: 2,
+      subscriptionExpirationDate: null,
     });
     expect(db.user.findUnique).toHaveBeenCalledWith({
       where: { email: 'admin@example.com' },
-      include: { role: true },
+      include: { role: true, person: { include: { affiliate: true } } },
     });
   });
 

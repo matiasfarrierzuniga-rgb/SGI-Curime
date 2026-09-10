@@ -9,6 +9,7 @@ export interface AuthenticatedUser {
   affiliateStatus?: 'ACTIVE' | 'INACTIVE' | null
   affiliateRoleId?: number | null
   affiliateRequestStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null
+  canAccessErp: boolean
 }
 export interface LoginCredentials { email: string; password: string }
 export interface LoginResponse { accessToken: string; user: AuthenticatedUser }

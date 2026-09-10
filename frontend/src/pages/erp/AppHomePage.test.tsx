@@ -21,7 +21,7 @@ describe('AppHomePage', () => {
     expect(screen.getByRole('link', { name: /Gestionar usuarios/ })).toHaveAttribute('href', '/admin/users')
     expect(screen.getByRole('link', { name: /Revisar solicitudes/ })).toHaveAttribute('href', '/app/admin/requests')
     expect(screen.getByRole('link', { name: /Consultar bitácora/ })).toHaveAttribute('href', '/admin/audit-logs')
-    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/app/reservations/new')
+    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/servicios/reservas')
     expect(screen.queryByText(/Módulo en desarrollo/i)).not.toBeInTheDocument()
   })
 
@@ -36,7 +36,7 @@ describe('AppHomePage', () => {
   it('shows a clear set of real account actions to community users', () => {
     auth.user = { fullName: 'María Solano', role: 'Vecino/Afiliado' }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
-    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/app/reservations/new')
+    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/servicios/reservas')
     expect(screen.getByRole('link', { name: /Enviar justificación/ })).toHaveAttribute('href', '/app/affiliate/absence-justifications/new')
     expect(screen.getByRole('link', { name: /Mis justificaciones/ })).toHaveAttribute('href', '/app/affiliate/justifications')
     expect(screen.getByRole('link', { name: 'Mi perfil' })).toHaveAttribute('href', '/profile')

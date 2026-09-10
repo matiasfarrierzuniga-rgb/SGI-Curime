@@ -14,6 +14,7 @@ import {
 import { isSubscriptionExpired } from '../../domain/policies/subscription-expiration.policy';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { toAuthHttpError } from '../errors/auth-http-error.mapper';
+import { canAccessErp } from '../../domain/policies/internal-access.policy';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -74,6 +75,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: account.email,
       status: account.status,
       role: account.roleName,
+      canAccessErp: canAccessErp({
+        userStatus: account.status,
+        userRoleId: account.roleId,
+        userRoleName: account.roleName,
+        userRoleIsActive: account.roleIsActive,
+        hasPerson: account.hasPerson,
+        affiliateStatus: account.affiliateStatus,
+        affiliateRoleId: account.affiliateRoleId,
+      }),
       ...(account.subscriptionExpirationDate
         ? { subscriptionExpirationDate: account.subscriptionExpirationDate }
         : {}),

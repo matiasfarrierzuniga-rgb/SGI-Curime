@@ -25,7 +25,8 @@ export function LoginPage() {
     try {
       const user = await login({ email: email.trim().toLowerCase(), password })
       const requested = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
-      navigate(requested || homePathForRole(user.role), { replace: true })
+      const authorizedRequest = requested && (!requested.startsWith('/app') || user.canAccessErp) ? requested : undefined
+      navigate(authorizedRequest || homePathForRole(user.role, user.canAccessErp), { replace: true })
     } catch {
       setError('No fue posible iniciar sesión. Verifique sus credenciales.')
     } finally {

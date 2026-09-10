@@ -19,7 +19,7 @@ const domainUser = {
 };
 
 describe('GetUserUseCase', () => {
-  const repository = { findById: jest.fn() };
+  const repository = { findById: jest.fn(), findAffiliationContext: jest.fn() };
   let useCase: GetUserUseCase;
 
   beforeEach(() => {
@@ -38,5 +38,20 @@ describe('GetUserUseCase', () => {
     repository.findById.mockResolvedValue(null);
 
     await expect(useCase.execute(99)).rejects.toBeInstanceOf(UserNotFoundError);
+  });
+
+  it('projects authoritative ERP access with the affiliation context', async () => {
+    repository.findById.mockResolvedValue(domainUser);
+    repository.findAffiliationContext.mockResolvedValue({
+      affiliateId: 8,
+      affiliateStatus: 'ACTIVE',
+      affiliateRoleId: 2,
+      affiliateRequestStatus: 'APPROVED',
+      hasPerson: true,
+    });
+
+    await expect(useCase.executeWithAffiliation(2)).resolves.toMatchObject({
+      affiliation: { affiliateId: 8, canAccessErp: true },
+    });
   });
 });
