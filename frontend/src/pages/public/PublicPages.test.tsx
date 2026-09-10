@@ -7,7 +7,11 @@ import { LandingPage } from '@/features/public-site'
 import { PublicEventsPage } from '@/features/events'
 import { ContactPage, NewsPage, ServicesPage } from './PublicPages'
 
-const authState = vi.hoisted(() => ({ isAuthenticated: false }))
+const authState = vi.hoisted(() => ({
+  isAuthenticated: false,
+  user: null as null | { canAccessErp: boolean },
+  logout: vi.fn(),
+}))
 vi.mock('@/features/auth', () => ({
   useAuth: () => authState,
 }))
@@ -33,6 +37,8 @@ function renderPublic(path = '/') {
 describe('portal público', () => {
   beforeEach(() => {
     authState.isAuthenticated = false
+    authState.user = null
+    authState.logout.mockReset()
     vi.stubGlobal('scrollTo', vi.fn())
   })
 
@@ -78,11 +84,22 @@ describe('portal público', () => {
 
   it('dirige a personas autenticadas al área interna', () => {
     authState.isAuthenticated = true
+    authState.user = { canAccessErp: true }
     const { container } = renderPublic()
 
     expect(container.querySelector<HTMLAnchorElement>('a[href="/app"]')).not.toBeNull()
     expect(screen.getAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
     authState.isAuthenticated = false
+  })
+
+  it('dirige una cuenta general autenticada a servicios', () => {
+    authState.isAuthenticated = true
+    authState.user = { canAccessErp: false }
+    const { container } = renderPublic()
+
+    expect(container.querySelector<HTMLAnchorElement>('a[href="/servicios"]')).not.toBeNull()
+    expect(screen.getAllByText('Ver servicios')).not.toHaveLength(0)
+    expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
   })
 
   it('abre y cierra el menú móvil con Escape', () => {

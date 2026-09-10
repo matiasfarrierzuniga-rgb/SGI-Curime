@@ -7,7 +7,9 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 
 export function LandingPage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const accessTo = !isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'
+  const accessLabel = !isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'
   useEffect(() => {
     document.title = 'Portal comunitario | ADI Curime'
     const description = 'Portal comunitario de la Asociación de Desarrollo Integral de Curime, Nicoya, Guanacaste.'
@@ -36,10 +38,10 @@ export function LandingPage() {
             Ingrese al SGI para utilizar las herramientas disponibles para su cuenta.
           </p>
           <Link
-            to={isAuthenticated ? '/app' : '/login'}
+            to={accessTo}
             className="mt-8 inline-flex min-h-12 items-center justify-center rounded-md bg-brand-deep px-6 py-3 font-bold text-brand-ivory shadow-sm transition-[background-color,box-shadow] hover:bg-brand-primary hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep"
           >
-            {isAuthenticated ? 'Ir al panel' : 'Iniciar sesión'}
+            {accessLabel}
           </Link>
         </div>
       </section>

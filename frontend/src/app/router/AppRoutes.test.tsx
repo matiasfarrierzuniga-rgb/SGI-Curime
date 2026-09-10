@@ -82,6 +82,30 @@ describe('AppRoutes capability deep links', () => {
 
     expect(await screen.findAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
     screen.getAllByRole('link', { name: 'Ir al panel' }).forEach((link) => expect(link).toHaveAttribute('href', '/app'))
+    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(3)
+    expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
+  })
+
+  it('shows services and logout, but no panel or account request, to a general account', async () => {
+    renderRoute('/servicios', 'Subscription_L1', false)
+
+    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Ver servicios' })).not.toHaveLength(0)
+    expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(3)
+  })
+
+  it('logs out a general account from the mobile public menu', async () => {
+    renderRoute('/servicios', 'Subscription_L1', false)
+
+    await screen.findByRole('heading', { name: 'Servicios' })
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
+
+    await waitFor(() => expect(sessionStorage.getItem('sgi-curime-session')).toBeNull())
+    expect(screen.getAllByRole('link', { name: 'Iniciar sesión' })).not.toHaveLength(0)
+    expect(screen.getAllByRole('link', { name: 'Solicitar una cuenta' })).not.toHaveLength(0)
   })
 
   it('redirects anonymous users from /app to login', () => {
