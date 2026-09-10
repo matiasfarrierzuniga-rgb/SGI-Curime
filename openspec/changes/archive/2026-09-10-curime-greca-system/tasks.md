@@ -6,19 +6,19 @@
 - [x] 1.4 Replace or visually subordinate the generic sage divider at the top of `ServicesSection` without changing content, layout, spacing, headings, cards or CTAs.
 - [x] 1.5 Confirm Phase 1 does not introduce `CurimeGrecaPattern`, `CurimeBrandAccent`, future assets, legacy folders or dependencies.
 
-## 2. Phase 1 — Visual and accessibility review
+## 2. System validation
 
-- [x] 2.1 Manually inspect the Hero-to-Services transition at 320px, 375px, 768px, 1024px, 1280px and 1440px+.
+- [x] 2.1 Manually inspect all three initial integrations at 320px, 375px, 768px, 1024px, 1280px and 1440px+.
 - [x] 2.2 Confirm no horizontal overflow, clipping, significant layout shift, heading competition or CTA collision.
 - [x] 2.3 Confirm decorative semantics, keyboard behavior, focus-visible behavior, landmarks, skip-link and touch targets are unchanged.
-- [x] 2.4 Confirm the divider uses existing identity colors and does not require gradients, motion or new tokens.
+- [x] 2.4 Confirm Divider, Pattern and Accent use existing identity colors and no gradients, motion or new tokens.
 
-## 3. Phase 1 — Daniel validation
+## 3. Daniel validation
 
 - [x] 3.1 Daniel ran `PublicPages.test.tsx`: 18/18 PASS.
 - [x] 3.2 Architecture validation passed through `npm run verify`.
 - [x] 3.3 Build and `npm run verify` passed: 65/65 test files and 402/402 tests.
-- [x] 3.4 Daniel approved final responsive and visual review for Phase 1.
+- [x] 3.4 Daniel approved final responsive and visual review for all three phases.
 
 ## 4. Phase 2 — CurimeGrecaPattern
 
