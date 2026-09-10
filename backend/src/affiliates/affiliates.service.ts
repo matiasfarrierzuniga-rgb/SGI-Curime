@@ -170,21 +170,22 @@ export class AffiliatesService {
     return item;
   }
 
-  async deactivate(
-    id: number,
-    actorId: number,
-    context: AuditContext = {},
-  ) {
+  async deactivate(id: number, actorId: number, context: AuditContext = {}) {
     return this.prisma.$transaction(async (tx) => {
       const affiliate = await tx.affiliate.findUnique({
         where: { id },
-        select: { id: true, status: true, personId: true, person: { select: { user: { select: { id: true } } } } },
+        select: {
+          id: true,
+          status: true,
+          personId: true,
+          person: { select: { user: { select: { id: true } } } },
+        },
       });
       if (!affiliate) throw new NotFoundException('Affiliate not found');
       if (affiliate.status !== 'ACTIVE') {
         throw new ConflictException('Affiliate is already inactive');
       }
-      if (!affiliate.personId) {
+      if (!affiliate.personId || !affiliate.person) {
         throw new ConflictException('Affiliate has no linked person');
       }
       const user = affiliate.person.user;
@@ -202,19 +203,28 @@ export class AffiliatesService {
         data: { status: 'INACTIVE' },
         select,
       });
-      await tx.user.update({ where: { id: user.id }, data: { roleId: generalRole.id } });
+      await tx.user.update({
+        where: { id: user.id },
+        data: { roleId: generalRole.id },
+      });
       await tx.session.updateMany({
         where: { userId: user.id, revokedAt: null },
-        data: { revokedAt: new Date(), revocationReason: 'AFFILIATE_DEACTIVATED' },
+        data: {
+          revokedAt: new Date(),
+          revocationReason: 'AFFILIATE_DEACTIVATED',
+        },
       });
-      await this.audit.log({
-        userId: actorId,
-        action: AuditAction.AFFILIATE_DEACTIVATED,
-        module: 'AFFILIATES',
-        entityType: 'Affiliate',
-        entityId: id,
-        ...context,
-      }, tx);
+      await this.audit.log(
+        {
+          userId: actorId,
+          action: AuditAction.AFFILIATE_DEACTIVATED,
+          module: 'AFFILIATES',
+          entityType: 'Affiliate',
+          entityId: id,
+          ...context,
+        },
+        tx,
+      );
       return item;
     });
   }

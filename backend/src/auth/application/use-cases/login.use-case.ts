@@ -8,6 +8,8 @@ import {
   isTemporaryLockActive,
 } from '../../domain/policies/account-lockout.policy';
 import { isSubscriptionExpired } from '../../domain/policies/subscription-expiration.policy';
+import { canAccessErp } from '../../domain/policies/internal-access.policy';
+import type { AuthAccount } from '../../domain/entities/auth-account';
 import {
   AUDIT_PORT,
   type AuditContext,
@@ -161,20 +163,22 @@ export class LoginUseCase {
   }
 }
 
-function toAuthenticatedUser(account: {
-  id: number;
-  fullName: string;
-  email: string;
-  status: string;
-  roleName: string;
-  subscriptionExpirationDate: Date | null;
-}): AuthenticatedUser {
+function toAuthenticatedUser(account: AuthAccount): AuthenticatedUser {
   return {
     id: account.id,
     fullName: account.fullName,
     email: account.email,
     status: account.status,
     role: account.roleName,
+    canAccessErp: canAccessErp({
+      userStatus: account.status,
+      userRoleId: account.roleId,
+      userRoleName: account.roleName,
+      userRoleIsActive: account.roleIsActive,
+      hasPerson: account.hasPerson,
+      affiliateStatus: account.affiliateStatus,
+      affiliateRoleId: account.affiliateRoleId,
+    }),
     ...(account.subscriptionExpirationDate
       ? { subscriptionExpirationDate: account.subscriptionExpirationDate }
       : {}),
