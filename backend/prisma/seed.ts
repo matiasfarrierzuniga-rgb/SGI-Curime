@@ -6,30 +6,7 @@ import {
   ReservableResourceStatus,
   ResourcePricingType,
 } from '../generated/prisma/client';
-
-const INITIAL_ROLES = [
-  {
-    name: 'Administrador',
-    description:
-      'Gestiona la configuración y administración general del sistema.',
-  },
-  {
-    name: 'Tesorero',
-    description: 'Gestiona las funciones financieras autorizadas.',
-  },
-  {
-    name: 'Gestor de Inventario',
-    description: 'Gestiona el inventario institucional autorizado.',
-  },
-  {
-    name: 'Vecino/Afiliado',
-    description: 'Accede a las funciones disponibles para vecinos y afiliados.',
-  },
-  {
-    name: 'Subscription_L1',
-    description: 'Acceso de suscripción de nivel 1.',
-  },
-] as const;
+import { ensureInitialRoles } from './seed-roles';
 
 const INITIAL_RESERVABLE_RESOURCES = [
   {
@@ -108,15 +85,7 @@ async function main(): Promise<void> {
   });
 
   try {
-    await prisma.$transaction(
-      INITIAL_ROLES.map((role) =>
-        prisma.role.upsert({
-          where: { name: role.name },
-          update: {},
-          create: role,
-        }),
-      ),
-    );
+    await ensureInitialRoles(prisma);
 
     for (const resource of INITIAL_RESERVABLE_RESOURCES) {
       const existing = await prisma.reservableResource.findFirst({

@@ -7,7 +7,7 @@ import { LoadingState } from '@/shared/ui/LoadingState'
 import { Modal } from '@/shared/ui/Modal'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
-import { useAffiliateRequestDetail, useAffiliateRequestMutations } from '../hooks/useAffiliateRequestsQueries'
+import { useAffiliateApprovalRoles, useAffiliateRequestDetail, useAffiliateRequestMutations } from '../hooks/useAffiliateRequestsQueries'
 import type { AffiliateRequestStatus } from '../model/affiliateRequests.types'
 
 const statusPresentation: Record<AffiliateRequestStatus, { label: string; variant: 'warning' | 'success' | 'danger' }> = {
@@ -51,6 +51,8 @@ function getMutationErrorMessage(error: unknown) {
 export function AffiliateRequestDetail({ requestId, onClose }: { requestId: number; onClose: () => void }) {
   const detailQuery = useAffiliateRequestDetail(requestId)
   const { approve, reject } = useAffiliateRequestMutations()
+  const rolesQuery = useAffiliateApprovalRoles()
+  const [roleId, setRoleId] = useState('')
   const [dialog, setDialog] = useState<'detail' | 'approve-confirm' | 'reject-reason' | 'reject-confirm'>('detail')
   const [rejectionReason, setRejectionReason] = useState('')
   const [reasonError, setReasonError] = useState('')
@@ -71,6 +73,7 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
     setReasonError('')
     setActionError('')
     setSuccess('')
+    setRoleId('')
   }, [requestId])
 
   const isLocked = () => submitting.current || approve.isPending || reject.isPending
@@ -90,7 +93,7 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
     setActionError('')
 
     try {
-      await approve.mutateAsync(requestId)
+      await approve.mutateAsync({ id: requestId, payload: { roleId: Number(roleId) } })
       if (version !== actionVersion.current) return
       setSuccess('Solicitud aprobada correctamente.')
       setDialog('detail')
@@ -155,7 +158,7 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
   }
 
   if (dialog === 'approve-confirm') {
-    return <ConfirmDialog title="¿Aprobar esta solicitud?" message="La persona será registrada como afiliada activa." confirmLabel="Aprobar" busy={busy} error={actionError} onConfirm={() => void confirmApprove()} onClose={returnToDetail} />
+    return <ConfirmDialog title="¿Aprobar esta solicitud?" message="La persona será registrada como afiliada activa con el rol seleccionado." confirmLabel="Aprobar" busy={busy} error={actionError} onConfirm={() => void confirmApprove()} onClose={returnToDetail} />
   }
 
   if (dialog === 'reject-confirm') {
@@ -185,7 +188,7 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
             <section aria-labelledby="employment-heading"><h3 id="employment-heading" className="font-heading text-heading-4 text-text-primary">Información laboral</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Ocupación" value={request.occupation} /><DetailField label="Lugar de trabajo" value={request.workplace} /></dl></section>
             <section aria-labelledby="request-heading"><h3 id="request-heading" className="font-heading text-heading-4 text-text-primary">Solicitud</h3><dl className="mt-3 grid gap-4"><DetailField label="Motivo de afiliación" value={request.affiliationReason} /></dl></section>
             <section aria-labelledby="review-heading"><h3 id="review-heading" className="font-heading text-heading-4 text-text-primary">Revisión</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Revisada el" value={formatTimestamp(request.reviewedAt)} /><DetailField label="Revisada por" value={request.reviewedBy ? `${request.reviewedBy.fullName} (${request.reviewedBy.email})` : null} />{request.status === 'REJECTED' && <DetailField label="Motivo de rechazo" value={request.rejectionReason} />}</dl></section>
-            {request.status === 'PENDING' && <div className="flex flex-wrap justify-end gap-3 border-t border-border-default pt-4"><button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('approve-confirm') } }} disabled={busy}>Aprobar solicitud</button><button className="min-h-10 rounded-control bg-danger px-4 font-semibold text-white" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('reject-reason') } }} disabled={busy}>Rechazar solicitud</button></div>}
+            {request.status === 'PENDING' && <div className="space-y-4 border-t border-border-default pt-4"><div><label className="font-semibold text-text-primary" htmlFor="affiliate-role">Rol funcional</label><select id="affiliate-role" className="mt-2 min-h-11 w-full rounded-control border border-border-default bg-surface px-3" value={roleId} onChange={(event) => setRoleId(event.target.value)} disabled={busy || rolesQuery.isPending || rolesQuery.isError}><option value="">Seleccione un rol</option>{rolesQuery.data?.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select>{rolesQuery.isPending ? <p className="mt-2 text-sm text-text-secondary" role="status">Cargando roles…</p> : null}{rolesQuery.isError ? <div className="mt-2"><p className="field-error" role="alert">No fue posible cargar los roles.</p><button type="button" className="mt-2 min-h-10 rounded-control border px-3" onClick={() => void rolesQuery.refetch()}>Reintentar roles</button></div> : null}</div><div className="flex flex-wrap justify-end gap-3"><button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('approve-confirm') } }} disabled={busy || !roleId || rolesQuery.isPending || rolesQuery.isError}>Aprobar solicitud</button><button className="min-h-10 rounded-control bg-danger px-4 font-semibold text-white" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('reject-reason') } }} disabled={busy}>Rechazar solicitud</button></div></div>}
           </div>
         ) : null}
       </div>

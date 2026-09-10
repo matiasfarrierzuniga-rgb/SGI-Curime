@@ -36,8 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     const session = await authService.login(credentials)
-    sessionStorageService.set({ token: session.accessToken, user: session.user }); setToken(session.accessToken); setUser(session.user)
-    return session.user
+    sessionStorageService.set({ token: session.accessToken, user: session.user })
+    setToken(session.accessToken)
+    const fresh = await authService.me()
+    sessionStorageService.set({ token: session.accessToken, user: fresh })
+    setUser(fresh)
+    return fresh
   }
   return <AuthContext.Provider value={{ user, token, isAuthenticated: Boolean(token && user), isLoading, login, logout }}>{children}</AuthContext.Provider>
 }

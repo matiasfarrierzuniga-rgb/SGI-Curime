@@ -48,6 +48,8 @@ export interface RejectAffiliateRequestPayload {
   rejectionReason: string
 }
 
+export interface ApproveAffiliateRequestPayload { roleId: number }
+
 export interface ApprovedAffiliate {
   id: number
   fullName: string
@@ -65,6 +67,7 @@ export interface ApprovedAffiliate {
   affiliateType: string | null
   affiliationDate: string
   status: 'ACTIVE' | 'INACTIVE'
+  roleId: number
   createdAt: string
   updatedAt: string
 }

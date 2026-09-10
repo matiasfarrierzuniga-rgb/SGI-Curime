@@ -25,6 +25,13 @@ export interface UserPage {
   limit: number;
 }
 
+export interface UserAffiliationContext {
+  affiliateId: number | null;
+  affiliateStatus: 'ACTIVE' | 'INACTIVE' | null;
+  affiliateRoleId: number | null;
+  affiliateRequestStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+}
+
 export interface UserUpdateData {
   fullName?: string;
   email?: string;
@@ -77,6 +84,7 @@ export interface UsersRepository {
   ): Promise<T>;
   findPage(query: UserQuery): Promise<UserPage>;
   findById(id: number): Promise<User | null>;
+  findAffiliationContext(id: number): Promise<UserAffiliationContext>;
   findByEmail(
     email: string,
     excludeId?: number,
