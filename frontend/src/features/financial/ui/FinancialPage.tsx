@@ -9,6 +9,9 @@ import { LoadingState } from '@/shared/ui/LoadingState'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Pagination } from '@/shared/ui/Pagination'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
+import { Select } from '@/shared/ui/select'
 import { useFinancialChargesList } from '../hooks/useFinancial'
 import { FINANCIAL_CHARGE_STATUSES, type FinancialCharge, type FinancialChargeListFilters } from '../model/financial.types'
 import { FinancialDetailModal } from './FinancialDetailModal'
@@ -51,10 +54,10 @@ export function FinancialPage() {
 
 function FilterSelect({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: ReactNode }) {
   const id = `financial-filter-${label.toLowerCase()}`
-  return <label className="grid gap-1 text-sm font-semibold" htmlFor={id}>{label}<select id={id} value={value} onChange={event => onChange(event.target.value)}>{children}</select></label>
+  return <Label className="grid gap-1 font-semibold" htmlFor={id}>{label}<Select id={id} value={value} onChange={event => onChange(event.target.value)}>{children}</Select></Label>
 }
 
 function FilterInput({ label, inputMode, value, onChange }: { label: string; inputMode: 'numeric'; value: string; onChange: (value: string) => void }) {
   const id = `financial-filter-${label.toLowerCase()}`
-  return <label className="grid gap-1 text-sm font-semibold" htmlFor={id}>{label}<input id={id} type="text" inputMode={inputMode} value={value} onChange={event => onChange(event.target.value)} /></label>
+  return <Label className="grid gap-1 font-semibold" htmlFor={id}>{label}<Input id={id} type="text" inputMode={inputMode} value={value} onChange={event => onChange(event.target.value)} /></Label>
 }

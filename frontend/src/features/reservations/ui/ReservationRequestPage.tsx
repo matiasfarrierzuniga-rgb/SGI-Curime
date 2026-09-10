@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CheckCircle2, MapPin, UsersRound } from 'lucide-react'
-import { useRef, useState, type ReactNode } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -10,6 +10,10 @@ import { LoadingState } from '@/shared/ui/LoadingState'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
+import { Field, FieldError, FieldLabel } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
+import { Select } from '@/shared/ui/select'
+import { Textarea } from '@/shared/ui/textarea'
 import { useCreateReservation, useReservableResources, useReservationAvailability } from '../hooks/useReservations'
 import type { ReservableResource } from '../model/reservations.types'
 
@@ -102,32 +106,30 @@ export function ReservationRequestPage() {
     <PageHeader context="Servicios" title="Solicitar una reserva" description="Elija el espacio y el horario. Luego confirme que esté disponible antes de enviar la solicitud." />
     <form className="mx-auto grid max-w-3xl gap-6 rounded-xl border border-border bg-surface p-4 sm:p-6" noValidate onSubmit={form.handleSubmit(submit)} aria-busy={submitting}>
       <fieldset disabled={submitting} className="contents">
-        <FormField label="Espacio" id="reservation-resource" errorId="resourceId-error" error={form.formState.errors.resourceId?.message}>
-          <select id="reservation-resource" className="min-h-11" {...field('resourceId')} {...form.register('resourceId', { onChange: resetAvailability })}><option value="">Seleccione un espacio</option>{resources.data.map(resource => <option key={resource.id} value={resource.id}>{resource.name}{resource.location ? ` · ${resource.location}` : ''}</option>)}</select>
-        </FormField>
+        <Field invalid={Boolean(form.formState.errors.resourceId)}>
+          <FieldLabel htmlFor="reservation-resource">Espacio</FieldLabel>
+          <Select id="reservation-resource" {...field('resourceId')} {...form.register('resourceId', { onChange: resetAvailability })}><option value="">Seleccione un espacio</option>{resources.data.map(resource => <option key={resource.id} value={resource.id}>{resource.name}{resource.location ? ` · ${resource.location}` : ''}</option>)}</Select>
+          {form.formState.errors.resourceId ? <FieldError id="resourceId-error" role="alert" match>{form.formState.errors.resourceId.message}</FieldError> : null}
+        </Field>
         {selectedResource ? <ResourceSummary resource={selectedResource} /> : null}
         <div className="grid gap-5 sm:grid-cols-2">
-          <FormField label="Fecha y hora de inicio" id="reservation-start" errorId="startAt-error" error={form.formState.errors.startAt?.message}><input id="reservation-start" className="min-h-11" type="datetime-local" {...field('startAt')} {...form.register('startAt', { onChange: resetAvailability })} /></FormField>
-          <FormField label="Fecha y hora de finalización" id="reservation-end" errorId="endAt-error" error={form.formState.errors.endAt?.message}><input id="reservation-end" className="min-h-11" type="datetime-local" {...field('endAt')} {...form.register('endAt', { onChange: resetAvailability })} /></FormField>
+          <Field invalid={Boolean(form.formState.errors.startAt)}><FieldLabel htmlFor="reservation-start">Fecha y hora de inicio</FieldLabel><Input id="reservation-start" type="datetime-local" {...field('startAt')} {...form.register('startAt', { onChange: resetAvailability })} />{form.formState.errors.startAt ? <FieldError id="startAt-error" role="alert" match>{form.formState.errors.startAt.message}</FieldError> : null}</Field>
+          <Field invalid={Boolean(form.formState.errors.endAt)}><FieldLabel htmlFor="reservation-end">Fecha y hora de finalización</FieldLabel><Input id="reservation-end" type="datetime-local" {...field('endAt')} {...form.register('endAt', { onChange: resetAvailability })} />{form.formState.errors.endAt ? <FieldError id="endAt-error" role="alert" match>{form.formState.errors.endAt.message}</FieldError> : null}</Field>
         </div>
         <div className="rounded-lg border border-border bg-surface-muted p-4">
           <Button variant="outline" type="button" size="lg" onClick={() => void checkAvailability()} disabled={availabilityQuery.isFetching}>{availabilityQuery.isFetching ? 'Consultando disponibilidad…' : 'Consultar disponibilidad'}</Button>
           <p className={`mt-3 text-sm font-semibold ${availability === 'available' ? 'text-success' : availability === 'unavailable' || availability === 'error' ? 'text-danger' : 'text-foreground-muted'}`} aria-live="polite" role="status">{availability === 'available' ? 'Disponible en este horario.' : availability === 'unavailable' ? 'No disponible en este horario. Elija otra fecha u hora.' : availability === 'error' ? 'No fue posible consultar la disponibilidad. Inténtelo nuevamente.' : 'Debe consultar la disponibilidad antes de enviar.'}</p>
         </div>
-        <FormField label="Motivo" id="reservation-purpose" errorId="purpose-error" error={form.formState.errors.purpose?.message}><textarea id="reservation-purpose" className="min-h-28" maxLength={1000} {...field('purpose')} {...form.register('purpose')} /></FormField>
+        <Field invalid={Boolean(form.formState.errors.purpose)}><FieldLabel htmlFor="reservation-purpose">Motivo</FieldLabel><Textarea id="reservation-purpose" maxLength={1000} {...field('purpose')} {...form.register('purpose')} />{form.formState.errors.purpose ? <FieldError id="purpose-error" role="alert" match>{form.formState.errors.purpose.message}</FieldError> : null}</Field>
         <div className="grid gap-5 sm:grid-cols-2">
-          <FormField label="Cantidad de personas (opcional)" id="reservation-attendees" errorId="estimatedAttendees-error" error={form.formState.errors.estimatedAttendees?.message}><input id="reservation-attendees" className="min-h-11" type="number" min="1" inputMode="numeric" {...field('estimatedAttendees')} {...form.register('estimatedAttendees')} /></FormField>
-          <FormField label="Notas adicionales (opcional)" id="reservation-notes" errorId="notes-error" error={form.formState.errors.notes?.message}><textarea id="reservation-notes" className="min-h-24" maxLength={5000} {...field('notes')} {...form.register('notes')} /></FormField>
+          <Field invalid={Boolean(form.formState.errors.estimatedAttendees)}><FieldLabel htmlFor="reservation-attendees">Cantidad de personas (opcional)</FieldLabel><Input id="reservation-attendees" type="number" min="1" inputMode="numeric" {...field('estimatedAttendees')} {...form.register('estimatedAttendees')} />{form.formState.errors.estimatedAttendees ? <FieldError id="estimatedAttendees-error" role="alert" match>{form.formState.errors.estimatedAttendees.message}</FieldError> : null}</Field>
+          <Field invalid={Boolean(form.formState.errors.notes)}><FieldLabel htmlFor="reservation-notes">Notas adicionales (opcional)</FieldLabel><Textarea id="reservation-notes" className="min-h-24" maxLength={5000} {...field('notes')} {...form.register('notes')} />{form.formState.errors.notes ? <FieldError id="notes-error" role="alert" match>{form.formState.errors.notes.message}</FieldError> : null}</Field>
         </div>
         <div className="rounded-lg border border-info/30 bg-info-bg p-4 text-sm text-foreground"><p className="font-semibold">Costo y aprobación</p><p className="mt-1">La Asociación le informará si este espacio tiene algún costo. Aprobar la solicitud no significa que el pago esté realizado.</p></div>
         <Button className="w-full sm:w-fit" size="lg" type="submit" disabled={submitting || availability !== 'available'}>{submitting ? 'Enviando solicitud…' : 'Enviar solicitud'}</Button>
       </fieldset>
     </form>
   </section>
-}
-
-function FormField({ label, id, errorId, error, children }: { label: string; id: string; errorId: string; error?: string; children: ReactNode }) {
-  return <div className="grid gap-2"><label className="font-semibold text-foreground" htmlFor={id}>{label}</label>{children}{error ? <p id={errorId} role="alert" className="field-error">{error}</p> : null}</div>
 }
 
 function ResourceSummary({ resource }: { resource: ReservableResource }) {

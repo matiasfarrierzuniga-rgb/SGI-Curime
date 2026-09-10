@@ -3,7 +3,11 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '@/shared/ui/button'
+import { Field, FieldError, FieldLabel } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
 import { Modal } from '@/shared/ui/Modal'
+import { Select } from '@/shared/ui/select'
+import { Textarea } from '@/shared/ui/textarea'
 import { useCreateFinancialMovement } from '../hooks/useFinancial'
 import { FINANCIAL_MOVEMENT_TYPES, type FinancialMovementType } from '../model/financial.types'
 import { financialMovementTypeLabel, getFinancialErrorMessage } from './financialPresentation'
@@ -41,16 +45,11 @@ export function FinancialMovementFormModal({ onClose }: { onClose: () => void })
   return <Modal title="Registrar movimiento financiero" onClose={close} busy={create.isPending}>
     <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)} aria-busy={create.isPending}>
       <fieldset disabled={create.isPending} className="space-y-4">
-        <label className="grid gap-2" htmlFor="movement-type">Tipo<select id="movement-type" {...field('type')} {...form.register('type')}><option value="">Seleccione un tipo</option>{FINANCIAL_MOVEMENT_TYPES.map(type => <option key={type} value={type}>{financialMovementTypeLabel(type)}</option>)}</select></label>
-        {form.formState.errors.type ? <p id="movement-type-error" role="alert" className="field-error">{form.formState.errors.type.message}</p> : null}
-        <label className="grid gap-2" htmlFor="movement-amount">Monto<input id="movement-amount" inputMode="decimal" autoFocus {...field('amount')} {...form.register('amount')} /></label>
-        {form.formState.errors.amount ? <p id="movement-amount-error" role="alert" className="field-error">{form.formState.errors.amount.message}</p> : null}
-        <label className="grid gap-2" htmlFor="movement-description">Concepto o descripción<textarea id="movement-description" maxLength={1000} {...field('description')} {...form.register('description')} /></label>
-        {form.formState.errors.description ? <p id="movement-description-error" role="alert" className="field-error">{form.formState.errors.description.message}</p> : null}
-        <label className="grid gap-2" htmlFor="movement-occurred-at">Fecha y hora<input id="movement-occurred-at" type="datetime-local" {...field('occurredAt')} {...form.register('occurredAt')} /></label>
-        {form.formState.errors.occurredAt ? <p id="movement-occurredAt-error" role="alert" className="field-error">{form.formState.errors.occurredAt.message}</p> : null}
-        <label className="grid gap-2" htmlFor="movement-reference">Referencia (opcional)<input id="movement-reference" maxLength={255} {...field('reference')} {...form.register('reference')} /></label>
-        {form.formState.errors.reference ? <p id="movement-reference-error" role="alert" className="field-error">{form.formState.errors.reference.message}</p> : null}
+        <Field invalid={Boolean(form.formState.errors.type)}><FieldLabel htmlFor="movement-type">Tipo</FieldLabel><Select id="movement-type" {...field('type')} {...form.register('type')}><option value="">Seleccione un tipo</option>{FINANCIAL_MOVEMENT_TYPES.map(type => <option key={type} value={type}>{financialMovementTypeLabel(type)}</option>)}</Select>{form.formState.errors.type ? <FieldError id="movement-type-error" role="alert" match>{form.formState.errors.type.message}</FieldError> : null}</Field>
+        <Field invalid={Boolean(form.formState.errors.amount)}><FieldLabel htmlFor="movement-amount">Monto</FieldLabel><Input id="movement-amount" inputMode="decimal" autoFocus {...field('amount')} {...form.register('amount')} />{form.formState.errors.amount ? <FieldError id="movement-amount-error" role="alert" match>{form.formState.errors.amount.message}</FieldError> : null}</Field>
+        <Field invalid={Boolean(form.formState.errors.description)}><FieldLabel htmlFor="movement-description">Concepto o descripción</FieldLabel><Textarea id="movement-description" maxLength={1000} {...field('description')} {...form.register('description')} />{form.formState.errors.description ? <FieldError id="movement-description-error" role="alert" match>{form.formState.errors.description.message}</FieldError> : null}</Field>
+        <Field invalid={Boolean(form.formState.errors.occurredAt)}><FieldLabel htmlFor="movement-occurred-at">Fecha y hora</FieldLabel><Input id="movement-occurred-at" type="datetime-local" {...field('occurredAt')} {...form.register('occurredAt')} />{form.formState.errors.occurredAt ? <FieldError id="movement-occurredAt-error" role="alert" match>{form.formState.errors.occurredAt.message}</FieldError> : null}</Field>
+        <Field invalid={Boolean(form.formState.errors.reference)}><FieldLabel htmlFor="movement-reference">Referencia (opcional)</FieldLabel><Input id="movement-reference" maxLength={255} {...field('reference')} {...form.register('reference')} />{form.formState.errors.reference ? <FieldError id="movement-reference-error" role="alert" match>{form.formState.errors.reference.message}</FieldError> : null}</Field>
       </fieldset>
       <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" disabled={create.isPending} onClick={close}>Cancelar</Button><Button type="submit" disabled={create.isPending}>{create.isPending ? 'Registrando...' : 'Registrar movimiento'}</Button></div>
     </form>

@@ -9,6 +9,9 @@ import { LoadingState } from '@/shared/ui/LoadingState'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Pagination } from '@/shared/ui/Pagination'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
+import { Select } from '@/shared/ui/select'
 import { useFinancialMovementSummary, useFinancialMovementsList } from '../hooks/useFinancial'
 import { FINANCIAL_MOVEMENT_TYPES, type FinancialMovementListFilters, type FinancialMovementType } from '../model/financial.types'
 import { FinancialMovementDetailModal } from './FinancialMovementDetailModal'
@@ -30,9 +33,9 @@ export function FinancialMovementsPage() {
   return <section className="space-y-6">
     <PageHeader context="Gestión financiera" title="Movimientos financieros" description="Registre ingresos y egresos manuales, consulte su historial y balance." actions={mayCreate ? <Button type="button" onClick={() => setCreating(true)}>Registrar movimiento</Button> : undefined} />
     <form className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4" onSubmit={event => event.preventDefault()}>
-      <label className="grid gap-1 text-sm font-semibold" htmlFor="movement-filter-type">Tipo<select id="movement-filter-type" value={filters.type ?? ''} onChange={event => update({ type: event.target.value ? event.target.value as FinancialMovementType : undefined })}><option value="">Todos los tipos</option>{FINANCIAL_MOVEMENT_TYPES.map(type => <option key={type} value={type}>{financialMovementTypeLabel(type)}</option>)}</select></label>
-      <label className="grid gap-1 text-sm font-semibold" htmlFor="movement-filter-from">Desde<input id="movement-filter-from" type="date" value={filters.dateFrom ?? ''} onChange={event => update({ dateFrom: event.target.value || undefined })} /></label>
-      <label className="grid gap-1 text-sm font-semibold" htmlFor="movement-filter-to">Hasta<input id="movement-filter-to" type="date" value={filters.dateTo ?? ''} onChange={event => update({ dateTo: event.target.value || undefined })} /></label>
+      <Label className="grid gap-1 font-semibold" htmlFor="movement-filter-type">Tipo<Select id="movement-filter-type" value={filters.type ?? ''} onChange={event => update({ type: event.target.value ? event.target.value as FinancialMovementType : undefined })}><option value="">Todos los tipos</option>{FINANCIAL_MOVEMENT_TYPES.map(type => <option key={type} value={type}>{financialMovementTypeLabel(type)}</option>)}</Select></Label>
+      <Label className="grid gap-1 font-semibold" htmlFor="movement-filter-from">Desde<Input id="movement-filter-from" type="date" value={filters.dateFrom ?? ''} onChange={event => update({ dateFrom: event.target.value || undefined })} /></Label>
+      <Label className="grid gap-1 font-semibold" htmlFor="movement-filter-to">Hasta<Input id="movement-filter-to" type="date" value={filters.dateTo ?? ''} onChange={event => update({ dateTo: event.target.value || undefined })} /></Label>
       <div className="flex items-end"><Button type="button" variant="outline" disabled={!hasActiveFilters} onClick={() => setFilters(initialFilters)}>Limpiar filtros</Button></div>
     </form>
     <section aria-label="Resumen de movimientos" className="grid gap-4 sm:grid-cols-3">

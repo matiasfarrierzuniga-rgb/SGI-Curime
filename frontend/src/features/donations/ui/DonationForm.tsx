@@ -4,6 +4,12 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '@/shared/ui/button'
+import { Checkbox } from '@/shared/ui/checkbox'
+import { Field, FieldError, FieldLabel } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
+import { Select } from '@/shared/ui/select'
+import { Textarea } from '@/shared/ui/textarea'
 import { useCreateDonation, useUpdateDonation } from '../hooks/donations.queries'
 import type { Donation, DonationMethod } from '../model/donations.types'
 import { donationMethods, donationMethodLabel, getDonationErrorMessage } from './donationPresentation'
@@ -85,20 +91,16 @@ export function DonationForm({ donation, onClose }: { donation?: Donation; onClo
   }
 
   return <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)} aria-busy={mutation.isPending}>
-    <label className="flex items-center gap-2 text-sm font-medium" htmlFor="donation-anonymous"><input id="donation-anonymous" type="checkbox" {...form.register('anonymous')} />Donación anónima</label>
+    <Label className="flex gap-2" htmlFor="donation-anonymous"><Checkbox id="donation-anonymous" name="anonymous" checked={anonymous} onCheckedChange={checked => form.setValue('anonymous', checked, { shouldDirty: true })} />Donación anónima</Label>
     <div className="grid gap-4 md:grid-cols-2">
-      <Field label="Nombre del donante" id="donation-donor-name" error={form.formState.errors.donorName?.message}><input id="donation-donor-name" disabled={anonymous || mutation.isPending} {...form.register('donorName')} /></Field>
-      <Field label="Identificación" id="donation-donor-identification" error={form.formState.errors.donorIdentification?.message}><input id="donation-donor-identification" disabled={anonymous || mutation.isPending} {...form.register('donorIdentification')} /></Field>
-      <Field label="Monto (CRC)" id="donation-amount" error={form.formState.errors.amount?.message}><input id="donation-amount" inputMode="decimal" placeholder="0.00" disabled={mutation.isPending} {...form.register('amount')} /></Field>
-      <label className="grid gap-1 text-sm font-medium" htmlFor="donation-method">Método<select id="donation-method" disabled={mutation.isPending} {...form.register('method')}>{donationMethods.map(method => <option key={method} value={method}>{donationMethodLabel(method)}</option>)}</select></label>
-      <Field label="Fecha de recepción" id="donation-received-at" error={form.formState.errors.receivedAt?.message}><input id="donation-received-at" type="datetime-local" disabled={mutation.isPending} {...form.register('receivedAt')} /></Field>
-      <Field label="Referencia (opcional)" id="donation-reference" error={form.formState.errors.reference?.message}><input id="donation-reference" disabled={mutation.isPending} {...form.register('reference')} /></Field>
+      <Field invalid={Boolean(form.formState.errors.donorName)}><FieldLabel htmlFor="donation-donor-name">Nombre del donante</FieldLabel><Input id="donation-donor-name" disabled={anonymous || mutation.isPending} aria-invalid={Boolean(form.formState.errors.donorName)} aria-describedby={form.formState.errors.donorName ? 'donation-donor-name-error' : undefined} {...form.register('donorName')} />{form.formState.errors.donorName ? <FieldError id="donation-donor-name-error" role="alert" match>{form.formState.errors.donorName.message}</FieldError> : null}</Field>
+      <Field invalid={Boolean(form.formState.errors.donorIdentification)}><FieldLabel htmlFor="donation-donor-identification">Identificación</FieldLabel><Input id="donation-donor-identification" disabled={anonymous || mutation.isPending} aria-invalid={Boolean(form.formState.errors.donorIdentification)} aria-describedby={form.formState.errors.donorIdentification ? 'donation-donor-identification-error' : undefined} {...form.register('donorIdentification')} />{form.formState.errors.donorIdentification ? <FieldError id="donation-donor-identification-error" role="alert" match>{form.formState.errors.donorIdentification.message}</FieldError> : null}</Field>
+      <Field invalid={Boolean(form.formState.errors.amount)}><FieldLabel htmlFor="donation-amount">Monto (CRC)</FieldLabel><Input id="donation-amount" inputMode="decimal" placeholder="0.00" disabled={mutation.isPending} aria-invalid={Boolean(form.formState.errors.amount)} aria-describedby={form.formState.errors.amount ? 'donation-amount-error' : undefined} {...form.register('amount')} />{form.formState.errors.amount ? <FieldError id="donation-amount-error" role="alert" match>{form.formState.errors.amount.message}</FieldError> : null}</Field>
+      <Field invalid={Boolean(form.formState.errors.method)}><FieldLabel htmlFor="donation-method">Método</FieldLabel><Select id="donation-method" disabled={mutation.isPending} aria-invalid={Boolean(form.formState.errors.method)} aria-describedby={form.formState.errors.method ? 'donation-method-error' : undefined} {...form.register('method')}>{donationMethods.map(method => <option key={method} value={method}>{donationMethodLabel(method)}</option>)}</Select>{form.formState.errors.method ? <FieldError id="donation-method-error" role="alert" match>{form.formState.errors.method.message}</FieldError> : null}</Field>
+      <Field invalid={Boolean(form.formState.errors.receivedAt)}><FieldLabel htmlFor="donation-received-at">Fecha de recepción</FieldLabel><Input id="donation-received-at" type="datetime-local" disabled={mutation.isPending} aria-invalid={Boolean(form.formState.errors.receivedAt)} aria-describedby={form.formState.errors.receivedAt ? 'donation-received-at-error' : undefined} {...form.register('receivedAt')} />{form.formState.errors.receivedAt ? <FieldError id="donation-received-at-error" role="alert" match>{form.formState.errors.receivedAt.message}</FieldError> : null}</Field>
+      <Field invalid={Boolean(form.formState.errors.reference)}><FieldLabel htmlFor="donation-reference">Referencia (opcional)</FieldLabel><Input id="donation-reference" disabled={mutation.isPending} aria-invalid={Boolean(form.formState.errors.reference)} aria-describedby={form.formState.errors.reference ? 'donation-reference-error' : undefined} {...form.register('reference')} />{form.formState.errors.reference ? <FieldError id="donation-reference-error" role="alert" match>{form.formState.errors.reference.message}</FieldError> : null}</Field>
     </div>
-    <Field label="Descripción (opcional)" id="donation-description" error={form.formState.errors.description?.message}><textarea id="donation-description" rows={3} disabled={mutation.isPending} {...form.register('description')} /></Field>
+    <Field invalid={Boolean(form.formState.errors.description)}><FieldLabel htmlFor="donation-description">Descripción (opcional)</FieldLabel><Textarea id="donation-description" rows={3} disabled={mutation.isPending} aria-invalid={Boolean(form.formState.errors.description)} aria-describedby={form.formState.errors.description ? 'donation-description-error' : undefined} {...form.register('description')} />{form.formState.errors.description ? <FieldError id="donation-description-error" role="alert" match>{form.formState.errors.description.message}</FieldError> : null}</Field>
     <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" disabled={mutation.isPending} onClick={onClose}>Cancelar</Button><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Guardando…' : donation ? 'Guardar cambios' : 'Registrar donación'}</Button></div>
   </form>
-}
-
-function Field({ label, id, error, children }: { label: string; id: string; error?: string; children: React.ReactNode }) {
-  return <div className="grid gap-1"><label className="text-sm font-medium" htmlFor={id}>{label}</label>{children}{error ? <p role="alert" className="field-error">{error}</p> : null}</div>
 }

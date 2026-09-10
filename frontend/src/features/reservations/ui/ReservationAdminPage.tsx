@@ -16,6 +16,10 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { Button } from '@/shared/ui/button'
 import { useReservableResources, useReservationMutations, useReservationsList } from '../hooks/useReservations'
+import { Field, FieldError, FieldLabel } from '@/shared/ui/field'
+import { Label } from '@/shared/ui/label'
+import { Select } from '@/shared/ui/select'
+import { Textarea } from '@/shared/ui/textarea'
 import type { ReservationFilters, ReservationStatus } from '../model/reservations.types'
 import { ReservationActions } from './ReservationActions'
 import { ReservationDetailsModal } from './ReservationDetailsModal'
@@ -80,7 +84,7 @@ export function ReservationAdminPage() {
       <Pagination page={list.data.page} total={list.data.total} limit={list.data.limit} onChange={page => setFilters(current => ({ ...current, page }))} />
     </> : null}
     {selectedId !== null ? <ReservationDetailsModal id={selectedId} role={user?.role} busy={busy} onClose={() => setSelectedId(null)} onApprove={id => openAction('approve', id)} onReject={id => openAction('reject', id)} onCancel={id => openAction('cancel', id)} /> : null}
-    {dialog?.type === 'reject' ? <Modal title="Rechazar reserva" onClose={closeAction} busy={busy}><form className="space-y-4" noValidate onSubmit={event => { event.preventDefault(); void runAction() }} aria-busy={busy}><label className="grid gap-2" htmlFor="rejection-reason">Motivo del rechazo<textarea id="rejection-reason" maxLength={1000} aria-invalid={Boolean(rejectForm.formState.errors.rejectionReason)} aria-describedby={rejectForm.formState.errors.rejectionReason ? 'rejection-reason-error' : undefined} {...rejectForm.register('rejectionReason')} /></label>{rejectForm.formState.errors.rejectionReason ? <p id="rejection-reason-error" role="alert">{rejectForm.formState.errors.rejectionReason.message}</p> : null}{actionError ? <p role="alert">{actionError}</p> : null}<div className="flex flex-wrap justify-end gap-2"><Button variant="outline" type="button" disabled={busy} onClick={closeAction}>Cancelar</Button><Button variant="destructive" type="submit" disabled={busy}>{busy ? 'Procesando...' : 'Rechazar reserva'}</Button></div></form></Modal> : null}
+    {dialog?.type === 'reject' ? <Modal title="Rechazar reserva" onClose={closeAction} busy={busy}><form className="space-y-4" noValidate onSubmit={event => { event.preventDefault(); void runAction() }} aria-busy={busy}><Field invalid={Boolean(rejectForm.formState.errors.rejectionReason)}><FieldLabel htmlFor="rejection-reason">Motivo del rechazo</FieldLabel><Textarea id="rejection-reason" maxLength={1000} aria-invalid={Boolean(rejectForm.formState.errors.rejectionReason)} aria-describedby={rejectForm.formState.errors.rejectionReason ? 'rejection-reason-error' : undefined} {...rejectForm.register('rejectionReason')} />{rejectForm.formState.errors.rejectionReason ? <FieldError id="rejection-reason-error" role="alert" match>{rejectForm.formState.errors.rejectionReason.message}</FieldError> : null}</Field>{actionError ? <p role="alert" className="text-body-small font-medium text-destructive">{actionError}</p> : null}<div className="flex flex-wrap justify-end gap-2"><Button variant="outline" type="button" disabled={busy} onClick={closeAction}>Cancelar</Button><Button variant="destructive" type="submit" disabled={busy}>{busy ? 'Procesando...' : 'Rechazar reserva'}</Button></div></form></Modal> : null}
     {dialog?.type === 'approve' ? <ConfirmDialog title="Aprobar reserva" message="Confirme la aprobación de esta reserva. Se verificará nuevamente la disponibilidad. Aprobar no registra un pago." confirmLabel="Aprobar" busy={busy} error={actionError} onConfirm={() => void runAction()} onClose={closeAction} /> : null}
     {dialog?.type === 'cancel' ? <ConfirmDialog title="Cancelar reserva" message="Confirme la cancelación de esta reserva. Esta acción no puede deshacerse." confirmLabel="Cancelar reserva" danger busy={busy} error={actionError} onConfirm={() => void runAction()} onClose={closeAction} /> : null}
   </section>
@@ -88,7 +92,7 @@ export function ReservationAdminPage() {
 
 function FilterSelect({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: ReactNode }) {
   const id = `reservation-filter-${label.toLowerCase()}`
-  return <label className="grid gap-1 text-sm font-semibold" htmlFor={id}>{label}<select id={id} value={value} onChange={event => onChange(event.target.value)}>{children}</select></label>
+  return <Label className="grid gap-1 font-semibold" htmlFor={id}>{label}<Select id={id} value={value} onChange={event => onChange(event.target.value)}>{children}</Select></Label>
 }
 
 function FilterInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
