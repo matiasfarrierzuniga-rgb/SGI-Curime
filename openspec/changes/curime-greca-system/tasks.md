@@ -4,7 +4,7 @@
 - [x] 1.2 Create `frontend/public/brand/motifs/greca-horizontal.svg` as the only Phase 1 brand asset, using a stable horizontal viewBox, restrained geometry and token-compatible color strategy.
 - [x] 1.3 Create `frontend/src/shared/ui/brand/CurimeGrecaDivider.tsx` as a presentational decorative SVG wrapper with `aria-hidden`, no interaction, no motion and fluid sizing.
 - [x] 1.4 Replace or visually subordinate the generic sage divider at the top of `ServicesSection` without changing content, layout, spacing, headings, cards or CTAs.
-- [x] 1.5 Confirm no `CurimeGrecaPattern`, `CurimeBrandAccent`, future assets, legacy folders or dependencies are introduced.
+- [x] 1.5 Confirm Phase 1 does not introduce `CurimeGrecaPattern`, `CurimeBrandAccent`, future assets, legacy folders or dependencies.
 
 ## 2. Phase 1 — Visual and accessibility review
 
@@ -24,6 +24,6 @@
 
 - [x] 4.1 Create `CurimeGrecaPattern` and `greca-pattern.svg` for one restrained, decorative use in `TransparencySection`, replacing the competing sage ring.
 
-## 5. Deferred Phase 3
+## 5. Phase 3 — CurimeBrandAccent
 
-- [ ] 5.1 Future phase: evaluate `CurimeBrandAccent` for one institutional accent location.
+- [x] 5.1 Create `CurimeBrandAccent` and `maize-mark.svg` for one restrained, decorative use in `AboutSection`.
