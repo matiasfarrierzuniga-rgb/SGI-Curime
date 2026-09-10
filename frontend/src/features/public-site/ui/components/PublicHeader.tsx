@@ -37,17 +37,17 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-[var(--z-nav)] border-b border-border bg-brand-ivory/95 font-sans text-brand-deep backdrop-blur-sm">
-      <div className="public-container grid min-h-[4.5rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 lg:min-h-24 lg:grid-cols-[9rem_minmax(0,1fr)_auto] lg:gap-x-6 xl:grid-cols-[11rem_minmax(0,1fr)_auto] xl:gap-x-8">
+      <div className="public-container grid min-h-[4.5rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 lg:min-h-24 lg:grid-cols-[11.5rem_minmax(0,1fr)_auto] lg:gap-x-6 min-[1280px]:grid-cols-[12.5rem_minmax(0,1fr)_auto] xl:grid-cols-[14.5rem_minmax(0,1fr)_auto] xl:gap-x-8 2xl:grid-cols-[15.75rem_minmax(0,1fr)_auto]">
         <Link
           to="/"
           aria-label="ADI Curime, inicio"
-            className="flex h-12 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-14 sm:w-44 lg:h-14 lg:w-36 xl:h-16 xl:w-44 2xl:h-[72px] 2xl:w-52"
+            className="flex h-10 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-12 sm:w-44 lg:h-[52px] lg:w-[184px] min-[1280px]:h-[60px] min-[1280px]:w-[200px] xl:h-16 xl:w-[232px] 2xl:h-[68px] 2xl:w-[252px]"
         >
           <img
-            src="/brand/adi-curime-logo-horizontal-color.png"
+            src="/brand/adi-curime-logo-horizontal-color-header-tight.png"
             alt=""
-            width="1448"
-            height="1086"
+            width="1331"
+            height="535"
             className="block size-full object-contain"
           />
         </Link>
