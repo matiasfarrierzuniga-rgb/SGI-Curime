@@ -143,8 +143,8 @@ describe('portal público', () => {
     expect(screen.getByRole('heading', { name: /encuentre lo que necesita/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /consultar sobre afiliación/i })).toHaveAttribute('href', '/afiliacion')
     expect(screen.getByRole('link', { name: /consultar sobre eventos/i })).toHaveAttribute('href', '/eventos')
+    expect(screen.getByRole('link', { name: /consultar sobre reservas/i })).toHaveAttribute('href', '/app/reservations/new')
     expect(screen.getAllByText('Próximamente')).toHaveLength(2)
-    expect(screen.queryByRole('link', { name: /reservas/i })).not.toBeInTheDocument()
   })
 
   it('separa acceso público e inicio de sesión', () => {

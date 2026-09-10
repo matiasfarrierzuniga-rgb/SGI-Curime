@@ -29,7 +29,7 @@ describe('ErpLayout', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(trigger)
     expect(trigger).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('dialog', { name: 'Navegación móvil' })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Navegación de SGI-Curime' })).toBeInTheDocument()
     fireEvent.click(screen.getAllByRole('link', { name: 'Ver sitio público' }).at(-1)!)
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
