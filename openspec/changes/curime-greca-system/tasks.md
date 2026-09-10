@@ -20,7 +20,10 @@
 - [x] 3.3 Build and `npm run verify` passed: 65/65 test files and 402/402 tests.
 - [x] 3.4 Daniel approved final responsive and visual review for Phase 1.
 
-## 4. Deferred phases
+## 4. Phase 2 — CurimeGrecaPattern
 
-- [ ] 4.1 Future phase: evaluate `CurimeGrecaPattern` for limited use in `TransparencySection`.
-- [ ] 4.2 Future phase: evaluate `CurimeBrandAccent` for one institutional accent location.
+- [x] 4.1 Create `CurimeGrecaPattern` and `greca-pattern.svg` for one restrained, decorative use in `TransparencySection`, replacing the competing sage ring.
+
+## 5. Deferred Phase 3
+
+- [ ] 5.1 Future phase: evaluate `CurimeBrandAccent` for one institutional accent location.
