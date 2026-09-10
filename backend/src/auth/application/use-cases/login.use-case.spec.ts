@@ -169,6 +169,13 @@ describe('LoginUseCase', () => {
   });
 
   it('signs a token, persists only the refresh hash, and audits on success', async () => {
+    repository.findCredentialsByEmail.mockResolvedValueOnce({
+      ...account,
+      hasPerson: false,
+      affiliateStatus: null,
+      affiliateRoleId: null,
+    });
+
     const result = await useCase.execute('admin@example.com', 'secret', {
       ipAddress: '127.0.0.1',
     });
@@ -216,9 +223,23 @@ describe('LoginUseCase', () => {
         affiliateRoleId: null,
       },
     ],
-    ['an inactive affiliate', { affiliateStatus: 'INACTIVE' }],
-    ['an affiliate without a role', { affiliateRoleId: null }],
-    ['inconsistent user and affiliate roles', { roleId: 3 }],
+    [
+      'an inactive affiliate',
+      {
+        roleId: 3,
+        roleName: 'Tesorero',
+        affiliateRoleId: 3,
+        affiliateStatus: 'INACTIVE',
+      },
+    ],
+    [
+      'an affiliate without a role',
+      { roleId: 3, roleName: 'Tesorero', affiliateRoleId: null },
+    ],
+    [
+      'inconsistent user and affiliate roles',
+      { roleId: 3, roleName: 'Tesorero', affiliateRoleId: 2 },
+    ],
   ])('returns canAccessErp=false for %s', async (_label, overrides) => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
       ...account,

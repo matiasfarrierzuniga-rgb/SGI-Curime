@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { site } from '@/content/publicSiteContent'
+import { Button } from '@/shared/ui/button'
 
 export function PublicFooter() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, logout } = useAuth()
   return (
     <>
       <svg
@@ -77,11 +78,19 @@ export function PublicFooter() {
                   {!isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'}
                 </Link>
               </li>
-              <li>
-                <Link className="inline-flex min-h-11 items-center rounded-sm text-brand-ivory/80 underline decoration-brand-accent/50 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-ivory" to="/register">
-                  Solicitar una cuenta
-                </Link>
-              </li>
+              {isAuthenticated ? (
+                <li>
+                  <Button variant="inverse" size="sm" type="button" onClick={() => void logout()}>
+                    Cerrar sesión
+                  </Button>
+                </li>
+              ) : (
+                <li>
+                  <Link className="inline-flex min-h-11 items-center rounded-sm text-brand-ivory/80 underline decoration-brand-accent/50 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-ivory" to="/register">
+                    Solicitar una cuenta
+                  </Link>
+                </li>
+              )}
             </ul>
           </nav>
         </div>
