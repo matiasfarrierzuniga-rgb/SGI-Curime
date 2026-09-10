@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, CalendarDays, CalendarPlus, FileText, Handshake, HeartHandshake, Store, UsersRound } from 'lucide-react'
+import { CurimeGrecaDivider } from '@/shared/ui/brand/CurimeGrecaDivider'
 
 const portalLinks = [
   { icon: CalendarPlus, title: 'Reservas', text: 'Solicite el uso de un espacio comunitario.', to: '/app/reservations/new', layout: '' },
@@ -16,7 +17,8 @@ const upcomingServices = [
 
 export function ServicesSection() {
   return (
-    <section aria-labelledby="services-title" className="public-section border-t border-brand-sage/70 bg-brand-ivory">
+    <section aria-labelledby="services-title" className="public-section relative bg-brand-ivory">
+      <CurimeGrecaDivider className="absolute inset-x-0 top-0" />
       <div className="public-container">
         <header className="mx-auto max-w-3xl text-center">
           <p className="public-eyebrow text-brand-primary">
