@@ -3,7 +3,7 @@ import { ArrowRight, CalendarDays, CalendarPlus, FileText, Handshake, HeartHands
 import { CurimeGrecaDivider } from '@/shared/ui/brand/CurimeGrecaDivider'
 
 const portalLinks = [
-  { icon: CalendarPlus, title: 'Reservas', text: 'Solicite el uso de un espacio comunitario.', to: '/app/reservations/new', layout: '' },
+  { icon: CalendarPlus, title: 'Reservas', text: 'Solicite el uso de un espacio comunitario.', to: '/servicios/reservas', layout: '' },
   { icon: UsersRound, title: 'Comunidad', text: 'Conozca los espacios comunitarios de la Asociación.', to: '/comunidad', layout: '' },
   { icon: Handshake, title: 'Afiliación', text: 'Inicie una gestión de afiliación comunitaria.', to: '/afiliacion', layout: '' },
   { icon: FileText, title: 'Transparencia', text: 'Consulte información pública autorizada.', to: '/transparencia', layout: 'lg:col-start-2' },

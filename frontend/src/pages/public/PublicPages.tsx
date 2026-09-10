@@ -125,7 +125,7 @@ export function ServicesPage() {
   const serviceActions = {
     affiliation: [{ label: "Solicitar afiliación", to: "/afiliacion" }],
     reservations: isAuthenticated
-      ? [{ label: "Solicitar una reserva", to: "/app/reservations/new" }]
+      ? [{ label: "Solicitar una reserva", to: "/servicios/reservas" }]
       : [
           { label: "Iniciar sesión", to: "/login" },
           { label: "Crear una cuenta", to: "/register" },

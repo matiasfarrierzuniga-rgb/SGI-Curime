@@ -1,9 +1,11 @@
 const KEY = 'sgi-curime-session'
 
+function removeLegacySession() { localStorage.removeItem(KEY) }
+
 export const sessionStorageService = {
   get<T>(): T | null {
-    try { const value = localStorage.getItem(KEY); return value ? JSON.parse(value) as T : null } catch { return null }
+    try { removeLegacySession(); const value = sessionStorage.getItem(KEY); return value ? JSON.parse(value) as T : null } catch { return null }
   },
-  set(session: unknown) { localStorage.setItem(KEY, JSON.stringify(session)) },
-  clear() { localStorage.removeItem(KEY) },
+  set(session: unknown) { removeLegacySession(); sessionStorage.setItem(KEY, JSON.stringify(session)) },
+  clear() { sessionStorage.removeItem(KEY); removeLegacySession() },
 }

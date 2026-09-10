@@ -20,7 +20,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
-import { hasAuthenticatedSessionCapability, hasCapability, type AccessCapability } from '@/shared/security/access'
+import { hasCapability, type AccessCapability } from '@/shared/security/access'
 
 export type ErpNavigationItem = {
   label: string
@@ -41,7 +41,6 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Inicio',
         path: '/app',
-        capability: 'erp.dashboard.read',
         icon: Home,
       },
     ],
@@ -51,7 +50,7 @@ const navigation: readonly ErpNavigationSection[] = [
     items: [
       {
         label: 'Solicitar una reserva',
-        path: '/app/reservations/new',
+        path: '/servicios/reservas',
         role: 'Vecino/Afiliado',
         icon: CalendarPlus,
       },
@@ -109,7 +108,7 @@ const navigation: readonly ErpNavigationSection[] = [
     items: [
       {
         label: 'Solicitar una reserva',
-        path: '/app/reservations/new',
+        path: '/servicios/reservas',
         excludedRole: 'Vecino/Afiliado',
         icon: CalendarPlus,
       },
@@ -176,7 +175,6 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Mi perfil',
         path: '/profile',
-        capability: 'usr.profile.read',
         icon: UserRound,
       },
       {
@@ -199,9 +197,7 @@ function isVisible(item: ErpNavigationItem, role: string | null | undefined): bo
   return (
     (item.role === undefined || item.role === role) &&
     item.excludedRole !== role &&
-    (item.capability === undefined ||
-      hasAuthenticatedSessionCapability(item.capability) ||
-      hasCapability(role, item.capability))
+    (item.capability === undefined || hasCapability(role, item.capability))
   )
 }
 

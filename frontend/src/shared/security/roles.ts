@@ -40,6 +40,6 @@ export function canManageInventory(role: RoleLike): boolean {
   )
 }
 
-export function homePathForRole(role: RoleLike): string {
-  return getRoleName(role) ? '/app' : '/login'
+export function homePathForRole(role: RoleLike, canAccessErp = false): string {
+  return getRoleName(role) && canAccessErp ? '/app' : '/servicios'
 }

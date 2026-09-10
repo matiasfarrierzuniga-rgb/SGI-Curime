@@ -27,14 +27,14 @@ vi.mock('@/services/inventoryReportsService', () => ({
 
 let httpGet: ReturnType<typeof vi.spyOn>
 
-function renderRoute(path: string, role: string | null) {
+function renderRoute(path: string, role: string | null, canAccessErp = role !== null) {
   if (role !== null) {
-    localStorage.setItem('sgi-curime-session', JSON.stringify({
+    sessionStorage.setItem('sgi-curime-session', JSON.stringify({
       token: 'test-token',
-      user: { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVO', role },
+      user: { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role, canAccessErp },
     }))
     vi.spyOn(authService, 'me').mockResolvedValue({
-      id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVO', role,
+      id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role, canAccessErp,
     })
   }
 
@@ -65,6 +65,7 @@ beforeEach(() => {
 
 afterEach(() => {
   localStorage.clear()
+  sessionStorage.clear()
   vi.restoreAllMocks()
 })
 
@@ -88,6 +89,14 @@ describe('AppRoutes capability deep links', () => {
 
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Área de gestión' })).not.toBeInTheDocument()
+  })
+
+  it('redirects a general account deep link to services without rendering internal navigation', async () => {
+    renderRoute('/app/admin/affiliates', 'Subscription_L1', false)
+
+    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Navegación móvil')).not.toBeInTheDocument()
   })
 
   it('redirects anonymous users from /admin/users to login before privileged content renders', () => {
@@ -150,7 +159,7 @@ describe('AppRoutes capability deep links', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
 
     expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
-    await waitFor(() => expect(localStorage.getItem('sgi-curime-session')).toBeNull())
+    await waitFor(() => expect(sessionStorage.getItem('sgi-curime-session')).toBeNull())
 
     sessionView.unmount()
     const appView = renderRoute('/app', null)

@@ -28,10 +28,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unauthorized = () => clearLocalSession()
     const tokenRefreshed = (event: Event) => setToken((event as CustomEvent<string>).detail)
+    const accessChanged = () => {
+      authService.me().then((fresh) => {
+        setUser(fresh)
+        const current = sessionStorageService.get<StoredSession>()
+        if (current) sessionStorageService.set({ ...current, user: fresh })
+      }).catch(clearLocalSession)
+    }
     window.addEventListener('auth:unauthorized', unauthorized)
     window.addEventListener('auth:token-refreshed', tokenRefreshed)
+    window.addEventListener('auth:access-changed', accessChanged)
     if (stored?.token) authService.me().then(fresh => { setUser(fresh); sessionStorageService.set({ token: stored.token, user: fresh }) }).catch(clearLocalSession).finally(() => setIsLoading(false))
-    return () => { window.removeEventListener('auth:unauthorized', unauthorized); window.removeEventListener('auth:token-refreshed', tokenRefreshed) }
+    return () => { window.removeEventListener('auth:unauthorized', unauthorized); window.removeEventListener('auth:token-refreshed', tokenRefreshed); window.removeEventListener('auth:access-changed', accessChanged) }
   }, [clearLocalSession, stored?.token])
 
   const login = async (credentials: LoginCredentials) => {

@@ -11,6 +11,7 @@ export {
 export { RequireCapabilities } from './presentation/decorators/require-capabilities.decorator';
 export { RolesGuard } from './presentation/guards/roles.guard';
 export type { AuthenticatedUser } from './domain/entities/auth-user';
+export { canAccessErp, GENERAL_ACCOUNT_ROLE } from './domain/policies/internal-access.policy';
 export {
   getAccountLockoutPolicy,
   isTemporaryLockActive,

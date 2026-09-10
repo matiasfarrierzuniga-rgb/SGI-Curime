@@ -70,6 +70,7 @@ describe('PrismaUsersRepository registration methods', () => {
       affiliateStatus: 'ACTIVE',
       affiliateRoleId: 4,
       affiliateRequestStatus: 'APPROVED',
+      hasPerson: true,
     });
   });
 

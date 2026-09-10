@@ -57,7 +57,7 @@ describe('portal público', () => {
     authState.isAuthenticated = true
     renderPublic('/servicios')
 
-    expect(screen.getByRole('link', { name: 'Solicitar una reserva' })).toHaveAttribute('href', '/app/reservations/new')
+    expect(screen.getByRole('link', { name: 'Solicitar una reserva' })).toHaveAttribute('href', '/servicios/reservas')
     expect(screen.queryByRole('heading', { name: 'Crear una cuenta' })).not.toBeInTheDocument()
     expect(screen.queryByText('Cree su cuenta para acceder a los servicios digitales disponibles.')).not.toBeInTheDocument()
     expect(screen.getAllByText('Próximamente')).toHaveLength(3)
@@ -144,7 +144,7 @@ describe('portal público', () => {
     expect(screen.getByRole('link', { name: /consultar sobre afiliación/i })).toHaveAttribute('href', '/afiliacion')
     expect(screen.getByRole('link', { name: /consultar sobre eventos/i })).toHaveAttribute('href', '/eventos')
     expect(screen.getAllByText('Próximamente')).toHaveLength(2)
-    expect(screen.getByRole('link', { name: /consultar sobre reservas/i })).toHaveAttribute('href', '/app/reservations/new')
+    expect(screen.getByRole('link', { name: /consultar sobre reservas/i })).toHaveAttribute('href', '/servicios/reservas')
   })
 
   it('separa acceso público e inicio de sesión', () => {

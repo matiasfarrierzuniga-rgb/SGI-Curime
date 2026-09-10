@@ -4,5 +4,6 @@ export interface AuthenticatedUser {
   email: string;
   status: string;
   role: string;
+  canAccessErp: boolean;
   subscriptionExpirationDate?: Date;
 }

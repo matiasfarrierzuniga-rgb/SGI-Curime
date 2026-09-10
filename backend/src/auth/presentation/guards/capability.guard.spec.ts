@@ -2,7 +2,7 @@ import type { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { CapabilityGuard } from './capability.guard';
 
-function contextFor(role?: string): ExecutionContext {
+function contextFor(role?: string, canAccessErp = true): ExecutionContext {
   return {
     getHandler: () => undefined,
     getClass: () => undefined,
@@ -15,6 +15,7 @@ function contextFor(role?: string): ExecutionContext {
               email: 'test@example.com',
               status: 'ACTIVE',
               role,
+              canAccessErp,
             }
           : undefined,
       }),
@@ -50,6 +51,11 @@ describe('CapabilityGuard', () => {
       .mockReturnValue(['usr.users.read']);
 
     expect(guard.canActivate(contextFor('Gestor de Inventario'))).toBe(false);
+  });
+
+  it('denies a role capability when current affiliate access is invalid', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.users.read']);
+    expect(guard.canActivate(contextFor('Administrador', false))).toBe(false);
   });
 
   it('denies an unknown role and unknown capability', () => {

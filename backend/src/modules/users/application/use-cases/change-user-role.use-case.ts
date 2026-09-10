@@ -48,7 +48,9 @@ export class ChangeUserRoleUseCase {
         assertAnotherActiveAdministrator(count);
       }
 
-      return tx.updateRole(id, roleId);
+      const updated = await tx.updateRole(id, roleId);
+      await tx.updateActiveAffiliateRoleForUser(id, roleId);
+      return updated;
     });
     await this.audit?.record({
       userId: actorId,

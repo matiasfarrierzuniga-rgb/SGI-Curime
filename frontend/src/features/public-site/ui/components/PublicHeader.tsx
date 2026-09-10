@@ -6,7 +6,7 @@ import { site } from '@/content/publicSiteContent'
 import { Button } from '@/shared/ui/button'
 
 export function PublicHeader() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const [open, setOpen] = useState(false)
   const id = useId()
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -32,8 +32,8 @@ export function PublicHeader() {
   }, [open])
 
   const close = () => setOpen(false)
-  const accessTo = isAuthenticated ? '/app' : '/login'
-  const accessLabel = isAuthenticated ? 'Ir al panel' : 'Iniciar sesión'
+  const accessTo = !isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'
+  const accessLabel = !isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'
 
   return (
     <header className="sticky top-0 z-[var(--z-nav)] border-b border-border bg-brand-ivory/95 font-sans text-brand-deep backdrop-blur-sm">

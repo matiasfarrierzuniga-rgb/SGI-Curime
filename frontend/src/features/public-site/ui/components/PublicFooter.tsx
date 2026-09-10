@@ -3,7 +3,7 @@ import { useAuth } from '@/features/auth'
 import { site } from '@/content/publicSiteContent'
 
 export function PublicFooter() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   return (
     <>
       <svg
@@ -73,8 +73,8 @@ export function PublicFooter() {
             <h3 className="font-heading text-heading-3 font-semibold text-brand-ivory">Sistema</h3>
             <ul className="mt-3 space-y-1.5 text-sm">
               <li>
-                <Link className="inline-flex min-h-11 items-center rounded-sm text-brand-ivory/80 underline decoration-brand-accent/50 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-ivory" to={isAuthenticated ? '/app' : '/login'}>
-                  {isAuthenticated ? 'Ir al panel' : 'Iniciar sesión'}
+                <Link className="inline-flex min-h-11 items-center rounded-sm text-brand-ivory/80 underline decoration-brand-accent/50 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-ivory" to={!isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'}>
+                  {!isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'}
                 </Link>
               </li>
               <li>

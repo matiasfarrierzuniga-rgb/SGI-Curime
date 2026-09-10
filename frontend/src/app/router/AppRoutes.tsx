@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
-import { ProtectedRoute } from '@/features/auth'
+import { InternalErpRoute, ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
 import { AffiliatesPage } from '@/features/affiliates'
 import { EventsManagementPage, PublicEventDetailPage, PublicEventsPage } from '@/features/events'
@@ -58,9 +58,14 @@ export function AppRoutes() {
       </Route>
       <Route path="/403" element={<ForbiddenPage />} />
       <Route element={<ProtectedRoute />}>
+        <Route element={<PublicLayout />}>
+          <Route path="/servicios/reservas" element={<ReservationRequestPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Route>
+      </Route>
+      <Route element={<InternalErpRoute />}>
         <Route element={<ErpLayout />}>
           <Route path="/app" element={<AppHomePage />} />
-          <Route path="/app/reservations/new" element={<ReservationRequestPage />} />
            <Route element={<RoleRoute capability="res.reservations.read" />}>
              <Route path="/app/reservations" element={<ReservationAdminPage />} />
            </Route>
@@ -72,9 +77,6 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="fin.movements.read" />}>
             <Route path="/app/financial/movements" element={<FinancialMovementsPage />} />
-          </Route>
-          <Route element={<RoleRoute capability="usr.profile.read" />}>
-            <Route path="/profile" element={<ProfilePage />} />
           </Route>
           <Route element={<RoleRoute capability="usr.users.read" />}>
             <Route path="/admin/users" element={<UsersPage />} />

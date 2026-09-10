@@ -95,7 +95,7 @@ describe('getErpNavigation', () => {
     const requests = getErpNavigation('Vecino/Afiliado').flatMap((section) => section.items).find((item) => item.label === 'Solicitar una reserva')
     const reservations = getErpNavigation('Vecino/Afiliado').flatMap((section) => section.items).find((item) => item.label === 'Reservas')
 
-    expect(requests).toMatchObject({ path: '/app/reservations/new' })
+    expect(requests).toMatchObject({ path: '/servicios/reservas' })
     expect(requests?.capability).toBeUndefined()
     expect(reservations).toBeUndefined()
   })

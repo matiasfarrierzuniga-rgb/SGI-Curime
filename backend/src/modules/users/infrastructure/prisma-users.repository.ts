@@ -181,6 +181,7 @@ export class PrismaUsersRepository implements UsersRepository {
       affiliateRoleId: affiliate?.roleId ?? null,
       affiliateRequestStatus:
         account?.person?.affiliateRequests[0]?.status ?? null,
+      hasPerson: account?.person !== null && account?.person !== undefined,
     };
   }
 
@@ -293,6 +294,16 @@ export class PrismaUsersRepository implements UsersRepository {
       select: userSelect,
     });
     return toUser(user);
+  }
+
+  async updateActiveAffiliateRoleForUser(
+    id: number,
+    roleId: number,
+  ): Promise<void> {
+    await this.db.affiliate.updateMany({
+      where: { person: { user: { id } }, status: 'ACTIVE' },
+      data: { roleId },
+    });
   }
 
   async resetTemporaryLock(id: number): Promise<User> {
