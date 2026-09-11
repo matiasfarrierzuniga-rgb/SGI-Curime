@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "SGI-Curime — Arquitectura general",
+    "subtitle": "Vista de alto nivel basada en la rama main",
+    "output": "docs/architecture/generated/system-overview.html",
+    "animation": "trace",
+    "visual_preset": "editorial",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/matiasfarrierzuniga-rgb/SGI-Curime",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "43c5af3859e8a4531deb22a2e0d1f136b33bdba7"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "external": { "label": "Usuario" },
+        "frontend": { "label": "Frontend" },
+        "backend": { "label": "Backend" },
+        "database": { "label": "Persistencia" }
+      }
+    },
+    "views": [
+      {
+        "id": "request-flow",
+        "label": "Flujo principal",
+        "focus": ["user", "frontend", "backend", "prisma", "postgres"],
+        "note": "Recorrido principal de una solicitud desde el navegador hasta PostgreSQL."
+      },
+      {
+        "id": "application",
+        "label": "Aplicación SGI",
+        "focus": ["frontend", "backend"],
+        "note": "Aplicaciones React y NestJS que implementan los módulos del SGI."
+      },
+      {
+        "id": "persistence",
+        "label": "Persistencia",
+        "focus": ["backend", "prisma", "postgres"],
+        "note": "Acceso a datos mediante Prisma sobre PostgreSQL."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [60, 120],
+    "cols": 5,
+    "gapX": 55,
+    "gapY": 80,
+    "cellW": 180,
+    "cellH": 90
+  },
+  "components": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "Usuario",
+      "sublabel": "Navegador web",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "frontend",
+      "type": "frontend",
+      "label": "SGI-Curime Frontend",
+      "sublabel": "React 19 · TypeScript · Vite",
+      "tag": "SPA",
+      "row": 1,
+      "col": 1,
+      "sources": [
+        { "path": "frontend/package.json", "label": "Stack frontend" },
+        { "path": "frontend/src/app/router/AppRoutes.tsx", "label": "Rutas y módulos" },
+        { "path": "frontend/src/shared/api/httpClient.ts", "label": "Cliente HTTP" }
+      ]
+    },
+    {
+      "id": "backend",
+      "type": "backend",
+      "label": "SGI-Curime API",
+      "sublabel": "NestJS 11 · REST",
+      "tag": "API",
+      "row": 1,
+      "col": 2,
+      "sources": [
+        { "path": "backend/src/main.ts", "label": "Bootstrap NestJS" },
+        { "path": "backend/src/app.module.ts", "label": "Módulos backend" },
+        { "path": "backend/package.json", "label": "Stack backend" }
+      ]
+    },
+    {
+      "id": "prisma",
+      "type": "backend",
+      "label": "Prisma",
+      "sublabel": "ORM / acceso a datos",
+      "row": 1,
+      "col": 3,
+      "sources": [
+        { "path": "backend/prisma/schema.prisma", "label": "Modelo de datos" }
+      ]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL 17",
+      "sublabel": "Base de datos SGI",
+      "row": 1,
+      "col": 4,
+      "sources": [
+        { "path": "compose.yaml", "label": "Servicio PostgreSQL" },
+        { "path": "backend/prisma/schema.prisma", "label": "Datasource Prisma" }
+      ]
+    },
+    {
+      "id": "frontendModules",
+      "type": "frontend",
+      "label": "Superficies frontend",
+      "sublabel": "Público · Acceso · ERP",
+      "row": 0,
+      "col": 1,
+      "sources": [
+        { "path": "frontend/src/app/router/AppRoutes.tsx", "label": "Router" }
+      ]
+    },
+    {
+      "id": "backendDomains",
+      "type": "backend",
+      "label": "Dominios SGI",
+      "sublabel": "Auth · Afiliados · Reservas · Financiero · Donaciones · Inventario",
+      "row": 0,
+      "col": 2,
+      "sources": [
+        { "path": "backend/src/app.module.ts", "label": "AppModule" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Aplicación SGI-Curime",
+      "wraps": ["frontend", "frontendModules", "backend", "backendDomains", "prisma"],
+      "pad": 24
+    },
+    {
+      "kind": "region",
+      "label": "Entorno Docker Compose",
+      "wraps": ["frontend", "backend", "postgres"],
+      "pad": 42
+    }
+  ],
+  "connections": [
+    {
+      "id": "user-frontend",
+      "from": "user",
+      "to": "frontend",
+      "label": "HTTPS / UI",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "frontend-backend",
+      "from": "frontend",
+      "to": "backend",
+      "label": "HTTP JSON · Bearer · Cookies",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "backend-prisma",
+      "from": "backend",
+      "to": "prisma",
+      "label": "Prisma Client",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "prisma-postgres",
+      "from": "prisma",
+      "to": "postgres",
+      "label": "PostgreSQL",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "frontend",
+      "to": "frontendModules",
+      "label": "routing",
+      "variant": "default",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "from": "backend",
+      "to": "backendDomains",
+      "label": "Nest modules",
+      "variant": "default",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Frontend",
+      "items": [
+        "React 19 + TypeScript + Vite",
+        "React Router para superficies pública, acceso y ERP",
+        "Axios + TanStack Query para comunicación y estado servidor"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Backend",
+      "items": [
+        "NestJS 11",
+        "Autenticación y autorización por roles/capabilities",
+        "Dominios de afiliación, reservas, financiero, donaciones e inventario"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Persistencia",
+      "items": [
+        "Prisma 7",
+        "PostgreSQL 17",
+        "Migraciones y seed ejecutados al iniciar el backend en Docker"
+      ]
+    }
+  ]
+}
