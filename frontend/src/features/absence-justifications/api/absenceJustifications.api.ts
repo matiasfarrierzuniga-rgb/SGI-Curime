@@ -28,6 +28,9 @@ export const absenceJustificationsService = {
   async listForAffiliate(affiliateId: number, filters: AbsenceJustificationListFilters) {
     return (await httpClient.get<AbsenceJustificationListResponse>(`/affiliates/${affiliateId}/absence-justifications`, { params: filters })).data
   },
+  async listMine(filters: AbsenceJustificationListFilters) {
+    return (await httpClient.get<AbsenceJustificationListResponse>('/me/absence-justifications', { params: filters })).data
+  },
   async getEvidence(id: number) {
     return (await httpClient.get<Pick<AbsenceJustification, 'attachmentUrl'>>(`/absence-justifications/${id}/evidence`)).data
   },
@@ -35,7 +38,8 @@ export const absenceJustificationsService = {
     return (await httpClient.get<Blob>(`/absence-justifications/${id}/evidence/file`, { responseType: 'blob' })).data
   },
   async listAssemblies() {
-    return (await httpClient.get<{ data: AssemblyOption[] }>('/assemblies', { params: { page: 1, limit: 100 } })).data
+    const items = (await httpClient.get<{ assembly: AssemblyOption & { status: string; attendanceStatus?: string | null; justification?: unknown } }[]>('/assemblies/mine')).data
+    return { data: items.filter((item) => item.assembly.status === 'COMPLETED' && item.assembly.attendanceStatus === 'ABSENT' && !item.assembly.justification).map((item) => item.assembly) }
   },
   async createForAffiliate(affiliateId: number, payload: AffiliateAbsenceJustificationPayload) {
     const formData = new FormData()
@@ -43,6 +47,13 @@ export const absenceJustificationsService = {
     formData.append('reason', payload.reason)
     if (payload.attachment) formData.append('attachment', payload.attachment)
     return (await httpClient.post<AbsenceJustification>(`/affiliates/${affiliateId}/absence-justifications`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })).data
+  },
+  async createMine(payload: AffiliateAbsenceJustificationPayload) {
+    const formData = new FormData()
+    formData.append('assemblyId', String(payload.assemblyId))
+    formData.append('reason', payload.reason)
+    if (payload.attachment) formData.append('attachment', payload.attachment)
+    return (await httpClient.post<AbsenceJustification>('/me/absence-justifications', formData, { headers: { 'Content-Type': 'multipart/form-data' } })).data
   },
   async approve(id: number, payload?: ReviewAbsenceJustificationPayload) {
     return (await httpClient.patch<AbsenceJustification>(`/absence-justifications/${id}/approve`, payload)).data

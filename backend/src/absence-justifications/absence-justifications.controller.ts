@@ -45,6 +45,33 @@ export class AbsenceJustificationsController {
   @UseInterceptors(
     FileInterceptor('attachment', { limits: { fileSize: 5 * 1024 * 1024 } }),
   )
+  @Post('me/absence-justifications')
+  registerMine(
+    @Body() payload: RegisterAffiliateJustificationDto,
+    @UploadedFile()
+    file:
+      | { originalname: string; mimetype: string; size: number; buffer: Buffer }
+      | undefined,
+    @Req() req: AuthRequest,
+  ) {
+    return this.service.registerMine(
+      payload,
+      file,
+      req.user.id,
+      this.context(req),
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/absence-justifications')
+  findMine(@Query() q: QueryJustificationsDto, @Req() req: AuthRequest) {
+    return this.service.findMine(q, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('attachment', { limits: { fileSize: 5 * 1024 * 1024 } }),
+  )
   @Post('affiliates/:affiliateId/absence-justifications')
   registerForAffiliate(
     @Param('affiliateId', ParseIntPipe) affiliateId: number,

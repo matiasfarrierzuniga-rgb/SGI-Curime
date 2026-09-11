@@ -3,11 +3,16 @@ import {
   IsDate,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
+  Min,
   IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
-import { AssemblyStatus } from '../../../generated/prisma/enums';
+import {
+  AssemblyQuorumType,
+  AssemblyStatus,
+} from '../../../generated/prisma/enums';
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
 export class CreateAssemblyDto {
@@ -27,6 +32,8 @@ export class CreateAssemblyDto {
   @MaxLength(2000)
   description?: string;
   @IsOptional() @IsEnum(AssemblyStatus) status?: AssemblyStatus;
+  @IsEnum(AssemblyQuorumType) quorumType: AssemblyQuorumType;
+  @Type(() => Number) @IsNumber() @Min(1) quorumValue: number;
 }
 export class UpdateAssemblyDto {
   @Transform(trim)
@@ -55,4 +62,6 @@ export class UpdateAssemblyDto {
   @MaxLength(2000)
   description?: string;
   @IsOptional() @IsEnum(AssemblyStatus) status?: AssemblyStatus;
+  @IsOptional() @IsEnum(AssemblyQuorumType) quorumType?: AssemblyQuorumType;
+  @Type(() => Number) @IsOptional() @IsNumber() @Min(1) quorumValue?: number;
 }

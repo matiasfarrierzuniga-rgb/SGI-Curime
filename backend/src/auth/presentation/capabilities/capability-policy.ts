@@ -13,6 +13,8 @@ export const CAPABILITIES = [
   'usr.profile.read',
   'adm.affiliates.read',
   'adm.requests.read',
+  'adm.assemblies.read',
+  'adm.assemblies.manage',
   'aud.logs.read',
   'inv.inventory.read',
   'pub.events.manage',
