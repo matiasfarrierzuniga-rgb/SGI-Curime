@@ -70,7 +70,14 @@ export class AbsenceJustificationsService {
     const [assembly, affiliate, attendance, existing] = await Promise.all([
       this.prisma.assembly.findUnique({
         where: { id: assemblyId },
-        select: { id: true },
+        select: {
+          id: true,
+          status: true,
+          convocations: {
+            where: { affiliateId: dto.affiliateId },
+            select: { id: true },
+          },
+        },
       }),
       this.prisma.affiliate.findUnique({
         where: { id: dto.affiliateId },
@@ -90,6 +97,12 @@ export class AbsenceJustificationsService {
       }),
     ]);
     if (!assembly) throw new NotFoundException('Assembly not found');
+    if (assembly.status !== 'COMPLETED')
+      throw new ConflictException('Only a completed assembly can be justified');
+    if (assembly.convocations.length === 0)
+      throw new ConflictException(
+        'Only a convoked person can justify an absence',
+      );
     if (!affiliate) throw new NotFoundException('Affiliate not found');
     if (attendance?.status !== 'ABSENT') {
       throw new ConflictException(
@@ -148,7 +161,11 @@ export class AbsenceJustificationsService {
     const [assembly, affiliate, attendance, existing] = await Promise.all([
       this.prisma.assembly.findUnique({
         where: { id: assemblyId },
-        select: { id: true },
+        select: {
+          id: true,
+          status: true,
+          convocations: { where: { affiliateId }, select: { id: true } },
+        },
       }),
       this.prisma.affiliate.findFirst({
         where: {
@@ -168,7 +185,13 @@ export class AbsenceJustificationsService {
     ]);
 
     if (!assembly) throw new NotFoundException('Assembly not found');
+    if (assembly.status !== 'COMPLETED')
+      throw new ConflictException('Only a completed assembly can be justified');
     if (!affiliate) throw new NotFoundException('Affiliate not found');
+    if (assembly.convocations.length === 0)
+      throw new ConflictException(
+        'Only a convoked person can justify an absence',
+      );
     if (attendance?.status !== 'ABSENT') {
       throw new ConflictException(
         'The affiliate must be marked as absent in this assembly before registering a justification.',
@@ -223,6 +246,39 @@ export class AbsenceJustificationsService {
       }
       throw error;
     }
+  }
+
+  private async affiliateIdForUser(actorId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: actorId },
+      select: { person: { select: { affiliate: { select: { id: true } } } } },
+    });
+    const affiliateId = user?.person?.affiliate?.id;
+    if (!affiliateId)
+      throw new ForbiddenException('No affiliate is linked to this account');
+    return affiliateId;
+  }
+
+  async registerMine(
+    payload: { assemblyId: number; reason: string },
+    file: UploadedJustificationFile | undefined,
+    actorId: number,
+    context: AuditContext = {},
+  ) {
+    const affiliateId = await this.affiliateIdForUser(actorId);
+    return this.registerFromAffiliate(
+      payload.assemblyId,
+      affiliateId,
+      payload,
+      file,
+      actorId,
+      context,
+    );
+  }
+
+  async findMine(q: QueryJustificationsDto, actorId: number) {
+    const affiliateId = await this.affiliateIdForUser(actorId);
+    return this.findAll({ ...q, affiliateId });
   }
   async findAll(q: QueryJustificationsDto) {
     const where = {

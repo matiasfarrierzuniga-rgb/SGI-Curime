@@ -33,6 +33,7 @@ import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
 import { FinancialMovementsPage, FinancialPage } from '@/features/financial'
 import { DonationsPage } from '@/features/donations'
+import { AssembliesAdminPage, MineAssembliesPage } from '@/features/assemblies'
 export function AppRoutes() {
   return (
     <Routes>
@@ -91,6 +92,10 @@ export function AppRoutes() {
             <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
           </Route>
+          <Route element={<RoleRoute capability="adm.assemblies.read" />}>
+            <Route path="/app/admin/assemblies" element={<AssembliesAdminPage />} />
+          </Route>
+          <Route path="/app/assemblies/mine" element={<MineAssembliesPage />} />
           <Route element={<RoleRoute capability="adm.justifications.read" />}>
             <Route path="/app/admin/absence-justifications" element={<AbsenceJustificationsPage />} />
           </Route>

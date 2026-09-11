@@ -66,6 +66,12 @@ const navigation: readonly ErpNavigationSection[] = [
         role: 'Vecino/Afiliado',
         icon: CalendarDays,
       },
+      {
+        label: 'Mis asambleas',
+        path: '/app/assemblies/mine',
+        excludedRole: 'Administrador',
+        icon: CalendarCheck,
+      },
     ],
   },
   {
@@ -94,6 +100,12 @@ const navigation: readonly ErpNavigationSection[] = [
         path: '/app/admin/absence-justifications',
         capability: 'adm.justifications.read',
         icon: FileCheck2,
+      },
+      {
+        label: 'Asambleas',
+        path: '/app/admin/assemblies',
+        capability: 'adm.assemblies.read',
+        icon: CalendarCheck,
       },
       {
         label: 'Eventos',

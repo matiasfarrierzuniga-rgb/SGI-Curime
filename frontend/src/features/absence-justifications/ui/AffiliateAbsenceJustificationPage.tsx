@@ -1,5 +1,5 @@
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react'
-import { useAuth } from '@/features/auth'
+import { useSearchParams } from 'react-router-dom'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { useToast } from '@/shared/ui/Toast'
@@ -30,14 +30,15 @@ function inferMimeType(fileName: string): string {
 }
 
 export function AffiliateAbsenceJustificationPage() {
-  const { user } = useAuth()
+  const [searchParams] = useSearchParams()
+  const requestedAssemblyId = searchParams.get('assemblyId') ?? ''
   const { notify } = useToast()
   const [assemblies, setAssemblies] = useState<AssemblyOption[]>([])
   const [loadingAssemblies, setLoadingAssemblies] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [form, setForm] = useState<FormState>({ assemblyId: '', reason: '' })
+  const [form, setForm] = useState<FormState>({ assemblyId: requestedAssemblyId, reason: '' })
 
   useEffect(() => {
     let active = true
@@ -85,7 +86,7 @@ export function AffiliateAbsenceJustificationPage() {
   }
 
   const submit = async () => {
-    if (!user || submitting) return
+    if (submitting) return
 
     const assemblyId = Number(form.assemblyId)
     const reason = form.reason.trim()
@@ -115,9 +116,9 @@ export function AffiliateAbsenceJustificationPage() {
         attachment: selectedFile ?? undefined,
       }
 
-      await absenceJustificationsService.createForAffiliate(user.id, payload)
+      await absenceJustificationsService.createMine(payload)
       notify('Tu justificación fue registrada y quedó en estado Pendiente.', 'success')
-      setForm({ assemblyId: '', reason: '' })
+      setForm({ assemblyId: requestedAssemblyId, reason: '' })
       setSelectedFile(null)
       const input = document.getElementById('evidence-file') as HTMLInputElement | null
       if (input) input.value = ''
@@ -157,9 +158,10 @@ export function AffiliateAbsenceJustificationPage() {
               value={form.assemblyId}
               onChange={(event) => setForm((current) => ({ ...current, assemblyId: event.target.value }))}
               className="min-h-11 rounded-md border border-border-default bg-surface px-3 text-sm"
-              disabled={loadingAssemblies || submitting}
+              disabled={loadingAssemblies || submitting || Boolean(requestedAssemblyId)}
+              aria-readonly={Boolean(requestedAssemblyId)}
             >
-              <option value="">Selecciona una asamblea</option>
+              {!requestedAssemblyId ? <option value="">Selecciona una asamblea</option> : null}
               {assemblies.map((assembly) => (
                 <option key={assembly.id} value={assembly.id}>
                   {assembly.title} • {new Date(assembly.date).toLocaleDateString('es-CR', { dateStyle: 'medium' })}

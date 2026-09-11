@@ -32,8 +32,14 @@ enum IdentificationType {
 
 enum AssemblyStatus {
   SCHEDULED
+  IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum AssemblyQuorumType {
+  FIXED
+  PERCENTAGE
 }
 
 enum EventStatus {
@@ -139,6 +145,7 @@ model Role {
 
   users      User[]
   affiliates Affiliate[]
+  assemblyConvocations AssemblyConvocation[]
 }
 
 model Person {
@@ -367,6 +374,7 @@ model Affiliate {
   justifications AbsenceJustification[]
   sanctions      AffiliateSanction[]
   inventoryLoans InventoryLoan[]
+  assemblyConvocations AssemblyConvocation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -417,15 +425,38 @@ model Assembly {
   place       String
   description String?
   status      AssemblyStatus @default(SCHEDULED)
+  quorumType  AssemblyQuorumType?
+  quorumValue Int?
+  convocationsLockedAt DateTime?
 
   attendances    AssemblyAttendance[]
   justifications AbsenceJustification[]
+  convocations   AssemblyConvocation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([date])
   @@index([status])
+}
+
+model AssemblyConvocation {
+  id               Int      @id @default(autoincrement())
+  assemblyId       Int
+  assembly         Assembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+  affiliateId      Int
+  affiliate        Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  roleId           Int?
+  role             Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  roleNameSnapshot String
+  convenedAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([assemblyId, affiliateId])
+  @@index([assemblyId])
+  @@index([affiliateId])
+  @@index([roleId])
 }
 
 model Event {

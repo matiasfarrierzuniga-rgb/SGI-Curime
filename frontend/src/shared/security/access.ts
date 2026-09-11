@@ -16,6 +16,8 @@ export const ACCESS_CAPABILITIES = [
   'usr.profile.read',
   'adm.affiliates.read',
   'adm.requests.read',
+  'adm.assemblies.read',
+  'adm.assemblies.manage',
   'adm.justifications.read',
   'abs.justifications.read',
   'aud.logs.read',
