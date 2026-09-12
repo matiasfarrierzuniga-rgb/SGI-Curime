@@ -28,16 +28,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unauthorized = () => clearLocalSession()
     const tokenRefreshed = (event: Event) => setToken((event as CustomEvent<string>).detail)
+    const accessChanged = () => {
+      authService.me().then((fresh) => {
+        setUser(fresh)
+        const current = sessionStorageService.get<StoredSession>()
+        if (current) sessionStorageService.set({ ...current, user: fresh })
+      }).catch(clearLocalSession)
+    }
     window.addEventListener('auth:unauthorized', unauthorized)
     window.addEventListener('auth:token-refreshed', tokenRefreshed)
+    window.addEventListener('auth:access-changed', accessChanged)
     if (stored?.token) authService.me().then(fresh => { setUser(fresh); sessionStorageService.set({ token: stored.token, user: fresh }) }).catch(clearLocalSession).finally(() => setIsLoading(false))
-    return () => { window.removeEventListener('auth:unauthorized', unauthorized); window.removeEventListener('auth:token-refreshed', tokenRefreshed) }
+    return () => { window.removeEventListener('auth:unauthorized', unauthorized); window.removeEventListener('auth:token-refreshed', tokenRefreshed); window.removeEventListener('auth:access-changed', accessChanged) }
   }, [clearLocalSession, stored?.token])
 
   const login = async (credentials: LoginCredentials) => {
     const session = await authService.login(credentials)
-    sessionStorageService.set({ token: session.accessToken, user: session.user }); setToken(session.accessToken); setUser(session.user)
-    return session.user
+    sessionStorageService.set({ token: session.accessToken, user: session.user })
+    setToken(session.accessToken)
+    const fresh = await authService.me()
+    sessionStorageService.set({ token: session.accessToken, user: fresh })
+    setUser(fresh)
+    return fresh
   }
   return <AuthContext.Provider value={{ user, token, isAuthenticated: Boolean(token && user), isLoading, login, logout }}>{children}</AuthContext.Provider>
 }

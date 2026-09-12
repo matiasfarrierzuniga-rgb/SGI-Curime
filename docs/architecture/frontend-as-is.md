@@ -1,225 +1,256 @@
-# Frontend AS-IS
+# Arquitectura frontend vigente
 
-This document is the current frontend source of truth. The original horizontal
-inventory is retained below as historical baseline evidence; the repository has
-since received Foundation/Auth/Users/Roles consolidation in separate commits.
-Phase 0 documentation does not authorize additional production moves.
+Estado: Vigente  
+Última revisión: 2026-09  
+Fuente primaria: código actual de `main`, configuración y pruebas del frontend
 
-## Scope
+## Propósito
 
-Baseline verified on branch `docs/frontend-architecture-phase-0` at closure review.
+Este documento describe la arquitectura real del frontend de SGI-Curime. Sustituye las descripciones históricas de Fase 0 que mezclaban estructuras anteriores con la organización actual.
 
-## Stack
+## Stack actual
 
-- Framework: React 19.
-- Build tool: Vite 8.
-- Language: TypeScript 6.
-- Router: React Router 7.
-- HTTP client: Axios.
-- Lint: Oxlint.
-- Tests: Vitest + Testing Library + jsdom.
+- React 19
+- TypeScript 6
+- Vite 8
+- React Router 7
+- Axios
+- TanStack Query
+- TanStack Table
+- React Hook Form + Zod
+- Tailwind CSS 4
+- Base UI
+- Vitest + Testing Library + jsdom
+- Oxlint
 
-## Current Structure
+Las versiones concretas deben consultarse en `frontend/package.json`.
 
-Historical pre-consolidation structure under `frontend/src/`:
+## Organización principal
+
+La estructura vigente combina una arquitectura por capas de aplicación con vertical slices por dominio:
 
 ```text
 frontend/src/
+├── app/          composición de aplicación, layouts y router
+├── features/     verticales funcionales por dominio
+├── pages/        páginas todavía compartidas o en transición
+├── shared/       infraestructura y UI reutilizable sin dependencia de dominio
+├── components/   componentes heredados todavía no migrados completamente
+├── content/      contenido estático o editorial
+├── services/     servicios heredados todavía en transición
+├── types/        tipos heredados todavía en transición
+├── test/         soporte de pruebas
+├── assets/
+├── main.tsx
+├── index.css
+└── tailwind.css
+```
+
+La presencia de `components/`, `services/` y `types/` no significa que sean la dirección arquitectónica preferida. Son raíces heredadas que continúan existiendo mientras el código se consolida dentro de `features/` y `shared/`.
+
+## Capas vigentes
+
+### `app/`
+
+Responsable de la composición de alto nivel de la SPA.
+
+Incluye, entre otros elementos:
+
+- layouts públicos, de acceso y ERP;
+- definición central de rutas;
+- composición de navegación y shell de aplicación.
+
+`frontend/src/app/router/AppRoutes.tsx` es actualmente el punto central de routing.
+
+### `features/`
+
+Cada feature representa una vertical de negocio o capacidad funcional. En `main` existen verticales para, entre otras:
+
+```text
+absence-justifications
+affiliate-requests
+affiliates
+auth
+events
+financial
+public-site
+reservations
+roles
+user-requests
+users
+```
+
+Una feature puede contener, según necesidad:
+
+```text
+feature/
 ├── api/
-├── auth/
-├── components/
+├── hooks/
+├── model/
+├── routing/
+├── ui/
+└── index.ts
+```
+
+No todas las features necesitan todos esos subdirectorios.
+
+### `shared/`
+
+Contiene infraestructura y componentes neutrales respecto al dominio:
+
+```text
+shared/
+├── api/
 ├── config/
-├── content/
-├── layouts/
-├── pages/
-├── routes/
-├── services/
-├── test/
-├── types/
-└── utils/
+├── lib/
+├── security/
+├── session/
+└── ui/
 ```
 
-Current source also contains committed boundaries:
+Ejemplos de responsabilidades adecuadas para `shared/`:
+
+- cliente HTTP;
+- lectura centralizada de variables de entorno;
+- sesión reutilizable;
+- utilidades generales;
+- primitives y componentes de UI neutrales;
+- helpers de seguridad que no pertenecen a una sola vertical.
+
+`shared/` no debe depender de `app/`, `features/` ni `pages/`.
+
+### `pages/`
+
+`pages/` todavía contiene pantallas que no han sido absorbidas por una feature concreta o que sirven como composición de varias capacidades. Debe tratarse como una capa de presentación/composición, no como lugar preferido para lógica de dominio reutilizable.
+
+## Flujo típico de una vertical
+
+El patrón preferido es:
 
 ```text
-frontend/src/
-├── app/                 App, layouts, router
-├── features/
-│   ├── auth/            api, model, routing, ui, public index
-│   ├── users/           api, hooks, model, ui, public index
-│   └── roles/           api, model, public index
-└── shared/              api, config, lib, security, session, ui
+Route / Page
+    ↓
+Feature UI
+    ↓
+Feature hook
+    ↓
+Feature API
+    ↓
+shared/api/httpClient
+    ↓
+Backend HTTP
 ```
 
-Legacy roots remain transitional. No new empty feature layers are required.
+Cuando TanStack Query aplica, los hooks de feature administran queries, mutations, query keys e invalidación de caché.
 
-## Current Dependency Shape
+## Routing y autorización
 
-Typical flow:
+El router central distingue tres zonas principales:
 
 ```text
-routes/pages
+Público
   ↓
-services
+PublicLayout
+
+Acceso
   ↓
-api/httpClient
+AccessLayout
+
+ERP autenticado
   ↓
-backend HTTP
+ProtectedRoute
+  ↓
+ErpLayout
+  ↓
+RoleRoute / capability
 ```
 
-Auth state lives under `frontend/src/auth/`. API-specific clients live under `frontend/src/services/`. Types live under `frontend/src/types/`.
+El acceso protegido utiliza capabilities para la mayoría de las rutas ERP. Ejemplos actuales incluyen:
 
-## Routing Current State
+- `res.reservations.read`
+- `fin.charges.read`
+- `fin.movements.read`
+- `usr.profile.read`
+- `usr.users.read`
+- `usr.roles.read`
+- `adm.affiliates.read`
+- `adm.requests.read`
+- `adm.justifications.read`
+- `aud.logs.read`
+- `pub.events.manage`
+- `inv.inventory.read`
 
-`frontend/src/routes/AppRoutes.tsx` owns public routes, protected app routes, admin routes, and inventory routes.
+Todavía existe al menos algún acceso basado directamente en rol, por lo que la transición hacia autorización completamente basada en capabilities no debe darse por terminada sin verificar el código.
 
-Relevant Sprint 1 routes:
+## Features de Sprint 2
+
+### Reservas
+
+Reservas está implementado como vertical propia bajo `frontend/src/features/reservations/` e integra API, hooks, modelos y UI. El router expone tanto la solicitud de reserva como la administración de reservas.
+
+### Financiero
+
+Financiero está implementado bajo `frontend/src/features/financial/` con API, modelos, hooks y pantallas para cargos y movimientos financieros.
+
+Estas verticales son evidencia de que la arquitectura por features ya no es una propuesta futura: es parte del frontend actual.
+
+## Reglas arquitectónicas automatizadas
+
+`frontend/scripts/check-architecture.mjs` aplica límites de dependencia.
+
+Reglas principales:
+
+- `shared` no puede depender de `app`, `features`, `pages` ni raíces heredadas de dominio;
+- una feature no puede depender de `app`, `pages` ni raíces heredadas prohibidas;
+- imports entre features deben utilizar el public API de la feature objetivo;
+- acceso directo a `import.meta.env` solo se permite desde `shared/config/env.ts`.
+
+Estas reglas se ejecutan con:
+
+```bash
+npm run check:architecture
+```
+
+## Validación del frontend
+
+El `package.json` define un comando agregado:
+
+```bash
+npm run verify
+```
+
+que ejecuta, en orden:
 
 ```text
-/login
-/register
-/activate-account
-/forgot-password
-/reset-password
-/profile
-/admin/users
+lint
+  ↓
+check:architecture
+  ↓
+tests
+  ↓
+build
 ```
 
-Protected admin users route requires role `Administrador` through `RoleRoute`.
+La ejecución final de los tests y verificaciones corresponde al flujo de validación del equipo; este documento describe los comandos disponibles, no afirma resultados futuros automáticamente.
 
-## Auth Frontend Current State
+## Estado de transición
 
-Files relevant to auth:
+La arquitectura actual es funcional pero no completamente homogénea.
 
-```text
-frontend/src/auth/AuthContext.tsx
-frontend/src/auth/ProtectedRoute.tsx
-frontend/src/auth/RoleRoute.tsx
-frontend/src/pages/LoginPage.tsx
-frontend/src/pages/ForgotPasswordPage.tsx
-frontend/src/pages/TokenPasswordPage.tsx
-frontend/src/services/authService.ts
-frontend/src/types/auth.ts
-frontend/src/utils/sessionStorage.ts
-```
+Persisten raíces heredadas como:
 
-`AuthContext` currently:
+- `components/`
+- `services/`
+- `types/`
+- algunas páginas administrativas e inventario bajo `pages/`
 
-- Reads/writes session through `sessionStorageService`.
-- Calls `authService.login` and `authService.me`.
-- Clears session on `auth:unauthorized` event.
-- Exposes `user`, `token`, `isAuthenticated`, `isLoading`, `login`, `logout`.
+La regla para nuevos cambios debe ser evitar ampliar innecesariamente esas raíces heredadas y preferir `features/` o `shared/` según la responsabilidad.
 
-`authService` maps to backend endpoints:
+## Fuente relacionada
 
-```text
-POST  /auth/login
-GET   /auth/me
-POST  /auth/activate-account
-POST  /auth/forgot-password
-POST  /auth/reset-password
-PATCH /auth/change-password
-```
-
-`api/httpClient.ts` injects Bearer token from session storage and clears session on HTTP 401.
-
-## Users Frontend Current State
-
-Files relevant to Users:
-
-```text
-frontend/src/pages/admin/UsersPage.tsx
-frontend/src/services/usersService.ts
-frontend/src/services/rolesService.ts
-frontend/src/types/users.ts
-frontend/src/pages/admin/UsersPage.test.tsx
-```
-
-`UsersPage` currently concentrates:
-
-- data fetching;
-- role fetching;
-- filters;
-- pagination state;
-- selected user state;
-- modal state;
-- edit form state;
-- role change;
-- activate/deactivate/unlock actions;
-- table rendering;
-- detail modal rendering;
-- toast notifications.
-
-`usersService` maps to backend endpoints:
-
-```text
-GET   /users
-GET   /users/:id
-PATCH /users/:id
-PATCH /users/:id/role
-PATCH /users/:id/activate
-PATCH /users/:id/deactivate
-PATCH /users/:id/unlock
-```
-
-`rolesService` maps to:
-
-```text
-GET /roles
-```
-
-## Shared UI Current State
-
-Reusable UI is under `frontend/src/components/`:
-
-```text
-ConfirmDialog
-ErrorBoundary
-Modal
-Pagination
-StatusMessage
-Toast
-```
-
-These are candidates for future `shared/ui` if they remain domain-neutral.
-
-## Tests Available
-
-Frontend has 27 passing test files and 101 tests. Tests cover auth context/routes, login/profile/status pages, users page, admin pages, inventory pages, public pages, HTTP client, shared utilities, and boundary-facing components.
-
-## Architecture Baseline Gaps
-
-These IDs describe the pre-consolidation Phase 0 audit, not instructions to
-refactor in this change:
-
-| ID | Gap | Current status |
-| --- | --- | --- |
-| P0-01 | No physical `app/features/shared` boundaries. | Resolved by pre-existing Foundation commits. |
-| P0-02 | Auth distributed across horizontal folders. | Auth slice established; legacy consumers remain transitional. |
-| P0-03 | `UsersPage` concentrated responsibilities. | Users slice established; remaining complexity is follow-up work. |
-| P0-04 | Feature APIs lived in global `services/`. | Auth/Users/Roles APIs moved; other domains remain transitional. |
-| P0-05 | Feature types lived in global `types/`. | Reference slices own relevant models; other domains remain transitional. |
-| P0-06 | No consistent feature public APIs. | Auth/Users/Roles expose `index.ts`. |
-| P0-07 | Dependency rules were not automated. | `check:architecture` and conventions are committed. |
-
-## Validation Results
-
-| Check | Result |
-| --- | --- |
-| `npm ci` | Passed. |
-| `npm run lint` | Passed. |
-| `npm run build` | Passed. |
-| `npm test -- --run` | Passed: 27 files, 101 tests. |
-
-## Pre-Existing Failures
-
-No frontend validation failure after reinstalling dependencies with `npm ci`.
-
-## Architecture Risks
-
-- No Vertical Slice layout exists yet.
-- `AppRoutes.tsx` imports all pages directly from horizontal folders.
-- `UsersPage` is too broad for reference architecture; it mixes API, state, mutations, modal orchestration, and UI.
-- Feature-specific services and types are global under `services/` and `types/`.
-- `shared` boundary does not exist yet.
-- Auth provider ownership is undecided: may belong in future `features/auth/model` or app provider composition depending on dependency direction.
+- `frontend/package.json`
+- `frontend/src/app/router/AppRoutes.tsx`
+- `frontend/src/features/`
+- `frontend/src/shared/`
+- `frontend/scripts/check-architecture.mjs`
+- `docs/architecture/frontend-slice-rules.md`

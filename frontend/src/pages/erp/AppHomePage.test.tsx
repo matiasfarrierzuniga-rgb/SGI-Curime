@@ -21,6 +21,8 @@ describe('AppHomePage', () => {
     expect(screen.getByRole('link', { name: /Gestionar usuarios/ })).toHaveAttribute('href', '/admin/users')
     expect(screen.getByRole('link', { name: /Revisar solicitudes/ })).toHaveAttribute('href', '/app/admin/requests')
     expect(screen.getByRole('link', { name: /Consultar bitácora/ })).toHaveAttribute('href', '/admin/audit-logs')
+    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/servicios/reservas')
+    expect(screen.queryByText(/Módulo en desarrollo/i)).not.toBeInTheDocument()
   })
 
   it('does not expose administrative actions to inventory managers', async () => {
@@ -31,10 +33,25 @@ describe('AppHomePage', () => {
     expect(screen.queryByRole('link', { name: /Gestionar usuarios|Revisar solicitudes|Consultar bitácora/ })).not.toBeInTheDocument()
   })
 
-  it('shows a clean empty state when a role has no operational quick actions', () => {
+  it('shows a clear set of real account actions to community users', () => {
     auth.user = { fullName: 'María Solano', role: 'Vecino/Afiliado' }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
-    expect(screen.getByText('No hay tareas pendientes disponibles.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/servicios/reservas')
+    expect(screen.getByRole('link', { name: /Enviar justificación/ })).toHaveAttribute('href', '/app/affiliate/absence-justifications/new')
+    expect(screen.getByRole('link', { name: /Mis justificaciones/ })).toHaveAttribute('href', '/app/affiliate/justifications')
+    expect(screen.getByRole('link', { name: 'Mi perfil' })).toHaveAttribute('href', '/profile')
+    expect(screen.getByRole('link', { name: 'Afiliación' })).toHaveAttribute('href', '/afiliacion')
+    expect(screen.getByRole('link', { name: 'Eventos' })).toHaveAttribute('href', '/eventos')
+    expect(screen.queryByRole('link', { name: /Gestionar usuarios|Revisar solicitudes|Consultar bitácora/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Accesos rápidos' })).not.toBeInTheDocument()
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
+  })
+
+  it('preserves financial actions for treasurers without community-only links', () => {
+    auth.user = { fullName: 'Carlos Ruiz', role: 'Tesorero' }
+    render(<MemoryRouter><AppHomePage /></MemoryRouter>)
+    expect(screen.getByRole('link', { name: /Cargos financieros/ })).toHaveAttribute('href', '/app/financial')
+    expect(screen.getByRole('link', { name: /Movimientos financieros/ })).toHaveAttribute('href', '/app/financial/movements')
+    expect(screen.queryByRole('link', { name: 'Afiliación' })).not.toBeInTheDocument()
   })
 })

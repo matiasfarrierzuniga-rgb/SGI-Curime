@@ -32,8 +32,14 @@ enum IdentificationType {
 
 enum AssemblyStatus {
   SCHEDULED
+  IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum AssemblyQuorumType {
+  FIXED
+  PERCENTAGE
 }
 
 enum EventStatus {
@@ -74,6 +80,13 @@ enum PaymentStatus {
 }
 
 enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  SINPE_MOVIL
+  OTHER
+}
+
+enum DonationMethod {
   CASH
   BANK_TRANSFER
   SINPE_MOVIL
@@ -131,7 +144,9 @@ model Role {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users User[]
+  users      User[]
+  affiliates Affiliate[]
+  assemblyConvocations AssemblyConvocation[]
 }
 
 model Person {
@@ -349,6 +364,10 @@ model Affiliate {
   affiliationDate     DateTime            @default(now())
   status              AffiliateStatus     @default(ACTIVE)
 
+  // Nullable for historical affiliates whose role cannot be inferred safely.
+  roleId Int?
+  role   Role? @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
   personId Int?    @unique
   person   Person? @relation(fields: [personId], references: [id], onDelete: Restrict)
 
@@ -356,9 +375,12 @@ model Affiliate {
   justifications AbsenceJustification[]
   sanctions      AffiliateSanction[]
   inventoryLoans InventoryLoan[]
+  assemblyConvocations AssemblyConvocation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([roleId])
 }
 
 model AffiliateRequest {
@@ -404,15 +426,38 @@ model Assembly {
   place       String
   description String?
   status      AssemblyStatus @default(SCHEDULED)
+  quorumType  AssemblyQuorumType?
+  quorumValue Int?
+  convocationsLockedAt DateTime?
 
   attendances    AssemblyAttendance[]
   justifications AbsenceJustification[]
+  convocations   AssemblyConvocation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([date])
   @@index([status])
+}
+
+model AssemblyConvocation {
+  id               Int      @id @default(autoincrement())
+  assemblyId       Int
+  assembly         Assembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+  affiliateId      Int
+  affiliate        Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  roleId           Int?
+  role             Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  roleNameSnapshot String
+  convenedAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([assemblyId, affiliateId])
+  @@index([assemblyId])
+  @@index([affiliateId])
+  @@index([roleId])
 }
 
 model Event {
@@ -523,36 +568,6 @@ model Payment {
   @@index([createdAt])
 }
 
-model Donation {
-  id                 Int            @id @default(autoincrement())
-  amount             Decimal        @db.Decimal(14, 2)
-  currency           String         @default("CRC")
-  description        String
-  reference          String?
-  donatedAt          DateTime       @default(now())
-  status             DonationStatus @default(PENDING)
-  cancellationReason String?
-  cancelledAt        DateTime?
-
-  donorPersonId Int?
-  donor         Person? @relation("PersonDonations", fields: [donorPersonId], references: [id], onDelete: SetNull)
-  recordedById  Int?
-  recordedBy    User?   @relation("DonationRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
-  cancelledById Int?
-  cancelledBy   User?   @relation("DonationCanceller", fields: [cancelledById], references: [id], onDelete: SetNull)
-
-  financialMovement FinancialMovement?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([status])
-  @@index([donatedAt])
-  @@index([donorPersonId])
-  @@index([recordedById])
-  @@index([cancelledById])
-}
-
 model FinancialMovement {
   id           Int                     @id @default(autoincrement())
   type         FinancialMovementType
@@ -564,10 +579,8 @@ model FinancialMovement {
   occurredAt   DateTime
   sourceId     Int?
   recordedById Int?
-  donationId   Int?                    @unique
 
   recordedBy User? @relation("FinancialMovementRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
-  donation   Donation? @relation(fields: [donationId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -576,6 +589,41 @@ model FinancialMovement {
   @@index([type, occurredAt])
   @@index([source, sourceId])
   @@index([recordedById])
+}
+
+model Donation {
+  id                  Int            @id @default(autoincrement())
+  donorName           String?
+  donorIdentification String?
+  amount              Decimal        @db.Decimal(14, 2)
+  currency            String         @default("CRC")
+  method              DonationMethod
+  reference           String?
+  description         String?
+  receivedAt          DateTime
+  status              DonationStatus @default(CONFIRMED)
+
+  recordedById  Int
+  recordedBy    User  @relation("DonationRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+  cancelledById Int?
+  cancelledBy   User? @relation("DonationCanceller", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledAt   DateTime?
+  cancellationReason String?
+
+  originalMovementId Int?               @unique
+  originalMovement   FinancialMovement? @relation("DonationOriginalMovement", fields: [originalMovementId], references: [id], onDelete: Restrict)
+  reversalMovementId Int?               @unique
+  reversalMovement   FinancialMovement? @relation("DonationReversalMovement", fields: [reversalMovementId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([method])
+  @@index([receivedAt])
+  @@index([recordedById])
+  @@index([cancelledById])
+  @@index([status, receivedAt])
 }
 
 model AssemblyAttendance {

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   ACCESS_CAPABILITIES,
   ACCESS_ROLE_CAPABILITIES,
-  hasAuthenticatedSessionCapability,
   hasCapability,
 } from './access'
 
@@ -29,6 +28,11 @@ describe('shared security access policy', () => {
       'fin.payments.record',
       'fin.movements.read',
       'fin.movements.create',
+      'don.donations.read',
+      'don.donations.create',
+      'don.donations.update',
+      'don.donations.cancel',
+      'don.donations.delete',
     ])
     expect(ACCESS_ROLE_CAPABILITIES.Administrador).toEqual(ACCESS_CAPABILITIES)
     expect(hasCapability('Administrador', 'adm.requests.read')).toBe(true)
@@ -37,6 +41,7 @@ describe('shared security access policy', () => {
     expect(hasCapability('Administrador', 'res.reservations.cancel')).toBe(true)
     expect(hasCapability('Administrador', 'fin.payments.record')).toBe(true)
     expect(hasCapability('Administrador', 'fin.movements.create')).toBe(true)
+    expect(hasCapability('Administrador', 'don.donations.delete')).toBe(true)
   })
 
   it('grants financial capabilities to the treasurer', () => {
@@ -45,11 +50,20 @@ describe('shared security access policy', () => {
       'fin.payments.record',
       'fin.movements.read',
       'fin.movements.create',
+      'don.donations.read',
+      'don.donations.create',
+      'don.donations.update',
+      'don.donations.cancel',
     ])
     expect(hasCapability('Tesorero', 'fin.charges.read')).toBe(true)
     expect(hasCapability('Tesorero', 'fin.payments.record')).toBe(true)
     expect(hasCapability('Tesorero', 'fin.movements.read')).toBe(true)
     expect(hasCapability('Tesorero', 'fin.movements.create')).toBe(true)
+    expect(hasCapability('Tesorero', 'don.donations.read')).toBe(true)
+    expect(hasCapability('Tesorero', 'don.donations.create')).toBe(true)
+    expect(hasCapability('Tesorero', 'don.donations.update')).toBe(true)
+    expect(hasCapability('Tesorero', 'don.donations.cancel')).toBe(true)
+    expect(hasCapability('Tesorero', 'don.donations.delete')).toBe(false)
     expect(hasCapability('Tesorero', 'usr.users.read')).toBe(false)
     expect(hasCapability('Tesorero', 'res.reservations.read')).toBe(false)
   })
@@ -102,9 +116,4 @@ describe('shared security access policy', () => {
     expect(hasCapability('Administrador', '')).toBe(false)
   })
 
-  it('grants profile and dashboard access to authenticated sessions', () => {
-    expect(hasAuthenticatedSessionCapability('usr.profile.read')).toBe(true)
-    expect(hasAuthenticatedSessionCapability('erp.dashboard.read')).toBe(true)
-    expect(hasAuthenticatedSessionCapability('adm.affiliates.read')).toBe(false)
-  })
 })

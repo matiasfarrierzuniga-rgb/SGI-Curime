@@ -16,6 +16,8 @@ export const ACCESS_CAPABILITIES = [
   'usr.profile.read',
   'adm.affiliates.read',
   'adm.requests.read',
+  'adm.assemblies.read',
+  'adm.assemblies.manage',
   'adm.justifications.read',
   'abs.justifications.read',
   'aud.logs.read',
@@ -30,6 +32,11 @@ export const ACCESS_CAPABILITIES = [
   'fin.payments.record',
   'fin.movements.read',
   'fin.movements.create',
+  'don.donations.read',
+  'don.donations.create',
+  'don.donations.update',
+  'don.donations.cancel',
+  'don.donations.delete',
 ] as const
 
 export type AccessCapability =
@@ -51,6 +58,10 @@ export const ACCESS_ROLE_CAPABILITIES: Readonly<
     'fin.payments.record',
     'fin.movements.read',
     'fin.movements.create',
+    'don.donations.read',
+    'don.donations.create',
+    'don.donations.update',
+    'don.donations.cancel',
   ],
 
   'Vecino/Afiliado': [
@@ -59,7 +70,6 @@ export const ACCESS_ROLE_CAPABILITIES: Readonly<
     'abs.justifications.read',
   ],
 }
-
 export function hasCapability(
   role: RoleLike,
   capability: string,
@@ -74,14 +84,5 @@ export function hasCapability(
     ACCESS_ROLE_CAPABILITIES[roleName]?.includes(
       capability as AccessCapability,
     ) === true
-  )
-}
-
-export function hasAuthenticatedSessionCapability(
-  capability: string,
-): boolean {
-  return (
-    capability === 'usr.profile.read' ||
-    capability === 'erp.dashboard.read'
   )
 }

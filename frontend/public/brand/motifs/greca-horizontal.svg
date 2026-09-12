@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 32" preserveAspectRatio="none">
+  <defs>
+    <pattern id="curime-greca" width="96" height="32" patternUnits="userSpaceOnUse">
+      <path fill="#b8c4b4" d="M0 24h40V8h24v16h32v8H56V16H40v16H0z" />
+    </pattern>
+  </defs>
+  <rect width="1440" height="32" fill="url(#curime-greca)" />
+</svg>

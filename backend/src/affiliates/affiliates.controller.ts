@@ -44,12 +44,7 @@ export class AffiliatesController {
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthRequest,
   ) {
-    return this.service.setStatus(
-      id,
-      'INACTIVE',
-      req.user.id,
-      this.context(req),
-    );
+    return this.service.deactivate(id, req.user.id, this.context(req));
   }
   private context(req: Request) {
     return { ipAddress: req.ip, userAgent: req.get('user-agent') };

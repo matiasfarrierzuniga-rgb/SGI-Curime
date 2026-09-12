@@ -7,7 +7,11 @@ import { LandingPage } from '@/features/public-site'
 import { PublicEventsPage } from '@/features/events'
 import { ContactPage, NewsPage, ServicesPage } from './PublicPages'
 
-const authState = vi.hoisted(() => ({ isAuthenticated: false }))
+const authState = vi.hoisted(() => ({
+  isAuthenticated: false,
+  user: null as null | { canAccessErp: boolean },
+  logout: vi.fn(),
+}))
 vi.mock('@/features/auth', () => ({
   useAuth: () => authState,
 }))
@@ -32,7 +36,37 @@ function renderPublic(path = '/') {
 
 describe('portal público', () => {
   beforeEach(() => {
+    authState.isAuthenticated = false
+    authState.user = null
+    authState.logout.mockReset()
     vi.stubGlobal('scrollTo', vi.fn())
+  })
+
+  it('muestra servicios disponibles y orienta a visitantes antes de reservar', () => {
+    renderPublic('/servicios')
+
+    const affiliation = screen.getByRole('heading', { name: 'Afiliación' }).closest('article')!
+    expect(within(affiliation).getByText('Disponible')).toBeVisible()
+    expect(within(affiliation).getByRole('link', { name: 'Solicitar afiliación' })).toHaveAttribute('href', '/afiliacion')
+
+    const reservations = screen.getByRole('heading', { name: 'Reservas' }).closest('article')!
+    expect(within(reservations).getByText('Disponible')).toBeVisible()
+    expect(within(reservations).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
+    expect(within(reservations).getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
+
+    expect(screen.getByRole('heading', { name: 'Crear una cuenta' })).toBeVisible()
+    expect(screen.getByText('Cree su cuenta para acceder a los servicios digitales disponibles.')).toBeVisible()
+    expect(screen.getAllByText('Próximamente')).toHaveLength(3)
+  })
+
+  it('permite reservar y oculta la creación de cuenta cuando hay sesión', () => {
+    authState.isAuthenticated = true
+    renderPublic('/servicios')
+
+    expect(screen.getByRole('link', { name: 'Solicitar una reserva' })).toHaveAttribute('href', '/servicios/reservas')
+    expect(screen.queryByRole('heading', { name: 'Crear una cuenta' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Cree su cuenta para acceder a los servicios digitales disponibles.')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Próximamente')).toHaveLength(3)
   })
 
   it('muestra la landing y navega al inicio de sesión', () => {
@@ -50,11 +84,22 @@ describe('portal público', () => {
 
   it('dirige a personas autenticadas al área interna', () => {
     authState.isAuthenticated = true
+    authState.user = { canAccessErp: true }
     const { container } = renderPublic()
 
     expect(container.querySelector<HTMLAnchorElement>('a[href="/app"]')).not.toBeNull()
     expect(screen.getAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
     authState.isAuthenticated = false
+  })
+
+  it('dirige una cuenta general autenticada a servicios', () => {
+    authState.isAuthenticated = true
+    authState.user = { canAccessErp: false }
+    const { container } = renderPublic()
+
+    expect(container.querySelector<HTMLAnchorElement>('a[href="/servicios"]')).not.toBeNull()
+    expect(screen.getAllByText('Ver servicios')).not.toHaveLength(0)
+    expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
   })
 
   it('abre y cierra el menú móvil con Escape', () => {
@@ -116,7 +161,7 @@ describe('portal público', () => {
     expect(screen.getByRole('link', { name: /consultar sobre afiliación/i })).toHaveAttribute('href', '/afiliacion')
     expect(screen.getByRole('link', { name: /consultar sobre eventos/i })).toHaveAttribute('href', '/eventos')
     expect(screen.getAllByText('Próximamente')).toHaveLength(2)
-    expect(screen.queryByRole('link', { name: /reservas/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /consultar sobre reservas/i })).toHaveAttribute('href', '/servicios/reservas')
   })
 
   it('separa acceso público e inicio de sesión', () => {

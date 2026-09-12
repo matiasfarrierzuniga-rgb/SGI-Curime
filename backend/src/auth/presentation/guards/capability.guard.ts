@@ -24,6 +24,7 @@ export class CapabilityGuard implements CanActivate {
 
     return Boolean(
       user &&
+        user.canAccessErp &&
         requiredCapabilities.every((capability) =>
           hasCapability(user.role, capability),
         ),

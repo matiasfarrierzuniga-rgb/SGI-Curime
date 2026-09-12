@@ -13,9 +13,12 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { AttendanceStatus } from '../../../generated/prisma/enums';
+import { IsIn } from 'class-validator';
 export class AttendanceEntryDto {
   @Type(() => Number) @IsInt() @Min(1) affiliateId: number;
-  @IsEnum(AttendanceStatus) status: AttendanceStatus;
+  @IsEnum(AttendanceStatus)
+  @IsIn([AttendanceStatus.PRESENT, AttendanceStatus.ABSENT])
+  status: AttendanceStatus;
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )

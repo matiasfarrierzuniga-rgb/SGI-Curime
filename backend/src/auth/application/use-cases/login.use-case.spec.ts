@@ -12,6 +12,11 @@ const account = {
   failedLoginAttempts: 0,
   lastLoginAt: null,
   roleName: 'Administrador',
+  roleId: 2,
+  roleIsActive: true,
+  hasPerson: true,
+  affiliateStatus: 'ACTIVE',
+  affiliateRoleId: 2,
   subscriptionExpirationDate: null,
 };
 
@@ -164,6 +169,13 @@ describe('LoginUseCase', () => {
   });
 
   it('signs a token, persists only the refresh hash, and audits on success', async () => {
+    repository.findCredentialsByEmail.mockResolvedValueOnce({
+      ...account,
+      hasPerson: false,
+      affiliateStatus: null,
+      affiliateRoleId: null,
+    });
+
     const result = await useCase.execute('admin@example.com', 'secret', {
       ipAddress: '127.0.0.1',
     });
@@ -195,8 +207,48 @@ describe('LoginUseCase', () => {
         email: 'admin@example.com',
         status: 'ACTIVE',
         role: 'Administrador',
+        canAccessErp: true,
       },
     });
+  });
+
+  it.each([
+    [
+      'a general Subscription_L1 account',
+      {
+        roleId: 1,
+        roleName: 'Subscription_L1',
+        hasPerson: false,
+        affiliateStatus: null,
+        affiliateRoleId: null,
+      },
+    ],
+    [
+      'an inactive affiliate',
+      {
+        roleId: 3,
+        roleName: 'Tesorero',
+        affiliateRoleId: 3,
+        affiliateStatus: 'INACTIVE',
+      },
+    ],
+    [
+      'an affiliate without a role',
+      { roleId: 3, roleName: 'Tesorero', affiliateRoleId: null },
+    ],
+    [
+      'inconsistent user and affiliate roles',
+      { roleId: 3, roleName: 'Tesorero', affiliateRoleId: 2 },
+    ],
+  ])('returns canAccessErp=false for %s', async (_label, overrides) => {
+    repository.findCredentialsByEmail.mockResolvedValueOnce({
+      ...account,
+      ...overrides,
+    });
+
+    await expect(
+      useCase.execute('admin@example.com', 'secret'),
+    ).resolves.toMatchObject({ user: { canAccessErp: false } });
   });
 
   it('delivers login credentials when the post-commit audit fails', async () => {

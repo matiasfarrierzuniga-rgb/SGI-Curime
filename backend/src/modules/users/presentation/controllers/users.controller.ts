@@ -62,7 +62,10 @@ export class UsersController {
   @Roles()
   me(@Req() req: Request & { user: AuthenticatedUser }) {
     return this.run(async () => {
-      return toUserResponse(await this.getUser.execute(req.user.id));
+      const { user, affiliation } = await this.getUser.executeWithAffiliation(
+        req.user.id,
+      );
+      return { ...toUserResponse(user), ...affiliation };
     });
   }
 

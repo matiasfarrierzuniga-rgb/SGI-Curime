@@ -8,7 +8,7 @@ function labels(role: string | null | undefined) {
 describe('getErpNavigation', () => {
   it('shows implemented administrative areas to administrators', () => {
     expect(labels('Administrador')).toEqual([
-      { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
+      { label: 'General', items: [{ label: 'Inicio', children: undefined }] },
 
       { label: 'Gestión administrativa', items: [
   { label: 'Usuarios', children: undefined },
@@ -18,7 +18,7 @@ describe('getErpNavigation', () => {
   { label: 'Eventos', children: undefined }
 ] },
 
-      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }, { label: 'Reservas', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Reservas', children: undefined }, { label: 'Donaciones', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Gestión financiera', items: [{ label: 'Financiero', children: undefined }, { label: 'Movimientos financieros', children: undefined }] },
       { label: 'Información', items: [{ label: 'Bitácora', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
@@ -28,8 +28,8 @@ describe('getErpNavigation', () => {
   it('limits inventory managers to dashboard, inventory, and profile', () => {
     const result = labels('Gestor de Inventario')
     expect(result).toEqual([
-      { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'General', items: [{ label: 'Inicio', children: undefined }] },
+      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
     expect(JSON.stringify(result)).not.toMatch(/Usuarios|Afiliados|Solicitudes de afiliación|Reservas|Financiero|Bitácora/)
@@ -38,8 +38,8 @@ describe('getErpNavigation', () => {
   it('shows the financial area to treasurers and hides admin-only areas', () => {
     const result = labels('Tesorero')
     expect(result).toEqual([
-      { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }] },
+      { label: 'General', items: [{ label: 'Inicio', children: undefined }] },
+      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Donaciones', children: undefined }] },
       { label: 'Gestión financiera', items: [{ label: 'Financiero', children: undefined }, { label: 'Movimientos financieros', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
@@ -48,10 +48,16 @@ describe('getErpNavigation', () => {
 
   it('shows session-wide navigation and reservation requests to other authenticated roles', () => {
     expect(labels('Vecino/Afiliado')).toEqual([
-      { label: 'General', items: [{ label: 'Dashboard', children: undefined }] },
-      { label: 'Operación', items: [{ label: 'Solicitar reserva', children: undefined }] },
-      { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }, { label: 'Justificar ausencia', children: undefined }, { label: 'Mis justificaciones', children: undefined }] },
+      { label: 'General', items: [{ label: 'Inicio', children: undefined }] },
+      { label: 'Comunidad', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Afiliación', children: undefined }, { label: 'Eventos', children: undefined }] },
+      { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }, { label: 'Enviar justificación', children: undefined }, { label: 'Mis justificaciones', children: undefined }] },
     ])
+  })
+
+  it('keeps community information links out of internal-role navigation', () => {
+    for (const role of ['Administrador', 'Tesorero', 'Gestor de Inventario']) {
+      expect(getErpNavigation(role).some((section) => section.label === 'Comunidad')).toBe(false)
+    }
   })
 
   it('assigns affiliate navigation to the affiliate read capability', () => {
@@ -78,11 +84,18 @@ describe('getErpNavigation', () => {
     expect(reservations).toMatchObject({ path: '/app/reservations', capability: 'res.reservations.read' })
   })
 
+  it('assigns donations navigation to its read capability and canonical route', () => {
+    const donations = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Donaciones')
+
+    expect(donations).toMatchObject({ path: '/app/donations', capability: 'don.donations.read' })
+    expect(getErpNavigation('Vecino/Afiliado').flatMap((section) => section.items).find((item) => item.label === 'Donaciones')).toBeUndefined()
+  })
+
   it('exposes reservation requests independently from administrative reservations', () => {
-    const requests = getErpNavigation('Vecino/Afiliado').flatMap((section) => section.items).find((item) => item.label === 'Solicitar reserva')
+    const requests = getErpNavigation('Vecino/Afiliado').flatMap((section) => section.items).find((item) => item.label === 'Solicitar una reserva')
     const reservations = getErpNavigation('Vecino/Afiliado').flatMap((section) => section.items).find((item) => item.label === 'Reservas')
 
-    expect(requests).toMatchObject({ path: '/app/reservations/new' })
+    expect(requests).toMatchObject({ path: '/servicios/reservas' })
     expect(requests?.capability).toBeUndefined()
     expect(reservations).toBeUndefined()
   })

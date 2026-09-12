@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/features/auth'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
@@ -15,21 +14,15 @@ const statusLabels: Record<AbsenceJustification['status'], string> = {
 }
 
 export function AffiliateJustificationsPage() {
-  const { user } = useAuth()
   const [items, setItems] = useState<AbsenceJustification[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!user?.id) {
-      setLoading(false)
-      return
-    }
-
     let active = true
 
     absenceJustificationsService
-      .listForAffiliate(user.id, { page: 1, limit: 100 })
+      .listMine({ page: 1, limit: 100 })
       .then((response) => {
         if (!active) return
         setItems(response.data ?? [])
@@ -46,7 +39,7 @@ export function AffiliateJustificationsPage() {
     return () => {
       active = false
     }
-  }, [user?.id])
+  }, [])
 
   return (
     <section className="space-y-6">

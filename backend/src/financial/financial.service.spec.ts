@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import {
   FinancialChargeStatus,
+  FinancialMovementSource,
+  FinancialMovementType,
   PaymentMethod,
   PaymentStatus,
   Prisma,
@@ -43,6 +45,24 @@ function payment(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function movement(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 2,
+    type: FinancialMovementType.INCOME,
+    source: FinancialMovementSource.RESERVATION_PAYMENT,
+    amount: new Prisma.Decimal('2500.00'),
+    currency: 'CRC',
+    description: 'Pago de reserva #10',
+    reference: null,
+    occurredAt: now,
+    sourceId: 1,
+    recordedById: 7,
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+}
+
 describe('FinancialService', () => {
   const prisma = {
     financialCharge: {
@@ -52,6 +72,9 @@ describe('FinancialService', () => {
       update: jest.fn(),
     },
     payment: {
+      create: jest.fn(),
+    },
+    financialMovement: {
       create: jest.fn(),
     },
     $transaction: jest.fn(),
@@ -76,6 +99,7 @@ describe('FinancialService', () => {
       charge({ status: FinancialChargeStatus.PAID }),
     );
     prisma.payment.create.mockResolvedValue(payment());
+    prisma.financialMovement.create.mockResolvedValue(movement());
   });
 
   it('lists charges with pagination, status filter, and reservation filter', async () => {
@@ -123,7 +147,7 @@ describe('FinancialService', () => {
     await expect(service.findOne(999)).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('records an exact manual payment and settles its charge atomically', async () => {
+  it('records an exact payment, settles its charge, and creates its movement atomically', async () => {
     const result = await service.recordPayment(
       1,
       { amount: '2500.00', method: PaymentMethod.BANK_TRANSFER, reference: ' SINPE-123 ' },
@@ -151,7 +175,39 @@ describe('FinancialService', () => {
         data: { status: FinancialChargeStatus.PAID },
       }),
     );
+    expect(prisma.financialMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: FinancialMovementType.INCOME,
+          source: FinancialMovementSource.RESERVATION_PAYMENT,
+          sourceId: 1,
+          amount: new Prisma.Decimal('2500.00'),
+          currency: 'CRC',
+          description: 'Pago de reserva #10',
+          reference: 'SINPE-123',
+          recordedById: 7,
+        }),
+      }),
+    );
+    const paymentPaidAt = prisma.payment.create.mock.calls[0][0].data.paidAt;
+    const movementOccurredAt =
+      prisma.financialMovement.create.mock.calls[0][0].data.occurredAt;
+    expect(movementOccurredAt).toBe(paymentPaidAt);
     expect(result.charge.status).toBe(FinancialChargeStatus.PAID);
+  });
+
+  it('fails the payment transaction when movement creation fails', async () => {
+    prisma.financialMovement.create.mockRejectedValueOnce(
+      new Error('movement failure'),
+    );
+
+    await expect(
+      service.recordPayment(1, { amount: '2500', method: PaymentMethod.CASH }, 7),
+    ).rejects.toThrow('movement failure');
+
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
   });
 
   it('normalizes an empty reference to null', async () => {

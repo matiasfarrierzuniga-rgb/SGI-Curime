@@ -25,6 +25,14 @@ export interface UserPage {
   limit: number;
 }
 
+export interface UserAffiliationContext {
+  affiliateId: number | null;
+  affiliateStatus: 'ACTIVE' | 'INACTIVE' | null;
+  affiliateRoleId: number | null;
+  affiliateRequestStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  hasPerson: boolean;
+}
+
 export interface UserUpdateData {
   fullName?: string;
   email?: string;
@@ -77,6 +85,7 @@ export interface UsersRepository {
   ): Promise<T>;
   findPage(query: UserQuery): Promise<UserPage>;
   findById(id: number): Promise<User | null>;
+  findAffiliationContext(id: number): Promise<UserAffiliationContext>;
   findByEmail(
     email: string,
     excludeId?: number,
@@ -93,6 +102,7 @@ export interface UsersRepository {
   updateStatus(id: number, status: UserStatus): Promise<User>;
   updateSubscriptionExpirationDate(id: number, value: Date): Promise<User>;
   updateRole(id: number, roleId: number): Promise<User>;
+  updateActiveAffiliateRoleForUser(id: number, roleId: number): Promise<void>;
   resetTemporaryLock(id: number): Promise<User>;
   countActiveAdministrators(excludeUserId: number): Promise<number>;
   countAdministrators(): Promise<number>;

@@ -1,5 +1,6 @@
 export { AuthProvider, useAuth } from './model/AuthContext'
 export { ProtectedRoute } from './routing/ProtectedRoute'
+export { InternalErpRoute } from './routing/InternalErpRoute'
 export { RoleRoute } from './routing/RoleRoute'
 export { authService } from './api/auth.api'
 export { LoginPage } from './ui/LoginPage'

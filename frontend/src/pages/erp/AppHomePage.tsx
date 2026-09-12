@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Boxes, CalendarCheck, ClipboardList, FileClock, HandCoins, Package, TriangleAlert, Users, Wallet } from 'lucide-react'
+import { ArrowRight, Boxes, CalendarCheck, CalendarDays, CalendarPlus, ClipboardList, FileCheck2, FileClock, HandCoins, Package, TriangleAlert, UserRound, Users, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { hasCapability } from '@/shared/security/access'
@@ -10,7 +10,8 @@ import { Badge } from '@/shared/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Skeleton } from '@/shared/ui/skeleton'
 
-const quickActions = [
+const internalQuickActions = [
+  { label: 'Solicitar una reserva', description: 'Solicite el uso de un espacio comunitario.', path: '/servicios/reservas', icon: CalendarPlus },
   { label: 'Gestionar usuarios', description: 'Consultar y administrar cuentas.', path: '/admin/users', capability: 'usr.users.read', icon: Users },
   { label: 'Revisar solicitudes', description: 'Atender solicitudes de afiliación.', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
   { label: 'Gestionar reservas', description: 'Consultar y atender reservas comunitarias.', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarCheck },
@@ -20,11 +21,24 @@ const quickActions = [
   { label: 'Consultar bitácora', description: 'Revisar la actividad registrada.', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: FileClock },
 ] as const
 
+const communityActions = [
+  { label: 'Solicitar una reserva', description: 'Pida el uso de un espacio comunitario.', path: '/servicios/reservas', icon: CalendarPlus },
+  { label: 'Enviar justificación', description: 'Justifique una ausencia a una asamblea.', path: '/app/affiliate/absence-justifications/new', icon: FileCheck2 },
+  { label: 'Mis justificaciones', description: 'Revise el estado de lo que ha enviado.', path: '/app/affiliate/justifications', icon: ClipboardList },
+] as const
+
+const communityLinks = [
+  { label: 'Mi perfil', path: '/profile', icon: UserRound },
+  { label: 'Afiliación', path: '/afiliacion', icon: Users },
+  { label: 'Eventos', path: '/eventos', icon: CalendarDays },
+] as const
+
 export function AppHomePage() {
   const { user } = useAuth()
   const roleName = getRoleName(user?.role)
+  const isCommunityUser = roleName === 'Vecino/Afiliado'
   const canViewInventory = hasCapability(roleName, 'inv.inventory.read')
-  const actions = quickActions.filter((action) => hasCapability(roleName, action.capability))
+  const actions = internalQuickActions.filter((action) => !('capability' in action) || hasCapability(roleName, action.capability))
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
   const [loading, setLoading] = useState(canViewInventory)
   const [summaryUnavailable, setSummaryUnavailable] = useState(false)
@@ -45,9 +59,9 @@ export function AppHomePage() {
     <div className="space-y-8">
         <header className="flex flex-col justify-between gap-5 border-b border-border pb-6 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-primary">Dashboard</p>
-          <h1 className="mt-2 font-heading text-heading-1 font-bold tracking-[-0.02em] text-brand-ink">{firstName ? `Hola, ${firstName}` : 'Área de gestión'}</h1>
-          <p className="mt-2 max-w-2xl text-foreground-muted">Resumen de las áreas disponibles para tu trabajo en SGI-Curime.</p>
+          <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-primary">Inicio</p>
+          <h1 className="mt-2 font-heading text-heading-1 font-bold tracking-[-0.02em] text-brand-ink">{firstName ? `Hola, ${firstName}` : 'Mi cuenta'}</h1>
+          <p className="mt-2 max-w-2xl text-foreground-muted">{isCommunityUser ? 'Desde aquí puede solicitar servicios y consultar la información de su cuenta.' : 'Resumen de las áreas disponibles para su trabajo en SGI-Curime.'}</p>
         </div>
         {roleName && <Badge variant="secondary" className="w-fit">{roleName}</Badge>}
       </header>
@@ -73,22 +87,45 @@ export function AppHomePage() {
         </section>
       )}
 
-      <section aria-labelledby="quick-title">
+      {isCommunityUser && (
+        <>
+          <section aria-labelledby="community-actions-title">
+            <h2 id="community-actions-title" className="text-xl font-bold text-brand-ink">¿Qué desea hacer?</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {communityActions.map((action) => <ActionCard key={action.path} action={action} />)}
+            </div>
+          </section>
+
+          <section aria-labelledby="community-links-title">
+            <h2 id="community-links-title" className="text-xl font-bold text-brand-ink">También puede consultar</h2>
+            <nav aria-label="Consultas de la comunidad" className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              {communityLinks.map((item) => {
+                const Icon = item.icon
+                return <Link key={item.path} to={item.path} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-card px-4 font-semibold text-brand-deep hover:border-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"><Icon className="size-4" aria-hidden="true" />{item.label}</Link>
+              })}
+            </nav>
+          </section>
+        </>
+      )}
+
+      {!isCommunityUser && <section aria-labelledby="quick-title">
         <h2 id="quick-title" className="text-xl font-bold text-brand-ink">Accesos rápidos</h2>
-        <p className="mt-1 text-sm text-foreground-muted">Módulos disponibles según los permisos de tu cuenta.</p>
+        <p className="mt-1 text-sm text-foreground-muted">Servicios y tareas disponibles para su cuenta.</p>
         {actions.length > 0 ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {actions.map((action) => {
-              const Icon = action.icon
-              return <Link key={action.path} to={action.path} className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"><Card className="h-full transition-colors group-hover:border-brand-soft"><CardHeader><div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-brand-soft/25 text-brand-deep"><Icon className="size-5" aria-hidden="true" /></div><CardTitle>{action.label}</CardTitle><CardDescription>{action.description}</CardDescription></CardHeader></Card></Link>
-            })}
+            {actions.map((action) => <ActionCard key={action.path} action={action} />)}
           </div>
         ) : (
           <Card className="mt-4"><CardContent><p className="font-semibold">No hay tareas pendientes disponibles.</p><p className="mt-1 text-sm text-foreground-muted">Utilice Mi perfil para consultar la información de su cuenta.</p></CardContent></Card>
         )}
-      </section>
+      </section>}
     </div>
   )
+}
+
+function ActionCard({ action }: { action: { label: string; description: string; path: string; icon: typeof Package } }) {
+  const Icon = action.icon
+  return <Link to={action.path} className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"><Card className="h-full transition-colors group-hover:border-brand-soft"><CardHeader><div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-brand-soft/25 text-brand-deep"><Icon className="size-5" aria-hidden="true" /></div><CardTitle>{action.label}</CardTitle><CardDescription>{action.description}</CardDescription></CardHeader></Card></Link>
 }
 
 function Metric({ label, value, icon: Icon, attention = false }: { label: string; value: number; icon: typeof Package; attention?: boolean }) {

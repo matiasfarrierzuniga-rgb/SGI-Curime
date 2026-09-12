@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
-import { ProtectedRoute } from '@/features/auth'
+import { InternalErpRoute, ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
 import { AffiliatesPage } from '@/features/affiliates'
 import { EventsManagementPage, PublicEventDetailPage, PublicEventsPage } from '@/features/events'
@@ -32,6 +32,8 @@ import { AppHomePage } from '@/pages/erp/AppHomePage'
 import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
 import { FinancialMovementsPage, FinancialPage } from '@/features/financial'
+import { DonationsPage } from '@/features/donations'
+import { AssembliesAdminPage, MineAssembliesPage } from '@/features/assemblies'
 export function AppRoutes() {
   return (
     <Routes>
@@ -57,20 +59,25 @@ export function AppRoutes() {
       </Route>
       <Route path="/403" element={<ForbiddenPage />} />
       <Route element={<ProtectedRoute />}>
+        <Route element={<PublicLayout />}>
+          <Route path="/servicios/reservas" element={<ReservationRequestPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Route>
+      </Route>
+      <Route element={<InternalErpRoute />}>
         <Route element={<ErpLayout />}>
           <Route path="/app" element={<AppHomePage />} />
-          <Route path="/app/reservations/new" element={<ReservationRequestPage />} />
-<Route element={<RoleRoute capability="res.reservations.read" />}>
-            <Route path="/app/reservations" element={<ReservationAdminPage />} />
+           <Route element={<RoleRoute capability="res.reservations.read" />}>
+             <Route path="/app/reservations" element={<ReservationAdminPage />} />
+           </Route>
+          <Route element={<RoleRoute capability="don.donations.read" />}>
+            <Route path="/app/donations" element={<DonationsPage />} />
           </Route>
           <Route element={<RoleRoute capability="fin.charges.read" />}>
             <Route path="/app/financial" element={<FinancialPage />} />
           </Route>
           <Route element={<RoleRoute capability="fin.movements.read" />}>
             <Route path="/app/financial/movements" element={<FinancialMovementsPage />} />
-          </Route>
-          <Route element={<RoleRoute capability="usr.profile.read" />}>
-            <Route path="/profile" element={<ProfilePage />} />
           </Route>
           <Route element={<RoleRoute capability="usr.users.read" />}>
             <Route path="/admin/users" element={<UsersPage />} />
@@ -85,6 +92,10 @@ export function AppRoutes() {
             <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
           </Route>
+          <Route element={<RoleRoute capability="adm.assemblies.read" />}>
+            <Route path="/app/admin/assemblies" element={<AssembliesAdminPage />} />
+          </Route>
+          <Route path="/app/assemblies/mine" element={<MineAssembliesPage />} />
           <Route element={<RoleRoute capability="adm.justifications.read" />}>
             <Route path="/app/admin/absence-justifications" element={<AbsenceJustificationsPage />} />
           </Route>

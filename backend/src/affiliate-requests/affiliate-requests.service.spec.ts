@@ -1,25 +1,27 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
-import { Prisma } from '../../generated/prisma/client';
-import { PersonLogicalIdentityRaceError } from '../identity/runtime-person-resolver.service';
-import { AuditAction } from '../audit/audit-actions';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment -- Jest asymmetric matchers are typed as any. */
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { AffiliateRequestsService } from './affiliate-requests.service';
 
-describe('AffiliateRequestsService', () => {
+describe('AffiliateRequestsService phase 1', () => {
   const pending = {
     id: 10,
     personId: 5,
-    fullName: 'Persona Afiliada',
-    identificationType: 'NATIONAL' as const,
+    fullName: 'Ana Pérez',
     identification: '123456789',
+    identificationType: 'NATIONAL',
     birthDate: new Date('1990-01-01'),
     gender: null,
-    phoneCountryCode: null,
-    phoneNationalNumber: null,
-    email: 'affiliate@example.com',
+    phoneCountryCode: '+506',
+    phoneNationalNumber: '88888888',
+    email: 'ana@example.com',
     address: 'Curime',
     occupation: null,
     workplace: null,
-    affiliationReason: 'Participar en la comunidad',
+    affiliationReason: 'Participar',
     status: 'PENDING',
     rejectionReason: null,
     reviewedAt: null,
@@ -27,7 +29,34 @@ describe('AffiliateRequestsService', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
   };
+  const account = {
+    id: 7,
+    fullName: pending.fullName,
+    identification: pending.identification,
+    identificationType: pending.identificationType,
+    email: pending.email,
+    phoneCountryCode: pending.phoneCountryCode,
+    phoneNationalNumber: pending.phoneNationalNumber,
+    address: pending.address,
+    personId: 5,
+    person: { id: 5 },
+  };
+  const linkedPerson = {
+    id: 5,
+    user: {
+      id: 7,
+      personId: 5,
+      fullName: pending.fullName,
+      identification: pending.identification,
+      identificationType: pending.identificationType,
+      email: pending.email,
+    },
+  };
   const tx = {
+    user: { findUnique: jest.fn(), update: jest.fn() },
+    person: { findUnique: jest.fn() },
+    role: { findUnique: jest.fn() },
+    affiliate: { findFirst: jest.fn(), create: jest.fn() },
     affiliateRequest: {
       create: jest.fn(),
       findFirst: jest.fn(),
@@ -35,329 +64,149 @@ describe('AffiliateRequestsService', () => {
       updateMany: jest.fn(),
       findUniqueOrThrow: jest.fn(),
     },
-    affiliate: { create: jest.fn(), findFirst: jest.fn() },
   };
   const prisma = {
-    affiliateRequest: {
-      findUnique: jest.fn(),
-      updateMany: jest.fn(),
-    },
     affiliate: { findFirst: jest.fn() },
-    $transaction: jest.fn((operation: (client: typeof tx) => unknown) =>
-      operation(tx),
+    affiliateRequest: { findUnique: jest.fn(), updateMany: jest.fn() },
+    $transaction: jest.fn(
+      (work: ((client: typeof tx) => unknown) | unknown[]) =>
+        typeof work === 'function' ? work(tx) : Promise.resolve(work),
     ),
   };
   const audit = { log: jest.fn() };
-  const personResolver = { resolveWithinTransaction: jest.fn() };
-  const service = new AffiliateRequestsService(
-    prisma as never,
-    personResolver as never,
-    audit as never,
-  );
+  const service = new AffiliateRequestsService(prisma as never, audit as never);
+  const dto = {
+    birthDate: pending.birthDate,
+    address: 'Nueva dirección',
+    affiliationReason: pending.affiliationReason,
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    prisma.affiliate.findFirst.mockResolvedValue(null);
+    tx.user.findUnique.mockResolvedValue(account);
+    tx.person.findUnique.mockResolvedValue(linkedPerson);
+    tx.role.findUnique.mockResolvedValue({
+      id: 4,
+      name: 'Vecino/Afiliado',
+      isActive: true,
+    });
     tx.affiliate.findFirst.mockResolvedValue(null);
     tx.affiliateRequest.findFirst.mockResolvedValue(null);
     tx.affiliateRequest.findUnique.mockResolvedValue(pending);
-    prisma.affiliateRequest.findUnique.mockResolvedValue(pending);
-    tx.affiliateRequest.create.mockResolvedValue(pending);
-    prisma.affiliateRequest.updateMany.mockResolvedValue({ count: 1 });
     tx.affiliateRequest.updateMany.mockResolvedValue({ count: 1 });
+    tx.affiliateRequest.create.mockResolvedValue(pending);
+    tx.affiliate.create.mockResolvedValue({
+      id: 20,
+      roleId: 4,
+      status: 'ACTIVE',
+    });
+    tx.user.update.mockResolvedValue({ id: 7, roleId: 4 });
     tx.affiliateRequest.findUniqueOrThrow.mockResolvedValue({
       ...pending,
       status: 'APPROVED',
-      reviewedById: 1,
     });
-    tx.affiliate.create.mockResolvedValue({ id: 20, status: 'ACTIVE' });
-    audit.log.mockResolvedValue({ id: 1 });
-    personResolver.resolveWithinTransaction.mockResolvedValue({
-      status: 'PERSON_CREATED',
-      person: { id: 5 },
-      profileEnrichmentRequired: false,
-    });
+    prisma.affiliateRequest.findUnique.mockResolvedValue(pending);
+    prisma.affiliateRequest.updateMany.mockResolvedValue({ count: 1 });
   });
 
-  it('creates only a pending request', async () => {
-    await service.create({
-      firstName: 'Persona',
-      firstSurname: 'Afiliada',
-      identificationType: pending.identificationType,
-      identification: pending.identification,
-      birthDate: pending.birthDate,
-      email: pending.email,
-      address: pending.address,
-      affiliationReason: pending.affiliationReason,
-    });
+  it('creates a pending request from the authenticated User Person identity', async () => {
+    await service.create(dto, 7);
+    expect(tx.user.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 7 } }),
+    );
     expect(tx.affiliateRequest.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: {
-          fullName: 'Persona Afiliada',
-          identification: pending.identification,
-          identificationType: pending.identificationType,
-          birthDate: pending.birthDate,
-          gender: undefined,
-          phoneCountryCode: undefined,
-          phoneNationalNumber: undefined,
-          email: pending.email,
-          address: pending.address,
-          occupation: undefined,
-          workplace: undefined,
-          affiliationReason: pending.affiliationReason,
+        data: expect.objectContaining({
           personId: 5,
-          status: 'PENDING',
-        },
-      }),
-    );
-    expect(personResolver.resolveWithinTransaction).toHaveBeenCalledWith(
-      expect.objectContaining({ firstName: 'Persona' }),
-      tx,
-    );
-    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
-      isolationLevel: 'Serializable',
-    });
-    expect(tx.affiliate.create).not.toHaveBeenCalled();
-  });
-
-  it('retries the whole Person-first transaction after a logical identity race', async () => {
-    prisma.$transaction.mockRejectedValueOnce(
-      new PersonLogicalIdentityRaceError(),
-    );
-
-    await service.create({
-      firstName: 'Persona',
-      firstSurname: 'Afiliada',
-      identificationType: pending.identificationType,
-      identification: pending.identification,
-      birthDate: pending.birthDate,
-      address: pending.address,
-      affiliationReason: pending.affiliationReason,
-    });
-
-    expect(prisma.$transaction).toHaveBeenCalledTimes(2);
-  });
-
-  it('rejects duplicates already present in the affiliate registry', async () => {
-    tx.affiliate.findFirst.mockResolvedValue({ id: 2 });
-    await expect(
-      service.create({
-        firstName: 'Persona',
-        firstSurname: 'Afiliada',
-        identificationType: pending.identificationType,
-        identification: pending.identification,
-        birthDate: pending.birthDate,
-        email: pending.email,
-        address: pending.address,
-        affiliationReason: pending.affiliationReason,
-      }),
-    ).rejects.toBeInstanceOf(ConflictException);
-  });
-
-  it('rejects a pending duplicate by identification or email', async () => {
-    tx.affiliateRequest.findFirst.mockResolvedValue({ id: 3 });
-    await expect(
-      service.create({
-        firstName: 'Persona',
-        firstSurname: 'Afiliada',
-        identificationType: pending.identificationType,
-        identification: pending.identification,
-        birthDate: pending.birthDate,
-        email: pending.email,
-        address: pending.address,
-        affiliationReason: pending.affiliationReason,
-      }),
-    ).rejects.toBeInstanceOf(ConflictException);
-  });
-
-  it('rejects structured identity conflicts without creating a request', async () => {
-    personResolver.resolveWithinTransaction.mockResolvedValue({
-      status: 'IDENTITY_CONFLICT',
-      conflictFields: ['firstName'],
-    });
-
-    await expect(
-      service.create({
-        firstName: 'Persona',
-        firstSurname: 'Afiliada',
-        identificationType: pending.identificationType,
-        identification: pending.identification,
-        birthDate: pending.birthDate,
-        address: pending.address,
-        affiliationReason: pending.affiliationReason,
-      }),
-    ).rejects.toBeInstanceOf(ConflictException);
-    expect(tx.affiliateRequest.create).not.toHaveBeenCalled();
-  });
-
-  it('approves atomically and creates an Affiliate, not a User', async () => {
-    const result = await service.approve(10, 1);
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(tx.affiliateRequest.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: 10, status: 'PENDING' },
-        data: expect.objectContaining({
-          status: 'APPROVED',
-          reviewedById: 1,
+          fullName: account.fullName,
+          identification: account.identification,
+          email: account.email,
+          address: dto.address,
         }),
       }),
     );
-    expect(tx.affiliate.create).toHaveBeenCalledWith({
-      data: {
-        personId: pending.personId,
-        fullName: pending.fullName,
-        identification: pending.identification,
-        identificationType: pending.identificationType,
-        birthDate: pending.birthDate,
-        gender: pending.gender,
-        phoneCountryCode: pending.phoneCountryCode,
-        phoneNationalNumber: pending.phoneNationalNumber,
-        email: pending.email,
-        address: pending.address,
-        occupation: pending.occupation,
-        workplace: pending.workplace,
-      },
-    });
-    expect(personResolver.resolveWithinTransaction).not.toHaveBeenCalled();
-    expect(result.affiliate.id).toBe(20);
-    expect(result.affiliate.status).toBe('ACTIVE');
-    expect(audit.log).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        action: AuditAction.AFFILIATE_CREATED,
-        entityId: 20,
-        userId: 1,
-      }),
-    );
-    expect(audit.log).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        action: AuditAction.AFFILIATE_REQUEST_APPROVED,
-        entityId: 10,
-        userId: 1,
-      }),
-    );
   });
 
-  it('rejects successfully, persists review data, and audits the decision', async () => {
-    const rejected = {
-      ...pending,
-      status: 'REJECTED',
-      rejectionReason: 'Documentación incompleta',
-      reviewedById: 1,
-    };
-    prisma.affiliateRequest.findUnique
-      .mockResolvedValueOnce(pending)
-      .mockResolvedValueOnce(rejected);
-
-    await expect(
-      service.reject(10, rejected.rejectionReason, 1),
-    ).resolves.toEqual(rejected);
-
-    expect(prisma.affiliateRequest.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: 10, status: 'PENDING' },
-        data: expect.objectContaining({
-          status: 'REJECTED',
-          rejectionReason: rejected.rejectionReason,
-          reviewedById: 1,
-        }),
-      }),
-    );
-    expect(audit.log).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: AuditAction.AFFILIATE_REQUEST_REJECTED,
-        entityId: 10,
-        userId: 1,
-      }),
-    );
-  });
-
-  it('does not process an already reviewed request through approve or reject', async () => {
-    const rejectedRequest = {
-      ...pending,
-      status: 'REJECTED',
-    };
-    prisma.affiliateRequest.findUnique.mockResolvedValue(rejectedRequest);
-    tx.affiliateRequest.findUnique.mockResolvedValue(rejectedRequest);
-    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
-      ConflictException,
-    );
-    await expect(
-      service.reject(10, 'Documentación incompleta', 1),
-    ).rejects.toBeInstanceOf(ConflictException);
-  });
-
-  it('prevents duplicate processing when the approval claim affects no request', async () => {
-    tx.affiliateRequest.updateMany.mockResolvedValue({ count: 0 });
-
-    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
-      ConflictException,
-    );
-
-    expect(tx.affiliate.create).not.toHaveBeenCalled();
-    expect(audit.log).not.toHaveBeenCalled();
-  });
-
-  it('prevents duplicate processing when the rejection claim affects no request', async () => {
-    prisma.affiliateRequest.updateMany.mockResolvedValue({ count: 0 });
-
-    await expect(
-      service.reject(10, 'Documentación incompleta', 1),
-    ).rejects.toBeInstanceOf(ConflictException);
-
-    expect(audit.log).not.toHaveBeenCalled();
-  });
-
-  it('rejects approval when the affiliate already exists', async () => {
-    tx.affiliate.findFirst.mockResolvedValue({ id: 20 });
-
-    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
-      ConflictException,
-    );
-
-    expect(tx.affiliate.create).not.toHaveBeenCalled();
-  });
-
-  it('blocks a legacy request without personId without identity fallback', async () => {
-    tx.affiliateRequest.findUnique.mockResolvedValue({
-      ...pending,
+  it('rejects an authenticated account without Person', async () => {
+    tx.user.findUnique.mockResolvedValue({
+      ...account,
       personId: null,
+      person: null,
     });
-
-    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
+    await expect(service.create(dto, 7)).rejects.toBeInstanceOf(
       ConflictException,
     );
-    expect(tx.affiliate.findFirst).not.toHaveBeenCalled();
-    expect(tx.affiliate.create).not.toHaveBeenCalled();
-    expect(personResolver.resolveWithinTransaction).not.toHaveBeenCalled();
   });
 
-  it('maps Affiliate personId unique races to a conflict', async () => {
-    prisma.$transaction.mockRejectedValueOnce(
-      new Prisma.PrismaClientKnownRequestError('unique race', {
-        code: 'P2002',
-        clientVersion: '7.9.1',
+  it('rejects an existing affiliate and a pending duplicate', async () => {
+    tx.affiliate.findFirst.mockResolvedValueOnce({ id: 1 });
+    await expect(service.create(dto, 7)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    tx.affiliate.findFirst.mockResolvedValue(null);
+    tx.affiliateRequest.findFirst.mockResolvedValue({ id: 2 });
+    await expect(service.create(dto, 7)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+  });
+
+  it.each([
+    [null, NotFoundException],
+    [{ id: 4, name: 'Vecino/Afiliado', isActive: false }, BadRequestException],
+    [{ id: 5, name: 'Subscription_L1', isActive: true }, BadRequestException],
+  ])('rejects an invalid affiliation role', async (role, error) => {
+    tx.role.findUnique.mockResolvedValue(role);
+    await expect(service.approve(10, 4, 1)).rejects.toBeInstanceOf(error);
+    expect(tx.affiliate.create).not.toHaveBeenCalled();
+  });
+
+  it('approves with one functional role for Affiliate and User', async () => {
+    const result = await service.approve(10, 4, 1);
+    expect(tx.affiliate.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ personId: 5, roleId: 4 }),
       }),
     );
-
-    await expect(service.approve(10, 1)).rejects.toBeInstanceOf(
-      ConflictException,
+    expect(tx.user.update).toHaveBeenCalledWith({
+      where: { id: 7 },
+      data: { roleId: 4 },
+    });
+    expect(tx.affiliateRequest.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 10, status: 'PENDING' } }),
     );
+    expect(result.affiliate).toMatchObject({ roleId: 4 });
   });
 
-  it('propagates affiliate creation failure without emitting post-transaction audit events', async () => {
-    tx.affiliate.create.mockRejectedValue(new Error('database failure'));
-
-    await expect(service.approve(10, 1)).rejects.toThrow('database failure');
-
+  it('rolls back the approval path when User role synchronization fails', async () => {
+    tx.user.update.mockRejectedValue(new Error('user update failed'));
+    await expect(service.approve(10, 4, 1)).rejects.toThrow(
+      'user update failed',
+    );
+    expect(tx.affiliateRequest.updateMany).not.toHaveBeenCalled();
     expect(audit.log).not.toHaveBeenCalled();
   });
 
-  it('returns 404 for an unknown request', async () => {
-    prisma.affiliateRequest.findUnique.mockResolvedValue(null);
-    await expect(service.findOne(999)).rejects.toBeInstanceOf(
-      NotFoundException,
+  it('rejects inconsistent request and account identity', async () => {
+    tx.person.findUnique.mockResolvedValue({
+      ...linkedPerson,
+      user: { ...linkedPerson.user, email: 'other@example.com' },
+    });
+    await expect(service.approve(10, 4, 1)).rejects.toBeInstanceOf(
+      ConflictException,
     );
+  });
+
+  it('preserves atomicity when a concurrent approval wins', async () => {
+    tx.affiliateRequest.updateMany.mockResolvedValue({ count: 0 });
+    await expect(service.approve(10, 4, 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(audit.log).not.toHaveBeenCalled();
+  });
+
+  it('rejects without changing the User role or creating an Affiliate', async () => {
+    await service.reject(10, 'No cumple requisitos', 1);
+    expect(tx.user.update).not.toHaveBeenCalled();
+    expect(tx.affiliate.create).not.toHaveBeenCalled();
   });
 });

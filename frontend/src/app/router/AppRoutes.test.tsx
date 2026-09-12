@@ -27,14 +27,14 @@ vi.mock('@/services/inventoryReportsService', () => ({
 
 let httpGet: ReturnType<typeof vi.spyOn>
 
-function renderRoute(path: string, role: string | null) {
+function renderRoute(path: string, role: string | null, canAccessErp = role !== null) {
   if (role !== null) {
-    localStorage.setItem('sgi-curime-session', JSON.stringify({
+    sessionStorage.setItem('sgi-curime-session', JSON.stringify({
       token: 'test-token',
-      user: { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVO', role },
+      user: { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role, canAccessErp },
     }))
     vi.spyOn(authService, 'me').mockResolvedValue({
-      id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVO', role,
+      id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role, canAccessErp,
     })
   }
 
@@ -58,12 +58,14 @@ beforeEach(() => {
     if (url === '/financial/charges') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
+    if (url === '/donations') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
   })
 })
 
 afterEach(() => {
   localStorage.clear()
+  sessionStorage.clear()
   vi.restoreAllMocks()
 })
 
@@ -80,6 +82,30 @@ describe('AppRoutes capability deep links', () => {
 
     expect(await screen.findAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
     screen.getAllByRole('link', { name: 'Ir al panel' }).forEach((link) => expect(link).toHaveAttribute('href', '/app'))
+    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(3)
+    expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
+  })
+
+  it('shows services and logout, but no panel or account request, to a general account', async () => {
+    renderRoute('/servicios', 'Subscription_L1', false)
+
+    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Ver servicios' })).not.toHaveLength(0)
+    expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(3)
+  })
+
+  it('logs out a general account from the mobile public menu', async () => {
+    renderRoute('/servicios', 'Subscription_L1', false)
+
+    await screen.findByRole('heading', { name: 'Servicios' })
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
+
+    await waitFor(() => expect(sessionStorage.getItem('sgi-curime-session')).toBeNull())
+    expect(screen.getAllByRole('link', { name: 'Iniciar sesión' })).not.toHaveLength(0)
+    expect(screen.getAllByRole('link', { name: 'Solicitar una cuenta' })).not.toHaveLength(0)
   })
 
   it('redirects anonymous users from /app to login', () => {
@@ -87,6 +113,14 @@ describe('AppRoutes capability deep links', () => {
 
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Área de gestión' })).not.toBeInTheDocument()
+  })
+
+  it('redirects a general account deep link to services without rendering internal navigation', async () => {
+    renderRoute('/app/admin/affiliates', 'Subscription_L1', false)
+
+    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Navegación móvil')).not.toBeInTheDocument()
   })
 
   it('redirects anonymous users from /admin/users to login before privileged content renders', () => {
@@ -149,7 +183,7 @@ describe('AppRoutes capability deep links', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
 
     expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
-    await waitFor(() => expect(localStorage.getItem('sgi-curime-session')).toBeNull())
+    await waitFor(() => expect(sessionStorage.getItem('sgi-curime-session')).toBeNull())
 
     sessionView.unmount()
     const appView = renderRoute('/app', null)
@@ -236,6 +270,28 @@ describe('AppRoutes capability deep links', () => {
 
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Financiero' })).not.toBeInTheDocument()
+  })
+
+  it('redirects anonymous users from /app/donations to login', () => {
+    renderRoute('/app/donations', null)
+
+    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Donaciones' })).not.toBeInTheDocument()
+  })
+
+  it('renders donations for users with the donations read capability', async () => {
+    renderRoute('/app/donations', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Donaciones' })).toBeInTheDocument()
+    expect(await screen.findByText('No existen donaciones registradas')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/donations', { params: expect.objectContaining({ page: 1, limit: 20 }) })
+  })
+
+  it('redirects users without donations read capability to 403', async () => {
+    renderRoute('/app/donations', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Donaciones' })).not.toBeInTheDocument()
   })
 
   it('renders the real financial page for treasurers using the financial API', async () => {

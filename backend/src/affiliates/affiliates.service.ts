@@ -3,7 +3,6 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  Optional,
 } from '@nestjs/common';
 import {
   isValidIdentification,
@@ -13,6 +12,7 @@ import { AffiliateStatus, Prisma } from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { GENERAL_ACCOUNT_ROLE } from '../auth/domain/policies/internal-access.policy';
 import { QueryAffiliatesDto } from './dto/query-affiliates.dto';
 import { UpdateAffiliateDto } from './dto/update-affiliate.dto';
 const select = {
@@ -39,7 +39,7 @@ const select = {
 export class AffiliatesService {
   constructor(
     private readonly prisma: PrismaService,
-    @Optional() private readonly audit?: AuditService,
+    private readonly audit: AuditService,
   ) {}
   async findAll(q: QueryAffiliatesDto) {
     const where: Prisma.AffiliateWhereInput = {
@@ -129,7 +129,7 @@ export class AffiliatesService {
       data: dto,
       select,
     });
-    await this.audit?.log({
+    await this.audit.log({
       userId: actorId,
       action: AuditAction.AFFILIATE_UPDATED,
       module: 'AFFILIATES',
@@ -168,5 +168,64 @@ export class AffiliatesService {
       ...context,
     });
     return item;
+  }
+
+  async deactivate(id: number, actorId: number, context: AuditContext = {}) {
+    return this.prisma.$transaction(async (tx) => {
+      const affiliate = await tx.affiliate.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          status: true,
+          personId: true,
+          person: { select: { user: { select: { id: true } } } },
+        },
+      });
+      if (!affiliate) throw new NotFoundException('Affiliate not found');
+      if (affiliate.status !== 'ACTIVE') {
+        throw new ConflictException('Affiliate is already inactive');
+      }
+      if (!affiliate.personId || !affiliate.person) {
+        throw new ConflictException('Affiliate has no linked person');
+      }
+      const user = affiliate.person.user;
+      if (!user) throw new ConflictException('Affiliate has no linked user');
+      const generalRole = await tx.role.findUnique({
+        where: { name: GENERAL_ACCOUNT_ROLE },
+        select: { id: true, isActive: true },
+      });
+      if (!generalRole?.isActive) {
+        throw new ConflictException('General account role is unavailable');
+      }
+
+      const item = await tx.affiliate.update({
+        where: { id },
+        data: { status: 'INACTIVE' },
+        select,
+      });
+      await tx.user.update({
+        where: { id: user.id },
+        data: { roleId: generalRole.id },
+      });
+      await tx.session.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: {
+          revokedAt: new Date(),
+          revocationReason: 'AFFILIATE_DEACTIVATED',
+        },
+      });
+      await this.audit.log(
+        {
+          userId: actorId,
+          action: AuditAction.AFFILIATE_DEACTIVATED,
+          module: 'AFFILIATES',
+          entityType: 'Affiliate',
+          entityId: id,
+          ...context,
+        },
+        tx,
+      );
+      return item;
+    });
   }
 }

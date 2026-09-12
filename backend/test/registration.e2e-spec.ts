@@ -46,6 +46,7 @@ describe('RegistrationController Person-first (e2e)', () => {
       update: jest.fn(),
       count: jest.fn(),
     },
+    affiliate: { create: jest.fn() },
     role: { findUnique: jest.fn() },
     userRequest: { create: jest.fn() },
     session: { create: jest.fn() },
@@ -179,6 +180,7 @@ describe('RegistrationController Person-first (e2e)', () => {
       ),
     ).toBe(true);
     expect(prisma.userRequest.create).not.toHaveBeenCalled();
+    expect(prisma.affiliate.create).not.toHaveBeenCalled();
     expect(prisma.session.create).not.toHaveBeenCalled();
     expect(response.body).toMatchObject({
       id: 8,

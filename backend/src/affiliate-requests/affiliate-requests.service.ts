@@ -8,10 +8,6 @@ import {
 import { Prisma, RequestStatus } from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
-import {
-  PersonLogicalIdentityRaceError,
-  RuntimePersonResolverService,
-} from '../identity/runtime-person-resolver.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAffiliateRequestDto } from './dto/create-affiliate-request.dto';
 import { QueryAffiliateRequestsDto } from './dto/query-affiliate-requests.dto';
@@ -39,50 +35,62 @@ const select = {
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.AffiliateRequestSelect;
+
+export const FUNCTIONAL_AFFILIATE_ROLES = new Set([
+  'Administrador',
+  'Tesorero',
+  'Gestor de Inventario',
+  'Vecino/Afiliado',
+  'Miembro de Junta Directiva',
+]);
+
 @Injectable()
 export class AffiliateRequestsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly personResolver: RuntimePersonResolverService,
     @Optional() private readonly audit?: AuditService,
   ) {}
-  async create(dto: CreateAffiliateRequestDto, context: AuditContext = {}) {
-    const created = await this.withPersonFirstTransaction(async (tx) => {
-      const resolution = await this.personResolver.resolveWithinTransaction(
-        dto,
-        tx,
-      );
-      if (resolution.status === 'IDENTITY_INCOMPLETE') {
-        throw new BadRequestException('Invalid affiliation identity');
-      }
-      if (resolution.status === 'INVALID_IDENTIFICATION') {
-        throw new BadRequestException('Invalid affiliation identity');
-      }
-      if (resolution.status === 'INVALID_STRUCTURED_NAME') {
-        throw new BadRequestException('Invalid affiliation identity');
-      }
-      if (
-        resolution.status === 'IDENTITY_CONFLICT' ||
-        resolution.status === 'IDENTITY_DUPLICATE_CORRUPTION' ||
-        resolution.status === 'MANUAL_REVIEW_REQUIRED'
-      ) {
-        throw new ConflictException('Unable to process affiliation request');
+  async create(
+    dto: CreateAffiliateRequestDto,
+    actorId: number,
+    context: AuditContext = {},
+  ) {
+    const created = await this.withSerializableTransaction(async (tx) => {
+      const account = await tx.user.findUnique({
+        where: { id: actorId },
+        select: {
+          id: true,
+          fullName: true,
+          identification: true,
+          identificationType: true,
+          email: true,
+          phoneCountryCode: true,
+          phoneNationalNumber: true,
+          address: true,
+          personId: true,
+          person: { select: { id: true } },
+        },
+      });
+      if (!account?.personId || !account.person) {
+        throw new ConflictException(
+          'The authenticated account has no linked person identity.',
+        );
       }
 
-      const personId = resolution.person.id;
-      await this.assertNoAffiliateByPerson(tx, personId, dto.email);
-      await this.assertNoPendingRequest(tx, personId, dto.email);
+      const personId = account.personId;
+      await this.assertNoAffiliateByPerson(tx, personId, account.email);
+      await this.assertNoPendingRequest(tx, personId, account.email);
       return tx.affiliateRequest.create({
         data: {
-          fullName: deriveFullName(dto),
-          identification: dto.identification,
-          identificationType: dto.identificationType,
+          fullName: account.fullName,
+          identification: account.identification,
+          identificationType: account.identificationType,
           birthDate: dto.birthDate,
           gender: dto.gender,
-          phoneCountryCode: dto.phoneCountryCode,
-          phoneNationalNumber: dto.phoneNationalNumber,
-          email: dto.email,
-          address: dto.address,
+          phoneCountryCode: account.phoneCountryCode,
+          phoneNationalNumber: account.phoneNationalNumber,
+          email: account.email,
+          address: dto.address || account.address || '',
           occupation: dto.occupation,
           workplace: dto.workplace,
           affiliationReason: dto.affiliationReason,
@@ -93,6 +101,7 @@ export class AffiliateRequestsService {
       });
     });
     await this.audit?.log({
+      userId: actorId,
       action: AuditAction.AFFILIATE_REQUEST_CREATED,
       module: 'AFFILIATE_REQUESTS',
       entityType: 'AffiliateRequest',
@@ -134,7 +143,12 @@ export class AffiliateRequestsService {
     if (!item) throw new NotFoundException('Affiliate request not found');
     return item;
   }
-  async approve(id: number, actorId: number, context: AuditContext = {}) {
+  async approve(
+    id: number,
+    roleId: number,
+    actorId: number,
+    context: AuditContext = {},
+  ) {
     let result: {
       affiliate: { id: number };
       affiliateRequest: Prisma.AffiliateRequestGetPayload<{
@@ -142,85 +156,142 @@ export class AffiliateRequestsService {
       }>;
     };
     try {
-      result = await this.prisma.$transaction(async (tx) => {
-        const request = await tx.affiliateRequest.findUnique({
-          where: { id },
-        });
-        if (!request)
-          throw new NotFoundException('Affiliate request not found');
-        if (request.status !== RequestStatus.PENDING)
-          throw new ConflictException(
-            'Affiliate request has already been resolved',
-          );
-        if (request.personId === null)
-          throw new ConflictException('Unable to process affiliation request');
-
-        const claimed = await tx.affiliateRequest.updateMany({
-          where: { id, status: 'PENDING' },
-          data: {
-            status: 'APPROVED',
-            rejectionReason: null,
-            reviewedAt: new Date(),
-            reviewedById: actorId,
-          },
-        });
-        if (claimed.count !== 1)
-          throw new ConflictException(
-            'Affiliate request has already been resolved',
-          );
-        await this.assertNoAffiliateForApproval(
-          tx,
-          request.personId,
-          request.identification,
-          request.email,
-        );
-        const affiliate = await tx.affiliate.create({
-          data: {
-            personId: request.personId,
-            fullName: request.fullName,
-            identification: request.identification,
-            identificationType: request.identificationType,
-            birthDate: request.birthDate,
-            gender: request.gender,
-            phoneCountryCode: request.phoneCountryCode,
-            phoneNationalNumber: request.phoneNationalNumber,
-            email: request.email,
-            address: request.address,
-            occupation: request.occupation,
-            workplace: request.workplace,
-          },
-        });
-        return {
-          affiliate,
-          affiliateRequest: await tx.affiliateRequest.findUniqueOrThrow({
+      result = await this.prisma.$transaction(
+        async (tx) => {
+          const request = await tx.affiliateRequest.findUnique({
             where: { id },
-            select,
-          }),
-        };
-      });
+          });
+          if (!request)
+            throw new NotFoundException('Affiliate request not found');
+          if (request.status !== RequestStatus.PENDING)
+            throw new ConflictException(
+              'Affiliate request has already been resolved',
+            );
+          if (request.personId === null)
+            throw new ConflictException(
+              'Unable to process affiliation request',
+            );
+
+          const [role, person] = await Promise.all([
+            tx.role.findUnique({ where: { id: roleId } }),
+            tx.person.findUnique({
+              where: { id: request.personId },
+              select: {
+                id: true,
+                user: {
+                  select: {
+                    id: true,
+                    personId: true,
+                    fullName: true,
+                    identification: true,
+                    identificationType: true,
+                    email: true,
+                  },
+                },
+              },
+            }),
+          ]);
+          if (!role) throw new NotFoundException('Role not found');
+          if (!role.isActive) throw new BadRequestException('Role is inactive');
+          if (!FUNCTIONAL_AFFILIATE_ROLES.has(role.name))
+            throw new BadRequestException(
+              'Role is not valid for an affiliation',
+            );
+          const user = person?.user;
+          if (!user || user.personId !== request.personId)
+            throw new ConflictException(
+              'The affiliation request is not linked to a user account.',
+            );
+          if (
+            user.fullName !== request.fullName ||
+            user.identification !== request.identification ||
+            user.identificationType !== request.identificationType ||
+            user.email.toLowerCase() !== request.email?.toLowerCase()
+          ) {
+            throw new ConflictException(
+              'Affiliation identity is inconsistent.',
+            );
+          }
+          await this.assertNoAffiliateForApproval(
+            tx,
+            request.personId,
+            request.identification,
+            request.email,
+          );
+          const affiliate = await tx.affiliate.create({
+            data: {
+              personId: request.personId,
+              fullName: request.fullName,
+              identification: request.identification,
+              identificationType: request.identificationType,
+              birthDate: request.birthDate,
+              gender: request.gender,
+              phoneCountryCode: request.phoneCountryCode,
+              phoneNationalNumber: request.phoneNationalNumber,
+              email: request.email,
+              address: request.address,
+              occupation: request.occupation,
+              workplace: request.workplace,
+              roleId,
+            },
+          });
+          await tx.user.update({
+            where: { id: user.id },
+            data: { roleId },
+          });
+          const claimed = await tx.affiliateRequest.updateMany({
+            where: { id, status: 'PENDING' },
+            data: {
+              status: 'APPROVED',
+              rejectionReason: null,
+              reviewedAt: new Date(),
+              reviewedById: actorId,
+            },
+          });
+          if (claimed.count !== 1)
+            throw new ConflictException(
+              'Affiliate request has already been resolved',
+            );
+          await this.audit?.log(
+            {
+              userId: actorId,
+              action: AuditAction.AFFILIATE_CREATED,
+              module: 'AFFILIATES',
+              entityType: 'Affiliate',
+              entityId: affiliate.id,
+              details: { roleId },
+              ...context,
+            },
+            tx,
+          );
+          await this.audit?.log(
+            {
+              userId: actorId,
+              action: AuditAction.AFFILIATE_REQUEST_APPROVED,
+              module: 'AFFILIATE_REQUESTS',
+              entityType: 'AffiliateRequest',
+              entityId: id,
+              details: { affiliateId: affiliate.id, roleId },
+              ...context,
+            },
+            tx,
+          );
+          return {
+            affiliate,
+            affiliateRequest: await tx.affiliateRequest.findUniqueOrThrow({
+              where: { id },
+              select,
+            }),
+          };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
     } catch (error) {
       if (isAffiliateUniqueConflict(error)) {
         throw new ConflictException('Unable to process affiliation request');
       }
       throw error;
     }
-    await this.audit?.log({
-      userId: actorId,
-      action: AuditAction.AFFILIATE_CREATED,
-      module: 'AFFILIATES',
-      entityType: 'Affiliate',
-      entityId: result.affiliate.id,
-      ...context,
-    });
-    await this.audit?.log({
-      userId: actorId,
-      action: AuditAction.AFFILIATE_REQUEST_APPROVED,
-      module: 'AFFILIATE_REQUESTS',
-      entityType: 'AffiliateRequest',
-      entityId: id,
-      details: { affiliateId: result.affiliate.id },
-      ...context,
-    });
     return result;
   }
   async reject(
@@ -265,7 +336,7 @@ export class AffiliateRequestsService {
       );
     return item;
   }
-  private async withPersonFirstTransaction<T>(
+  private async withSerializableTransaction<T>(
     work: (tx: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
     const maxAttempts = 3;
@@ -345,17 +416,10 @@ export class AffiliateRequestsService {
   }
 }
 
-function deriveFullName(dto: CreateAffiliateRequestDto): string {
-  return [dto.firstName, dto.firstSurname, dto.secondSurname]
-    .filter((part): part is string => Boolean(part))
-    .join(' ');
-}
-
 function isRetriableConflict(error: unknown): boolean {
   return (
-    error instanceof PersonLogicalIdentityRaceError ||
-    (error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2034')
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2034'
   );
 }
 

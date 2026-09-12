@@ -8,6 +8,11 @@ export interface AuthAccount {
   failedLoginAttempts: number;
   lastLoginAt: Date | null;
   roleName: string;
+  roleId: number;
+  roleIsActive: boolean;
+  hasPerson: boolean;
+  affiliateStatus: string | null;
+  affiliateRoleId: number | null;
   subscriptionExpirationDate: Date | null;
 }
 

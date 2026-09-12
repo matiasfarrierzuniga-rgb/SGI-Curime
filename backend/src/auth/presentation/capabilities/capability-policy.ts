@@ -1,3 +1,11 @@
+export const DONATION_CAPABILITIES = {
+  read: 'don.donations.read',
+  create: 'don.donations.create',
+  update: 'don.donations.update',
+  cancel: 'don.donations.cancel',
+  delete: 'don.donations.delete',
+} as const;
+
 export const CAPABILITIES = [
   'erp.dashboard.read',
   'usr.users.read',
@@ -5,6 +13,8 @@ export const CAPABILITIES = [
   'usr.profile.read',
   'adm.affiliates.read',
   'adm.requests.read',
+  'adm.assemblies.read',
+  'adm.assemblies.manage',
   'aud.logs.read',
   'inv.inventory.read',
   'pub.events.manage',
@@ -17,6 +27,11 @@ export const CAPABILITIES = [
   'fin.payments.record',
   'fin.movements.read',
   'fin.movements.create',
+  DONATION_CAPABILITIES.read,
+  DONATION_CAPABILITIES.create,
+  DONATION_CAPABILITIES.update,
+  DONATION_CAPABILITIES.cancel,
+  DONATION_CAPABILITIES.delete,
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -39,6 +54,10 @@ export const ROLE_CAPABILITIES: Readonly<
     'fin.payments.record',
     'fin.movements.read',
     'fin.movements.create',
+    DONATION_CAPABILITIES.read,
+    DONATION_CAPABILITIES.create,
+    DONATION_CAPABILITIES.update,
+    DONATION_CAPABILITIES.cancel,
   ],
 };
 

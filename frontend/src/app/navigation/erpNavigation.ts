@@ -11,6 +11,7 @@ import {
   FileClock,
   HandCoins,
   Handshake,
+  HeartHandshake,
   Home,
   Package,
   Tags,
@@ -19,7 +20,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
-import { hasAuthenticatedSessionCapability, hasCapability, type AccessCapability } from '@/shared/security/access'
+import { hasCapability, type AccessCapability } from '@/shared/security/access'
 
 export type ErpNavigationItem = {
   label: string
@@ -28,6 +29,7 @@ export type ErpNavigationItem = {
   icon?: LucideIcon
   children?: readonly ErpNavigationItem[]
   role?: string
+  excludedRole?: string
 }
 
 export type ErpNavigationSection = { label: string; items: readonly ErpNavigationItem[] }
@@ -37,10 +39,38 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'General',
     items: [
       {
-        label: 'Dashboard',
+        label: 'Inicio',
         path: '/app',
-        capability: 'erp.dashboard.read',
         icon: Home,
+      },
+    ],
+  },
+  {
+    label: 'Comunidad',
+    items: [
+      {
+        label: 'Solicitar una reserva',
+        path: '/servicios/reservas',
+        role: 'Vecino/Afiliado',
+        icon: CalendarPlus,
+      },
+      {
+        label: 'Afiliación',
+        path: '/afiliacion',
+        role: 'Vecino/Afiliado',
+        icon: Handshake,
+      },
+      {
+        label: 'Eventos',
+        path: '/eventos',
+        role: 'Vecino/Afiliado',
+        icon: CalendarDays,
+      },
+      {
+        label: 'Mis asambleas',
+        path: '/app/assemblies/mine',
+        excludedRole: 'Administrador',
+        icon: CalendarCheck,
       },
     ],
   },
@@ -72,6 +102,12 @@ const navigation: readonly ErpNavigationSection[] = [
         icon: FileCheck2,
       },
       {
+        label: 'Asambleas',
+        path: '/app/admin/assemblies',
+        capability: 'adm.assemblies.read',
+        icon: CalendarCheck,
+      },
+      {
         label: 'Eventos',
         path: '/app/events',
         capability: 'pub.events.manage',
@@ -83,8 +119,9 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'Operación',
     items: [
       {
-        label: 'Solicitar reserva',
-        path: '/app/reservations/new',
+        label: 'Solicitar una reserva',
+        path: '/servicios/reservas',
+        excludedRole: 'Vecino/Afiliado',
         icon: CalendarPlus,
       },
       {
@@ -92,6 +129,12 @@ const navigation: readonly ErpNavigationSection[] = [
         path: '/app/reservations',
         capability: 'res.reservations.read',
         icon: CalendarCheck,
+      },
+      {
+        label: 'Donaciones',
+        path: '/app/donations',
+        capability: 'don.donations.read',
+        icon: HeartHandshake,
       },
       {
         label: 'Inventario',
@@ -144,11 +187,10 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Mi perfil',
         path: '/profile',
-        capability: 'usr.profile.read',
         icon: UserRound,
       },
       {
-        label: 'Justificar ausencia',
+        label: 'Enviar justificación',
         path: '/app/affiliate/absence-justifications/new',
         role: 'Vecino/Afiliado',
         icon: FileCheck2,
@@ -166,9 +208,8 @@ const navigation: readonly ErpNavigationSection[] = [
 function isVisible(item: ErpNavigationItem, role: string | null | undefined): boolean {
   return (
     (item.role === undefined || item.role === role) &&
-    (item.capability === undefined ||
-      hasAuthenticatedSessionCapability(item.capability) ||
-      hasCapability(role, item.capability))
+    item.excludedRole !== role &&
+    (item.capability === undefined || hasCapability(role, item.capability))
   )
 }
 

@@ -27,6 +27,9 @@ function refreshAccessToken() {
 }
 
 httpClient.interceptors.response.use(response => response, async (error: unknown) => {
+  if (axios.isAxiosError(error) && error.response?.status === 403) {
+    window.dispatchEvent(new Event('auth:access-changed'))
+  }
   if (!axios.isAxiosError(error) || error.response?.status !== 401) return Promise.reject(error)
 
   const request = error.config as RetryableRequestConfig | undefined
