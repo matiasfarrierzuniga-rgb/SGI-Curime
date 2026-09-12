@@ -256,6 +256,20 @@ describe('DonationsService', () => {
     );
   });
 
+  it('returns an empty collection with pagination metadata when there are no matches', async () => {
+    prisma.donation.findMany.mockResolvedValueOnce([]);
+    prisma.donation.count.mockResolvedValueOnce(0);
+
+    await expect(
+      service.findAll({ search: 'no-match', page: 3, limit: 10 }),
+    ).resolves.toEqual({
+      data: [],
+      total: 0,
+      page: 3,
+      limit: 10,
+    });
+  });
+
   it('filters list results by status, method, and date range', async () => {
     await service.findAll({
       status: DonationStatus.CONFIRMED,

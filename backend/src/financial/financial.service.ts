@@ -27,6 +27,7 @@ const chargeListSelect = {
   amount: true,
   currency: true,
   status: true,
+  dueAt: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.FinancialChargeSelect;
@@ -106,7 +107,13 @@ export class FinancialService {
       select: chargeDetailSelect,
     });
     if (!charge) throw new NotFoundException('Financial charge not found');
-    return charge;
+    return {
+      ...charge,
+      balance:
+        charge.status === FinancialChargeStatus.PENDING
+          ? charge.amount.toFixed(2)
+          : '0.00',
+    };
   }
 
   async recordPayment(id: number, dto: RecordPaymentDto, actorId: number) {
@@ -125,13 +132,16 @@ export class FinancialService {
       });
       if (!charge) throw new NotFoundException('Financial charge not found');
       if (charge.status !== FinancialChargeStatus.PENDING) {
-        throw new ConflictException('Financial charge is not pending');
+        throw new ConflictException('El cargo financiero no está pendiente de pago');
+      }
+      if (!charge.amount.greaterThan(0)) {
+        throw new ConflictException('El cargo financiero no tiene un balance pendiente mayor que cero');
       }
       if (charge.currency !== 'CRC') {
-        throw new ConflictException('Financial charge currency is not supported');
+        throw new ConflictException('La moneda del cargo financiero no está soportada');
       }
       if (!amount.equals(charge.amount)) {
-        throw new ConflictException('Payment amount must match financial charge amount');
+        throw new ConflictException('El monto del pago debe ser exactamente igual al balance pendiente');
       }
 
       const paidAt = new Date();
@@ -167,7 +177,10 @@ export class FinancialService {
         select: financialMovementSelect,
       });
 
-      return { payment, charge: updatedCharge };
+      return {
+        payment,
+        charge: { ...updatedCharge, balance: '0.00' },
+      };
     });
   }
 
@@ -293,10 +306,10 @@ export class FinancialService {
   private parseAmount(value: unknown): Prisma.Decimal {
     if (
       typeof value !== 'string' ||
-      !/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(value)
+      !/^(?=.*[1-9])(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(value)
     ) {
       throw new BadRequestException(
-        'Payment amount must be a valid decimal with up to two decimal places',
+        'El monto del pago debe ser positivo y tener hasta dos decimales',
       );
     }
     return new Prisma.Decimal(value);

@@ -23,6 +23,7 @@ function charge(overrides: Record<string, unknown> = {}) {
     amount: new Prisma.Decimal('2500.00'),
     currency: 'CRC',
     status: FinancialChargeStatus.PENDING,
+    dueAt: new Date('2030-01-15T10:00:00.000Z'),
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -139,6 +140,13 @@ describe('FinancialService', () => {
         recordedById: 7,
       }),
     );
+    expect(result).toEqual(
+      expect.objectContaining({
+        amount: new Prisma.Decimal('2500.00'),
+        balance: '2500.00',
+        dueAt: new Date('2030-01-15T10:00:00.000Z'),
+      }),
+    );
   });
 
   it('throws 404 for an unknown charge detail', async () => {
@@ -222,7 +230,7 @@ describe('FinancialService', () => {
     );
   });
 
-  it.each(['abc', '1.234', '-1', ''])('rejects malformed amount %j', async (amount) => {
+  it.each(['abc', '1.234', '-1', '0', '0.00', ''])('rejects malformed amount %j', async (amount) => {
     await expect(
       service.recordPayment(1, { amount, method: PaymentMethod.CASH }, 7),
     ).rejects.toBeInstanceOf(BadRequestException);

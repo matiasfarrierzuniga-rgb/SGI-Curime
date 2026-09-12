@@ -105,7 +105,6 @@ enum FinancialMovementSource {
 }
 
 enum DonationStatus {
-  PENDING
   CONFIRMED
   CANCELLED
 }
@@ -581,6 +580,8 @@ model FinancialMovement {
   recordedById Int?
 
   recordedBy User? @relation("FinancialMovementRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+  originalDonation Donation? @relation("DonationOriginalMovement")
+  reversalDonation Donation? @relation("DonationReversalMovement")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

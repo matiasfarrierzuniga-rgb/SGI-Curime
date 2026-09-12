@@ -36,7 +36,12 @@ export function formatFinancialCurrency(amount: string, currency = 'CRC') {
 export function getFinancialErrorMessage(error: unknown, fallback = 'Ocurrió un error. Intenta nuevamente.') {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as { message?: string | string[] } | undefined
-    if (typeof data?.message === 'string') return data.message
+    if (typeof data?.message === 'string') {
+      if (data.message.includes('no está pendiente')) return 'El cargo ya fue pagado o cancelado.'
+      if (data.message.includes('balance pendiente')) return 'El cargo no tiene un balance pendiente mayor que cero.'
+      if (data.message.includes('exactamente igual')) return 'El monto debe ser exactamente igual al balance pendiente.'
+      return data.message
+    }
     if (Array.isArray(data?.message)) return data.message.join('. ')
     const status = error.response?.status
     if (status === 400) return 'Los datos enviados no son válidos. Revise la información e intente nuevamente.'
