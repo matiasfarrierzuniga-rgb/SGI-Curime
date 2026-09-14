@@ -46,6 +46,7 @@ export class CreateInventoryItemDto {
   @Transform(trim)
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(50)
   unit?: string;
 

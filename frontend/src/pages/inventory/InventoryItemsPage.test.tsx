@@ -70,6 +70,7 @@ describe('InventoryItemsPage', () => {
   })
 
   it('creates an item through the modal', async () => {
+    vi.mocked(inventoryItemsService.create).mockResolvedValue(item as never)
     page()
     fireEvent.click(await screen.findByRole('button', { name: 'Nuevo artículo' }))
     const dialog = await screen.findByRole('dialog', { name: 'Nuevo artículo' })
@@ -90,6 +91,21 @@ describe('InventoryItemsPage', () => {
         condition: 'GOOD',
       }),
     )
+    expect(await screen.findByRole('dialog', { name: /Registrar entrada: Martillo/ })).toBeInTheDocument()
+  })
+
+  it('rejects an invalid minimum quantity without silently coercing it', async () => {
+    page()
+    fireEvent.click(await screen.findByRole('button', { name: 'Nuevo artículo' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Nuevo artículo' })
+    fireEvent.change(screen.getByLabelText('Código'), { target: { value: 'HER-002' } })
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Tornillo' } })
+    fireEvent.change(within(dialog).getByLabelText('Categoría'), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText('Cantidad mínima'), { target: { value: '-2' } })
+    fireEvent.submit(within(dialog).getByRole('button', { name: 'Guardar' }).closest('form')!)
+
+    expect(await screen.findByText('La cantidad mínima debe ser un entero mayor o igual a cero.')).toBeInTheDocument()
+    expect(inventoryItemsService.create).not.toHaveBeenCalled()
   })
 
   it('records an entry', async () => {
