@@ -1,7 +1,19 @@
 export const REPORT_VERSION = '1.0' as const;
 
 export type ReportDataSource =
-  'AFFILIATE' | 'ASSEMBLY_CONVOCATION' | 'ABSENCE_JUSTIFICATION' | 'SANCTION';
+  | 'AFFILIATE'
+  | 'ASSEMBLY_CONVOCATION'
+  | 'ABSENCE_JUSTIFICATION'
+  | 'SANCTION'
+  | 'INVENTORY_ITEM'
+  | 'INVENTORY_CATEGORY'
+  | 'INVENTORY_MOVEMENT'
+  | 'INVENTORY_LOAN';
+
+export type ReportDataSources = readonly [
+  ReportDataSource,
+  ...ReportDataSource[],
+];
 
 export interface ReportGeneratedBy {
   id: number;
@@ -20,7 +32,7 @@ export interface ReportMetadata {
   generatedBy: ReportGeneratedBy | null;
   period: ReportPeriod;
   appliedFilters: Record<string, ReportFilterValue>;
-  dataSource: ReportDataSource;
+  dataSource: ReportDataSource | ReportDataSources;
   reportVersion: typeof REPORT_VERSION;
 }
 
@@ -34,7 +46,7 @@ interface BuildReportMetadataOptions {
   dateFrom?: Date;
   dateTo?: Date;
   filters?: Record<string, ReportFilterValue | null | undefined>;
-  dataSource: ReportDataSource;
+  dataSource: ReportDataSource | ReportDataSources;
 }
 
 export function buildReportMetadata({

@@ -8,18 +8,20 @@ import type {
   InventoryStockRow,
 } from '../types/inventory'
 
+type ReportEnvelope<T> = { data: T }
+
 export const inventoryReportsService = {
   async summary() {
-    return (await httpClient.get<InventoryReportSummary>('/inventory/reports/summary')).data
+    return (await httpClient.get<ReportEnvelope<InventoryReportSummary>>('/inventory/reports/summary')).data.data
   },
   async stock(params?: InventoryReportQuery) {
-    return (await httpClient.get<InventoryStockListResponse>('/inventory/reports/stock', { params })).data
+    return (await httpClient.get<ReportEnvelope<InventoryStockListResponse>>('/inventory/reports/stock', { params })).data.data
   },
   async movements(params?: InventoryReportQuery) {
-    return (await httpClient.get<InventoryMovementReport>('/inventory/reports/movements', { params })).data
+    return (await httpClient.get<ReportEnvelope<InventoryMovementReport>>('/inventory/reports/movements', { params })).data.data
   },
   async loans(params?: InventoryReportQuery) {
-    return (await httpClient.get<InventoryLoansReport>('/inventory/reports/loans', { params })).data
+    return (await httpClient.get<ReportEnvelope<InventoryLoansReport>>('/inventory/reports/loans', { params })).data.data
   },
 }
 

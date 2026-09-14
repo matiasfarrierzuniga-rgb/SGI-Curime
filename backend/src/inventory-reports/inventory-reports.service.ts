@@ -6,6 +6,10 @@ import {
   Prisma,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  buildReportMetadata,
+  type ReportGeneratedBy,
+} from '../reporting/report-metadata';
 import { QueryReportsDto } from './dto/query-reports.dto';
 
 const stockSelect = {
@@ -28,7 +32,7 @@ const stockSelect = {
 export class InventoryReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async summary() {
+  async summary(generatedBy: ReportGeneratedBy | null = null) {
     const now = new Date();
     const [
       totalItems,
@@ -75,18 +79,31 @@ export class InventoryReportsService {
     ]);
 
     return {
-      totalItems,
-      activeItems,
-      inactiveItems,
-      totalCategories,
-      lowStockCount: lowStock,
-      outOfStockCount: outOfStock,
-      activeLoans,
-      overdueLoans,
+      metadata: buildReportMetadata({
+        generatedBy,
+        dataSource: [
+          'INVENTORY_ITEM',
+          'INVENTORY_CATEGORY',
+          'INVENTORY_LOAN',
+        ],
+      }),
+      data: {
+        totalItems,
+        activeItems,
+        inactiveItems,
+        totalCategories,
+        lowStockCount: lowStock,
+        outOfStockCount: outOfStock,
+        activeLoans,
+        overdueLoans,
+      },
     };
   }
 
-  async stock(query: QueryReportsDto) {
+  async stock(
+    query: QueryReportsDto,
+    generatedBy: ReportGeneratedBy | null = null,
+  ) {
     const where: Prisma.InventoryItemWhereInput = {
       categoryId: query.categoryId,
       status: query.status,
@@ -102,18 +119,35 @@ export class InventoryReportsService {
       }),
       this.prisma.inventoryItem.count({ where }),
     ]);
-    return { data, total, page: query.page, limit: query.limit };
+    return {
+      metadata: buildReportMetadata({
+        generatedBy,
+        filters: {
+          categoryId: query.categoryId,
+          status: query.status,
+          page: query.page,
+          limit: query.limit,
+        },
+        dataSource: 'INVENTORY_ITEM',
+      }),
+      data: { data, total, page: query.page, limit: query.limit },
+    };
   }
 
-  async movements(query: QueryReportsDto) {
+  async movements(
+    query: QueryReportsDto,
+    generatedBy: ReportGeneratedBy | null = null,
+  ) {
+    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
+    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
     const where: Prisma.InventoryMovementWhereInput = {
       type: query.type,
       item: query.categoryId ? { categoryId: query.categoryId } : undefined,
       createdAt:
         query.dateFrom || query.dateTo
           ? {
-              gte: query.dateFrom ? new Date(query.dateFrom) : undefined,
-              lte: query.dateTo ? new Date(query.dateTo) : undefined,
+              gte: dateFrom,
+              lte: dateTo,
             }
           : undefined,
     };
@@ -144,18 +178,37 @@ export class InventoryReportsService {
         quantity: row._sum.quantity ?? 0,
       };
     }
-    return { period, summary };
+    return {
+      metadata: buildReportMetadata({
+        generatedBy,
+        dateFrom,
+        dateTo,
+        filters: {
+          categoryId: query.categoryId,
+          type: query.type,
+          dateFrom,
+          dateTo,
+        },
+        dataSource: 'INVENTORY_MOVEMENT',
+      }),
+      data: { period, summary },
+    };
   }
 
-  async loans(query: QueryReportsDto) {
+  async loans(
+    query: QueryReportsDto,
+    generatedBy: ReportGeneratedBy | null = null,
+  ) {
     const now = new Date();
+    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
+    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
     const base: Prisma.InventoryLoanWhereInput = {
       item: query.categoryId ? { categoryId: query.categoryId } : undefined,
       loanDate:
         query.dateFrom || query.dateTo
           ? {
-              gte: query.dateFrom ? new Date(query.dateFrom) : undefined,
-              lte: query.dateTo ? new Date(query.dateTo) : undefined,
+              gte: dateFrom,
+              lte: dateTo,
             }
           : undefined,
     };
@@ -179,11 +232,20 @@ export class InventoryReportsService {
       this.prisma.inventoryLoan.count({ where: base }),
     ]);
     return {
-      period: {
-        dateFrom: query.dateFrom ?? null,
-        dateTo: query.dateTo ?? null,
+      metadata: buildReportMetadata({
+        generatedBy,
+        dateFrom,
+        dateTo,
+        filters: { categoryId: query.categoryId, dateFrom, dateTo },
+        dataSource: 'INVENTORY_LOAN',
+      }),
+      data: {
+        period: {
+          dateFrom: query.dateFrom ?? null,
+          dateTo: query.dateTo ?? null,
+        },
+        summary: { active, returned, cancelled, overdue, total },
       },
-      summary: { active, returned, cancelled, overdue, total },
     };
   }
 }

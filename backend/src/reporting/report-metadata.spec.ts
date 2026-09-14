@@ -31,4 +31,20 @@ describe('buildReportMetadata', () => {
     expect(metadata.period).toEqual({ from: null, to: null });
     expect(metadata.appliedFilters).toEqual({});
   });
+
+  it('supports an explicit non-empty collection for composite reports', () => {
+    const metadata = buildReportMetadata({
+      dataSource: [
+        'INVENTORY_ITEM',
+        'INVENTORY_CATEGORY',
+        'INVENTORY_LOAN',
+      ],
+    });
+
+    expect(metadata.dataSource).toEqual([
+      'INVENTORY_ITEM',
+      'INVENTORY_CATEGORY',
+      'INVENTORY_LOAN',
+    ]);
+  });
 });
