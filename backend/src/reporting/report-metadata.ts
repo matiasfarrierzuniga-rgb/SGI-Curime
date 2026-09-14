@@ -8,7 +8,12 @@ export type ReportDataSource =
   | 'INVENTORY_ITEM'
   | 'INVENTORY_CATEGORY'
   | 'INVENTORY_MOVEMENT'
-  | 'INVENTORY_LOAN';
+  | 'INVENTORY_LOAN'
+  | 'AFFILIATE_REQUEST'
+  | 'RESERVATION'
+  | 'FINANCIAL_MOVEMENT'
+  | 'DONATION'
+  | 'ASSEMBLY';
 
 export type ReportDataSources = readonly [
   ReportDataSource,

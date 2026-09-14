@@ -1,4 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import {
+  AssemblyStatus,
+  DonationStatus,
+  ReservationStatus,
+} from '../../generated/prisma/client';
+import { FinancialService } from '../financial/financial.service';
+import { InventoryReportsService } from '../inventory-reports/inventory-reports.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   buildReportMetadata,
@@ -7,7 +14,89 @@ import {
 import { AttendanceReportQueryDto } from './dto/report-query.dto';
 @Injectable()
 export class AdminReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly financialService: FinancialService,
+    private readonly inventoryReportsService: InventoryReportsService,
+  ) {}
+
+  async dashboard(generatedBy: ReportGeneratedBy | null = null) {
+    const [
+      affiliatesReport,
+      financial,
+      inventoryReport,
+      justificationsReport,
+      reservationGroups,
+      assemblyGroups,
+      donationGroups,
+    ] = await Promise.all([
+      this.affiliatesSummary(),
+      this.financialService.summarizeMovements({}),
+      this.inventoryReportsService.summary(),
+      this.justificationsSummary(),
+      this.prisma.reservation.groupBy({
+        by: ['status'],
+        _count: { _all: true },
+      }),
+      this.prisma.assembly.groupBy({
+        by: ['status'],
+        _count: { _all: true },
+      }),
+      this.prisma.donation.groupBy({
+        by: ['status'],
+        _count: { _all: true },
+      }),
+    ]);
+
+    const reservations = this.countStatuses(
+      Object.values(ReservationStatus),
+      reservationGroups,
+    );
+    const assemblies = this.countStatuses(
+      Object.values(AssemblyStatus),
+      assemblyGroups,
+    );
+    const donations = this.countStatuses(
+      Object.values(DonationStatus),
+      donationGroups,
+    );
+    const { pendingRequests, ...affiliates } = affiliatesReport.data;
+    const inventory = inventoryReport.data;
+
+    return {
+      metadata: buildReportMetadata({
+        generatedBy,
+        dataSource: [
+          'AFFILIATE',
+          'AFFILIATE_REQUEST',
+          'RESERVATION',
+          'FINANCIAL_MOVEMENT',
+          'DONATION',
+          'INVENTORY_ITEM',
+          'INVENTORY_CATEGORY',
+          'INVENTORY_LOAN',
+          'ASSEMBLY',
+          'ABSENCE_JUSTIFICATION',
+        ],
+      }),
+      data: {
+        affiliates,
+        affiliateRequests: { pending: pendingRequests },
+        reservations,
+        financial,
+        donations,
+        inventory: {
+          totalItems: inventory.totalItems,
+          lowStockItems: inventory.lowStockCount,
+          outOfStockItems: inventory.outOfStockCount,
+          activeLoans: inventory.activeLoans,
+          overdueLoans: inventory.overdueLoans,
+        },
+        assemblies,
+        justifications: { pending: justificationsReport.data.PENDING },
+      },
+    };
+  }
   async affiliatesSummary(generatedBy: ReportGeneratedBy | null = null) {
     const [total, active, inactive, pendingRequests] =
       await this.prisma.$transaction([
@@ -126,6 +215,25 @@ export class AdminReportsService {
         total: Object.values(counts).reduce((a, b) => a + b, 0),
         ...counts,
       },
+    };
+  }
+
+  private countStatuses<T extends string>(
+    statuses: T[],
+    groups: Array<{ status: T; _count: { _all: number } }>,
+  ): { total: number } & Record<Lowercase<T>, number> {
+    const counts = Object.fromEntries(
+      statuses.map((status) => [status.toLowerCase(), 0]),
+    ) as Record<Lowercase<T>, number>;
+    for (const group of groups) {
+      counts[group.status.toLowerCase() as Lowercase<T>] = group._count._all;
+    }
+    return {
+      total: statuses.reduce(
+        (sum, status) => sum + counts[status.toLowerCase() as Lowercase<T>],
+        0,
+      ),
+      ...counts,
     };
   }
 }

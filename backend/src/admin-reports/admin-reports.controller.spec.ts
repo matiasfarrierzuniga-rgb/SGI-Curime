@@ -1,5 +1,6 @@
 import type { Request } from 'express';
 import type { AuthenticatedUser } from '../auth';
+import { ROLES_KEY } from '../auth/presentation/decorators/roles.decorator';
 import { AdminReportsController } from './admin-reports.controller';
 import { AdminReportsService } from './admin-reports.service';
 
@@ -7,6 +8,7 @@ type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
 describe('AdminReportsController', () => {
   const service = {
+    dashboard: jest.fn(),
     affiliatesSummary: jest.fn(),
     attendanceSummary: jest.fn(),
     justificationsSummary: jest.fn(),
@@ -37,5 +39,20 @@ describe('AdminReportsController', () => {
       { assemblyId: 3 },
       { id: 12, fullName: 'Persona Administradora' },
     );
+  });
+
+  it('passes only the safe report identity to the dashboard facade', () => {
+    controller.dashboard(request);
+
+    expect(service.dashboard).toHaveBeenCalledWith({
+      id: 12,
+      fullName: 'Persona Administradora',
+    });
+  });
+
+  it('keeps all admin report endpoints restricted to administrators', () => {
+    expect(Reflect.getMetadata(ROLES_KEY, AdminReportsController)).toEqual([
+      'Administrador',
+    ]);
   });
 });
