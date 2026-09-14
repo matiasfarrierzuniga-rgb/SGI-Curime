@@ -8,5 +8,6 @@ import { FinancialService } from './financial.service';
   imports: [AuthModule],
   controllers: [FinancialController, FinancialMovementsController],
   providers: [FinancialService],
+  exports: [FinancialService],
 })
 export class FinancialModule {}

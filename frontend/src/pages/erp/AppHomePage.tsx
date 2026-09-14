@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowRight, Boxes, CalendarCheck, CalendarDays, CalendarPlus, ClipboardList, FileCheck2, FileClock, HandCoins, Package, TriangleAlert, UserRound, Users, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
+import { AdminDashboard } from '@/features/admin-dashboard'
 import { hasCapability } from '@/shared/security/access'
 import { getRoleName } from '@/shared/security/roles'
 import { inventoryReportsService } from '@/services/inventoryReportsService'
@@ -37,7 +38,8 @@ export function AppHomePage() {
   const { user } = useAuth()
   const roleName = getRoleName(user?.role)
   const isCommunityUser = roleName === 'Vecino/Afiliado'
-  const canViewInventory = hasCapability(roleName, 'inv.inventory.read')
+  const isAdministrator = roleName === 'Administrador'
+  const canViewInventory = roleName === 'Gestor de Inventario'
   const actions = internalQuickActions.filter((action) => !('capability' in action) || hasCapability(roleName, action.capability))
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
   const [loading, setLoading] = useState(canViewInventory)
@@ -65,6 +67,8 @@ export function AppHomePage() {
         </div>
         {roleName && <Badge variant="secondary" className="w-fit">{roleName}</Badge>}
       </header>
+
+      {isAdministrator && <AdminDashboard />}
 
       {canViewInventory && (
         <section aria-labelledby="summary-title">
