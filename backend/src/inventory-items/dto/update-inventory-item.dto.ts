@@ -49,6 +49,7 @@ export class UpdateInventoryItemDto {
   @Transform(trim)
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(50)
   unit?: string;
 

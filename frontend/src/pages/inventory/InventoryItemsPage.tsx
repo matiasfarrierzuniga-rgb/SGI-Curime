@@ -56,6 +56,7 @@ export function InventoryItemsPage() {
   const [movementBusy, setMovementBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [itemFormErrors, setItemFormErrors] = useState<Record<string, string>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -116,6 +117,7 @@ export function InventoryItemsPage() {
 
   const openCreate = () => {
     setItemForm(emptyItemForm)
+    setItemFormErrors({})
     setMode('create')
   }
 
@@ -131,6 +133,7 @@ export function InventoryItemsPage() {
       location: item.location ?? '',
       condition: item.condition,
     })
+    setItemFormErrors({})
     setMode('edit')
   }
 
@@ -174,8 +177,15 @@ export function InventoryItemsPage() {
   const submitItem = async (e: FormEvent) => {
     e.preventDefault()
     const categoryId = Number(itemForm.categoryId)
-    if (!itemForm.code.trim() || !itemForm.name.trim() || !itemForm.categoryId) {
-      notify('Código, nombre y categoría son obligatorios.', 'error')
+    const minimumQuantity = Number(itemForm.minimumQuantity)
+    const validationErrors: Record<string, string> = {}
+    if (!itemForm.code.trim()) validationErrors.code = 'El código es obligatorio.'
+    if (!itemForm.name.trim()) validationErrors.name = 'El nombre es obligatorio.'
+    if (!itemForm.categoryId || !Number.isInteger(categoryId) || categoryId < 1) validationErrors.categoryId = 'Seleccione una categoría válida.'
+    if (itemForm.minimumQuantity === '' || !Number.isInteger(minimumQuantity) || minimumQuantity < 0) validationErrors.minimumQuantity = 'La cantidad mínima debe ser un entero mayor o igual a cero.'
+    if (!itemForm.unit.trim()) validationErrors.unit = 'La unidad es obligatoria.'
+    setItemFormErrors(validationErrors)
+    if (Object.keys(validationErrors).length > 0) {
       return
     }
     setBusy(true)
@@ -185,23 +195,29 @@ export function InventoryItemsPage() {
         name: itemForm.name.trim(),
         description: itemForm.description.trim() || undefined,
         categoryId,
-        minimumQuantity: itemForm.minimumQuantity === '' ? undefined : Math.max(0, Number(itemForm.minimumQuantity)),
-        unit: itemForm.unit.trim() || undefined,
-        location: itemForm.location.trim() || undefined,
+        minimumQuantity,
+        unit: itemForm.unit.trim(),
+        location: mode === 'edit' ? itemForm.location.trim() : itemForm.location.trim() || undefined,
         condition: itemForm.condition,
       }
       if (mode === 'create') {
-        await inventoryItemsService.create(payload)
+        const created = await inventoryItemsService.create(payload)
         notify('Artículo creado correctamente.', 'success')
+        setSelected(created)
+        setMovementForm(emptyMovementForm)
+        setMode('entry')
       } else if (mode === 'edit' && selected) {
-        await inventoryItemsService.update(selected.id, payload)
+        await inventoryItemsService.update(selected.id, { ...payload, description: itemForm.description.trim() })
         notify('Artículo actualizado correctamente.', 'success')
+        setMode(null)
       }
-      setMode(null)
-      await refreshSelected()
       await load()
     } catch (err) {
-      notify(getErrorMessage(err, 'No fue posible guardar el artículo.'), 'error')
+      if (isConflictWithMessage(err, 'Inventory item code is already in use')) {
+        setItemFormErrors({ code: 'Ya existe un artículo con este código.' })
+      } else {
+        notify(getErrorMessage(err, 'No fue posible guardar el artículo.'), 'error')
+      }
     } finally {
       setBusy(false)
     }
@@ -288,7 +304,11 @@ export function InventoryItemsPage() {
       await refreshSelected()
       await load()
     } catch (err) {
-      notify(getErrorMessage(err, 'No fue posible actualizar el estado del artículo.'), 'error')
+      if (isConflictWithMessage(err, 'Inventory item has active loans and cannot be deactivated')) {
+        notify('El artículo tiene préstamos activos y no se puede inactivar hasta cerrarlos.', 'error')
+      } else {
+        notify(getErrorMessage(err, 'No fue posible actualizar el estado del artículo.'), 'error')
+      }
     } finally {
       setBusy(false)
     }
@@ -385,22 +405,22 @@ export function InventoryItemsPage() {
         <Modal title={mode === 'create' ? 'Nuevo artículo' : `Editar artículo: ${selected?.name ?? ''}`} onClose={() => setMode(null)} busy={busy}>
           {categories.length === 0 && <p className="message error" role="alert">No hay categorías activas. Cree una categoría antes de registrar artículos.</p>}
           <form className="form-grid" onSubmit={(e) => void submitItem(e)}>
-            <label>Código<input maxLength={100} required value={itemForm.code} onChange={(e) => setItemForm({ ...itemForm, code: e.target.value })} /></label>
-            <label>Nombre<input maxLength={200} required value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} /></label>
+            <label>Código<input maxLength={100} required aria-invalid={Boolean(itemFormErrors.code)} aria-describedby={itemFormErrors.code ? 'item-code-error' : undefined} value={itemForm.code} onChange={(e) => setItemForm({ ...itemForm, code: e.target.value })} />{itemFormErrors.code && <span id="item-code-error" className="message error">{itemFormErrors.code}</span>}</label>
+            <label>Nombre<input maxLength={200} required aria-invalid={Boolean(itemFormErrors.name)} aria-describedby={itemFormErrors.name ? 'item-name-error' : undefined} value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} />{itemFormErrors.name && <span id="item-name-error" className="message error">{itemFormErrors.name}</span>}</label>
             <label>Descripción<textarea maxLength={1000} value={itemForm.description} onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })} /></label>
-            <label>Categoría<select required value={itemForm.categoryId} onChange={(e) => setItemForm({ ...itemForm, categoryId: e.target.value })}>
+            <label>Categoría<select required aria-invalid={Boolean(itemFormErrors.categoryId)} aria-describedby={itemFormErrors.categoryId ? 'item-category-error' : undefined} value={itemForm.categoryId} onChange={(e) => setItemForm({ ...itemForm, categoryId: e.target.value })}>
               <option value="">Seleccione una categoría</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select></label>
-            <label>Cantidad mínima<input type="number" min={0} value={itemForm.minimumQuantity} onChange={(e) => setItemForm({ ...itemForm, minimumQuantity: e.target.value })} /></label>
-            <label>Unidad<input maxLength={50} value={itemForm.unit} onChange={(e) => setItemForm({ ...itemForm, unit: e.target.value })} /></label>
+            </select>{itemFormErrors.categoryId && <span id="item-category-error" className="message error">{itemFormErrors.categoryId}</span>}</label>
+            <label>Cantidad mínima<input type="number" min={0} step={1} required aria-invalid={Boolean(itemFormErrors.minimumQuantity)} aria-describedby={itemFormErrors.minimumQuantity ? 'item-minimum-error' : undefined} value={itemForm.minimumQuantity} onChange={(e) => setItemForm({ ...itemForm, minimumQuantity: e.target.value })} />{itemFormErrors.minimumQuantity && <span id="item-minimum-error" className="message error">{itemFormErrors.minimumQuantity}</span>}</label>
+            <label>Unidad<input maxLength={50} required aria-invalid={Boolean(itemFormErrors.unit)} aria-describedby={itemFormErrors.unit ? 'item-unit-error' : undefined} value={itemForm.unit} onChange={(e) => setItemForm({ ...itemForm, unit: e.target.value })} />{itemFormErrors.unit && <span id="item-unit-error" className="message error">{itemFormErrors.unit}</span>}</label>
             <label>Ubicación<input maxLength={200} value={itemForm.location} onChange={(e) => setItemForm({ ...itemForm, location: e.target.value })} /></label>
             <label>Condición<select value={itemForm.condition} onChange={(e) => setItemForm({ ...itemForm, condition: e.target.value as InventoryItemCondition })}>
               <option value="GOOD">Bueno</option>
               <option value="DAMAGED">Dañado</option>
               <option value="UNDER_REPAIR">En reparación</option>
             </select></label>
-            <p className="muted">La existencia inicial se controla mediante entradas, salidas y ajustes.</p>
+            <p className="muted">La existencia inicial se registra como una entrada para conservar su trazabilidad.</p>
             <div className="actions"><button className="primary" disabled={busy || categories.length === 0}>{busy ? 'Guardando…' : 'Guardar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
           </form>
         </Modal>

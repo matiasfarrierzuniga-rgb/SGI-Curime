@@ -15,6 +15,7 @@ describe('getErpNavigation', () => {
   { label: 'Afiliados', children: undefined },
   { label: 'Solicitudes de afiliación', children: undefined },
   { label: 'Justificaciones de ausencia', children: undefined },
+  { label: 'Asambleas', children: undefined },
   { label: 'Eventos', children: undefined }
 ] },
 
@@ -29,6 +30,7 @@ describe('getErpNavigation', () => {
     const result = labels('Gestor de Inventario')
     expect(result).toEqual([
       { label: 'General', items: [{ label: 'Inicio', children: undefined }] },
+      { label: 'Comunidad', items: [{ label: 'Mis asambleas', children: undefined }] },
       { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
@@ -39,6 +41,7 @@ describe('getErpNavigation', () => {
     const result = labels('Tesorero')
     expect(result).toEqual([
       { label: 'General', items: [{ label: 'Inicio', children: undefined }] },
+      { label: 'Comunidad', items: [{ label: 'Mis asambleas', children: undefined }] },
       { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Donaciones', children: undefined }] },
       { label: 'Gestión financiera', items: [{ label: 'Financiero', children: undefined }, { label: 'Movimientos financieros', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
@@ -49,14 +52,18 @@ describe('getErpNavigation', () => {
   it('shows session-wide navigation and reservation requests to other authenticated roles', () => {
     expect(labels('Vecino/Afiliado')).toEqual([
       { label: 'General', items: [{ label: 'Inicio', children: undefined }] },
-      { label: 'Comunidad', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Afiliación', children: undefined }, { label: 'Eventos', children: undefined }] },
+      { label: 'Comunidad', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Afiliación', children: undefined }, { label: 'Eventos', children: undefined }, { label: 'Mis asambleas', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }, { label: 'Enviar justificación', children: undefined }, { label: 'Mis justificaciones', children: undefined }] },
     ])
   })
 
-  it('keeps community information links out of internal-role navigation', () => {
+  it('keeps public community links out of internal-role navigation', () => {
     for (const role of ['Administrador', 'Tesorero', 'Gestor de Inventario']) {
-      expect(getErpNavigation(role).some((section) => section.label === 'Comunidad')).toBe(false)
+      const communityLabels = getErpNavigation(role)
+        .find((section) => section.label === 'Comunidad')
+        ?.items.map((item) => item.label) ?? []
+
+      expect(communityLabels).not.toEqual(expect.arrayContaining(['Afiliación', 'Eventos']))
     }
   })
 
