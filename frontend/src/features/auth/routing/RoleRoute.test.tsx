@@ -5,7 +5,7 @@ import { ROLE_ADMIN, ROLE_INVENTORY_MANAGER } from '../../../shared/security/rol
 import { RoleRoute } from './RoleRoute'
 
 const auth = vi.hoisted(() => ({
-  user: { role: 'Administrador' } as { role: string } | null,
+  user: { role: 'Administrador', canAccessErp: true } as { role: string; canAccessErp: boolean } | null,
   isAuthenticated: true,
 }))
 
@@ -42,7 +42,7 @@ describe('RoleRoute', () => {
   })
 
   it('renders capability route for administrator usr.users.read', () => {
-    auth.user = { role: ROLE_ADMIN }
+    auth.user = { role: ROLE_ADMIN, canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'usr.users.read' })
@@ -51,7 +51,7 @@ describe('RoleRoute', () => {
   })
 
   it('renders reservation administration route for administrator capability', () => {
-    auth.user = { role: ROLE_ADMIN }
+    auth.user = { role: ROLE_ADMIN, canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'res.reservations.read' })
@@ -60,7 +60,7 @@ describe('RoleRoute', () => {
   })
 
   it('denies reservation administration route without reservation capability', () => {
-    auth.user = { role: ROLE_INVENTORY_MANAGER }
+    auth.user = { role: ROLE_INVENTORY_MANAGER, canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'res.reservations.read' })
@@ -69,7 +69,7 @@ describe('RoleRoute', () => {
   })
 
   it('redirects inventory manager from usr.users.read', () => {
-    auth.user = { role: ROLE_INVENTORY_MANAGER }
+    auth.user = { role: ROLE_INVENTORY_MANAGER, canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'usr.users.read' })
@@ -78,7 +78,7 @@ describe('RoleRoute', () => {
   })
 
   it('redirects unknown role from privileged route', () => {
-    auth.user = { role: 'Rol desconocido' }
+    auth.user = { role: 'Rol desconocido', canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ role: ROLE_ADMIN })
@@ -87,7 +87,7 @@ describe('RoleRoute', () => {
   })
 
   it('redirects unknown capability', () => {
-    auth.user = { role: ROLE_ADMIN }
+    auth.user = { role: ROLE_ADMIN, canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'unknown.capability' })
@@ -96,7 +96,7 @@ describe('RoleRoute', () => {
   })
 
   it('prioritizes denied capability over allowed legacy role', () => {
-    auth.user = { role: ROLE_ADMIN }
+    auth.user = { role: ROLE_ADMIN, canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ role: ROLE_ADMIN, capability: 'unknown.capability' })
@@ -105,7 +105,7 @@ describe('RoleRoute', () => {
   })
 
   it('allows legacy role arrays', () => {
-    auth.user = { role: ROLE_INVENTORY_MANAGER }
+    auth.user = { role: ROLE_INVENTORY_MANAGER, canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ role: [ROLE_ADMIN, ROLE_INVENTORY_MANAGER] })
