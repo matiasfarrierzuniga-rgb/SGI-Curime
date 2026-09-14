@@ -15,9 +15,6 @@ export class AdminReportsService {
     return { total, active, inactive, pendingRequests };
   }
   async attendanceSummary(q: AttendanceReportQueryDto) {
-    const totalActive = await this.prisma.affiliate.count({
-      where: { status: 'ACTIVE' },
-    });
     const assemblies = await this.prisma.assembly.findMany({
       where: {
         id: q.assemblyId,
@@ -32,10 +29,12 @@ export class AdminReportsService {
         date: true,
         status: true,
         attendances: { select: { status: true } },
+        _count: { select: { convocations: true } },
       },
       orderBy: { date: 'desc' },
     });
     const data = assemblies.map((a) => {
+      const convokedCount = a._count.convocations;
       const present = a.attendances.filter(
           (x) => x.status === 'PRESENT',
         ).length,
@@ -48,15 +47,16 @@ export class AdminReportsService {
         title: a.title,
         date: a.date,
         status: a.status,
-        totalActive,
+        convokedCount,
+        denominatorAvailable: convokedCount > 0,
         present,
         absent,
         justified,
-        unrecorded: Math.max(0, totalActive - present - absent - justified),
+        unrecorded: Math.max(0, convokedCount - present - absent - justified),
         attendancePercentage:
-          totalActive === 0
-            ? 0
-            : Number(((present / totalActive) * 100).toFixed(2)),
+          convokedCount === 0
+            ? null
+            : Number(((present / convokedCount) * 100).toFixed(2)),
       };
     });
     return {
