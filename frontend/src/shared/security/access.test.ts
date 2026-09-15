@@ -14,6 +14,8 @@ describe('shared security access policy', () => {
       'usr.profile.read',
       'adm.affiliates.read',
       'adm.requests.read',
+      'adm.assemblies.read',
+      'adm.assemblies.manage',
       'adm.justifications.read',
       'abs.justifications.read',
       'aud.logs.read',
@@ -36,6 +38,7 @@ describe('shared security access policy', () => {
     ])
     expect(ACCESS_ROLE_CAPABILITIES.Administrador).toEqual(ACCESS_CAPABILITIES)
     expect(hasCapability('Administrador', 'adm.requests.read')).toBe(true)
+    expect(hasCapability('Administrador', 'adm.assemblies.manage')).toBe(true)
     expect(hasCapability('Administrador', 'aud.logs.read')).toBe(true)
     expect(hasCapability('Administrador', 'pub.events.publish')).toBe(true)
     expect(hasCapability('Administrador', 'res.reservations.cancel')).toBe(true)

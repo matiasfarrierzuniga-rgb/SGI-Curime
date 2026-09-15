@@ -5,7 +5,11 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import { InventoryItemStatus, Prisma } from '../../generated/prisma/client';
+import {
+  InventoryItemStatus,
+  InventoryLoanStatus,
+  Prisma,
+} from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
@@ -96,8 +100,11 @@ export class InventoryItemsService {
           }
         : undefined;
     const where: Prisma.InventoryItemWhereInput = {
-      name: query.search
-        ? { contains: query.search, mode: 'insensitive' }
+      OR: query.search
+        ? [
+            { name: { contains: query.search, mode: 'insensitive' } },
+            { code: { contains: query.search, mode: 'insensitive' } },
+          ]
         : undefined,
       code: query.code
         ? { contains: query.code, mode: 'insensitive' }
@@ -157,11 +164,12 @@ export class InventoryItemsService {
         data: {
           code: dto.code,
           name: dto.name,
-          description: dto.description,
+          description:
+            dto.description === '' ? null : dto.description,
           categoryId: dto.categoryId,
           minimumQuantity: dto.minimumQuantity,
           unit: dto.unit,
-          location: dto.location,
+          location: dto.location === '' ? null : dto.location,
           condition: dto.condition,
         },
         select: itemSelect,
@@ -201,6 +209,16 @@ export class InventoryItemsService {
           ? 'Inventory item is already active'
           : 'Inventory item is already inactive',
       );
+    }
+    if (!active) {
+      const activeLoans = await this.prisma.inventoryLoan.count({
+        where: { itemId: id, status: InventoryLoanStatus.ACTIVE },
+      });
+      if (activeLoans > 0) {
+        throw new ConflictException(
+          'Inventory item has active loans and cannot be deactivated',
+        );
+      }
     }
     const updated = await this.prisma.inventoryItem.update({
       where: { id },

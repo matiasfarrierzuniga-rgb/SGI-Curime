@@ -49,6 +49,9 @@ describe('InventoryItemsService', () => {
     inventoryCategory: {
       findUnique: jest.fn(),
     },
+    inventoryLoan: {
+      count: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
   let service: InventoryItemsService;
@@ -70,6 +73,7 @@ describe('InventoryItemsService', () => {
       id: 1,
       isActive: true,
     });
+    prisma.inventoryLoan.count.mockResolvedValue(0);
   });
 
   it('creates an item with zero stock and a safe select', async () => {
@@ -126,6 +130,10 @@ describe('InventoryItemsService', () => {
       limit: 5,
     });
     const query = prisma.inventoryItem.findMany.mock.calls[0][0];
+    expect(query.where.OR).toEqual([
+      { name: { contains: 'mart', mode: 'insensitive' } },
+      { code: { contains: 'mart', mode: 'insensitive' } },
+    ]);
     expect(query.where).toEqual(
       expect.objectContaining({
         code: expect.objectContaining({ contains: 'HER' }),
@@ -206,5 +214,27 @@ describe('InventoryItemsService', () => {
       ConflictException,
     );
     expect(prisma.inventoryItem.update).not.toHaveBeenCalled();
+  });
+
+  it('does not deactivate an item with active loans', async () => {
+    prisma.inventoryItem.findUnique.mockResolvedValueOnce({
+      id: 1,
+      status: InventoryItemStatus.ACTIVE,
+    });
+    prisma.inventoryLoan.count.mockResolvedValueOnce(1);
+
+    await expect(service.setActive(1, false)).rejects.toThrow(
+      'Inventory item has active loans and cannot be deactivated',
+    );
+    expect(prisma.inventoryItem.update).not.toHaveBeenCalled();
+  });
+
+  it('clears nullable text fields explicitly', async () => {
+    await service.update(1, { description: '', location: '' });
+    expect(prisma.inventoryItem.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ description: null, location: null }),
+      }),
+    );
   });
 });
