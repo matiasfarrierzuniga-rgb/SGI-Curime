@@ -1,6 +1,7 @@
 import { httpClient } from '@/shared/api/httpClient'
 import type {
   CreateFinancialMovementInput,
+  DinadecoAnnualReport,
   FinancialChargeDetail,
   FinancialChargeListFilters,
   FinancialMovement,
@@ -20,4 +21,5 @@ export const financialApi = {
   async getMovement(id: number) { return (await httpClient.get<FinancialMovementDetail>(`/financial/movements/${id}`)).data },
   async getMovementSummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) { return (await httpClient.get<FinancialMovementSummary>('/financial/movements/summary', { params: filters })).data },
   async createMovement(payload: CreateFinancialMovementInput) { return (await httpClient.post<FinancialMovement>('/financial/movements', payload)).data },
+  async getDinadecoAnnualReport(year: number) { return (await httpClient.get<DinadecoAnnualReport>('/financial/reports/dinadeco/annual', { params: { year } })).data },
 }

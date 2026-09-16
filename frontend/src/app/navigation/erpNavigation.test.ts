@@ -19,8 +19,8 @@ describe('getErpNavigation', () => {
   { label: 'Eventos', children: undefined }
 ] },
 
-      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Reservas', children: undefined }, { label: 'Donaciones', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
-      { label: 'Gestión financiera', items: [{ label: 'Financiero', children: undefined }, { label: 'Movimientos financieros', children: undefined }] },
+      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Reservas', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
+      { label: 'Gestión financiera', items: [{ label: 'Finanzas', children: undefined }, { label: 'Movimientos financieros', children: undefined }, { label: 'DINADECO', children: undefined }, { label: 'Donaciones', children: undefined }] },
       { label: 'Información', items: [{ label: 'Bitácora', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
@@ -34,7 +34,7 @@ describe('getErpNavigation', () => {
       { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Inventario', children: ['Resumen', 'Artículos', 'Categorías', 'Movimientos', 'Préstamos', 'Alertas', 'Reportes'] }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
-    expect(JSON.stringify(result)).not.toMatch(/Usuarios|Afiliados|Solicitudes de afiliación|Reservas|Financiero|Bitácora/)
+    expect(JSON.stringify(result)).not.toMatch(/Usuarios|Afiliados|Solicitudes de afiliación|Reservas|Finanzas|DINADECO|Bitácora/)
   })
 
   it('shows the financial area to treasurers and hides admin-only areas', () => {
@@ -42,8 +42,8 @@ describe('getErpNavigation', () => {
     expect(result).toEqual([
       { label: 'General', items: [{ label: 'Inicio', children: undefined }] },
       { label: 'Comunidad', items: [{ label: 'Mis asambleas', children: undefined }] },
-      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }, { label: 'Donaciones', children: undefined }] },
-      { label: 'Gestión financiera', items: [{ label: 'Financiero', children: undefined }, { label: 'Movimientos financieros', children: undefined }] },
+      { label: 'Operación', items: [{ label: 'Solicitar una reserva', children: undefined }] },
+      { label: 'Gestión financiera', items: [{ label: 'Finanzas', children: undefined }, { label: 'Movimientos financieros', children: undefined }, { label: 'DINADECO', children: undefined }, { label: 'Donaciones', children: undefined }] },
       { label: 'Cuenta', items: [{ label: 'Mi perfil', children: undefined }] },
     ])
     expect(JSON.stringify(result)).not.toMatch(/Usuarios|Afiliados|Solicitudes de afiliación|Eventos|Reservas|Inventario|Bitácora/)
@@ -108,9 +108,17 @@ describe('getErpNavigation', () => {
   })
 
   it('assigns financial navigation to its read capability', () => {
-    const financial = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Financiero')
+    const financial = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Finanzas')
 
     expect(financial).toMatchObject({ path: '/app/financial', capability: 'fin.charges.read' })
+  })
+
+  it('shows DINADECO only with its dedicated capability roles', () => {
+    const findDinadeco = (role: string) => getErpNavigation(role).flatMap((section) => section.items).find((item) => item.label === 'DINADECO')
+    expect(findDinadeco('Administrador')).toMatchObject({ path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read' })
+    expect(findDinadeco('Tesorero')).toBeDefined()
+    expect(findDinadeco('Gestor de Inventario')).toBeUndefined()
+    expect(findDinadeco('Vecino/Afiliado')).toBeUndefined()
   })
 
   it('assigns financial movements navigation to its read capability', () => {

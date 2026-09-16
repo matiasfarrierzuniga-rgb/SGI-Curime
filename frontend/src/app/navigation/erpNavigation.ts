@@ -9,6 +9,7 @@ import {
   ClipboardList,
   FileCheck2,
   FileClock,
+  FileText,
   HandCoins,
   Handshake,
   HeartHandshake,
@@ -131,12 +132,6 @@ const navigation: readonly ErpNavigationSection[] = [
         icon: CalendarCheck,
       },
       {
-        label: 'Donaciones',
-        path: '/app/donations',
-        capability: 'don.donations.read',
-        icon: HeartHandshake,
-      },
-      {
         label: 'Inventario',
         path: '/inventory',
         capability: 'inv.inventory.read',
@@ -157,7 +152,7 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'Gestión financiera',
     items: [
       {
-        label: 'Financiero',
+        label: 'Finanzas',
         path: '/app/financial',
         capability: 'fin.charges.read',
         icon: Wallet,
@@ -167,6 +162,18 @@ const navigation: readonly ErpNavigationSection[] = [
         path: '/app/financial/movements',
         capability: 'fin.movements.read',
         icon: HandCoins,
+      },
+      {
+        label: 'DINADECO',
+        path: '/app/financial/dinadeco',
+        capability: 'fin.dinadeco.read',
+        icon: FileText,
+      },
+      {
+        label: 'Donaciones',
+        path: '/app/donations',
+        capability: 'don.donations.read',
+        icon: HeartHandshake,
       },
     ],
   },

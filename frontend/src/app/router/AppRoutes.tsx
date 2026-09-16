@@ -31,7 +31,7 @@ import { LandingPage } from '@/features/public-site'
 import { AppHomePage } from '@/pages/erp/AppHomePage'
 import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
-import { FinancialMovementsPage, FinancialPage } from '@/features/financial'
+import { DinadecoAnnualReportPage, FinancialMovementsPage, FinancialPage } from '@/features/financial'
 import { DonationsPage } from '@/features/donations'
 import { AssembliesAdminPage, MineAssembliesPage } from '@/features/assemblies'
 export function AppRoutes() {
@@ -78,6 +78,9 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="fin.movements.read" />}>
             <Route path="/app/financial/movements" element={<FinancialMovementsPage />} />
+          </Route>
+          <Route element={<RoleRoute capability="fin.dinadeco.read" />}>
+            <Route path="/app/financial/dinadeco" element={<DinadecoAnnualReportPage />} />
           </Route>
           <Route element={<RoleRoute capability="usr.users.read" />}>
             <Route path="/admin/users" element={<UsersPage />} />

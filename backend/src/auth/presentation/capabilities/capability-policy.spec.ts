@@ -4,6 +4,13 @@ import {
 } from './capability-policy';
 
 describe('donation capability policy', () => {
+  it('grants DINADECO reporting only to Administrador and Tesorero', () => {
+    expect(hasCapability('Administrador', 'fin.dinadeco.read')).toBe(true);
+    expect(hasCapability('Tesorero', 'fin.dinadeco.read')).toBe(true);
+    expect(hasCapability('Gestor de Inventario', 'fin.dinadeco.read')).toBe(false);
+    expect(hasCapability('Vecino/Afiliado', 'fin.dinadeco.read')).toBe(false);
+  });
+
   it('grants every donation capability to Administrador', () => {
     for (const capability of Object.values(DONATION_CAPABILITIES)) {
       expect(hasCapability('Administrador', capability)).toBe(true);

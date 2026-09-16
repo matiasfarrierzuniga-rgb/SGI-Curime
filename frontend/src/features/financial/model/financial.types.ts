@@ -75,3 +75,25 @@ export type FinancialMovementSummary = {
   balance: string
 }
 export const FINANCIAL_MOVEMENT_TYPES: readonly FinancialMovementType[] = ['INCOME', 'EXPENSE']
+
+export type DinadecoSourceSummary = { total: string; count: number }
+export type DinadecoAnnualReport = {
+  metadata: {
+    generatedAt: string
+    generatedBy: { id: number; fullName: string } | null
+    period: { from: string; to: string }
+    appliedFilters: { year: number }
+    dataSource: 'FINANCIAL_MOVEMENT'
+    reportVersion: string
+  }
+  data: {
+    year: number
+    currency: 'CRC'
+    openingBalance: string
+    income: { total: string; count: number; bySource: Partial<Record<FinancialMovementSource, DinadecoSourceSummary>> }
+    expenses: { total: string; count: number; bySource: Partial<Record<FinancialMovementSource, DinadecoSourceSummary>> }
+    netMovement: string
+    closingBalance: string
+    movementCount: number
+  }
+}
