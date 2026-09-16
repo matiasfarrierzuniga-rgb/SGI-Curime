@@ -9,6 +9,7 @@ import { InventoryAlertsModule } from '../src/inventory-alerts/inventory-alerts.
 import { InventoryAlertsService } from '../src/inventory-alerts/inventory-alerts.service';
 import { InventoryReportsModule } from '../src/inventory-reports/inventory-reports.module';
 import { InventoryReportsService } from '../src/inventory-reports/inventory-reports.service';
+import { buildPrismaAuthUser } from './helpers/auth-fixtures';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -30,14 +31,7 @@ describe('InventoryAlerts and InventoryReports (e2e)', () => {
   const prisma = {
     user: {
       findUnique: jest.fn(() =>
-        Promise.resolve({
-          id: 1,
-          fullName: 'Admin',
-          email: 'admin@example.com',
-          status: 'ACTIVE',
-          lockedAt: null,
-          role: { name: role },
-        }),
+        Promise.resolve(buildPrismaAuthUser({ roleName: role })),
       ),
     },
   };
@@ -135,6 +129,7 @@ describe('InventoryAlerts and InventoryReports (e2e)', () => {
       .expect(200);
     expect(reportsService.movements).toHaveBeenCalledWith(
       expect.objectContaining({ dateFrom: '2026-01-01', dateTo: '2026-12-31' }),
+      { id: 1, fullName: 'Usuario E2E' },
     );
 
     await request(app.getHttpServer())
@@ -143,6 +138,7 @@ describe('InventoryAlerts and InventoryReports (e2e)', () => {
       .expect(200);
     expect(reportsService.loans).toHaveBeenCalledWith(
       expect.objectContaining({ page: 1, limit: 20 }),
+      { id: 1, fullName: 'Usuario E2E' },
     );
   });
 });

@@ -6,6 +6,7 @@ import { App } from 'supertest/types';
 import { AuditService } from '../src/audit/audit.service';
 import { EventsModule } from '../src/events/events.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { buildPrismaAuthUser } from './helpers/auth-fixtures';
 
 process.env.JWT_SECRET = 'events-auth-test-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -57,16 +58,13 @@ describe('Events authorization (e2e)', () => {
     currentRole = 'Administrador';
     jest.clearAllMocks();
     prismaMock.user.findUnique.mockImplementation(() =>
-      Promise.resolve({
-        id: 1,
-        fullName: 'Usuario de prueba',
-        email: 'user@curime.test',
-        passwordHash: 'unused',
-        status: 'ACTIVE',
-        lockedAt: null,
-        failedLoginAttempts: 0,
-        role: { name: currentRole },
-      }),
+      Promise.resolve(
+        buildPrismaAuthUser({
+          fullName: 'Usuario de prueba',
+          email: 'user@curime.test',
+          roleName: currentRole,
+        }),
+      ),
     );
     prismaMock.event.findMany.mockResolvedValue([publishedEvent]);
     prismaMock.event.findFirst.mockResolvedValue(publishedEvent);
