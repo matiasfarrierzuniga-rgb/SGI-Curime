@@ -10,6 +10,7 @@ import { App } from 'supertest/types';
 import { AuditModule } from '../src/audit/audit.module';
 import { AuditService } from '../src/audit/audit.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { buildPrismaAuthUser } from './helpers/auth-fixtures';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -25,13 +26,7 @@ describe('AuditController (e2e)', () => {
   const prisma = {
     user: {
       findUnique: jest.fn(() =>
-        Promise.resolve({
-          id: 1,
-          fullName: 'Admin',
-          email: 'admin@example.com',
-          status: 'ACTIVE',
-          role: { name: role },
-        }),
+        Promise.resolve(buildPrismaAuthUser({ roleName: role })),
       ),
     },
   };

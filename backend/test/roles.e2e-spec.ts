@@ -7,6 +7,7 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import { RolesModule } from '../src/modules/roles/roles.module';
 import { ListRolesUseCase } from '../src/modules/roles/application/use-cases/list-roles.use-case';
+import { buildPrismaAuthUser } from './helpers/auth-fixtures';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -22,13 +23,7 @@ describe('RolesController (e2e)', () => {
   const prisma = {
     user: {
       findUnique: jest.fn(() =>
-        Promise.resolve({
-          id: 1,
-          fullName: 'Admin',
-          email: 'admin@example.com',
-          status: 'ACTIVE',
-          role: { name: role },
-        }),
+        Promise.resolve(buildPrismaAuthUser({ roleName: role })),
       ),
     },
   };

@@ -11,6 +11,7 @@ import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { InventoryLoansModule } from '../src/inventory-loans/inventory-loans.module';
 import { InventoryLoansService } from '../src/inventory-loans/inventory-loans.service';
+import { buildPrismaAuthUser } from './helpers/auth-fixtures';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -48,14 +49,7 @@ describe('InventoryLoansController (e2e)', () => {
   const prisma = {
     user: {
       findUnique: jest.fn(() =>
-        Promise.resolve({
-          id: 1,
-          fullName: 'Admin',
-          email: 'admin@example.com',
-          status: 'ACTIVE',
-          lockedAt: null,
-          role: { name: role },
-        }),
+        Promise.resolve(buildPrismaAuthUser({ roleName: role })),
       ),
     },
   };

@@ -11,6 +11,7 @@ import { PASSWORD_RESET_DELIVERY_PORT } from '../src/auth/application/ports/pass
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createHash } from 'crypto';
 import cookieParser from 'cookie-parser';
+import { buildPrismaAuthUser } from './helpers/auth-fixtures';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -19,17 +20,8 @@ process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
 process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES = '30';
 process.env.REFRESH_TOKEN_TTL = '3600';
 
-type TestUser = {
-  id: number;
-  fullName: string;
+type TestUser = ReturnType<typeof buildPrismaAuthUser> & {
   identification: string;
-  email: string;
-  passwordHash: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
-  lockedAt: Date | null;
-  failedLoginAttempts: number;
-  subscriptionExpirationDate: Date | null;
-  role: { name: string };
 };
 
 type AuthenticatedUser = {
@@ -53,6 +45,17 @@ function loginResponseBody(response: { body: unknown }): LoginResponseBody {
 
 function messageResponseBody(response: { body: unknown }): { message: string } {
   return response.body as { message: string };
+}
+
+function withRole(user: TestUser, roleName: string): TestUser {
+  const roleFixture = buildPrismaAuthUser({ roleName });
+
+  return {
+    ...user,
+    roleId: roleFixture.roleId,
+    role: roleFixture.role,
+    person: roleFixture.person,
+  };
 }
 
 describe('AuthController (e2e)', () => {
@@ -126,16 +129,15 @@ describe('AuthController (e2e)', () => {
   beforeEach(async () => {
     const passwordHash = await bcrypt.hash('valid-password', 4);
     currentUser = {
-      id: 1,
+      ...buildPrismaAuthUser({
+        id: 1,
+        fullName: 'Administrador de Prueba',
+        email: 'admin@curime.test',
+        passwordHash,
+        roleName: 'Administrador',
+      }),
       fullName: 'Administrador de Prueba',
       identification: '100000001',
-      email: 'admin@curime.test',
-      passwordHash,
-      status: 'ACTIVE',
-      lockedAt: null,
-      failedLoginAttempts: 0,
-      subscriptionExpirationDate: null,
-      role: { name: 'Administrador' },
     };
     resetTokenRecord = undefined;
     deliveredToken = undefined;
@@ -304,6 +306,7 @@ describe('AuthController (e2e)', () => {
       email: 'admin@curime.test',
       status: 'ACTIVE',
       role: 'Administrador',
+      canAccessErp: true,
     });
     expect(body.user.passwordHash).toBeUndefined();
     expect(response.headers['set-cookie']).toEqual(
@@ -523,9 +526,8 @@ describe('AuthController (e2e)', () => {
       .expect(401);
 
     currentUser = {
-      ...currentUser!,
+      ...withRole(currentUser!, 'Subscription_L1'),
       status: 'ACTIVE',
-      role: { name: 'Subscription_L1' },
       subscriptionExpirationDate: new Date(Date.now() - 1),
     };
     await request(app.getHttpServer())
@@ -536,8 +538,7 @@ describe('AuthController (e2e)', () => {
 
   it('rejects expired Subscription_L1 login and refresh with 403', async () => {
     currentUser = {
-      ...currentUser!,
-      role: { name: 'Subscription_L1' },
+      ...withRole(currentUser!, 'Subscription_L1'),
       subscriptionExpirationDate: new Date(Date.now() + 60_000),
     };
     const response = await login().expect(200);
@@ -682,6 +683,7 @@ describe('AuthController (e2e)', () => {
       email: 'admin@curime.test',
       status: 'ACTIVE',
       role: 'Administrador',
+      canAccessErp: true,
     });
   });
 
@@ -720,8 +722,7 @@ describe('AuthController (e2e)', () => {
 
   it('rejects a JWT when its Subscription_L1 user expires', async () => {
     currentUser = {
-      ...currentUser!,
-      role: { name: 'Subscription_L1' },
+      ...withRole(currentUser!, 'Subscription_L1'),
       subscriptionExpirationDate: new Date(Date.now() + 60_000),
     };
     const body = loginResponseBody(await login().expect(200));
@@ -747,7 +748,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('denies the administrator endpoint to another role', async () => {
-    currentUser = { ...currentUser!, role: { name: 'Tesorero' } };
+    currentUser = withRole(currentUser!, 'Tesorero');
     const body = loginResponseBody(await login().expect(200));
 
     await request(app.getHttpServer())
