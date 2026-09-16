@@ -214,6 +214,33 @@ El resumen se devuelve en `CRC`.
 | GET | `/financial/movements/summary` | `fin.movements.read` | Obtener resumen |
 | GET | `/financial/movements/:id` | `fin.movements.read` | Obtener detalle |
 
+### Reporte Económico DINADECO
+
+La Fase 1 proporciona una base funcional para preparar el Informe Económico anual correspondiente al período del 1 de enero al 31 de diciembre. El endpoint `GET /financial/reports/dinadeco/annual?year=YYYY`, protegido por `fin.dinadeco.read`, consulta exclusivamente `FinancialMovement`; una donación representada por un movimiento con `source = DONATION` no se suma nuevamente desde la tabla `Donation`.
+
+Implementado:
+
+- consulta anual con intervalo `[1 de enero, 1 de enero del año siguiente)`;
+- saldo anterior calculado como ingresos históricos menos egresos históricos registrados en SGI-Curime;
+- entradas, salidas, movimiento neto y saldo final usando aritmética `Decimal`;
+- desglose de entradas y salidas por `FinancialMovementSource`;
+- conteos de movimientos;
+- metadata compartida con período, filtro, fuente `FINANCIAL_MOVEMENT` y usuario generador;
+- interfaz ERP en `/app/financial/dinadeco` con selector de año, resumen y documentación complementaria.
+
+El saldo anterior es un cálculo derivado del historial disponible en SGI-Curime. No se afirma que equivalga al saldo oficialmente presentado en períodos anteriores.
+
+Pendiente:
+
+- clasificación contable y catálogo de cuentas DINADECO;
+- cuentas y folios de tesorería;
+- conciliación bancaria y carga de documentos adjuntos;
+- balance de situación, balance de comprobación y estado de resultados;
+- exportación oficial en PDF o Excel;
+- formulario final, firma o envío a DINADECO.
+
+Por estas limitaciones, esta fase es una base para la preparación del Informe Económico y no un formulario oficial terminado.
+
 ## Rutas frontend
 
 Actualmente el router expone:
@@ -222,6 +249,7 @@ Actualmente el router expone:
 | --- | --- | --- |
 | `/app/financial` | `fin.charges.read` | Cargos financieros |
 | `/app/financial/movements` | `fin.movements.read` | Movimientos financieros |
+| `/app/financial/dinadeco` | `fin.dinadeco.read` | Base anual del Informe Económico DINADECO |
 
 ## Filtros
 

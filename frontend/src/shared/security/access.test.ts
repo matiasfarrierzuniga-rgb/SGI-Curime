@@ -30,6 +30,7 @@ describe('shared security access policy', () => {
       'fin.payments.record',
       'fin.movements.read',
       'fin.movements.create',
+      'fin.dinadeco.read',
       'don.donations.read',
       'don.donations.create',
       'don.donations.update',
@@ -53,6 +54,7 @@ describe('shared security access policy', () => {
       'fin.payments.record',
       'fin.movements.read',
       'fin.movements.create',
+      'fin.dinadeco.read',
       'don.donations.read',
       'don.donations.create',
       'don.donations.update',
@@ -62,6 +64,7 @@ describe('shared security access policy', () => {
     expect(hasCapability('Tesorero', 'fin.payments.record')).toBe(true)
     expect(hasCapability('Tesorero', 'fin.movements.read')).toBe(true)
     expect(hasCapability('Tesorero', 'fin.movements.create')).toBe(true)
+    expect(hasCapability('Tesorero', 'fin.dinadeco.read')).toBe(true)
     expect(hasCapability('Tesorero', 'don.donations.read')).toBe(true)
     expect(hasCapability('Tesorero', 'don.donations.create')).toBe(true)
     expect(hasCapability('Tesorero', 'don.donations.update')).toBe(true)
@@ -107,6 +110,8 @@ describe('shared security access policy', () => {
     expect(hasCapability('Gestor de Inventario', 'usr.users.read')).toBe(false)
     expect(hasCapability('Gestor de Inventario', 'fin.charges.read')).toBe(false)
     expect(hasCapability('Gestor de Inventario', 'fin.movements.read')).toBe(false)
+    expect(hasCapability('Gestor de Inventario', 'fin.dinadeco.read')).toBe(false)
+    expect(hasCapability('Vecino/Afiliado', 'fin.dinadeco.read')).toBe(false)
     expect(hasCapability('Vecino/Afiliado', 'fin.movements.create')).toBe(false)
     expect(hasCapability('Tesorero', 'adm.affiliates.read')).toBe(false)
     expect(hasCapability(null, 'usr.profile.read')).toBe(false)

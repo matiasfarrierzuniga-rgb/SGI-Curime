@@ -51,5 +51,10 @@ export function financialMovementTypeLabel(type: FinancialMovementType) {
 }
 
 export function financialMovementSourceLabel(source: FinancialMovementSource) {
-  return { MANUAL: 'Manual', RESERVATION_PAYMENT: 'Pago de reserva', DONATION: 'Donación' }[source]
+  const labels: Record<FinancialMovementSource, string> = {
+    MANUAL: 'Manual',
+    RESERVATION_PAYMENT: 'Pago de reserva',
+    DONATION: 'Donación',
+  }
+  return labels[source] ?? source
 }

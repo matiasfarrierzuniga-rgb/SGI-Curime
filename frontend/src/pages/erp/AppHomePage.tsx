@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Boxes, CalendarCheck, CalendarDays, CalendarPlus, ClipboardList, FileCheck2, FileClock, HandCoins, Package, TriangleAlert, UserRound, Users, Wallet } from 'lucide-react'
+import { ArrowRight, Boxes, CalendarCheck, CalendarDays, CalendarPlus, ClipboardList, FileCheck2, FileClock, FileText, HandCoins, Package, TriangleAlert, UserRound, Users, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { AdminDashboard } from '@/features/admin-dashboard'
@@ -18,6 +18,7 @@ const internalQuickActions = [
   { label: 'Gestionar reservas', description: 'Consultar y atender reservas comunitarias.', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarCheck },
   { label: 'Cargos financieros', description: 'Consultar cargos y registrar pagos.', path: '/app/financial', capability: 'fin.charges.read', icon: Wallet },
   { label: 'Movimientos financieros', description: 'Registrar y consultar ingresos y egresos.', path: '/app/financial/movements', capability: 'fin.movements.read', icon: HandCoins },
+  { label: 'Informe DINADECO', description: 'Consultar el resumen económico anual.', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: FileText },
   { label: 'Abrir inventario', description: 'Ver existencias, préstamos y movimientos.', path: '/inventory', capability: 'inv.inventory.read', icon: Boxes },
   { label: 'Consultar bitácora', description: 'Revisar la actividad registrada.', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: FileClock },
 ] as const

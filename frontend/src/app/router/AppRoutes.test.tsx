@@ -58,6 +58,7 @@ beforeEach(() => {
     if (url === '/financial/charges') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
+    if (url === '/financial/reports/dinadeco/annual') return Promise.resolve({ data: responseForDinadeco() })
     if (url === '/donations') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
   })
@@ -335,4 +336,23 @@ describe('AppRoutes capability deep links', () => {
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
+
+  it('protects and renders the DINADECO report route by capability', async () => {
+    renderRoute('/app/financial/dinadeco', 'Tesorero')
+    expect(await screen.findByRole('heading', { name: 'Informe Económico DINADECO' })).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/financial/reports/dinadeco/annual', { params: { year: new Date().getFullYear() } })
+  })
+
+  it('denies the DINADECO report to roles without capability', async () => {
+    renderRoute('/app/financial/dinadeco', 'Gestor de Inventario')
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+  })
 })
+
+function responseForDinadeco() {
+  const year = new Date().getFullYear()
+  return {
+    metadata: { generatedAt: new Date().toISOString(), generatedBy: { id: 1, fullName: 'Ana Pérez' }, period: { from: `${year}-01-01T00:00:00.000Z`, to: `${year + 1}-01-01T00:00:00.000Z` }, appliedFilters: { year }, dataSource: 'FINANCIAL_MOVEMENT', reportVersion: '1.0' },
+    data: { year, currency: 'CRC', openingBalance: '0.00', income: { total: '0.00', count: 0, bySource: {} }, expenses: { total: '0.00', count: 0, bySource: {} }, netMovement: '0.00', closingBalance: '0.00', movementCount: 0 },
+  }
+}
