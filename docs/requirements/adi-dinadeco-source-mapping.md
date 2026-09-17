@@ -67,16 +67,16 @@ Ubicaciones: encabezado A2, declaración institucional A5, anexo A6, detalle A7:
 | FIE | Distrito | Ninguna fuente institucional | MISSING_MODEL | No | Requiere dato de organización validado. |
 | FIE | Teléfono para notificaciones | Ninguna fuente institucional | MISSING_MODEL | No | Teléfonos personales no son sustituto automático. |
 | FIE | Correo para notificaciones | Ninguna fuente institucional | MISSING_MODEL | No | Cuenta de acceso no equivale al correo institucional. |
-| FIE | Entradas: descripción, posiciones 1–15 | `FinancialMovement.description`, tipo INCOME | AVAILABLE | Parcial | Datos de movimiento disponibles fuera del reporte agregado; criterio de agrupación pendiente. |
-| FIE | Entradas: monto en colones | `FinancialMovement.amount`, INCOME, CRC | AVAILABLE | Parcial | Exige cobertura íntegra, clasificación y tratamiento de más de quince filas. |
-| FIE | Salidas: descripción, quince espacios | `FinancialMovement.description`, EXPENSE | AVAILABLE | Parcial | No existen cuentas contables oficiales asociadas. |
-| FIE | Salidas: monto en colones | `FinancialMovement.amount`, EXPENSE, CRC | AVAILABLE | Parcial | Reversos de donaciones también son egresos operativos; revisar presentación. |
+| FIE | Entradas: descripción, posiciones 1–15 | `data.fie.entries`, FinancialMovement INCOME | AVAILABLE | Sí, como preparación | Detalle anual completo y ordenado; capacidad 15 y overflow explícito, sin agrupación ni omisión automática. |
+| FIE | Entradas: monto en colones | `data.fie.entries[].amount`, INCOME, CRC | AVAILABLE | Sí, como preparación | Dos decimales; cobertura real y estrategia oficial para más de quince filas siguen pendientes de validación. |
+| FIE | Salidas: descripción, quince espacios | `data.fie.exits`, FinancialMovement EXPENSE | AVAILABLE | Sí, como preparación | Detalle anual completo con capacidad 15 y overflow; no existen cuentas contables oficiales asociadas. |
+| FIE | Salidas: monto en colones | `data.fie.exits[].amount`, EXPENSE, CRC | AVAILABLE | Sí, como preparación | Dos decimales; reversos de donaciones también son egresos operativos, revisar presentación oficial. |
 | FIE | Total de entradas en el período | `income.total` / suma INCOME anual | DERIVABLE | Sí | Solo historial registrado; no sumar Donation por segunda vez. |
 | FIE | Total de salidas en el período | `expenses.total` / suma EXPENSE anual | DERIVABLE | Sí | No garantiza que todas las salidas reales estén registradas. |
 | FIE | Saldo inicial del período | `openingBalance` | DERIVABLE | Parcial | Neto histórico SGI; requiere conciliación con saldo oficial anterior. |
 | FIE | Saldo final en caja al 31 de diciembre | `closingBalance` como candidato | DERIVABLE | Parcial | Neto histórico no distingue caja de banco; no afirmar equivalencia sin revisión. |
-| FIE | Total de entradas más el saldo inicial | `income.total + openingBalance` | DERIVABLE | Parcial | Decimal; depende de validar el saldo inicial. |
-| FIE | Total de salidas más el saldo final | `expenses.total + closingBalance` | DERIVABLE | Parcial | Igualdad aritmética no prueba conciliación de caja/bancos. |
+| FIE | Total de entradas más el saldo inicial | `data.fie.totalIncomePlusOpeningBalance` | DERIVABLE | Sí, como preparación | Decimal; el saldo inicial sigue siendo derivado, pendiente de validación oficial. |
+| FIE | Total de salidas más el saldo final | `data.fie.totalExpensesPlusClosingBalance` | DERIVABLE | Sí, como preparación | Decimal; igualdad aritmética no prueba conciliación de caja/bancos. |
 | FIE | Declaración de legitimidad y veracidad | Ninguna certificación automática | MANUAL_REQUIRED | No | Deben ratificar los declarantes; metadata no sustituye juramento. |
 | FIE | Nombre y N° cédula en pie de presidencia | Persona seleccionada; cargo no modelado | AVAILABLE | Parcial | Reutilizar identidad validada, sin inferir el nombramiento. |
 | FIE | Nombre y N° cédula en pie de tesorería | Persona seleccionada; cargo no modelado | AVAILABLE | Parcial | Mismo límite. |
@@ -232,7 +232,7 @@ Las filas compartidas nombran expresamente los formularios a los que aplican. No
 
 ## FIE vs implementación DINADECO actual
 
-El contrato `GET /financial/reports/dinadeco/annual?year=YYYY` devuelve `{ metadata, data }`. El controlador exige `fin.dinadeco.read`; la ruta `/app/financial/dinadeco` aplica esa capability y muestra selector de año, saldos, entradas, salidas, desglose y metadata. No exporta ni representa el FIE oficial. Se contrastó el servicio y la UI sin modificarlos ni afirmar validación visual en navegador.
+El contrato `GET /financial/reports/dinadeco/annual?year=YYYY` devuelve `{ metadata, data }`. El controlador exige `fin.dinadeco.read`; la ruta `/app/financial/dinadeco` aplica esa capability y muestra selector de año, saldos, entradas, salidas, desglose y metadata. El incremento de alineación añade `data.fie` y la sección «Preparación del FIE»; no exporta ni representa el FIE oficial ni implica validación visual en navegador.
 
 | Campo del contrato | Utilidad para FIE | Límite |
 | --- | --- | --- |
@@ -243,12 +243,15 @@ El contrato `GET /financial/reports/dinadeco/annual?year=YYYY` devuelve `{ metad
 | `netMovement` | Control entradas menos salidas | No existe casilla independiente de movimiento neto en el FIE observado. |
 | `closingBalance` | Candidato a saldo final | openingBalance + netMovement, no saldo segregado «en caja» ni saldo bancario conciliado. |
 | `movementCount` | Control técnico de cobertura | No corresponde a quince filas ni a conteo de comprobantes del formulario. |
+| `fie.entries`, `fie.exits` | Detalle anual de id, descripción, monto, fecha y fuente | Orden fecha/id ascendente; detalle completo, sin datos personales adicionales ni clasificación oficial. |
+| `fie.capacity` | Conteos, capacidades 15 y overflow por tipo | Más de 15 mantiene todas las filas; consolidación pendiente de validación con ADI. |
+| `fie.totalIncomePlusOpeningBalance`, `fie.totalExpensesPlusClosingBalance` | Sumas de cierre derivadas | Igualdad Decimal; no certifica los saldos. |
 | `metadata` | Trazabilidad técnica | generatedAt, generatedBy, period, appliedFilters, dataSource y reportVersion no certifican firma, presidencia, tesorería ni recepción regional. |
 
 Respuestas al contraste:
 
 1. **Qué ya sirve:** período anual, montos Decimal serializados con dos decimales, sumas INCOME/EXPENSE, neto, conteos, procedencia por source y metadata compartida. Los pagos confirmados de reservas crean movimientos RESERVATION_PAYMENT; donaciones crean movimiento DONATION y su cancelación genera reverso EXPENSE. El FIE no debe volver a sumar Payment/Donation además del movimiento.
-2. **Qué puede alimentar directamente la plantilla:** año, total de entradas y total de salidas del historial SGI. Las dos sumas de cierre de la fila 25 son derivables. openingBalance y closingBalance solo son candidatos después de validar integridad y conciliación. Las descripciones/montos de detalle existen en el listado de movimientos, no en la respuesta anual.
+2. **Qué puede alimentar directamente la plantilla:** año, total de entradas y total de salidas del historial SGI. Las dos sumas de cierre de la fila 25 se exponen en `data.fie` con Decimal. openingBalance y closingBalance solo son candidatos después de validar integridad y conciliación. Las descripciones/montos de detalle anual se exponen completos en `fie.entries` y `fie.exits`.
 3. **Campos financieros faltantes:** saldo inicial oficial respaldado, discriminación de caja y banco, clasificación validada del detalle, cobertura de gastos fuera del sistema y criterios para reversos/ajustes. No hay fórmulas en FIE: C23:E25 contienen símbolos de moneda, no cálculos. No copiar resultados vacíos como cifras certificadas.
 4. **Datos institucionales faltantes:** nombre legal, cédula jurídica, código DINADECO, provincia/cantón/distrito y contactos institucionales; no existe fuente institucional única.
 5. **Cargos faltantes:** titular legal de presidencia y tesorería, nombramiento y vigencia. FIE no solicita la lista completa de Junta Directiva, aunque FRAG sí. Role controla acceso, no acredita cargo electo.
@@ -256,9 +259,9 @@ Respuestas al contraste:
 7. **Anexos sin soporte:** FIE exige expresamente copia de estado de cuenta con corte al 31 de diciembre. No existe expediente financiero de anexos. La UI menciona estados financieros adicionales cuando apliquen; el original observado no los enumera. Balance de situación, balance de comprobación y estado de resultados no están implementados y su exigibilidad para este caso queda pendiente, no se inventa como requisito del FIE.
 8. **Información bancaria faltante:** banco/cuenta institucional, saldos de estado de cuenta, conciliación y relación con caja. FIE no contiene casillas de número de cuenta/banco: el requisito observado es el anexo, no nuevos campos en la plantilla.
 9. **Información contable adicional:** cuentas/clasificación, folios o libros de tesorería, saldos respaldados y conciliación requieren semántica adicional. El FIE no trae columnas explícitas de cuenta o folio; no se las atribuye al original. El modelo actual es registro de movimientos, no contabilidad de doble partida ni libro legal.
-10. **Agregado frente a detalle:** groupBy tipo/source pierde filas, orden y descripción. Las quince posiciones del FIE no equivalen a tres fuentes ni a movementCount. Falta acordar si se listan movimientos, conceptos agrupados o una hoja adicional y cómo resolver más de quince entradas/salidas. No se debe truncar silenciosamente ni adoptar source como clasificación oficial sin validación de la ADI.
+10. **Agregado frente a detalle:** groupBy tipo/source pierde filas, orden y descripción. El incremento conserva el agregado y añade detalle anual ordenado y capacidad explícita. Las quince posiciones del FIE no equivalen a tres fuentes ni a movementCount. Más de quince entradas/salidas se conservan completas y generan advertencia; sigue pendiente acordar consolidación o una hoja adicional con la ADI, sin adoptar source como clasificación oficial.
 
-Control futuro: totales del detalle deben cuadrar con sus totales, y entradas + saldo inicial con salidas + saldo final. Esa igualdad puede cumplirse por construcción del API aunque falten movimientos reales: no prueba suficiencia documental. El alcance UTC actual debe validarse para operaciones cerca de límites de año y la fecha operativa utilizada por la ADI; no se cambió ese comportamiento.
+Control implementado con pruebas: entradas + saldo inicial = salidas + saldo final, conservando Decimal y el detalle íntegro. Esa igualdad puede cumplirse por construcción del API aunque falten movimientos reales: no prueba suficiencia documental. El alcance UTC actual debe validarse para operaciones cerca de límites de año y la fecha operativa utilizada por la ADI; no se cambió ese comportamiento.
 
 ## Padrón histórico vs Affiliate / Person
 
