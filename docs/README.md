@@ -44,6 +44,7 @@ Documentos estables disponibles:
 - [`modules/affiliates.md`](./modules/affiliates.md): consulta, edición, estados, validaciones y auditoría de Afiliados.
 - [`modules/audit.md`](./modules/audit.md): trazabilidad, sanitización y consulta administrativa de Auditoría.
 - [`modules/donations.md`](./modules/donations.md): estado real de Donaciones, preparación existente y alcance todavía pendiente.
+- [`requirements/adi-dinadeco-source-mapping.md`](./requirements/adi-dinadeco-source-mapping.md): análisis de plantillas privadas ADI/DINADECO y mapeo de requisitos contra el sistema actual, sin implementación ni datos personales.
 
 Cada documento de módulo distingue entre funcionalidad implementada, trabajo en evolución y alcance planificado.
 
