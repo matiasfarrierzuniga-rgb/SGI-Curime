@@ -77,6 +77,7 @@ export type FinancialMovementSummary = {
 export const FINANCIAL_MOVEMENT_TYPES: readonly FinancialMovementType[] = ['INCOME', 'EXPENSE']
 
 export type DinadecoSourceSummary = { total: string; count: number }
+export type DinadecoFieLine = Pick<FinancialMovement, 'id' | 'description' | 'amount' | 'occurredAt' | 'source'>
 export type DinadecoAnnualReport = {
   metadata: {
     generatedAt: string
@@ -95,5 +96,19 @@ export type DinadecoAnnualReport = {
     netMovement: string
     closingBalance: string
     movementCount: number
+    fie: {
+      entries: DinadecoFieLine[]
+      exits: DinadecoFieLine[]
+      capacity: {
+        entryCount: number
+        exitCount: number
+        entryCapacity: 15
+        exitCapacity: 15
+        entryOverflow: boolean
+        exitOverflow: boolean
+      }
+      totalIncomePlusOpeningBalance: string
+      totalExpensesPlusClosingBalance: string
+    }
   }
 }

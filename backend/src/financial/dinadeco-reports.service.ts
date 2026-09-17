@@ -32,21 +32,38 @@ export class DinadecoReportsService {
   async annual(year: number, generatedBy: ReportGeneratedBy) {
     const from = new Date(Date.UTC(year, 0, 1));
     const to = new Date(Date.UTC(year + 1, 0, 1));
-    const [openingGroups, annualGroups] = await this.prisma.$transaction([
-      this.prisma.financialMovement.groupBy({
-        by: ['type'],
-        orderBy: { type: 'asc' },
-        where: { occurredAt: { lt: from } },
-        _sum: { amount: true },
-      }),
-      this.prisma.financialMovement.groupBy({
-        by: ['type', 'source'],
-        orderBy: [{ type: 'asc' }, { source: 'asc' }],
-        where: { occurredAt: { gte: from, lt: to } },
-        _sum: { amount: true },
-        _count: { _all: true },
-      }),
-    ]);
+    // Keep aggregate and detail on the same snapshot during concurrent writes.
+    const [openingGroups, annualGroups, movements] =
+      await this.prisma.$transaction(
+        [
+          this.prisma.financialMovement.groupBy({
+            by: ['type'],
+            orderBy: { type: 'asc' },
+            where: { occurredAt: { lt: from } },
+            _sum: { amount: true },
+          }),
+          this.prisma.financialMovement.groupBy({
+            by: ['type', 'source'],
+            orderBy: [{ type: 'asc' }, { source: 'asc' }],
+            where: { occurredAt: { gte: from, lt: to } },
+            _sum: { amount: true },
+            _count: { _all: true },
+          }),
+          this.prisma.financialMovement.findMany({
+            where: { occurredAt: { gte: from, lt: to } },
+            orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }],
+            select: {
+              id: true,
+              type: true,
+              description: true,
+              amount: true,
+              occurredAt: true,
+              source: true,
+            },
+          }),
+        ],
+        { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+      );
 
     let openingIncome = new Prisma.Decimal(0);
     let openingExpenses = new Prisma.Decimal(0);
@@ -56,7 +73,8 @@ export class DinadecoReportsService {
     }>) {
       const amount = group._sum.amount ?? new Prisma.Decimal(0);
       if (group.type === FinancialMovementType.INCOME) openingIncome = amount;
-      if (group.type === FinancialMovementType.EXPENSE) openingExpenses = amount;
+      if (group.type === FinancialMovementType.EXPENSE)
+        openingExpenses = amount;
     }
 
     const income = this.summarizeType(
@@ -69,6 +87,19 @@ export class DinadecoReportsService {
     );
     const openingBalance = openingIncome.minus(openingExpenses);
     const netMovement = income.total.minus(expenses.total);
+    const closingBalance = openingBalance.plus(netMovement);
+    const lines = (type: FinancialMovementType) =>
+      movements
+        .filter((movement) => movement.type === type)
+        .map(({ id, description, source, amount, occurredAt }) => ({
+          id,
+          description,
+          source,
+          amount: amount.toFixed(2),
+          occurredAt: occurredAt.toISOString(),
+        }));
+    const entries = lines(FinancialMovementType.INCOME);
+    const exits = lines(FinancialMovementType.EXPENSE);
 
     return {
       metadata: buildReportMetadata({
@@ -85,8 +116,26 @@ export class DinadecoReportsService {
         income: this.serializeSummary(income),
         expenses: this.serializeSummary(expenses),
         netMovement: netMovement.toFixed(2),
-        closingBalance: openingBalance.plus(netMovement).toFixed(2),
+        closingBalance: closingBalance.toFixed(2),
         movementCount: income.count + expenses.count,
+        fie: {
+          entries,
+          exits,
+          capacity: {
+            entryCount: entries.length,
+            exitCount: exits.length,
+            entryCapacity: 15,
+            exitCapacity: 15,
+            entryOverflow: entries.length > 15,
+            exitOverflow: exits.length > 15,
+          },
+          totalIncomePlusOpeningBalance: openingBalance
+            .plus(income.total)
+            .toFixed(2),
+          totalExpensesPlusClosingBalance: expenses.total
+            .plus(closingBalance)
+            .toFixed(2),
+        },
       },
     };
   }

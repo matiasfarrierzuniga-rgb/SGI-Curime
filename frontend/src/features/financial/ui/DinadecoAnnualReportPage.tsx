@@ -8,7 +8,7 @@ import { LoadingState } from '@/shared/ui/LoadingState'
 import { MetricCard } from '@/shared/ui/MetricCard'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { useDinadecoAnnualReport } from '../hooks/useFinancial'
-import type { FinancialMovementSource } from '../model/financial.types'
+import type { DinadecoFieLine, FinancialMovementSource } from '../model/financial.types'
 import { financialMovementSourceLabel, formatFinancialCurrency, formatFinancialDate } from './financialPresentation'
 
 const currentYear = new Date().getFullYear()
@@ -76,14 +76,58 @@ function ReportContent({ report }: { report: NonNullable<ReturnType<typeof useDi
         </CardContent>
       </Card>
 
+      <section aria-labelledby="fie-preparation-title" className="space-y-5">
+        <h2 id="fie-preparation-title">Preparación del FIE</h2>
+        <Card>
+          <CardHeader><CardTitle>Resumen FIE</CardTitle><CardDescription>Datos para completar el FIE a partir del historial registrado.</CardDescription></CardHeader>
+          <CardContent>
+            <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                ['Saldo inicial derivado', data.openingBalance],
+                ['Total entradas', data.income.total],
+                ['Total entradas + saldo inicial', data.fie.totalIncomePlusOpeningBalance],
+                ['Total salidas', data.expenses.total],
+                ['Saldo final derivado', data.closingBalance],
+                ['Total salidas + saldo final', data.fie.totalExpensesPlusClosingBalance],
+              ].map(([label, value]) => <div key={label}><dt className="text-sm text-foreground-muted">{label}</dt><dd className="font-semibold tabular-nums">{formatFinancialCurrency(value)}</dd></div>)}
+            </dl>
+          </CardContent>
+        </Card>
+        <p className="text-sm text-foreground-muted">El formulario FIE dispone de 15 espacios para entradas y 15 para salidas. SGI-Curime no consolida ni omite movimientos automáticamente.</p>
+        <FieMovements title="Entradas" lines={data.fie.entries} count={data.fie.capacity.entryCount} capacity={data.fie.capacity.entryCapacity} overflow={data.fie.capacity.entryOverflow} direction="entrada" />
+        <FieMovements title="Salidas" lines={data.fie.exits} count={data.fie.capacity.exitCount} capacity={data.fie.capacity.exitCapacity} overflow={data.fie.capacity.exitOverflow} direction="salida" />
+      </section>
+
       <Card>
         <CardHeader><CardTitle>Documentación complementaria</CardTitle></CardHeader>
         <CardContent className="space-y-3 text-sm text-foreground-muted">
+          <p>El saldo inicial y el saldo final son derivados del historial disponible en SGI-Curime. No existe conciliación bancaria en este incremento ni se distingue automáticamente caja física de cuentas bancarias; estos valores no son saldos oficiales conciliados.</p>
+          <p>Los datos institucionales y de presidencia/tesorería, firmas, sello, anexo bancario y recepción por DINADECO siguen pendientes de captura o validación manual y fuera del alcance de esta preparación.</p>
           <p>El Informe Económico presentado a DINADECO requiere documentación de respaldo, incluido el estado de cuenta bancario correspondiente al cierre anual y, cuando aplique, estados financieros adicionales.</p>
           <p>Esta vista agrupa los movimientos registrados en SGI-Curime por su fuente operativa. Es una base para preparar el informe; todavía no clasifica cuentas, folios ni un catálogo contable DINADECO, y no genera el formulario oficial.</p>
         </CardContent>
       </Card>
     </>
+  )
+}
+
+function FieMovements({ title, lines, count, capacity, overflow, direction }: { title: string; lines: DinadecoFieLine[]; count: number; capacity: number; overflow: boolean; direction: string }) {
+  return (
+    <Card>
+      <CardHeader><CardTitle>{title}</CardTitle><CardDescription>{count} de {capacity} movimientos de {direction}</CardDescription></CardHeader>
+      <CardContent className="space-y-3">
+        {overflow && <p role="alert" className="text-sm font-semibold text-status-warning">El formulario oficial no tiene espacio suficiente para representar individualmente todos los movimientos de {direction}. Se conserva el detalle completo; la estrategia de consolidación requiere validación con la ADI.</p>}
+        {lines.length === 0 ? <p className="text-sm text-foreground-muted">No se registraron movimientos de {direction} en el período.</p> : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <caption className="sr-only">Detalle de {title.toLowerCase()} para preparar el FIE</caption>
+              <thead><tr>{['Fecha', 'Descripción', 'Fuente', 'Monto'].map((label) => <th key={label} scope="col" className="p-3 text-left">{label}</th>)}</tr></thead>
+              <tbody>{lines.map((line) => <tr key={line.id} className="border-t border-border-default"><td className="p-3 whitespace-nowrap">{formatFinancialDate(line.occurredAt)}</td><td className="p-3 break-words">{line.description}</td><td className="p-3">{financialMovementSourceLabel(line.source)}</td><td className="p-3 text-right whitespace-nowrap tabular-nums">{formatFinancialCurrency(line.amount)}</td></tr>)}</tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

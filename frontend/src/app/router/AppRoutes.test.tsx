@@ -340,6 +340,7 @@ describe('AppRoutes capability deep links', () => {
   it('protects and renders the DINADECO report route by capability', async () => {
     renderRoute('/app/financial/dinadeco', 'Tesorero')
     expect(await screen.findByRole('heading', { name: 'Informe Económico DINADECO' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Preparación del FIE' })).toBeInTheDocument()
     expect(httpGet).toHaveBeenCalledWith('/financial/reports/dinadeco/annual', { params: { year: new Date().getFullYear() } })
   })
 
@@ -353,6 +354,13 @@ function responseForDinadeco() {
   const year = new Date().getFullYear()
   return {
     metadata: { generatedAt: new Date().toISOString(), generatedBy: { id: 1, fullName: 'Ana Pérez' }, period: { from: `${year}-01-01T00:00:00.000Z`, to: `${year + 1}-01-01T00:00:00.000Z` }, appliedFilters: { year }, dataSource: 'FINANCIAL_MOVEMENT', reportVersion: '1.0' },
-    data: { year, currency: 'CRC', openingBalance: '0.00', income: { total: '0.00', count: 0, bySource: {} }, expenses: { total: '0.00', count: 0, bySource: {} }, netMovement: '0.00', closingBalance: '0.00', movementCount: 0 },
+    data: {
+      year, currency: 'CRC', openingBalance: '0.00', income: { total: '0.00', count: 0, bySource: {} }, expenses: { total: '0.00', count: 0, bySource: {} }, netMovement: '0.00', closingBalance: '0.00', movementCount: 0,
+      fie: {
+        entries: [], exits: [],
+        capacity: { entryCount: 0, exitCount: 0, entryCapacity: 15, exitCapacity: 15, entryOverflow: false, exitOverflow: false },
+        totalIncomePlusOpeningBalance: '0.00', totalExpensesPlusClosingBalance: '0.00',
+      },
+    },
   }
 }

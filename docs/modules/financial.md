@@ -225,10 +225,15 @@ Implementado:
 - entradas, salidas, movimiento neto y saldo final usando aritmética `Decimal`;
 - desglose de entradas y salidas por `FinancialMovementSource`;
 - conteos de movimientos;
+- preparación FIE en `data.fie`: detalle anual completo de entradas INCOME y salidas EXPENSE, ordenado por `occurredAt ASC`, luego `id ASC`, con id, descripción, monto de dos decimales, fecha ISO y fuente; no incluye identidades personales ni referencias;
+- capacidad independiente de 15 entradas y 15 salidas; conteos y overflow cuando el conteo supera 15, conservando todas las filas y sin consolidación automática;
+- `totalIncomePlusOpeningBalance` y `totalExpensesPlusClosingBalance` en `data.fie`, calculados con `Prisma.Decimal`; ambos son iguales por la fórmula del saldo final;
 - metadata compartida con período, filtro, fuente `FINANCIAL_MOVEMENT` y usuario generador;
 - interfaz ERP en `/app/financial/dinadeco` con selector de año, resumen y documentación complementaria.
 
-El saldo anterior es un cálculo derivado del historial disponible en SGI-Curime. No se afirma que equivalga al saldo oficialmente presentado en períodos anteriores.
+El saldo inicial y el saldo final son cálculos derivados del historial disponible en SGI-Curime. No equivalen automáticamente a saldos oficiales conciliados, caja física ni saldo bancario. La sección «Preparación del FIE» conserva las cards, desglose y metadata anteriores, y añade resumen de seis cifras, tablas completas y advertencias visibles si se exceden los quince espacios por tipo. La estrategia futura de consolidación requiere validación con la ADI.
+
+Los datos institucionales, titulares legales de presidencia/tesorería, firmas, sellos, recepción y anexo bancario permanecen pendientes de captura o validación manual. No se inventan ni se infieren del branding o de roles de acceso.
 
 Pendiente:
 
