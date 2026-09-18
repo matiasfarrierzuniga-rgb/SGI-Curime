@@ -13,7 +13,8 @@ type FinancialDetailModalProps = { id: number; role: string | null | undefined; 
 export function FinancialDetailModal({ id, role, onClose, onRecord }: FinancialDetailModalProps) {
   const detail = useFinancialChargeDetail(id)
   const status = (detail.error as { response?: { status?: number } } | null)?.response?.status
-  const mayRecord = detail.data?.status === 'PENDING' && hasCapability(role, 'fin.payments.record')
+  const balance = detail.data?.balance ?? (detail.data?.status === 'PENDING' ? detail.data.amount : '0.00')
+  const mayRecord = detail.data?.status === 'PENDING' && Number(balance) > 0 && hasCapability(role, 'fin.payments.record')
   return <Modal title={`Cargo financiero #${id}`} onClose={onClose} busy={false}>
     {detail.isPending ? <LoadingState label="Cargando detalle del cargo..." /> : null}
     {detail.isError ? <ErrorState title={status === 404 ? 'Cargo financiero no encontrado' : 'No fue posible cargar el cargo'} message={status === 404 ? 'El cargo solicitado no existe o fue eliminado.' : 'Ocurrió un error al consultar el detalle del cargo.'} action={<button type="button" onClick={() => void detail.refetch()}>Reintentar</button>} /> : null}
@@ -22,9 +23,11 @@ export function FinancialDetailModal({ id, role, onClose, onRecord }: FinancialD
       <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
         <Detail label="ID de cargo" value={`#${detail.data.id}`} />
         <Detail label="ID de reserva" value={`#${detail.data.reservationId}`} />
-        <Detail label="Monto" value={formatFinancialCurrency(detail.data.amount, detail.data.currency)} />
+        <Detail label="Monto original" value={formatFinancialCurrency(detail.data.amount, detail.data.currency)} />
+        <Detail label="Balance" value={formatFinancialCurrency(detail.data.balance ?? (detail.data.status === 'PENDING' ? detail.data.amount : '0.00'), detail.data.currency)} />
         <Detail label="Moneda" value={detail.data.currency} />
         <Detail label="Estado" value={financialChargeStatusLabel(detail.data.status)} />
+        <Detail label="Vencimiento" value={formatFinancialDate(detail.data.dueAt)} />
         <Detail label="Actualizado" value={formatFinancialDate(detail.data.updatedAt)} />
       </dl>
       <div>

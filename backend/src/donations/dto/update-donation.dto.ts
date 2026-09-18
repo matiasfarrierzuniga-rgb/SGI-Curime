@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
+  MaxLength,
   IsOptional,
   IsString,
   Matches,
@@ -18,11 +19,13 @@ export class UpdateDonationDto {
   @Transform(trim)
   @IsOptional()
   @IsString()
+  @MaxLength(150)
   donorName?: string;
 
   @Transform(trim)
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   donorIdentification?: string;
 
   @Transform(trim)
@@ -40,11 +43,13 @@ export class UpdateDonationDto {
   @Transform(trim)
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   reference?: string;
 
   @Transform(trim)
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   description?: string;
 
   @IsOptional()

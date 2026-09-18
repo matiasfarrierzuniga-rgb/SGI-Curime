@@ -86,11 +86,6 @@ enum PaymentMethod {
   OTHER
 }
 
-enum DonationStatus {
-  CONFIRMED
-  CANCELLED
-}
-
 enum DonationMethod {
   CASH
   BANK_TRANSFER
@@ -107,6 +102,11 @@ enum FinancialMovementSource {
   MANUAL
   RESERVATION_PAYMENT
   DONATION
+}
+
+enum DonationStatus {
+  CONFIRMED
+  CANCELLED
 }
 
 enum PublicationStatus {
@@ -246,8 +246,8 @@ model User {
   approvedReservations      Reservation[]            @relation("ReservationApprover")
   recordedPayments          Payment[]                @relation("PaymentRecorder")
   recordedFinancialMovements FinancialMovement[]      @relation("FinancialMovementRecorder")
-  recordedDonations         Donation[]               @relation("DonationRecorder")
-  cancelledDonations        Donation[]               @relation("DonationCanceller")
+  recordedDonations         Donation[]                @relation("DonationRecorder")
+  cancelledDonations        Donation[]                @relation("DonationCanceller")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

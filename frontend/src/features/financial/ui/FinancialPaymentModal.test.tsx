@@ -22,7 +22,8 @@ describe('FinancialPaymentModal', () => {
   it('prefills the exact amount from the charge', () => {
     renderModal(vi.fn())
     expect(screen.getByLabelText('Monto a pagar')).toHaveValue('15000.00')
-    expect(screen.getByText(/Monto del cargo:/)).toBeInTheDocument()
+    expect(screen.getByText(/Monto original:/)).toBeInTheDocument()
+    expect(screen.getByText(/Balance a pagar:/)).toBeInTheDocument()
   })
 
   it('submits only amount, method, and reference without status or recordedById', async () => {
@@ -49,10 +50,21 @@ describe('FinancialPaymentModal', () => {
 
   it('requires a valid amount and method on submit', async () => {
     renderModal(vi.fn())
-    fireEvent.change(screen.getByLabelText('Monto a pagar'), { target: { value: '0.001' } })
+    fireEvent.change(screen.getByLabelText('Monto a pagar'), { target: { value: '0' } })
     fireEvent.click(screen.getByRole('button', { name: 'Registrar pago' }))
-    expect(await screen.findByText('Ingrese un monto válido con hasta dos decimales.')).toBeInTheDocument()
+    expect(await screen.findByText('Ingrese un monto positivo con hasta dos decimales.')).toBeInTheDocument()
     expect(screen.getByText('Seleccione un método de pago.')).toBeInTheDocument()
+  })
+
+  it('rejects an amount different from the balance before sending', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useRecordPayment).mockReturnValue({ isPending: false, mutateAsync: mutateAsync as never } as never)
+    renderModal(vi.fn())
+    fireEvent.change(screen.getByLabelText('Monto a pagar'), { target: { value: '14999.99' } })
+    fireEvent.change(screen.getByLabelText('Método de pago'), { target: { value: 'CASH' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar pago' }))
+    expect(await screen.findByText('El monto debe ser exactamente igual al balance pendiente.')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
   })
 
   it('closes and toasts on success', async () => {
