@@ -14,6 +14,7 @@ import type {
 } from '../../types/inventory'
 import { conditionLabels, itemStatusLabels, movementTypeLabels } from '../../types/inventory'
 import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
+import { useUpdateInventoryItem } from './hooks/useInventoryQueries'
 
 const limit = 10
 
@@ -57,6 +58,7 @@ export function InventoryItemsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [itemFormErrors, setItemFormErrors] = useState<Record<string, string>>({})
+  const updateItemMutation = useUpdateInventoryItem()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -207,7 +209,10 @@ export function InventoryItemsPage() {
         setMovementForm(emptyMovementForm)
         setMode('entry')
       } else if (mode === 'edit' && selected) {
-        await inventoryItemsService.update(selected.id, { ...payload, description: itemForm.description.trim() })
+        await updateItemMutation.mutateAsync({
+          id: selected.id,
+          data: { ...payload, description: itemForm.description.trim() },
+        })
         notify('Artículo actualizado correctamente.', 'success')
         setMode(null)
       }
@@ -318,9 +323,11 @@ export function InventoryItemsPage() {
   const quantityTone = (item: InventoryItem) =>
     item.status === 'INACTIVE' || item.currentQuantity === 0 ? 'warning' : item.currentQuantity <= item.minimumQuantity ? 'warning' : 'success'
 
+  const hasFilters = Boolean(search || categoryFilter || statusFilter || lowStockFilter)
+
   return (
-    <section>
-      <h1>Artículos</h1>
+    <section aria-busy={loading}>
+      <h1>Inventario</h1>
       <form className="filters card" onSubmit={applyFilters}>
         <label>Búsqueda (nombre o código)<input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
         <label>Categoría<select value={categoryFilter} onChange={(e) => { setPage(1); setCategoryFilter(e.target.value) }}>
@@ -339,11 +346,14 @@ export function InventoryItemsPage() {
       {loading ? (
         <p aria-live="polite">Cargando artículos…</p>
       ) : items.length === 0 ? (
-        <p className="card">No hay artículos que coincidan con los filtros.</p>
+        <p className="card">
+          {hasFilters ? 'No hay artículos que coincidan con los filtros.' : 'No hay bienes registrados en el inventario.'}
+        </p>
       ) : (
         <>
           <div className="table-wrap" tabIndex={0} aria-label="Tabla de artículos, desplazable horizontalmente">
             <table>
+              <caption className="sr-only">Listado de bienes registrados en el inventario</caption>
               <thead>
                 <tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Existencia</th><th>Mínimo</th><th>Unidad</th><th>Ubicación</th><th>Estado</th><th>Condición</th><th><span className="sr-only">Acciones</span></th></tr>
               </thead>

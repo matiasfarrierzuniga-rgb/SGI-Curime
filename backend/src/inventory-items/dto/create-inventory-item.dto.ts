@@ -34,6 +34,11 @@ export class CreateInventoryItemDto {
 
   @Type(() => Number)
   @IsInt()
+  @Min(0)
+  quantity: number;
+
+  @Type(() => Number)
+  @IsInt()
   @Min(1)
   categoryId: number;
 

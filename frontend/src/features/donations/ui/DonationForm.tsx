@@ -20,11 +20,11 @@ type DonationFormValues = {
 }
 
 const schema = z.object({
-  donorName: z.string().max(255),
-  donorIdentification: z.string().max(100),
+  donorName: z.string().max(150),
+  donorIdentification: z.string().max(50),
   amount: z.string().trim().regex(/^(?=.*[1-9])(?:0|[1-9]\d*)(?:\.\d{1,2})?$/, 'Ingrese un monto positivo con máximo dos decimales.'),
   method: z.enum(['CASH', 'BANK_TRANSFER', 'SINPE_MOVIL', 'OTHER']),
-  reference: z.string().max(255),
+  reference: z.string().max(100),
   receivedAt: z.string().min(1, 'La fecha de recepción es requerida.'),
   description: z.string().max(1000),
   anonymous: z.boolean(),

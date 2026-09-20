@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '@/shared/ui/Toast'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
@@ -47,9 +48,11 @@ const conflict = (message: string) => ({ isAxiosError: true, response: { status:
 
 const page = () =>
   render(
-    <ToastProvider>
-      <InventoryItemsPage />
-    </ToastProvider>,
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <ToastProvider>
+        <InventoryItemsPage />
+      </ToastProvider>
+    </QueryClientProvider>,
   )
 
 describe('InventoryItemsPage', () => {
@@ -67,6 +70,20 @@ describe('InventoryItemsPage', () => {
     expect(screen.getAllByText('Herramientas').length).toBeGreaterThan(0)
     expect(screen.getByText('Bodega A')).toBeInTheDocument()
     expect(screen.getByText('Bueno')).toBeInTheDocument()
+  })
+
+  it('shows the empty state when there are no registered goods', async () => {
+    vi.mocked(inventoryItemsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
+    page()
+
+    expect(await screen.findByText('No hay bienes registrados en el inventario.')).toBeInTheDocument()
+  })
+
+  it('shows an error state when the inventory cannot be loaded', async () => {
+    vi.mocked(inventoryItemsService.list).mockRejectedValueOnce(new Error('network error'))
+    page()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar los artículos.')
   })
 
   it('creates an item through the modal', async () => {
@@ -92,6 +109,30 @@ describe('InventoryItemsPage', () => {
       }),
     )
     expect(await screen.findByRole('dialog', { name: /Registrar entrada: Martillo/ })).toBeInTheDocument()
+  })
+
+  it('updates an existing item through the edit form', async () => {
+    vi.mocked(inventoryItemsService.update).mockResolvedValue({ ...item, name: 'Martillo reforzado' } as never)
+    page()
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }))
+    await screen.findByRole('dialog', { name: /Artículo: Martillo/ })
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Martillo reforzado' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() =>
+      expect(inventoryItemsService.update).toHaveBeenCalledWith(1, {
+        code: 'HER-001',
+        name: 'Martillo reforzado',
+        description: '',
+        categoryId: 1,
+        minimumQuantity: 2,
+        unit: 'unidad',
+        location: 'Bodega A',
+        condition: 'GOOD',
+      }),
+    )
+    expect(await screen.findByText('Artículo actualizado correctamente.')).toBeInTheDocument()
   })
 
   it('rejects an invalid minimum quantity without silently coercing it', async () => {

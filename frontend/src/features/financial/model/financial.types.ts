@@ -5,8 +5,10 @@ export type FinancialCharge = {
   id: number
   reservationId: number
   amount: string
+  balance?: string
   currency: string
   status: FinancialChargeStatus
+  dueAt: string | null
   createdAt: string
   updatedAt: string
 }

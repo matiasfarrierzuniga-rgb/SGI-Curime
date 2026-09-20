@@ -49,6 +49,9 @@ describe('InventoryItemsService', () => {
     inventoryCategory: {
       findUnique: jest.fn(),
     },
+    inventoryMovement: {
+      create: jest.fn(),
+    },
     inventoryLoan: {
       count: jest.fn(),
     },
@@ -66,7 +69,10 @@ describe('InventoryItemsService', () => {
     prisma.inventoryItem.create.mockResolvedValue(item);
     prisma.inventoryItem.findMany.mockResolvedValue([item]);
     prisma.inventoryItem.count.mockResolvedValue(1);
-    prisma.inventoryItem.findUnique.mockResolvedValue(item);
+    prisma.inventoryItem.findUnique.mockImplementation(
+      ({ where }: { where: { code?: string } }) =>
+        where.code ? null : item,
+    );
     prisma.inventoryItem.findFirst.mockResolvedValue(null);
     prisma.inventoryItem.update.mockResolvedValue(item);
     prisma.inventoryCategory.findUnique.mockResolvedValue({
@@ -76,25 +82,51 @@ describe('InventoryItemsService', () => {
     prisma.inventoryLoan.count.mockResolvedValue(0);
   });
 
-  it('creates an item with zero stock and a safe select', async () => {
+  it('creates an item and its initial entry in one transaction', async () => {
     const result = await service.create({
       code: 'HER-001',
       name: 'Martillo',
       categoryId: 1,
+      quantity: 5,
       minimumQuantity: 2,
     });
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function));
     expect(prisma.inventoryItem.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           code: 'HER-001',
           categoryId: 1,
-          currentQuantity: 0,
+          currentQuantity: 5,
           minimumQuantity: 2,
           status: InventoryItemStatus.ACTIVE,
         }),
       }),
     );
+    expect(prisma.inventoryMovement.create).toHaveBeenCalledWith({
+      data: {
+        itemId: 1,
+        type: 'ENTRY',
+        quantity: 5,
+        reason: 'Initial inventory registration',
+        reference: 'HER-001',
+        createdById: undefined,
+      },
+    });
     expect(result).not.toHaveProperty('movements');
+  });
+
+  it('rejects a duplicated item code before opening the transaction', async () => {
+    prisma.inventoryItem.findUnique.mockResolvedValueOnce({ id: 2 });
+
+    await expect(
+      service.create({
+        code: 'HER-001',
+        name: 'Martillo',
+        categoryId: 1,
+        quantity: 1,
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('requires an active category', async () => {
@@ -103,19 +135,34 @@ describe('InventoryItemsService', () => {
       isActive: false,
     });
     await expect(
-      service.create({ code: 'HER-002', name: 'Llave', categoryId: 1 }),
+      service.create({
+        code: 'HER-002',
+        name: 'Llave',
+        categoryId: 1,
+        quantity: 1,
+      }),
     ).rejects.toBeInstanceOf(ConflictException);
 
     prisma.inventoryCategory.findUnique.mockResolvedValueOnce(null);
     await expect(
-      service.create({ code: 'HER-002', name: 'Llave', categoryId: 99 }),
+      service.create({
+        code: 'HER-002',
+        name: 'Llave',
+        categoryId: 99,
+        quantity: 1,
+      }),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('rejects a duplicated item code', async () => {
     prisma.inventoryItem.create.mockRejectedValueOnce(uniqueConstraintError());
     await expect(
-      service.create({ code: 'HER-001', name: 'Martillo', categoryId: 1 }),
+      service.create({
+        code: 'HER-001',
+        name: 'Martillo',
+        categoryId: 1,
+        quantity: 1,
+      }),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 

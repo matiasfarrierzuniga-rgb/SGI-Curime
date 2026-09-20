@@ -42,4 +42,61 @@ describe('DonationsController', () => {
       ).toEqual([capability]);
     }
   });
+
+  it('registers a donation and returns the service representation', async () => {
+    const dto = {
+      amount: '1250.50',
+      method: 'SINPE_MOVIL',
+      receivedAt: '2026-09-09T16:00:00.000Z',
+    };
+    const createdDonation = {
+      id: 41,
+      amount: '1250.50',
+      status: 'CONFIRMED',
+      originalMovementId: 84,
+    };
+    const request = {
+      user: { id: 17 },
+      ip: '127.0.0.1',
+      get: jest.fn().mockReturnValue('test-agent'),
+    };
+    service.create.mockResolvedValueOnce(createdDonation);
+
+    await expect(controller.create(dto as never, request as never)).resolves.toEqual(
+      createdDonation,
+    );
+    expect(service.create).toHaveBeenCalledWith(dto, 17, {
+      ipAddress: '127.0.0.1',
+      userAgent: 'test-agent',
+    });
+  });
+
+  it('returns the paginated donation collection from the service', async () => {
+    const query = { status: 'CONFIRMED', page: 2, limit: 10 };
+    const result = {
+      data: [{ id: 41, amount: '1250.50', status: 'CONFIRMED' }],
+      total: 1,
+      page: 2,
+      limit: 10,
+    };
+    service.findAll.mockResolvedValueOnce(result);
+
+    await expect(controller.findAll(query as never)).resolves.toEqual(result);
+    expect(service.findAll).toHaveBeenCalledWith(query);
+  });
+
+  it('returns the authoritative donation detail by id', async () => {
+    const result = {
+      id: 41,
+      amount: '1250.50',
+      status: 'CANCELLED',
+      cancellationReason: 'Registro duplicado',
+      originalMovementId: 84,
+      reversalMovementId: 85,
+    };
+    service.findOne.mockResolvedValueOnce(result);
+
+    await expect(controller.findOne(41)).resolves.toEqual(result);
+    expect(service.findOne).toHaveBeenCalledWith(41);
+  });
 });
