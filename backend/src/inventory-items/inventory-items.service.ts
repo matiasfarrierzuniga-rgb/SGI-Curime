@@ -8,6 +8,7 @@ import {
 import {
   InventoryItemStatus,
   InventoryLoanStatus,
+  InventoryMovementType,
   Prisma,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -55,21 +56,41 @@ export class InventoryItemsService {
     context: AuditContext = {},
   ) {
     await this.requireActiveCategory(dto.categoryId);
+    const duplicate = await this.prisma.inventoryItem.findUnique({
+      where: { code: dto.code },
+      select: { id: true },
+    });
+    if (duplicate) {
+      throw new ConflictException('Inventory item code is already in use');
+    }
     try {
-      const created = await this.prisma.inventoryItem.create({
-        data: {
-          code: dto.code,
-          name: dto.name,
-          description: dto.description ?? null,
-          categoryId: dto.categoryId,
-          minimumQuantity: dto.minimumQuantity ?? 0,
-          unit: dto.unit ?? 'unidad',
-          location: dto.location ?? null,
-          condition: dto.condition,
-          currentQuantity: 0,
-          status: InventoryItemStatus.ACTIVE,
-        },
-        select: itemSelect,
+      const created = await this.prisma.$transaction(async (tx) => {
+        const item = await tx.inventoryItem.create({
+          data: {
+            code: dto.code,
+            name: dto.name,
+            description: dto.description ?? null,
+            categoryId: dto.categoryId,
+            minimumQuantity: dto.minimumQuantity ?? 0,
+            unit: dto.unit ?? 'unidad',
+            location: dto.location ?? null,
+            condition: dto.condition,
+            currentQuantity: dto.quantity,
+            status: InventoryItemStatus.ACTIVE,
+          },
+          select: itemSelect,
+        });
+        await tx.inventoryMovement.create({
+          data: {
+            itemId: item.id,
+            type: InventoryMovementType.ENTRY,
+            quantity: dto.quantity,
+            reason: 'Initial inventory registration',
+            reference: item.code,
+            createdById: actorId,
+          },
+        });
+        return item;
       });
       await this.audit?.log({
         userId: actorId,
@@ -164,8 +185,7 @@ export class InventoryItemsService {
         data: {
           code: dto.code,
           name: dto.name,
-          description:
-            dto.description === '' ? null : dto.description,
+          description: dto.description === '' ? null : dto.description,
           categoryId: dto.categoryId,
           minimumQuantity: dto.minimumQuantity,
           unit: dto.unit,
