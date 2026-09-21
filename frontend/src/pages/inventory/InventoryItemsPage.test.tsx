@@ -1,5 +1,4 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '@/shared/ui/Toast'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
@@ -48,11 +47,9 @@ const conflict = (message: string) => ({ isAxiosError: true, response: { status:
 
 const page = () =>
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <ToastProvider>
-        <InventoryItemsPage />
-      </ToastProvider>
-    </QueryClientProvider>,
+    <ToastProvider>
+      <InventoryItemsPage />
+    </ToastProvider>,
   )
 
 describe('InventoryItemsPage', () => {

@@ -24,7 +24,7 @@ describe('DINADECO annual report (e2e)', () => {
     clearLockout: jest.fn(),
   };
   const prisma = {
-    financialMovement: { groupBy: jest.fn() },
+    financialMovement: { groupBy: jest.fn(), findMany: jest.fn() },
     $transaction: jest.fn((operations: Promise<unknown>[]) =>
       Promise.all(operations),
     ),
@@ -54,6 +54,24 @@ describe('DINADECO annual report (e2e)', () => {
           _count: { _all: 1 },
         },
       ]);
+    prisma.financialMovement.findMany.mockResolvedValue([
+      {
+        id: 101,
+        type: FinancialMovementType.INCOME,
+        description: 'Ingreso ficticio para prueba E2E',
+        amount: new Prisma.Decimal('250.00'),
+        occurredAt: new Date('2026-03-15T14:30:00.000Z'),
+        source: FinancialMovementSource.DONATION,
+      },
+      {
+        id: 102,
+        type: FinancialMovementType.EXPENSE,
+        description: 'Egreso ficticio para prueba E2E',
+        amount: new Prisma.Decimal('50.00'),
+        occurredAt: new Date('2026-04-20T16:45:00.000Z'),
+        source: FinancialMovementSource.MANUAL,
+      },
+    ]);
 
     const module = await Test.createTestingModule({ imports: [FinancialModule] })
       .overrideProvider(PrismaService)
@@ -136,6 +154,36 @@ describe('DINADECO annual report (e2e)', () => {
         netMovement: '200.00',
         closingBalance: '1200.00',
         movementCount: 2,
+        fie: {
+          entries: [
+            {
+              id: 101,
+              description: 'Ingreso ficticio para prueba E2E',
+              amount: '250.00',
+              occurredAt: '2026-03-15T14:30:00.000Z',
+              source: 'DONATION',
+            },
+          ],
+          exits: [
+            {
+              id: 102,
+              description: 'Egreso ficticio para prueba E2E',
+              amount: '50.00',
+              occurredAt: '2026-04-20T16:45:00.000Z',
+              source: 'MANUAL',
+            },
+          ],
+          capacity: {
+            entryCount: 1,
+            exitCount: 1,
+            entryCapacity: 15,
+            exitCapacity: 15,
+            entryOverflow: false,
+            exitOverflow: false,
+          },
+          totalIncomePlusOpeningBalance: '1250.00',
+          totalExpensesPlusClosingBalance: '1250.00',
+        },
       },
     });
   });
