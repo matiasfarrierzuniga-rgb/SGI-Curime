@@ -97,6 +97,7 @@ describe('InventoryItemsController (e2e)', () => {
       .send({
         code: 'HER-001',
         name: 'Martillo',
+        quantity: 5,
         categoryId: 1,
         minimumQuantity: 2,
       })

@@ -14,7 +14,6 @@ import type {
 } from '../../types/inventory'
 import { conditionLabels, itemStatusLabels, movementTypeLabels } from '../../types/inventory'
 import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
-import { useUpdateInventoryItem } from './hooks/useInventoryQueries'
 
 const limit = 10
 
@@ -58,7 +57,6 @@ export function InventoryItemsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [itemFormErrors, setItemFormErrors] = useState<Record<string, string>>({})
-  const updateItemMutation = useUpdateInventoryItem()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -209,9 +207,9 @@ export function InventoryItemsPage() {
         setMovementForm(emptyMovementForm)
         setMode('entry')
       } else if (mode === 'edit' && selected) {
-        await updateItemMutation.mutateAsync({
-          id: selected.id,
-          data: { ...payload, description: itemForm.description.trim() },
+        await inventoryItemsService.update(selected.id, {
+          ...payload,
+          description: itemForm.description.trim(),
         })
         notify('Artículo actualizado correctamente.', 'success')
         setMode(null)
