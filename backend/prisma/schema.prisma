@@ -16,6 +16,8 @@ model Role {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   users       User[]
+  affiliates  Affiliate[]
+  assemblyConvocations AssemblyConvocation[]
 }
 
 model Person {
@@ -100,6 +102,8 @@ model User {
   createdSanctions           AffiliateSanction[]      @relation("SanctionCreator")
   auditLogs                  AuditLog[]
   recordedFinancialMovements FinancialMovement[]      @relation("FinancialMovementRecorder")
+  recordedDonations          Donation[]               @relation("DonationRecorder")
+  cancelledDonations         Donation[]               @relation("DonationCanceller")
   inventoryLoansCreated      InventoryLoan[]          @relation("LoanCreator")
   inventoryLoansReceived     InventoryLoan[]          @relation("LoanReceiver")
   inventoryMovements         InventoryMovement[]
@@ -217,11 +221,16 @@ model Affiliate {
   phoneCountryCode    String?
   phoneNationalNumber String?
   personId            Int?                   @unique
+  roleId              Int?
   justifications      AbsenceJustification[]
   person              Person?                @relation(fields: [personId], references: [id], onDelete: Restrict)
+  role                Role?                  @relation(fields: [roleId], references: [id], onDelete: Restrict)
   sanctions           AffiliateSanction[]
   attendances         AssemblyAttendance[]
   inventoryLoans      InventoryLoan[]
+  assemblyConvocations AssemblyConvocation[]
+
+  @@index([roleId])
 }
 
 model AffiliateRequest {
@@ -264,13 +273,36 @@ model Assembly {
   place          String
   description    String?
   status         AssemblyStatus         @default(SCHEDULED)
+  quorumType     AssemblyQuorumType?
+  quorumValue    Int?
+  convocationsLockedAt DateTime?
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   justifications AbsenceJustification[]
   attendances    AssemblyAttendance[]
+  convocations   AssemblyConvocation[]
 
   @@index([date])
   @@index([status])
+}
+
+model AssemblyConvocation {
+  id               Int      @id @default(autoincrement())
+  assemblyId       Int
+  assembly         Assembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+  affiliateId      Int
+  affiliate        Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  roleId           Int?
+  role             Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  roleNameSnapshot String
+  convenedAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([assemblyId, affiliateId])
+  @@index([assemblyId])
+  @@index([affiliateId])
+  @@index([roleId])
 }
 
 model Event {
@@ -387,11 +419,48 @@ model FinancialMovement {
   createdAt    DateTime                @default(now())
   updatedAt    DateTime                @updatedAt
   recordedBy   User?                   @relation("FinancialMovementRecorder", fields: [recordedById], references: [id])
+  originalDonation Donation?           @relation("DonationOriginalMovement")
+  reversalDonation Donation?           @relation("DonationReversalMovement")
 
   @@index([occurredAt])
   @@index([type, occurredAt])
   @@index([source, sourceId])
   @@index([recordedById])
+}
+
+model Donation {
+  id                  Int            @id @default(autoincrement())
+  donorName           String?
+  donorIdentification String?
+  amount              Decimal        @db.Decimal(14, 2)
+  currency            String         @default("CRC")
+  method              DonationMethod
+  reference           String?
+  description         String?
+  receivedAt          DateTime
+  status              DonationStatus @default(CONFIRMED)
+
+  recordedById  Int
+  recordedBy    User  @relation("DonationRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+  cancelledById Int?
+  cancelledBy   User? @relation("DonationCanceller", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledAt   DateTime?
+  cancellationReason String?
+
+  originalMovementId Int?               @unique
+  originalMovement   FinancialMovement? @relation("DonationOriginalMovement", fields: [originalMovementId], references: [id], onDelete: Restrict)
+  reversalMovementId Int?               @unique
+  reversalMovement   FinancialMovement? @relation("DonationReversalMovement", fields: [reversalMovementId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([method])
+  @@index([receivedAt])
+  @@index([recordedById])
+  @@index([cancelledById])
+  @@index([status, receivedAt])
 }
 
 model AssemblyAttendance {
@@ -562,8 +631,14 @@ enum IdentificationType {
 
 enum AssemblyStatus {
   SCHEDULED
+  IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum AssemblyQuorumType {
+  FIXED
+  PERCENTAGE
 }
 
 enum EventStatus {
@@ -604,6 +679,18 @@ enum PaymentStatus {
 }
 
 enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  SINPE_MOVIL
+  OTHER
+}
+
+enum DonationStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum DonationMethod {
   CASH
   BANK_TRANSFER
   SINPE_MOVIL
