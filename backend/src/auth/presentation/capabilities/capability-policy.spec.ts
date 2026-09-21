@@ -4,6 +4,15 @@ import {
 } from './capability-policy';
 
 describe('donation capability policy', () => {
+  it('grants institutional profile administration only to Administrador', () => {
+    for (const capability of ['adm.institutional-profile.read', 'adm.institutional-profile.update']) {
+      expect(hasCapability('Administrador', capability)).toBe(true);
+      expect(hasCapability('Tesorero', capability)).toBe(false);
+      expect(hasCapability('Gestor de Inventario', capability)).toBe(false);
+      expect(hasCapability('Vecino/Afiliado', capability)).toBe(false);
+      expect(hasCapability('Subscription_L1', capability)).toBe(false);
+    }
+  });
   it('grants DINADECO reporting only to Administrador and Tesorero', () => {
     expect(hasCapability('Administrador', 'fin.dinadeco.read')).toBe(true);
     expect(hasCapability('Tesorero', 'fin.dinadeco.read')).toBe(true);

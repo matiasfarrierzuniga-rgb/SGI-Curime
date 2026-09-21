@@ -149,6 +149,25 @@ model AuditLog {
   @@index([createdAt])
 }
 
+model InstitutionalProfile {
+  id                       Int                       @id @default(1)
+  legalName                String?
+  legalIdentification      String?
+  dinadecoRegistrationCode String?
+  dinadecoRegion           String?
+  organizationType         InstitutionalOrganizationType?
+  province                 String?
+  canton                   String?
+  district                 String?
+  locality                 String?
+  correspondenceAddress    String?
+  phone                    String?
+  telefax                  String?
+  email                    String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+}
+
 model PasswordResetToken {
   id        Int       @id @default(autoincrement())
   tokenHash String    @unique
@@ -755,4 +774,9 @@ enum InventoryLoanStatus {
   ACTIVE
   RETURNED
   CANCELLED
+}
+
+enum InstitutionalOrganizationType {
+  INTEGRAL
+  SPECIFIC
 }

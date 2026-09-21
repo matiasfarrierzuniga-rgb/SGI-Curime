@@ -16,6 +16,8 @@ describe('shared security access policy', () => {
       'adm.requests.read',
       'adm.assemblies.read',
       'adm.assemblies.manage',
+      'adm.institutional-profile.read',
+      'adm.institutional-profile.update',
       'adm.justifications.read',
       'abs.justifications.read',
       'aud.logs.read',
@@ -72,6 +74,15 @@ describe('shared security access policy', () => {
     expect(hasCapability('Tesorero', 'don.donations.delete')).toBe(false)
     expect(hasCapability('Tesorero', 'usr.users.read')).toBe(false)
     expect(hasCapability('Tesorero', 'res.reservations.read')).toBe(false)
+  })
+
+  it('grants institutional profile administration only to Administrador', () => {
+    expect(hasCapability('Administrador', 'adm.institutional-profile.read')).toBe(true)
+    expect(hasCapability('Administrador', 'adm.institutional-profile.update')).toBe(true)
+    for (const role of ['Tesorero', 'Gestor de Inventario', 'Vecino/Afiliado', 'Subscription_L1']) {
+      expect(hasCapability(role, 'adm.institutional-profile.read')).toBe(false)
+      expect(hasCapability(role, 'adm.institutional-profile.update')).toBe(false)
+    }
   })
 
   it('grants capabilities to role objects by name', () => {
