@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeftRight,
   Boxes,
+  Building2,
   CalendarCheck,
   CalendarDays,
   CalendarPlus,
@@ -107,6 +108,12 @@ const navigation: readonly ErpNavigationSection[] = [
         path: '/app/admin/assemblies',
         capability: 'adm.assemblies.read',
         icon: CalendarCheck,
+      },
+      {
+        label: 'Perfil institucional',
+        path: '/app/admin/institutional-profile',
+        capability: 'adm.institutional-profile.read',
+        icon: Building2,
       },
       {
         label: 'Eventos',

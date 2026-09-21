@@ -24,6 +24,7 @@ import { IdentityModule } from './identity/identity.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { FinancialModule } from './financial/financial.module';
 import { DonationsModule } from './donations/donations.module';
+import { InstitutionalProfileModule } from './institutional-profile/institutional-profile.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { DonationsModule } from './donations/donations.module';
     ReservationsModule,
     FinancialModule,
     DonationsModule,
+    InstitutionalProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -60,6 +60,7 @@ beforeEach(() => {
     if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
     if (url === '/financial/reports/dinadeco/annual') return Promise.resolve({ data: responseForDinadeco() })
     if (url === '/donations') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
+    if (url === '/institutional-profile') return Promise.resolve({ data: emptyInstitutionalProfile() })
     throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
   })
 })
@@ -348,7 +349,22 @@ describe('AppRoutes capability deep links', () => {
     renderRoute('/app/financial/dinadeco', 'Gestor de Inventario')
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
+
+  it('protects the institutional profile route for Administrador only', async () => {
+    renderRoute('/app/admin/institutional-profile', 'Administrador')
+    expect(await screen.findByRole('heading', { name: 'Perfil institucional' })).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/institutional-profile')
+  })
+
+  it('denies the institutional profile route to Tesorero', async () => {
+    renderRoute('/app/admin/institutional-profile', 'Tesorero')
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+  })
 })
+
+function emptyInstitutionalProfile() {
+  return { id: 1, legalName: null, legalIdentification: null, dinadecoRegistrationCode: null, dinadecoRegion: null, organizationType: null, province: null, canton: null, district: null, locality: null, correspondenceAddress: null, phone: null, telefax: null, email: null, createdAt: '2026-09-20T00:00:00.000Z', updatedAt: '2026-09-20T00:00:00.000Z' }
+}
 
 function responseForDinadeco() {
   const year = new Date().getFullYear()

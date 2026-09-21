@@ -16,6 +16,7 @@ describe('getErpNavigation', () => {
   { label: 'Solicitudes de afiliación', children: undefined },
   { label: 'Justificaciones de ausencia', children: undefined },
   { label: 'Asambleas', children: undefined },
+  { label: 'Perfil institucional', children: undefined },
   { label: 'Eventos', children: undefined }
 ] },
 
@@ -77,6 +78,12 @@ describe('getErpNavigation', () => {
     const requests = getErpNavigation('Administrador').flatMap((section) => section.items).find((item) => item.label === 'Solicitudes de afiliación')
 
     expect(requests).toMatchObject({ path: '/app/admin/requests', capability: 'adm.requests.read' })
+  })
+
+  it('shows institutional profile navigation only to Administrador', () => {
+    const findProfile = (role: string) => getErpNavigation(role).flatMap(section => section.items).find(item => item.label === 'Perfil institucional')
+    expect(findProfile('Administrador')).toMatchObject({ path: '/app/admin/institutional-profile', capability: 'adm.institutional-profile.read' })
+    for (const role of ['Tesorero', 'Gestor de Inventario', 'Vecino/Afiliado', 'Subscription_L1']) expect(findProfile(role)).toBeUndefined()
   })
 
   it('assigns event navigation to its management capability', () => {

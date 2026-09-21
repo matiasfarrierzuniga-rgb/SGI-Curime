@@ -29,6 +29,7 @@ Los estados de la matriz significan:
 | DERIVABLE | Se puede calcular o componer desde datos actuales; se explicitan límites y validaciones. |
 | MANUAL_REQUIRED | Declaración, decisión, firma, sello, recepción o dato de emisión que debe confirmar una persona. |
 | MISSING_MODEL | Falta persistencia con semántica suficiente, aunque exista texto libre o información personal reutilizable. |
+| MODEL_AVAILABLE / CAPTURE_PENDING | Existe una fuente canónica con el campo apropiado, pero el valor continúa vacío o pendiente de confirmación por la ADI. |
 | NOT_APPLICABLE | No corresponde a una entrada del sistema en este alcance; no se usa para ocultar un campo faltante. |
 
 «Automatizable» describe posibilidad con el sistema actual: «Sí» no implica generación implementada; «Parcial» exige revisión, conciliación o selección humana; «No» requiere intervención o datos/modelos nuevos. No se atribuyen cargos legales a usuarios a partir de sus roles de acceso.
@@ -59,14 +60,14 @@ Ubicaciones: encabezado A2, declaración institucional A5, anexo A6, detalle A7:
 | FIE | Documento de identidad de presidencia | `Person.identification`, `identificationType`; Affiliate legado | AVAILABLE | Parcial | Solo después de seleccionar y validar al titular; no es cédula jurídica. |
 | FIE | Nombre de quien ocupa tesorería | Person / Affiliate / User como candidatos; sin cargo legal | MISSING_MODEL | No | Un rol de acceso Tesorero no prueba nombramiento legal. |
 | FIE | Documento de identidad de tesorería | Person / Affiliate | AVAILABLE | Parcial | Selección humana del titular pendiente. |
-| FIE | Organización comunal denominada | Ninguna fuente institucional única | MISSING_MODEL | No | Nombre legal, no nombre de página o usuario. |
-| FIE | Cédula jurídica (etiqueta truncada) | Ninguna | MISSING_MODEL | No | Confirmar etiqueta y formato del original; no usar identificación personal. |
-| FIE | N° código de registro | Ninguna | MISSING_MODEL | No | Código DINADECO. |
-| FIE | Provincia | Ninguna fuente institucional | MISSING_MODEL | No | No inferir de dirección personal. |
-| FIE | Cantón | Ninguna fuente institucional | MISSING_MODEL | No | Requiere dato de organización validado. |
-| FIE | Distrito | Ninguna fuente institucional | MISSING_MODEL | No | Requiere dato de organización validado. |
-| FIE | Teléfono para notificaciones | Ninguna fuente institucional | MISSING_MODEL | No | Teléfonos personales no son sustituto automático. |
-| FIE | Correo para notificaciones | Ninguna fuente institucional | MISSING_MODEL | No | Cuenta de acceso no equivale al correo institucional. |
+| FIE | Organización comunal denominada | `InstitutionalProfile.legalName` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | El valor debe confirmarse; DINADECO todavía no consume el perfil. |
+| FIE | Cédula jurídica (etiqueta truncada) | `InstitutionalProfile.legalIdentification` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Confirmar etiqueta, valor y formato; no usar identificación personal. |
+| FIE | N° código de registro | `InstitutionalProfile.dinadecoRegistrationCode` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | El código debe ser cargado y validado por la ADI. |
+| FIE | Provincia | `InstitutionalProfile.province` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | No inferir del contenido público. |
+| FIE | Cantón | `InstitutionalProfile.canton` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Requiere captura institucional validada. |
+| FIE | Distrito | `InstitutionalProfile.district` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Requiere captura institucional validada. |
+| FIE | Teléfono para notificaciones | `InstitutionalProfile.phone` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | No se rellena desde teléfonos personales o contenido público. |
+| FIE | Correo para notificaciones | `InstitutionalProfile.email` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | No se rellena desde cuentas de acceso o contenido público. |
 | FIE | Entradas: descripción, posiciones 1–15 | `data.fie.entries`, FinancialMovement INCOME | AVAILABLE | Sí, como preparación | Detalle anual completo y ordenado; capacidad 15 y overflow explícito, sin agrupación ni omisión automática. |
 | FIE | Entradas: monto en colones | `data.fie.entries[].amount`, INCOME, CRC | AVAILABLE | Sí, como preparación | Dos decimales; cobertura real y estrategia oficial para más de quince filas siguen pendientes de validación. |
 | FIE | Salidas: descripción, quince espacios | `data.fie.exits`, FinancialMovement EXPENSE | AVAILABLE | Sí, como preparación | Detalle anual completo con capacidad 15 y overflow; no existen cuentas contables oficiales asociadas. |
@@ -97,13 +98,13 @@ Las filas que indican «FLFGirarISR / FLICemento» aplican individualmente a amb
 | --- | --- | --- | --- | --- | --- |
 | FLFGirarISR | Recursos del FONDO POR GIRAR | Ningún fondo/asignación | MISSING_MODEL | No | Origen institucional explícito en el título. |
 | FLICemento | Recursos provenientes del IMPUESTO AL CEMENTO | Ningún fondo/asignación | MISSING_MODEL | No | Origen distinto; no equivale a `FinancialMovementSource`. |
-| FLFGirarISR / FLICemento | Nombre de la organización | Ninguna fuente institucional | MISSING_MODEL | No | Nombre legal compartido. |
-| FLFGirarISR / FLICemento | Número de cédula jurídica | Ninguna | MISSING_MODEL | No | No confundir con Person. |
-| FLFGirarISR / FLICemento | Código de registro | Ninguna | MISSING_MODEL | No | DINADECO. |
-| FLFGirarISR / FLICemento | Región | Ninguna | MISSING_MODEL | No | Confirmar catálogo/región competente, sin inventarlo. |
-| FLFGirarISR / FLICemento | Provincia | Ninguna fuente institucional | MISSING_MODEL | No | Dato de organización. |
-| FLFGirarISR / FLICemento | Cantón | Ninguna fuente institucional | MISSING_MODEL | No | Dato de organización. |
-| FLFGirarISR / FLICemento | Distrito | Ninguna fuente institucional | MISSING_MODEL | No | Dato de organización. |
+| FLFGirarISR / FLICemento | Nombre de la organización | `InstitutionalProfile.legalName` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Nombre legal compartido pendiente de validación. |
+| FLFGirarISR / FLICemento | Número de cédula jurídica | `InstitutionalProfile.legalIdentification` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | No confundir con Person. |
+| FLFGirarISR / FLICemento | Código de registro | `InstitutionalProfile.dinadecoRegistrationCode` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Requiere captura validada. |
+| FLFGirarISR / FLICemento | Región | `InstitutionalProfile.dinadecoRegion` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Confirmar región competente. |
+| FLFGirarISR / FLICemento | Provincia | `InstitutionalProfile.province` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Dato institucional pendiente de validación. |
+| FLFGirarISR / FLICemento | Cantón | `InstitutionalProfile.canton` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Dato institucional pendiente de validación. |
+| FLFGirarISR / FLICemento | Distrito | `InstitutionalProfile.district` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Dato institucional pendiente de validación. |
 | FLFGirarISR / FLICemento | Fecha de entrega de recursos | Ninguna asignación de fondo | MISSING_MODEL | No | `occurredAt` podría documentar un ingreso, pero no acredita entrega específica. |
 | FLFGirarISR / FLICemento | Monto de recursos otorgados | Ninguna asignación de fondo | MISSING_MODEL | No | Suma de todos los ingresos no identifica monto otorgado. |
 | FLFGirarISR / FLICemento | Ordinal de gasto, 1–10 | Posición de fila | DERIVABLE | Sí | No es identificador persistente de factura o movimiento. |
@@ -137,21 +138,21 @@ Las filas que indican «FLFGirarISR / FLICemento» aplican individualmente a amb
 
 | Documento | Campo oficial | Fuente SGI-Curime | Estado | Automatizable | Observación |
 | --- | --- | --- | --- | --- | --- |
-| FRAG | Dirección Regional | Ninguna fuente institucional | MISSING_MODEL | No | Encabezado regional. |
+| FRAG | Dirección Regional | `InstitutionalProfile.dinadecoRegion` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Encabezado regional pendiente de validación. |
 | FRAG | Fecha del formulario | Fecha de emisión a confirmar | MANUAL_REQUIRED | Parcial | Es distinta de fecha de celebración; `generatedAt` no la certifica. |
-| FRAG | Nombre organización | Ninguna fuente institucional | MISSING_MODEL | No | Nombre legal. |
-| FRAG | Integral / Específica | Ninguna clasificación institucional | MISSING_MODEL | No | No equivale a `Affiliate.affiliateType`. |
-| FRAG | De (lugar) | Ninguna fuente institucional | MISSING_MODEL | No | Localidad de organización, distinta del lugar de sesión. |
-| FRAG | Código registro | Ninguna | MISSING_MODEL | No | DINADECO. |
+| FRAG | Nombre organización | `InstitutionalProfile.legalName` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Nombre legal pendiente de validación. |
+| FRAG | Integral / Específica | `InstitutionalProfile.organizationType` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | No equivale a `Affiliate.affiliateType`. |
+| FRAG | De (lugar) | `InstitutionalProfile.locality` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Localidad institucional distinta del lugar de sesión. |
+| FRAG | Código registro | `InstitutionalProfile.dinadecoRegistrationCode` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Código pendiente de validación. |
 | FRAG | Ordinaria / extraordinaria | `Assembly.type` | AVAILABLE | Parcial | Es String opcional, no enum que garantice estas opciones. |
 | FRAG | Convocada por 10 % de afiliados / Fiscalía / Junta Directiva | Ninguna autoridad convocante | MISSING_MODEL | No | Convocation representa destinatarios, no quién convoca. |
 | FRAG | Día, mes y año de celebración | `Assembly.date` | AVAILABLE | Parcial | Fecha programada; confirmar celebración efectiva y zona horaria. |
 | FRAG | Lugar de celebración | `Assembly.place` | AVAILABLE | Parcial | Confirmar lugar real si cambió respecto de programación. |
 | FRAG | Primera / segunda convocatoria | Ninguna | MISSING_MODEL | No | Cuórum fijo/porcentaje y `convenedAt` no representan ronda de convocatoria. |
 | FRAG | # afiliados presentes | Conteo `AssemblyAttendance.status = PRESENT` | DERIVABLE | Sí | Con registro completo y revisado de la asamblea seleccionada. |
-| FRAG | Dirección física para correspondencia | Ninguna fuente institucional | MISSING_MODEL | No | Dirección personal no sustituye dirección de organización. |
-| FRAG | Telefax | Ninguna fuente institucional | MISSING_MODEL | No | No se observa casilla telefónica institucional separada del telefax. |
-| FRAG | Correo electrónico | Ninguna fuente institucional | MISSING_MODEL | No | Correo de correspondencia. |
+| FRAG | Dirección física para correspondencia | `InstitutionalProfile.correspondenceAddress` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Dirección personal no sustituye dirección institucional. |
+| FRAG | Telefax | `InstitutionalProfile.telefax` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Valor pendiente de captura validada. |
+| FRAG | Correo electrónico | `InstitutionalProfile.email` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Correo institucional pendiente de validación. |
 | FRAG | Nombramiento total / parcial | Ninguna elección estructurada | MISSING_MODEL | No | No derivar del estado de asamblea. |
 | FRAG | Período Junta Directiva | Ninguna | MISSING_MODEL | No | Requiere vigencia de nombramientos. |
 | FRAG | Presidencia: nombre, identificación, Tel | Person / Affiliate para identidad; sin elección | MISSING_MODEL | Parcial | Identidad reutilizable si existe, designación no registrada. |
@@ -188,13 +189,13 @@ Las filas compartidas nombran expresamente los formularios a los que aplican. No
 | --- | --- | --- | --- | --- | --- |
 | FCIdoneidad: solicitud | Nombre de presidente solicitante | Identidad personal, sin representación institucional | MISSING_MODEL | Parcial | Falta nombramiento validado. |
 | FCIdoneidad: solicitud | Cédula de identidad | Person / Affiliate | AVAILABLE | Parcial | Tras seleccionar representante. |
-| FCIdoneidad: solicitud | Nombre completo organización como en cédula jurídica | Ninguna fuente institucional | MISSING_MODEL | No | El texto refiere Asociación de Desarrollo Integral. |
-| FCIdoneidad: solicitud | Cédula jurídica | Ninguna | MISSING_MODEL | No | No reconstruir desde prefijo impreso. |
+| FCIdoneidad: solicitud | Nombre completo organización como en cédula jurídica | `InstitutionalProfile.legalName` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Requiere confirmación de la ADI. |
+| FCIdoneidad: solicitud | Cédula jurídica | `InstitutionalProfile.legalIdentification` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | No reconstruir desde prefijo impreso; requiere confirmación. |
 | FCIdoneidad: solicitud | Solicitud para percibir recursos del 2 % ISR; Fondo por Girar / Fondo de Proyectos según corresponda | Ningún expediente de idoneidad | MANUAL_REQUIRED | No | Declaración impresa, no selector de montos ni prueba automática de requisitos. |
 | FCIdoneidad: cuatro declaraciones | Nombre de presidente | Identidad personal, sin representación institucional | MISSING_MODEL | Parcial | Titular y autorización por validar. |
 | FCIdoneidad: cuatro declaraciones | Documento de identidad | Person / Affiliate | AVAILABLE | Parcial | Sin valores personales en esta documentación. |
-| FCIdoneidad: cuatro declaraciones | Nombre completo organización | Ninguna fuente institucional | MISSING_MODEL | No | Reutilizable entre declaraciones cuando exista fuente validada. |
-| FCIdoneidad: cuatro declaraciones | Cédula jurídica | Ninguna | MISSING_MODEL | No | Grafías/prefijos del original varían; validar dato legal, no concatenar a ciegas. |
+| FCIdoneidad: cuatro declaraciones | Nombre completo organización | `InstitutionalProfile.legalName` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Reutilizable cuando el valor esté validado. |
+| FCIdoneidad: cuatro declaraciones | Cédula jurídica | `InstitutionalProfile.legalIdentification` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Grafías/prefijos del original varían; validar dato legal, no concatenar a ciegas. |
 | FCIdoneidad: reglamentos, libros y manejo fondos | Residente en | `Person.address` / `Affiliate.address` | AVAILABLE | Parcial | Domicilio del representante, no institucional; verificar vigencia. |
 | FCIdoneidad: reglamentos, libros y manejo fondos | Teléfono | Person descompuesto / Affiliate | AVAILABLE | Parcial | Contacto personal opcional, requiere confirmación. |
 | FCIdoneidad: reglamentos, libros y manejo fondos | Asamblea General número que autoriza | Ninguna numeración legal/autorización | MISSING_MODEL | No | `Assembly.id` no acredita número oficial ni acuerdo autorizante. |
@@ -253,7 +254,7 @@ Respuestas al contraste:
 1. **Qué ya sirve:** período anual, montos Decimal serializados con dos decimales, sumas INCOME/EXPENSE, neto, conteos, procedencia por source y metadata compartida. Los pagos confirmados de reservas crean movimientos RESERVATION_PAYMENT; donaciones crean movimiento DONATION y su cancelación genera reverso EXPENSE. El FIE no debe volver a sumar Payment/Donation además del movimiento.
 2. **Qué puede alimentar directamente la plantilla:** año, total de entradas y total de salidas del historial SGI. Las dos sumas de cierre de la fila 25 se exponen en `data.fie` con Decimal. openingBalance y closingBalance solo son candidatos después de validar integridad y conciliación. Las descripciones/montos de detalle anual se exponen completos en `fie.entries` y `fie.exits`.
 3. **Campos financieros faltantes:** saldo inicial oficial respaldado, discriminación de caja y banco, clasificación validada del detalle, cobertura de gastos fuera del sistema y criterios para reversos/ajustes. No hay fórmulas en FIE: C23:E25 contienen símbolos de moneda, no cálculos. No copiar resultados vacíos como cifras certificadas.
-4. **Datos institucionales faltantes:** nombre legal, cédula jurídica, código DINADECO, provincia/cantón/distrito y contactos institucionales; no existe fuente institucional única.
+4. **Datos institucionales:** existe `InstitutionalProfile` como fuente canónica, pero sus valores pueden seguir pendientes de captura/validación y DINADECO todavía no lo consume.
 5. **Cargos faltantes:** titular legal de presidencia y tesorería, nombramiento y vigencia. FIE no solicita la lista completa de Junta Directiva, aunque FRAG sí. Role controla acceso, no acredita cargo electo.
 6. **Firmas/sellos manuales:** firmas de presidencia y tesorería, sello ADI y sello de recepción; el juramento también debe ratificarse. No usar `metadata.generatedBy` como firmante legal.
 7. **Anexos sin soporte:** FIE exige expresamente copia de estado de cuenta con corte al 31 de diciembre. No existe expediente financiero de anexos. La UI menciona estados financieros adicionales cuando apliquen; el original observado no los enumera. Balance de situación, balance de comprobación y estado de resultados no están implementados y su exigibilidad para este caso queda pendiente, no se inventa como requisito del FIE.
@@ -396,27 +397,27 @@ No contiene la referencia de Asamblea/residencia/teléfono de las otras tres dec
 
 ## Datos institucionales de la organización
 
-No se encontró en el esquema Prisma actual un modelo único de organización legal, Junta Directiva o período de representación. Textos institucionales del frontend no son una fuente persistida y validada de esos datos. Person es identidad individual, Role es autorización y Assembly es evento de reunión.
+`InstitutionalProfile` es la fuente canónica persistida para los datos legales e institucionales de la Asociación. Su fila singleton existe con campos nullable, por lo que disponibilidad del modelo no demuestra que un valor haya sido capturado o validado. El contenido público no es fuente legal. Person es identidad individual, Role es autorización y Assembly es evento de reunión. No existe todavía un modelo de Junta Directiva o período de representación.
 
 | Dato institucional requerido | Estado actual | Evidencia / límite |
 | --- | --- | --- |
-| Nombre legal | MISSING_MODEL | No existe organización legal persistida. |
-| Cédula jurídica | MISSING_MODEL | Person/User/Affiliate almacenan identificación individual. |
-| Código registro DINADECO | MISSING_MODEL | No hay campo institucional. |
-| Región | MISSING_MODEL | No hay jurisdicción regional institucional. |
-| Provincia | MISSING_MODEL | Sin geografía de organización estructurada. |
-| Cantón | MISSING_MODEL | Mismo límite. |
-| Distrito | MISSING_MODEL | Mismo límite. |
-| Dirección de organización/correspondencia | MISSING_MODEL | Direcciones de Person/Affiliate no son dirección institucional. |
-| Teléfono / telefax | MISSING_MODEL | Contactos personales no son contactos institucionales. |
-| Correo | MISSING_MODEL | Correo de cuenta o persona no es fuente legal de organización. |
+| Nombre legal | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.legalName`; requiere confirmación de la ADI. |
+| Cédula jurídica | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.legalIdentification`; no usar identificación individual. |
+| Código registro DINADECO | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.dinadecoRegistrationCode`. |
+| Región | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.dinadecoRegion`. |
+| Provincia | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.province`. |
+| Cantón | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.canton`. |
+| Distrito | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.district`. |
+| Dirección de organización/correspondencia | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.correspondenceAddress`. |
+| Teléfono / telefax | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.phone` y `telefax`. |
+| Correo | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.email`. |
 | Junta Directiva vigente | MISSING_MODEL | Sin designaciones, posiciones o vigencias. |
 | Presidente | MISSING_MODEL | Personas existentes pueden ser candidatos; no hay titular legal registrado. |
 | Tesorero | MISSING_MODEL | Role Tesorero no acredita titular legal. |
 | Período Junta Directiva | MISSING_MODEL | No existe mandato institucional. |
-| Integral / Específica y localidad | MISSING_MODEL | Requerido por FRAG, sin clasificación institucional. |
+| Integral / Específica y localidad | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.organizationType` y `locality`; ambos requieren confirmación. |
 
-Esta brecha compartida afecta FIE, ambas liquidaciones, FRAG y los cinco formularios de idoneidad. No se creó un modelo ni se fijó un catálogo de cargos/regiones; la validación institucional debe preceder a su diseño.
+El modelo institucional cubre la persistencia canónica mínima compartida, pero DINADECO/FIE todavía no lo consume y sus valores no se precargan desde branding público. La brecha de Junta Directiva, representación y vigencias permanece; no se fijó un catálogo de cargos o regiones.
 
 ## Pendientes de interpretación y follow-ups documentales
 
