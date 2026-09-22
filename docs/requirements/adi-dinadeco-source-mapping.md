@@ -60,14 +60,14 @@ Ubicaciones: encabezado A2, declaración institucional A5, anexo A6, detalle A7:
 | FIE | Documento de identidad de presidencia | `Person.identification`, `identificationType`; Affiliate legado | AVAILABLE | Parcial | Solo después de seleccionar y validar al titular; no es cédula jurídica. |
 | FIE | Nombre de quien ocupa tesorería | Person / Affiliate / User como candidatos; sin cargo legal | MISSING_MODEL | No | Un rol de acceso Tesorero no prueba nombramiento legal. |
 | FIE | Documento de identidad de tesorería | Person / Affiliate | AVAILABLE | Parcial | Selección humana del titular pendiente. |
-| FIE | Organización comunal denominada | `InstitutionalProfile.legalName` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | El valor debe confirmarse; DINADECO todavía no consume el perfil. |
-| FIE | Cédula jurídica (etiqueta truncada) | `InstitutionalProfile.legalIdentification` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Confirmar etiqueta, valor y formato; no usar identificación personal. |
-| FIE | N° código de registro | `InstitutionalProfile.dinadecoRegistrationCode` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | El código debe ser cargado y validado por la ADI. |
-| FIE | Provincia | `InstitutionalProfile.province` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | No inferir del contenido público. |
-| FIE | Cantón | `InstitutionalProfile.canton` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Requiere captura institucional validada. |
-| FIE | Distrito | `InstitutionalProfile.district` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Requiere captura institucional validada. |
-| FIE | Teléfono para notificaciones | `InstitutionalProfile.phone` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | No se rellena desde teléfonos personales o contenido público. |
-| FIE | Correo para notificaciones | `InstitutionalProfile.email` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | No se rellena desde cuentas de acceso o contenido público. |
+| FIE | Organización comunal denominada | `data.institutionalProfile.legalName` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | El reporte consume el valor canónico; debe confirmarse por la Asociación. |
+| FIE | Cédula jurídica (etiqueta truncada) | `data.institutionalProfile.legalIdentification` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | Confirmar etiqueta, valor y formato; no usar identificación personal. |
+| FIE | N° código de registro | `data.institutionalProfile.dinadecoRegistrationCode` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | El código debe ser cargado y validado por la Asociación. |
+| FIE | Provincia | `data.institutionalProfile.province` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | No inferir del contenido público. |
+| FIE | Cantón | `data.institutionalProfile.canton` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | Requiere captura institucional validada. |
+| FIE | Distrito | `data.institutionalProfile.district` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | Requiere captura institucional validada. |
+| FIE | Teléfono para notificaciones | `data.institutionalProfile.phone` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | No se rellena desde teléfonos personales o contenido público. |
+| FIE | Correo para notificaciones | `data.institutionalProfile.email` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | No se rellena desde cuentas de acceso o contenido público. |
 | FIE | Entradas: descripción, posiciones 1–15 | `data.fie.entries`, FinancialMovement INCOME | AVAILABLE | Sí, como preparación | Detalle anual completo y ordenado; capacidad 15 y overflow explícito, sin agrupación ni omisión automática. |
 | FIE | Entradas: monto en colones | `data.fie.entries[].amount`, INCOME, CRC | AVAILABLE | Sí, como preparación | Dos decimales; cobertura real y estrategia oficial para más de quince filas siguen pendientes de validación. |
 | FIE | Salidas: descripción, quince espacios | `data.fie.exits`, FinancialMovement EXPENSE | AVAILABLE | Sí, como preparación | Detalle anual completo con capacidad 15 y overflow; no existen cuentas contables oficiales asociadas. |
@@ -254,7 +254,7 @@ Respuestas al contraste:
 1. **Qué ya sirve:** período anual, montos Decimal serializados con dos decimales, sumas INCOME/EXPENSE, neto, conteos, procedencia por source y metadata compartida. Los pagos confirmados de reservas crean movimientos RESERVATION_PAYMENT; donaciones crean movimiento DONATION y su cancelación genera reverso EXPENSE. El FIE no debe volver a sumar Payment/Donation además del movimiento.
 2. **Qué puede alimentar directamente la plantilla:** año, total de entradas y total de salidas del historial SGI. Las dos sumas de cierre de la fila 25 se exponen en `data.fie` con Decimal. openingBalance y closingBalance solo son candidatos después de validar integridad y conciliación. Las descripciones/montos de detalle anual se exponen completos en `fie.entries` y `fie.exits`.
 3. **Campos financieros faltantes:** saldo inicial oficial respaldado, discriminación de caja y banco, clasificación validada del detalle, cobertura de gastos fuera del sistema y criterios para reversos/ajustes. No hay fórmulas en FIE: C23:E25 contienen símbolos de moneda, no cálculos. No copiar resultados vacíos como cifras certificadas.
-4. **Datos institucionales:** existe `InstitutionalProfile` como fuente canónica, pero sus valores pueden seguir pendientes de captura/validación y DINADECO todavía no lo consume.
+4. **Datos institucionales:** `InstitutionalProfile` es la fuente canónica consumida por el reporte DINADECO; sus valores nullable pueden seguir en `CAPTURE_PENDING` hasta que la Asociación los capture o valide.
 5. **Cargos faltantes:** titular legal de presidencia y tesorería, nombramiento y vigencia. FIE no solicita la lista completa de Junta Directiva, aunque FRAG sí. Role controla acceso, no acredita cargo electo.
 6. **Firmas/sellos manuales:** firmas de presidencia y tesorería, sello ADI y sello de recepción; el juramento también debe ratificarse. No usar `metadata.generatedBy` como firmante legal.
 7. **Anexos sin soporte:** FIE exige expresamente copia de estado de cuenta con corte al 31 de diciembre. No existe expediente financiero de anexos. La UI menciona estados financieros adicionales cuando apliquen; el original observado no los enumera. Balance de situación, balance de comprobación y estado de resultados no están implementados y su exigibilidad para este caso queda pendiente, no se inventa como requisito del FIE.
@@ -417,7 +417,7 @@ No contiene la referencia de Asamblea/residencia/teléfono de las otras tres dec
 | Período Junta Directiva | MISSING_MODEL | No existe mandato institucional. |
 | Integral / Específica y localidad | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.organizationType` y `locality`; ambos requieren confirmación. |
 
-El modelo institucional cubre la persistencia canónica mínima compartida, pero DINADECO/FIE todavía no lo consume y sus valores no se precargan desde branding público. La brecha de Junta Directiva, representación y vigencias permanece; no se fijó un catálogo de cargos o regiones.
+El modelo institucional cubre la persistencia canónica mínima compartida y el reporte DINADECO lo consume en `data.institutionalProfile`, sin precargar valores desde branding público. `FinancialMovement` permanece como fuente financiera; `metadata.dataSource = FINANCIAL_MOVEMENT` describe esa fuente financiera. Los valores `null` conservan el estado `CAPTURE_PENDING`. La brecha de Junta Directiva, representación y vigencias permanece; no se fijó un catálogo de cargos o regiones.
 
 ## Pendientes de interpretación y follow-ups documentales
 

@@ -1,6 +1,9 @@
-import { CalendarDays, FileText, Landmark, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
+import { Building2, CalendarDays, FileText, Landmark, Pencil, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { ErrorState } from '@/shared/ui/ErrorState'
@@ -8,15 +11,17 @@ import { LoadingState } from '@/shared/ui/LoadingState'
 import { MetricCard } from '@/shared/ui/MetricCard'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { useDinadecoAnnualReport } from '../hooks/useFinancial'
-import type { DinadecoFieLine, FinancialMovementSource } from '../model/financial.types'
+import type { DinadecoFieLine, DinadecoInstitutionalProfile, FinancialMovementSource } from '../model/financial.types'
 import { financialMovementSourceLabel, formatFinancialCurrency, formatFinancialDate } from './financialPresentation'
 
 const currentYear = new Date().getFullYear()
 const availableYears = Array.from({ length: currentYear - 1899 }, (_, index) => currentYear - index)
 
 export function DinadecoAnnualReportPage() {
+  const { user } = useAuth()
   const [year, setYear] = useState(currentYear)
   const report = useDinadecoAnnualReport(year)
+  const mayEditInstitutionalProfile = hasCapability(user?.role, 'adm.institutional-profile.read')
 
   return (
     <div className="space-y-7">
@@ -41,12 +46,12 @@ export function DinadecoAnnualReportPage() {
           action={<Button variant="outline" onClick={() => void report.refetch()}>Reintentar</Button>}
         />
       )}
-      {report.data && <ReportContent report={report.data} />}
+      {report.data && <ReportContent report={report.data} mayEditInstitutionalProfile={mayEditInstitutionalProfile} />}
     </div>
   )
 }
 
-function ReportContent({ report }: { report: NonNullable<ReturnType<typeof useDinadecoAnnualReport>['data']> }) {
+function ReportContent({ report, mayEditInstitutionalProfile }: { report: NonNullable<ReturnType<typeof useDinadecoAnnualReport>['data']>; mayEditInstitutionalProfile: boolean }) {
   const { data, metadata } = report
   return (
     <>
@@ -64,6 +69,8 @@ function ReportContent({ report }: { report: NonNullable<ReturnType<typeof useDi
         <SourceBreakdown title="Entradas del período" sources={data.income.bySource} />
         <SourceBreakdown title="Salidas del período" sources={data.expenses.bySource} />
       </div>
+
+      <InstitutionalProfileCard profile={data.institutionalProfile} mayEdit={mayEditInstitutionalProfile} />
 
       <Card>
         <CardHeader><CardTitle>Información del reporte</CardTitle><CardDescription>Datos de generación y alcance temporal.</CardDescription></CardHeader>
@@ -102,13 +109,61 @@ function ReportContent({ report }: { report: NonNullable<ReturnType<typeof useDi
         <CardHeader><CardTitle>Documentación complementaria</CardTitle></CardHeader>
         <CardContent className="space-y-3 text-sm text-foreground-muted">
           <p>El saldo inicial y el saldo final son derivados del historial disponible en SGI-Curime. No existe conciliación bancaria en este incremento ni se distingue automáticamente caja física de cuentas bancarias; estos valores no son saldos oficiales conciliados.</p>
-          <p>Los datos institucionales y de presidencia/tesorería, firmas, sello, anexo bancario y recepción por DINADECO siguen pendientes de captura o validación manual y fuera del alcance de esta preparación.</p>
+          <p>Los datos institucionales mostrados provienen del Perfil institucional. Los campos marcados como “Pendiente de cargar” aún requieren captura o validación por la Asociación.</p>
+          <p>La presidencia y tesorería legal, las firmas, el sello, los anexos bancarios y la recepción por DINADECO continúan fuera del alcance de esta preparación.</p>
           <p>El Informe Económico presentado a DINADECO requiere documentación de respaldo, incluido el estado de cuenta bancario correspondiente al cierre anual y, cuando aplique, estados financieros adicionales.</p>
           <p>Esta vista agrupa los movimientos registrados en SGI-Curime por su fuente operativa. Es una base para preparar el informe; todavía no clasifica cuentas, folios ni un catálogo contable DINADECO, y no genera el formulario oficial.</p>
         </CardContent>
       </Card>
     </>
   )
+}
+
+function InstitutionalProfileCard({ profile, mayEdit }: { profile: DinadecoInstitutionalProfile; mayEdit: boolean }) {
+  const fields = [
+    ['Nombre legal', profile.legalName],
+    ['Cédula jurídica', profile.legalIdentification],
+    ['Registro DINADECO', profile.dinadecoRegistrationCode],
+    ['Región', profile.dinadecoRegion],
+    ['Tipo', organizationTypeLabel(profile.organizationType)],
+    ['Provincia', profile.province],
+    ['Cantón', profile.canton],
+    ['Distrito', profile.district],
+    ['Localidad', profile.locality],
+    ['Dirección de correspondencia', profile.correspondenceAddress],
+    ['Teléfono', profile.phone],
+    ['Telefax', profile.telefax],
+    ['Correo institucional', profile.email],
+  ] as const
+
+  return (
+    <section aria-labelledby="institutional-profile-title">
+      <Card>
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4">
+          <div>
+            <CardTitle><h2 id="institutional-profile-title" className="flex items-center gap-2"><Building2 aria-hidden="true" />Información institucional</h2></CardTitle>
+            <CardDescription>Identidad de la Asociación utilizada para preparar el reporte DINADECO.</CardDescription>
+          </div>
+          {mayEdit && <Button nativeButton={false} render={<Link to="/app/admin/institutional-profile" />} variant="outline" size="sm"><Pencil aria-hidden="true" />Editar perfil institucional</Button>}
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+            {fields.map(([label, value]) => <InstitutionalDatum key={label} label={label} value={value} />)}
+          </dl>
+        </CardContent>
+      </Card>
+    </section>
+  )
+}
+
+function InstitutionalDatum({ label, value }: { label: string; value: string | null }) {
+  return <div><dt className="text-sm text-foreground-muted">{label}</dt><dd className="mt-1 font-semibold text-text-primary">{value ?? 'Pendiente de cargar'}</dd></div>
+}
+
+function organizationTypeLabel(value: DinadecoInstitutionalProfile['organizationType']) {
+  if (value === 'INTEGRAL') return 'Integral'
+  if (value === 'SPECIFIC') return 'Específica'
+  return null
 }
 
 function FieMovements({ title, lines, count, capacity, overflow, direction }: { title: string; lines: DinadecoFieLine[]; count: number; capacity: number; overflow: boolean; direction: string }) {

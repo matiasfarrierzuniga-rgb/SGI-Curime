@@ -25,14 +25,32 @@ describe('DINADECO annual report (e2e)', () => {
   };
   const prisma = {
     financialMovement: { groupBy: jest.fn(), findMany: jest.fn() },
-    $transaction: jest.fn((operations: Promise<unknown>[]) =>
-      Promise.all(operations),
-    ),
+    institutionalProfile: { findUniqueOrThrow: jest.fn() },
+    $transaction: jest.fn((work: (client: unknown) => unknown) => work(prisma)),
+  };
+
+  const institutionalProfile = {
+    legalName: 'Asociación Integral de Prueba',
+    legalIdentification: '3-002-999999',
+    dinadecoRegistrationCode: 'REG-TEST-001',
+    dinadecoRegion: 'Región ficticia',
+    organizationType: 'INTEGRAL',
+    province: 'Provincia ficticia',
+    canton: 'Cantón ficticio',
+    district: 'Distrito ficticio',
+    locality: 'Localidad ficticia',
+    correspondenceAddress: 'Dirección ficticia 100 metros norte',
+    phone: '+506 2000-0000',
+    telefax: '+506 2000-0001',
+    email: 'institucional@example.test',
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     account = authAccount('Administrador');
+    prisma.institutionalProfile.findUniqueOrThrow.mockResolvedValue(
+      institutionalProfile,
+    );
     prisma.financialMovement.groupBy
       .mockResolvedValueOnce([
         {
@@ -73,7 +91,9 @@ describe('DINADECO annual report (e2e)', () => {
       },
     ]);
 
-    const module = await Test.createTestingModule({ imports: [FinancialModule] })
+    const module = await Test.createTestingModule({
+      imports: [FinancialModule],
+    })
       .overrideProvider(PrismaService)
       .useValue(prisma)
       .overrideProvider(AUTH_REPOSITORY)
@@ -105,104 +125,153 @@ describe('DINADECO annual report (e2e)', () => {
     ['Gestor de Inventario', true],
     ['Vecino/Afiliado', true],
     ['Subscription_L1', false],
-  ] as const)('returns 403 for authenticated role %s without capability', async (role, hasAffiliate) => {
-    account = authAccount(role, hasAffiliate);
+  ] as const)(
+    'returns 403 for authenticated role %s without capability',
+    async (role, hasAffiliate) => {
+      account = authAccount(role, hasAffiliate);
 
-    await request(app.getHttpServer())
-      .get('/financial/reports/dinadeco/annual?year=2026')
-      .set('Authorization', await authorization())
-      .expect(403);
-  });
+      await request(app.getHttpServer())
+        .get('/financial/reports/dinadeco/annual?year=2026')
+        .set('Authorization', await authorization())
+        .expect(403);
+    },
+  );
 
   it.each([
     ['Administrador', false],
     ['Tesorero', true],
-  ] as const)('returns the annual report for %s', async (role, hasAffiliate) => {
-    account = authAccount(role, hasAffiliate);
+  ] as const)(
+    'returns the annual report for %s',
+    async (role, hasAffiliate) => {
+      account = authAccount(role, hasAffiliate);
+
+      const response = await request(app.getHttpServer())
+        .get('/financial/reports/dinadeco/annual?year=2026')
+        .set('Authorization', await authorization())
+        .expect(200);
+
+      expect(response.body).toEqual({
+        metadata: expect.objectContaining({
+          generatedAt: expect.any(String),
+          generatedBy: { id: 1, fullName: `Usuario ${role}` },
+          period: {
+            from: '2026-01-01T00:00:00.000Z',
+            to: '2027-01-01T00:00:00.000Z',
+          },
+          appliedFilters: { year: 2026 },
+          dataSource: 'FINANCIAL_MOVEMENT',
+          reportVersion: '1.0',
+        }),
+        data: {
+          year: 2026,
+          currency: 'CRC',
+          openingBalance: '1000.00',
+          income: {
+            total: '250.00',
+            count: 1,
+            bySource: { DONATION: { total: '250.00', count: 1 } },
+          },
+          expenses: {
+            total: '50.00',
+            count: 1,
+            bySource: { MANUAL: { total: '50.00', count: 1 } },
+          },
+          netMovement: '200.00',
+          closingBalance: '1200.00',
+          movementCount: 2,
+          institutionalProfile,
+          fie: {
+            entries: [
+              {
+                id: 101,
+                description: 'Ingreso ficticio para prueba E2E',
+                amount: '250.00',
+                occurredAt: '2026-03-15T14:30:00.000Z',
+                source: 'DONATION',
+              },
+            ],
+            exits: [
+              {
+                id: 102,
+                description: 'Egreso ficticio para prueba E2E',
+                amount: '50.00',
+                occurredAt: '2026-04-20T16:45:00.000Z',
+                source: 'MANUAL',
+              },
+            ],
+            capacity: {
+              entryCount: 1,
+              exitCount: 1,
+              entryCapacity: 15,
+              exitCapacity: 15,
+              entryOverflow: false,
+              exitOverflow: false,
+            },
+            totalIncomePlusOpeningBalance: '1250.00',
+            totalExpensesPlusClosingBalance: '1250.00',
+          },
+        },
+      });
+      expect(response.body.data.institutionalProfile).not.toHaveProperty('id');
+      expect(response.body.data.institutionalProfile).not.toHaveProperty(
+        'createdAt',
+      );
+      expect(response.body.data.institutionalProfile).not.toHaveProperty(
+        'updatedAt',
+      );
+    },
+  );
+
+  it('preserves null institutional values without failing the report', async () => {
+    prisma.institutionalProfile.findUniqueOrThrow.mockResolvedValue(
+      Object.fromEntries(
+        Object.keys(institutionalProfile).map((field) => [field, null]),
+      ),
+    );
 
     const response = await request(app.getHttpServer())
       .get('/financial/reports/dinadeco/annual?year=2026')
       .set('Authorization', await authorization())
       .expect(200);
 
-    expect(response.body).toEqual({
-      metadata: expect.objectContaining({
-        generatedAt: expect.any(String),
-        generatedBy: { id: 1, fullName: `Usuario ${role}` },
-        period: {
-          from: '2026-01-01T00:00:00.000Z',
-          to: '2027-01-01T00:00:00.000Z',
-        },
-        appliedFilters: { year: 2026 },
-        dataSource: 'FINANCIAL_MOVEMENT',
-        reportVersion: '1.0',
-      }),
-      data: {
-        year: 2026,
-        currency: 'CRC',
-        openingBalance: '1000.00',
-        income: {
-          total: '250.00',
-          count: 1,
-          bySource: { DONATION: { total: '250.00', count: 1 } },
-        },
-        expenses: {
-          total: '50.00',
-          count: 1,
-          bySource: { MANUAL: { total: '50.00', count: 1 } },
-        },
-        netMovement: '200.00',
-        closingBalance: '1200.00',
-        movementCount: 2,
-        fie: {
-          entries: [
-            {
-              id: 101,
-              description: 'Ingreso ficticio para prueba E2E',
-              amount: '250.00',
-              occurredAt: '2026-03-15T14:30:00.000Z',
-              source: 'DONATION',
-            },
-          ],
-          exits: [
-            {
-              id: 102,
-              description: 'Egreso ficticio para prueba E2E',
-              amount: '50.00',
-              occurredAt: '2026-04-20T16:45:00.000Z',
-              source: 'MANUAL',
-            },
-          ],
-          capacity: {
-            entryCount: 1,
-            exitCount: 1,
-            entryCapacity: 15,
-            exitCapacity: 15,
-            entryOverflow: false,
-            exitOverflow: false,
-          },
-          totalIncomePlusOpeningBalance: '1250.00',
-          totalExpensesPlusClosingBalance: '1250.00',
-        },
-      },
-    });
+    expect(response.body.data.institutionalProfile).toEqual(
+      Object.fromEntries(
+        Object.keys(institutionalProfile).map((field) => [field, null]),
+      ),
+    );
+    expect(response.body.data.closingBalance).toBe('1200.00');
   });
 
-  it.each(['abc', '26', '2026.5'])('returns 400 for invalid year %s', async (year) => {
-    await request(app.getHttpServer())
-      .get(`/financial/reports/dinadeco/annual?year=${year}`)
-      .set('Authorization', await authorization())
-      .expect(400);
-  });
+  it.each(['abc', '26', '2026.5'])(
+    'returns 400 for invalid year %s',
+    async (year) => {
+      await request(app.getHttpServer())
+        .get(`/financial/reports/dinadeco/annual?year=${year}`)
+        .set('Authorization', await authorization())
+        .expect(400);
+    },
+  );
 
   function authorization() {
-    return jwt.signAsync({ sub: account.id, email: account.email, role: account.roleName })
+    return jwt
+      .signAsync({
+        sub: account.id,
+        email: account.email,
+        role: account.roleName,
+      })
       .then((token) => `Bearer ${token}`);
   }
 });
 
 function authAccount(roleName: string, hasAffiliate = false): AuthAccount {
-  const roleId = roleName === 'Administrador' ? 1 : roleName === 'Tesorero' ? 2 : roleName === 'Gestor de Inventario' ? 3 : 4;
+  const roleId =
+    roleName === 'Administrador'
+      ? 1
+      : roleName === 'Tesorero'
+        ? 2
+        : roleName === 'Gestor de Inventario'
+          ? 3
+          : 4;
   return {
     id: 1,
     email: 'user@curime.test',

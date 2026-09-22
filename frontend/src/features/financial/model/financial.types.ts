@@ -80,6 +80,21 @@ export const FINANCIAL_MOVEMENT_TYPES: readonly FinancialMovementType[] = ['INCO
 
 export type DinadecoSourceSummary = { total: string; count: number }
 export type DinadecoFieLine = Pick<FinancialMovement, 'id' | 'description' | 'amount' | 'occurredAt' | 'source'>
+export type DinadecoInstitutionalProfile = {
+  legalName: string | null
+  legalIdentification: string | null
+  dinadecoRegistrationCode: string | null
+  dinadecoRegion: string | null
+  organizationType: 'INTEGRAL' | 'SPECIFIC' | null
+  province: string | null
+  canton: string | null
+  district: string | null
+  locality: string | null
+  correspondenceAddress: string | null
+  phone: string | null
+  telefax: string | null
+  email: string | null
+}
 export type DinadecoAnnualReport = {
   metadata: {
     generatedAt: string
@@ -98,6 +113,7 @@ export type DinadecoAnnualReport = {
     netMovement: string
     closingBalance: string
     movementCount: number
+    institutionalProfile: DinadecoInstitutionalProfile
     fie: {
       entries: DinadecoFieLine[]
       exits: DinadecoFieLine[]

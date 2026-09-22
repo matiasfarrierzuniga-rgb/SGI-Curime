@@ -5,6 +5,7 @@ import {
   Prisma,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { InstitutionalProfileService } from '../institutional-profile/institutional-profile.service';
 import {
   buildReportMetadata,
   type ReportGeneratedBy,
@@ -27,41 +28,46 @@ type MovementSummary = {
 
 @Injectable()
 export class DinadecoReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly institutionalProfile: InstitutionalProfileService,
+  ) {}
 
   async annual(year: number, generatedBy: ReportGeneratedBy) {
     const from = new Date(Date.UTC(year, 0, 1));
     const to = new Date(Date.UTC(year + 1, 0, 1));
     // Keep aggregate and detail on the same snapshot during concurrent writes.
-    const [openingGroups, annualGroups, movements] =
+    const [institutionalProfile, openingGroups, annualGroups, movements] =
       await this.prisma.$transaction(
-        [
-          this.prisma.financialMovement.groupBy({
-            by: ['type'],
-            orderBy: { type: 'asc' },
-            where: { occurredAt: { lt: from } },
-            _sum: { amount: true },
-          }),
-          this.prisma.financialMovement.groupBy({
-            by: ['type', 'source'],
-            orderBy: [{ type: 'asc' }, { source: 'asc' }],
-            where: { occurredAt: { gte: from, lt: to } },
-            _sum: { amount: true },
-            _count: { _all: true },
-          }),
-          this.prisma.financialMovement.findMany({
-            where: { occurredAt: { gte: from, lt: to } },
-            orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }],
-            select: {
-              id: true,
-              type: true,
-              description: true,
-              amount: true,
-              occurredAt: true,
-              source: true,
-            },
-          }),
-        ],
+        async (tx) =>
+          Promise.all([
+            this.institutionalProfile.getForReport(tx),
+            tx.financialMovement.groupBy({
+              by: ['type'],
+              orderBy: { type: 'asc' },
+              where: { occurredAt: { lt: from } },
+              _sum: { amount: true },
+            }),
+            tx.financialMovement.groupBy({
+              by: ['type', 'source'],
+              orderBy: [{ type: 'asc' }, { source: 'asc' }],
+              where: { occurredAt: { gte: from, lt: to } },
+              _sum: { amount: true },
+              _count: { _all: true },
+            }),
+            tx.financialMovement.findMany({
+              where: { occurredAt: { gte: from, lt: to } },
+              orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }],
+              select: {
+                id: true,
+                type: true,
+                description: true,
+                amount: true,
+                occurredAt: true,
+                source: true,
+              },
+            }),
+          ]),
         { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
       );
 
@@ -118,6 +124,7 @@ export class DinadecoReportsService {
         netMovement: netMovement.toFixed(2),
         closingBalance: closingBalance.toFixed(2),
         movementCount: income.count + expenses.count,
+        institutionalProfile,
         fie: {
           entries,
           exits,

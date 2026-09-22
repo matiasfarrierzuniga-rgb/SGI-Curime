@@ -1,10 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { httpClient } from '@/shared/api/httpClient'
 import { DinadecoAnnualReportPage } from './DinadecoAnnualReportPage'
 
 vi.mock('@/shared/api/httpClient', () => ({ httpClient: { get: vi.fn() } }))
+let role = 'Administrador'
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role } }) }))
 
 const currentYear = new Date().getFullYear()
 const response = {
@@ -25,6 +28,21 @@ const response = {
     netMovement: '65000.50',
     closingBalance: '190000.50',
     movementCount: 4,
+    institutionalProfile: {
+      legalName: 'Asociación Integral de Prueba',
+      legalIdentification: '3-002-999999',
+      dinadecoRegistrationCode: 'REG-TEST-001',
+      dinadecoRegion: 'Región ficticia',
+      organizationType: 'INTEGRAL',
+      province: 'Provincia ficticia',
+      canton: 'Cantón ficticio',
+      district: 'Distrito ficticio',
+      locality: 'Localidad ficticia',
+      correspondenceAddress: 'Dirección ficticia 100 metros norte',
+      phone: '+506 2000-0000',
+      telefax: '+506 2000-0001',
+      email: 'institucional@example.test',
+    },
     fie: {
       entries: [
         { id: 1, description: 'Entrada ficticia', amount: '25000.50', occurredAt: '2026-02-01T12:00:00.000Z', source: 'MANUAL' },
@@ -41,10 +59,14 @@ const response = {
 
 function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(<QueryClientProvider client={client}><DinadecoAnnualReportPage /></QueryClientProvider>)
+  return render(<MemoryRouter><QueryClientProvider client={client}><DinadecoAnnualReportPage /></QueryClientProvider></MemoryRouter>)
 }
 
 describe('DinadecoAnnualReportPage', () => {
+  beforeEach(() => {
+    role = 'Administrador'
+  })
+
   it('renders the initial loading state for the current year', () => {
     vi.mocked(httpClient.get).mockReturnValue(new Promise(() => {}))
     renderPage()
@@ -81,7 +103,55 @@ describe('DinadecoAnnualReportPage', () => {
     expect(screen.getByText('1 de 15 movimientos de salida')).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByText(/No existe conciliación bancaria.*caja física de cuentas bancarias/)).toBeInTheDocument()
-    expect(screen.getByText(/datos institucionales.*pendientes de captura o validación manual/)).toBeInTheDocument()
+    expect(screen.getByText(/datos institucionales mostrados provienen del Perfil institucional/)).toBeInTheDocument()
+    expect(screen.getByText(/presidencia y tesorería legal.*continúan fuera del alcance/)).toBeInTheDocument()
+  })
+
+  it('renders the complete institutional profile and admin edit link', async () => {
+    vi.mocked(httpClient.get).mockResolvedValue({ data: response })
+    renderPage()
+
+    const section = await screen.findByRole('heading', { name: 'Información institucional' })
+    const card = section.closest('section')!
+    for (const label of ['Nombre legal', 'Cédula jurídica', 'Registro DINADECO', 'Región', 'Tipo', 'Provincia', 'Cantón', 'Distrito', 'Localidad', 'Dirección de correspondencia', 'Teléfono', 'Telefax', 'Correo institucional']) {
+      expect(within(card).getByText(label)).toBeInTheDocument()
+    }
+    expect(within(card).getByText('Asociación Integral de Prueba')).toBeInTheDocument()
+    expect(within(card).getByText('Integral')).toBeInTheDocument()
+    expect(within(card).getByText('institucional@example.test')).toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: 'Editar perfil institucional' })).toHaveAttribute('href', '/app/admin/institutional-profile')
+  })
+
+  it('shows pending values and the SPECIFIC label without exposing admin controls to the treasurer', async () => {
+    role = 'Tesorero'
+    const fixture = structuredClone(response)
+    fixture.data.institutionalProfile = {
+      ...fixture.data.institutionalProfile,
+      legalIdentification: null,
+      dinadecoRegistrationCode: null,
+      organizationType: 'SPECIFIC',
+    }
+    vi.mocked(httpClient.get).mockResolvedValue({ data: fixture })
+    renderPage()
+
+    expect(await screen.findByText('Específica')).toBeInTheDocument()
+    expect(screen.getAllByText('Pendiente de cargar')).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: 'Editar perfil institucional' })).not.toBeInTheDocument()
+  })
+
+  it('renders a completely empty institutional profile without affecting financial content', async () => {
+    const fixture = structuredClone(response)
+    fixture.data.institutionalProfile = Object.fromEntries(
+      Object.keys(fixture.data.institutionalProfile).map((field) => [field, null]),
+    ) as typeof fixture.data.institutionalProfile
+    vi.mocked(httpClient.get).mockResolvedValue({ data: fixture })
+    renderPage()
+
+    expect(await screen.findByRole('heading', { name: 'Información institucional' })).toBeInTheDocument()
+    expect(screen.getAllByText('Pendiente de cargar')).toHaveLength(13)
+    expect(screen.getByText('Saldo anterior')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Preparación del FIE' })).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'Detalle de entradas para preparar el FIE' })).toBeInTheDocument()
   })
 
   it.each(['entries', 'exits'] as const)('shows overflow without hiding any of the 16 %s', async (direction) => {

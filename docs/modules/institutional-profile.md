@@ -23,6 +23,14 @@ Ambas capabilities están asignadas únicamente a Administrador. No existe `POST
 
 La ruta `/app/admin/institutional-profile` permite al Administrador capturar o limpiar los campos opcionales. No precarga datos desde el sitio público. Los valores legales deben ser confirmados conscientemente por la ADI.
 
+## Consumo por DINADECO
+
+El reporte anual DINADECO consume internamente los trece campos institucionales mediante una lectura read-only dentro del mismo snapshot financiero `RepeatableRead`. Los datos aparecen en `data.institutionalProfile`; los valores `null` se preservan y significan que el dato continúa pendiente de captura o validación.
+
+Este consumo no amplía las capabilities administrativas: Administrador y Tesorero pueden recibir la identidad institucional como parte del reporte mediante `fin.dinadeco.read`, pero solo Administrador conserva acceso a los endpoints y la pantalla administrativa del perfil.
+
+`InstitutionalProfile` es la fuente institucional y `FinancialMovement` continúa siendo la fuente financiera. En la metadata DINADECO, `dataSource: FINANCIAL_MOVEMENT` describe exclusivamente esa fuente financiera.
+
 ## Límites de esta fase
 
-DINADECO/FIE todavía no consume `InstitutionalProfile`. Junta Directiva, representación legal, nombramientos, vigencias, firmas, sellos, anexos bancarios y conciliación permanecen fuera de alcance.
+La integración no constituye un formulario oficial completo, conciliación bancaria, firma, sello, exportación oficial ni envío a DINADECO. Junta Directiva, representación legal, nombramientos, vigencias, firmas, sellos, anexos bancarios y conciliación permanecen fuera de alcance.

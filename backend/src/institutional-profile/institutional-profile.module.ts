@@ -8,5 +8,6 @@ import { InstitutionalProfileService } from './institutional-profile.service';
   imports: [AuthModule, AuditModule],
   controllers: [InstitutionalProfileController],
   providers: [InstitutionalProfileService],
+  exports: [InstitutionalProfileService],
 })
 export class InstitutionalProfileModule {}

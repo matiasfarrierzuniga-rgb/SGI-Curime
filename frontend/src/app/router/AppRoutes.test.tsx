@@ -372,6 +372,7 @@ function responseForDinadeco() {
     metadata: { generatedAt: new Date().toISOString(), generatedBy: { id: 1, fullName: 'Ana Pérez' }, period: { from: `${year}-01-01T00:00:00.000Z`, to: `${year + 1}-01-01T00:00:00.000Z` }, appliedFilters: { year }, dataSource: 'FINANCIAL_MOVEMENT', reportVersion: '1.0' },
     data: {
       year, currency: 'CRC', openingBalance: '0.00', income: { total: '0.00', count: 0, bySource: {} }, expenses: { total: '0.00', count: 0, bySource: {} }, netMovement: '0.00', closingBalance: '0.00', movementCount: 0,
+      institutionalProfile: { legalName: null, legalIdentification: null, dinadecoRegistrationCode: null, dinadecoRegion: null, organizationType: null, province: null, canton: null, district: null, locality: null, correspondenceAddress: null, phone: null, telefax: null, email: null },
       fie: {
         entries: [], exits: [],
         capacity: { entryCount: 0, exitCount: 0, entryCapacity: 15, exitCapacity: 15, entryOverflow: false, exitOverflow: false },
