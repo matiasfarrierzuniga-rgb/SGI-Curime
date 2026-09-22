@@ -4,24 +4,47 @@ import {
   Prisma,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { InstitutionalProfileService } from '../institutional-profile/institutional-profile.service';
 import { DinadecoReportsService } from './dinadeco-reports.service';
 
 const decimal = (value: string) => new Prisma.Decimal(value);
 
 describe('DinadecoReportsService', () => {
+  const emptyInstitutionalProfile = {
+    legalName: null,
+    legalIdentification: null,
+    dinadecoRegistrationCode: null,
+    dinadecoRegion: null,
+    organizationType: null,
+    province: null,
+    canton: null,
+    district: null,
+    locality: null,
+    correspondenceAddress: null,
+    phone: null,
+    telefax: null,
+    email: null,
+  };
   const prisma = {
     financialMovement: { groupBy: jest.fn(), findMany: jest.fn() },
     donation: { findMany: jest.fn(), aggregate: jest.fn() },
     $transaction: jest.fn(),
   };
+  const institutionalProfile = { getForReport: jest.fn() };
   let service: DinadecoReportsService;
 
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.financialMovement.findMany.mockResolvedValue([]);
-    service = new DinadecoReportsService(prisma as unknown as PrismaService);
-    prisma.$transaction.mockImplementation((operations: Promise<unknown>[]) =>
-      Promise.all(operations),
+    institutionalProfile.getForReport.mockResolvedValue(
+      emptyInstitutionalProfile,
+    );
+    service = new DinadecoReportsService(
+      prisma as unknown as PrismaService,
+      institutionalProfile as unknown as InstitutionalProfileService,
+    );
+    prisma.$transaction.mockImplementation(
+      (work: (client: typeof prisma) => unknown) => work(prisma),
     );
   });
 
@@ -43,6 +66,7 @@ describe('DinadecoReportsService', () => {
       netMovement: '0.00',
       closingBalance: '0.00',
       movementCount: 0,
+      institutionalProfile: emptyInstitutionalProfile,
       fie: {
         entries: [],
         exits: [],
@@ -258,9 +282,10 @@ describe('DinadecoReportsService', () => {
       fullName: 'Tesorería ficticia',
     });
     expect(data.fie.entries.map((row) => row.id)).toEqual([1, 2]);
-    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Array), {
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
       isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
     });
+    expect(institutionalProfile.getForReport).toHaveBeenCalledWith(prisma);
     expect(
       data.fie.entries
         .reduce((sum, row) => sum.plus(row.amount), decimal('0'))
@@ -355,5 +380,51 @@ describe('DinadecoReportsService', () => {
     expect(data.fie.exits).toEqual([]);
     expect(data.fie.totalIncomePlusOpeningBalance).toBe(data.openingBalance);
     expect(data.fie.totalExpensesPlusClosingBalance).toBe(data.openingBalance);
+  });
+
+  it.each([
+    [
+      'complete',
+      {
+        legalName: 'Asociación Integral de Prueba',
+        legalIdentification: '3-002-999999',
+        dinadecoRegistrationCode: 'REG-TEST-001',
+        dinadecoRegion: 'Región ficticia',
+        organizationType: 'INTEGRAL',
+        province: 'Provincia ficticia',
+        canton: 'Cantón ficticio',
+        district: 'Distrito ficticio',
+        locality: 'Localidad ficticia',
+        correspondenceAddress: 'Dirección ficticia 100 metros norte',
+        phone: '+506 2000-0000',
+        telefax: '+506 2000-0001',
+        email: 'institucional@example.test',
+      },
+    ],
+    [
+      'partial',
+      {
+        ...emptyInstitutionalProfile,
+        legalName: 'Asociación Parcial de Prueba',
+        organizationType: 'SPECIFIC',
+        email: 'parcial@example.test',
+      },
+    ],
+    ['empty', emptyInstitutionalProfile],
+  ])('preserves the %s institutional profile snapshot', async (_, profile) => {
+    institutionalProfile.getForReport.mockResolvedValue(profile);
+    prisma.financialMovement.groupBy
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const result = await service.annual(2026, {
+      id: 7,
+      fullName: 'Persona Tesorera',
+    });
+
+    expect(result.data.institutionalProfile).toEqual(profile);
+    expect(result.data.institutionalProfile).not.toHaveProperty('id');
+    expect(result.data.institutionalProfile).not.toHaveProperty('createdAt');
+    expect(result.data.institutionalProfile).not.toHaveProperty('updatedAt');
   });
 });

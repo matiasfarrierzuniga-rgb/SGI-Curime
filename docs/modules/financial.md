@@ -216,7 +216,7 @@ El resumen se devuelve en `CRC`.
 
 ### Reporte Económico DINADECO
 
-La Fase 1 proporciona una base funcional para preparar el Informe Económico anual correspondiente al período del 1 de enero al 31 de diciembre. El endpoint `GET /financial/reports/dinadeco/annual?year=YYYY`, protegido por `fin.dinadeco.read`, consulta exclusivamente `FinancialMovement`; una donación representada por un movimiento con `source = DONATION` no se suma nuevamente desde la tabla `Donation`.
+La Fase 1 proporciona una base funcional para preparar el Informe Económico anual correspondiente al período del 1 de enero al 31 de diciembre. El endpoint `GET /financial/reports/dinadeco/annual?year=YYYY`, protegido por `fin.dinadeco.read`, consume `FinancialMovement` como fuente financiera e `InstitutionalProfile` como fuente separada de identidad institucional. Una donación representada por un movimiento con `source = DONATION` no se suma nuevamente desde la tabla `Donation`.
 
 Implementado:
 
@@ -225,15 +225,16 @@ Implementado:
 - entradas, salidas, movimiento neto y saldo final usando aritmética `Decimal`;
 - desglose de entradas y salidas por `FinancialMovementSource`;
 - conteos de movimientos;
+- datos institucionales read-only en `data.institutionalProfile`, conservando `null` cuando un dato aún requiere captura o validación y sin exponer id ni timestamps;
 - preparación FIE en `data.fie`: detalle anual completo de entradas INCOME y salidas EXPENSE, ordenado por `occurredAt ASC`, luego `id ASC`, con id, descripción, monto de dos decimales, fecha ISO y fuente; no incluye identidades personales ni referencias;
 - capacidad independiente de 15 entradas y 15 salidas; conteos y overflow cuando el conteo supera 15, conservando todas las filas y sin consolidación automática;
 - `totalIncomePlusOpeningBalance` y `totalExpensesPlusClosingBalance` en `data.fie`, calculados con `Prisma.Decimal`; ambos son iguales por la fórmula del saldo final;
-- metadata compartida con período, filtro, fuente `FINANCIAL_MOVEMENT` y usuario generador;
+- metadata compartida con período, filtro, fuente `FINANCIAL_MOVEMENT` y usuario generador; `dataSource` describe la fuente financiera y no duplica la identidad institucional;
 - interfaz ERP en `/app/financial/dinadeco` con selector de año, resumen y documentación complementaria.
 
 El saldo inicial y el saldo final son cálculos derivados del historial disponible en SGI-Curime. No equivalen automáticamente a saldos oficiales conciliados, caja física ni saldo bancario. La sección «Preparación del FIE» conserva las cards, desglose y metadata anteriores, y añade resumen de seis cifras, tablas completas y advertencias visibles si se exceden los quince espacios por tipo. La estrategia futura de consolidación requiere validación con la ADI.
 
-Los datos institucionales, titulares legales de presidencia/tesorería, firmas, sellos, recepción y anexo bancario permanecen pendientes de captura o validación manual. No se inventan ni se infieren del branding o de roles de acceso.
+Los datos institucionales mostrados provienen exclusivamente de `InstitutionalProfile`; un valor `null` indica que aún requiere captura o validación por la Asociación. No se inventan ni se infieren del branding o de roles de acceso. Los titulares legales de presidencia/tesorería, firmas, sellos, recepción y anexo bancario permanecen fuera del alcance.
 
 Pendiente:
 
