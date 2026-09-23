@@ -13,6 +13,12 @@ describe('donation capability policy', () => {
       expect(hasCapability('Subscription_L1', capability)).toBe(false);
     }
   });
+  it('grants board capabilities only to Administrador', () => {
+    for (const capability of ['adm.institutional-board.read', 'adm.institutional-board.manage']) {
+      expect(hasCapability('Administrador', capability)).toBe(true);
+      for (const role of ['Tesorero', 'Gestor de Inventario', 'Vecino/Afiliado']) expect(hasCapability(role, capability)).toBe(false);
+    }
+  });
   it('grants DINADECO reporting only to Administrador and Tesorero', () => {
     expect(hasCapability('Administrador', 'fin.dinadeco.read')).toBe(true);
     expect(hasCapability('Tesorero', 'fin.dinadeco.read')).toBe(true);

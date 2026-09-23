@@ -43,6 +43,7 @@ Documentos estables disponibles:
 - [`modules/financial.md`](./modules/financial.md): cargos, pagos, movimientos, resumen e integración con Reservas.
 - [`modules/affiliates.md`](./modules/affiliates.md): consulta, edición, estados, validaciones y auditoría de Afiliados.
 - [`modules/audit.md`](./modules/audit.md): trazabilidad, sanitización y consulta administrativa de Auditoría.
+- [`modules/institutional-board.md`](./modules/institutional-board.md): períodos, nombramientos, historia y límites de Junta Directiva.
 - [`modules/donations.md`](./modules/donations.md): estado real de Donaciones, preparación existente y alcance todavía pendiente.
 - [`requirements/adi-dinadeco-source-mapping.md`](./requirements/adi-dinadeco-source-mapping.md): análisis de plantillas privadas ADI/DINADECO y mapeo de requisitos contra el sistema actual, sin implementación ni datos personales.
 

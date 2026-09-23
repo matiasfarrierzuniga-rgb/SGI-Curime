@@ -56,9 +56,9 @@ Ubicaciones: encabezado A2, declaración institucional A5, anexo A6, detalle A7:
 | Documento | Campo oficial | Fuente SGI-Curime | Estado | Automatizable | Observación |
 | --- | --- | --- | --- | --- | --- |
 | FIE | Año; del 1 de enero al 31 de diciembre | `data.year`, `metadata.period` | AVAILABLE | Sí | Intervalo del API con fin exclusivo; la plantilla expresa fin inclusivo. |
-| FIE | Nombre de quien ocupa presidencia | Person / Affiliate / User como candidatos; sin cargo legal | MISSING_MODEL | No | Falta nombramiento vigente y representante autorizado. |
+| FIE | Nombre de quien ocupa presidencia | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | El nombramiento puede registrarse; representación y evidencia documental siguen pendientes. |
 | FIE | Documento de identidad de presidencia | `Person.identification`, `identificationType`; Affiliate legado | AVAILABLE | Parcial | Solo después de seleccionar y validar al titular; no es cédula jurídica. |
-| FIE | Nombre de quien ocupa tesorería | Person / Affiliate / User como candidatos; sin cargo legal | MISSING_MODEL | No | Un rol de acceso Tesorero no prueba nombramiento legal. |
+| FIE | Nombre de quien ocupa tesorería | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | El cargo institucional es independiente del Role Tesorero y requiere confirmación. |
 | FIE | Documento de identidad de tesorería | Person / Affiliate | AVAILABLE | Parcial | Selección humana del titular pendiente. |
 | FIE | Organización comunal denominada | `data.institutionalProfile.legalName` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | El reporte consume el valor canónico; debe confirmarse por la Asociación. |
 | FIE | Cédula jurídica (etiqueta truncada) | `data.institutionalProfile.legalIdentification` | MODEL_AVAILABLE / CAPTURE_PENDING | Sí, como preparación | Confirmar etiqueta, valor y formato; no usar identificación personal. |
@@ -123,9 +123,9 @@ Las filas que indican «FLFGirarISR / FLICemento» aplican individualmente a amb
 | FLFGirarISR / FLICemento | Total de montos de pago (W26) | No hay medios salientes por asignación | MISSING_MODEL | No | La plantilla mantiene dos totales, no un único total sin distinción. |
 | FLFGirarISR / FLICemento | Remanente (D29) | Sin asignación y total liquidado validado | MISSING_MODEL | No | Fórmula del original con referencias incongruentes; confirmar base del remanente. |
 | FLFGirarISR / FLICemento | Juramento sobre gastos y plan de trabajo | Ninguna certificación | MANUAL_REQUIRED | No | Exige confirmación humana; plan aprobado/presentado no modelado. |
-| FLFGirarISR / FLICemento | Nombre del presidente | Personas candidatas, sin nombramiento | MISSING_MODEL | No | Falta Junta Directiva vigente. |
+| FLFGirarISR / FLICemento | Nombre del presidente | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | La fuente estructural existe; la integración documental sigue pendiente. |
 | FLFGirarISR / FLICemento | Número de cédula del presidente | Person / Affiliate | AVAILABLE | Parcial | Reutilizable tras selección autorizada. |
-| FLFGirarISR / FLICemento | Nombre del tesorero | Personas candidatas, sin nombramiento | MISSING_MODEL | No | Falta cargo legal vigente. |
+| FLFGirarISR / FLICemento | Nombre del tesorero | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | La fuente estructural existe; requiere confirmación y evidencia. |
 | FLFGirarISR / FLICemento | Número de cédula del tesorero | Person / Affiliate | AVAILABLE | Parcial | Reutilizable tras selección autorizada. |
 | FLFGirarISR / FLICemento | Firma presidente | Ninguna | MANUAL_REQUIRED | No | Manual inicialmente. |
 | FLFGirarISR / FLICemento | Firma tesorería | Ninguna | MANUAL_REQUIRED | No | Manual inicialmente. |
@@ -154,20 +154,20 @@ Las filas que indican «FLFGirarISR / FLICemento» aplican individualmente a amb
 | FRAG | Telefax | `InstitutionalProfile.telefax` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Valor pendiente de captura validada. |
 | FRAG | Correo electrónico | `InstitutionalProfile.email` | MODEL_AVAILABLE / CAPTURE_PENDING | No, en esta fase | Correo institucional pendiente de validación. |
 | FRAG | Nombramiento total / parcial | Ninguna elección estructurada | MISSING_MODEL | No | No derivar del estado de asamblea. |
-| FRAG | Período Junta Directiva | Ninguna | MISSING_MODEL | No | Requiere vigencia de nombramientos. |
-| FRAG | Presidencia: nombre, identificación, Tel | Person / Affiliate para identidad; sin elección | MISSING_MODEL | Parcial | Identidad reutilizable si existe, designación no registrada. |
-| FRAG | Vicepresidencia: nombre, identificación, Tel | Person / Affiliate; sin elección | MISSING_MODEL | Parcial | No convertir Role en cargo legal. |
-| FRAG | Secretaría: nombre, identificación, Tel | Person / Affiliate; sin elección | MISSING_MODEL | Parcial | Falta designación. |
-| FRAG | Tesorería: nombre, identificación, Tel | Person / Affiliate; sin elección | MISSING_MODEL | Parcial | Falta designación. |
-| FRAG | Vocal 1: nombre, identificación, Tel | Person / Affiliate; sin elección | MISSING_MODEL | Parcial | Falta posición y vigencia. |
-| FRAG | Vocal 2: nombre, identificación, Tel | Person / Affiliate; sin elección | MISSING_MODEL | Parcial | Mismo límite. |
-| FRAG | Vocal 3: nombre, identificación, Tel | Person / Affiliate; sin elección | MISSING_MODEL | Parcial | Mismo límite. |
-| FRAG | Fiscal 1: nombre, identificación, Tel | Person / Affiliate; sin nombramiento | MISSING_MODEL | Parcial | Cantidad según estatuto; tres espacios, no obligación automática de tres. |
-| FRAG | Fiscal 2: nombre, identificación, Tel | Person / Affiliate; sin nombramiento | MISSING_MODEL | Parcial | Confirmar aplicabilidad con estatuto. |
-| FRAG | Fiscal 3: nombre, identificación, Tel | Person / Affiliate; sin nombramiento | MISSING_MODEL | Parcial | Confirmar aplicabilidad con estatuto. |
-| FRAG | Suplencia 1: nombre, identificación, Tel | Person / Affiliate; sin nombramiento | MISSING_MODEL | Parcial | Cantidad según estatuto. |
-| FRAG | Suplencia 2: nombre, identificación, Tel | Person / Affiliate; sin nombramiento | MISSING_MODEL | Parcial | Confirmar aplicabilidad. |
-| FRAG | Suplencia 3: nombre, identificación, Tel | Person / Affiliate; sin nombramiento | MISSING_MODEL | Parcial | Confirmar aplicabilidad. |
+| FRAG | Período Junta Directiva | BoardTerm | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Fechas estructuradas; no se vinculan todavía a Asamblea o resolución. |
+| FRAG | Presidencia: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Designación estructurada; teléfono y evidencia no se duplican en el nombramiento. |
+| FRAG | Vicepresidencia: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | No convertir Role en cargo institucional. |
+| FRAG | Secretaría: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Fuente estructural disponible; evidencia pendiente. |
+| FRAG | Tesorería: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Fuente estructural independiente del Role. |
+| FRAG | Vocal 1: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | `seatNumber` puede distinguir plazas sin imponer máximos. |
+| FRAG | Vocal 2: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Cantidades estatutarias pendientes. |
+| FRAG | Vocal 3: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Cantidades estatutarias pendientes. |
+| FRAG | Fiscal 1: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Cantidad según estatuto; no se impone obligatoriedad. |
+| FRAG | Fiscal 2: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Confirmar aplicabilidad y cantidad con estatuto. |
+| FRAG | Fiscal 3: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Confirmar aplicabilidad y cantidad con estatuto. |
+| FRAG | Suplencia 1: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Cantidad y aplicabilidad según estatuto. |
+| FRAG | Suplencia 2: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Confirmar aplicabilidad. |
+| FRAG | Suplencia 3: nombre, identificación, Tel | BoardAppointment + Person | MODEL_AVAILABLE / CAPTURE_PENDING | Parcial | Confirmar aplicabilidad. |
 | FRAG | Se aprobó reformas al estatuto: Sí / No | Ninguna resolución de reforma | MISSING_MODEL | No | No interpretar `description` como aprobación formal. |
 | FRAG | Cuáles artículos reformados | Ninguna | MISSING_MODEL | No | Falta trazabilidad de texto/reforma y decisión. |
 | FRAG | Se aprobó Plan de Trabajo: Sí / No | Ningún plan/aprobación | MISSING_MODEL | No | No derivar de asamblea COMPLETED. |
@@ -255,7 +255,7 @@ Respuestas al contraste:
 2. **Qué puede alimentar directamente la plantilla:** año, total de entradas y total de salidas del historial SGI. Las dos sumas de cierre de la fila 25 se exponen en `data.fie` con Decimal. openingBalance y closingBalance solo son candidatos después de validar integridad y conciliación. Las descripciones/montos de detalle anual se exponen completos en `fie.entries` y `fie.exits`.
 3. **Campos financieros faltantes:** saldo inicial oficial respaldado, discriminación de caja y banco, clasificación validada del detalle, cobertura de gastos fuera del sistema y criterios para reversos/ajustes. No hay fórmulas en FIE: C23:E25 contienen símbolos de moneda, no cálculos. No copiar resultados vacíos como cifras certificadas.
 4. **Datos institucionales:** `InstitutionalProfile` es la fuente canónica consumida por el reporte DINADECO; sus valores nullable pueden seguir en `CAPTURE_PENDING` hasta que la Asociación los capture o valide.
-5. **Cargos faltantes:** titular legal de presidencia y tesorería, nombramiento y vigencia. FIE no solicita la lista completa de Junta Directiva, aunque FRAG sí. Role controla acceso, no acredita cargo electo.
+5. **Cargos institucionales:** el modelo de Junta, cargos y vigencias existe, pero su captura puede seguir pendiente. DINADECO todavía no consume `BoardAppointment`, y la resolución temporal/documental continúa pendiente. Role controla acceso, no acredita cargo electo.
 6. **Firmas/sellos manuales:** firmas de presidencia y tesorería, sello ADI y sello de recepción; el juramento también debe ratificarse. No usar `metadata.generatedBy` como firmante legal.
 7. **Anexos sin soporte:** FIE exige expresamente copia de estado de cuenta con corte al 31 de diciembre. No existe expediente financiero de anexos. La UI menciona estados financieros adicionales cuando apliquen; el original observado no los enumera. Balance de situación, balance de comprobación y estado de resultados no están implementados y su exigibilidad para este caso queda pendiente, no se inventa como requisito del FIE.
 8. **Información bancaria faltante:** banco/cuenta institucional, saldos de estado de cuenta, conciliación y relación con caja. FIE no contiene casillas de número de cuenta/banco: el requisito observado es el anexo, no nuevos campos en la plantilla.
@@ -319,7 +319,7 @@ Brechas para FRAG:
 
 - Fuente institucional: región, nombre/tipo de organización, localidad, código, correspondencia, telefax y correo.
 - Convocatoria legal: autoridad y ronda; fecha/lugar efectivos deben confirmarse frente a lo programado.
-- Junta Directiva: nombramiento total/parcial, período, siete cargos (presidencia, vicepresidencia, secretaría, tesorería y tres vocalías), Fiscalía y suplencias con cantidades según estatuto. Identidad disponible no equivale a designación registrada.
+- Junta Directiva: nombramiento total/parcial y período. El formulario observado contiene espacios para presidencia, vicepresidencia, secretaría, tesorería y tres vocalías, pero esos tres espacios no establecen una cantidad estatutaria fija; la cantidad aplicable de vocalías, Fiscalía y suplencias continúa `VALIDATION_PENDING`. Identidad disponible no equivale a designación registrada.
 - Reforma estatutaria: decisión Sí/No, artículos, evidencia y seguimiento de publicación. El formulario contiene una nota sobre retiro del aviso y publicación; no existe workflow de ese trámite.
 - Plan de Trabajo: documento y resolución de aprobación; no equivalen a description.
 - Acta y expediente: mínimo dos copias del acta y formulario, sin infraestructura específica observada. Los adjuntos de justificación de ausencia pertenecen a otra finalidad y no sustituyen actas o expediente institucional.
@@ -397,7 +397,7 @@ No contiene la referencia de Asamblea/residencia/teléfono de las otras tres dec
 
 ## Datos institucionales de la organización
 
-`InstitutionalProfile` es la fuente canónica persistida para los datos legales e institucionales de la Asociación. Su fila singleton existe con campos nullable, por lo que disponibilidad del modelo no demuestra que un valor haya sido capturado o validado. El contenido público no es fuente legal. Person es identidad individual, Role es autorización y Assembly es evento de reunión. No existe todavía un modelo de Junta Directiva o período de representación.
+`InstitutionalProfile` es la fuente canónica persistida para los datos legales e institucionales de la Asociación. Su fila singleton existe con campos nullable, por lo que disponibilidad del modelo no demuestra que un valor haya sido capturado o validado. El contenido público no es fuente legal. Person es identidad individual, Role es autorización y Assembly es evento de reunión. `BoardTerm` y `BoardAppointment` ofrecen ahora fuente estructural para períodos, cargos y nombramientos; DINADECO todavía no consume esos datos.
 
 | Dato institucional requerido | Estado actual | Evidencia / límite |
 | --- | --- | --- |
@@ -411,13 +411,13 @@ No contiene la referencia de Asamblea/residencia/teléfono de las otras tres dec
 | Dirección de organización/correspondencia | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.correspondenceAddress`. |
 | Teléfono / telefax | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.phone` y `telefax`. |
 | Correo | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.email`. |
-| Junta Directiva vigente | MISSING_MODEL | Sin designaciones, posiciones o vigencias. |
-| Presidente | MISSING_MODEL | Personas existentes pueden ser candidatos; no hay titular legal registrado. |
-| Tesorero | MISSING_MODEL | Role Tesorero no acredita titular legal. |
-| Período Junta Directiva | MISSING_MODEL | No existe mandato institucional. |
+| Junta Directiva vigente | MODEL_AVAILABLE / CAPTURE_PENDING | Períodos y nombramientos estructurados; requieren confirmación de la Asociación. |
+| Presidente | MODEL_AVAILABLE / CAPTURE_PENDING | `BoardAppointment(PRESIDENT)` referencia Person; no acredita evidencia documental. |
+| Tesorero | MODEL_AVAILABLE / CAPTURE_PENDING | `BoardAppointment(TREASURER)` es independiente de Role Tesorero. |
+| Período Junta Directiva | MODEL_AVAILABLE / CAPTURE_PENDING | `BoardTerm` conserva fechas explícitas e historia. |
 | Integral / Específica y localidad | MODEL_AVAILABLE / CAPTURE_PENDING | `InstitutionalProfile.organizationType` y `locality`; ambos requieren confirmación. |
 
-El modelo institucional cubre la persistencia canónica mínima compartida y el reporte DINADECO lo consume en `data.institutionalProfile`, sin precargar valores desde branding público. `FinancialMovement` permanece como fuente financiera; `metadata.dataSource = FINANCIAL_MOVEMENT` describe esa fuente financiera. Los valores `null` conservan el estado `CAPTURE_PENDING`. La brecha de Junta Directiva, representación y vigencias permanece; no se fijó un catálogo de cargos o regiones.
+El modelo institucional cubre la persistencia canónica mínima compartida y el reporte DINADECO consume únicamente `data.institutionalProfile`, sin consumir todavía Junta Directiva. `FinancialMovement` permanece como fuente financiera. Los valores `null` conservan `CAPTURE_PENDING`. Junta, cargos y vigencias ya tienen fuente estructural; representación documental, resolución, firma, sello, evidencia, Asamblea y reglas estatutarias permanecen pendientes.
 
 ## Pendientes de interpretación y follow-ups documentales
 

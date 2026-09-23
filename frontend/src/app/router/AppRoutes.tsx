@@ -35,6 +35,7 @@ import { DinadecoAnnualReportPage, FinancialMovementsPage, FinancialPage } from 
 import { DonationsPage } from '@/features/donations'
 import { AssembliesAdminPage, MineAssembliesPage } from '@/features/assemblies'
 import { InstitutionalProfilePage } from '@/features/institutional-profile'
+import { InstitutionalBoardPage } from '@/features/institutional-board'
 export function AppRoutes() {
   return (
     <Routes>
@@ -105,6 +106,9 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="adm.institutional-profile.read" />}>
             <Route path="/app/admin/institutional-profile" element={<InstitutionalProfilePage />} />
+          </Route>
+          <Route element={<RoleRoute capability="adm.institutional-board.read" />}>
+            <Route path="/app/admin/institutional-board" element={<InstitutionalBoardPage />} />
           </Route>
           <Route element={<RoleRoute role="Vecino/Afiliado" />}>
             <Route path="/app/affiliate/absence-justifications/new" element={<AffiliateAbsenceJustificationPage />} />

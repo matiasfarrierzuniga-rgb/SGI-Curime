@@ -20,6 +20,8 @@ export const ACCESS_CAPABILITIES = [
   'adm.assemblies.manage',
   'adm.institutional-profile.read',
   'adm.institutional-profile.update',
+  'adm.institutional-board.read',
+  'adm.institutional-board.manage',
   'adm.justifications.read',
   'abs.justifications.read',
   'aud.logs.read',

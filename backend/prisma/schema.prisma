@@ -41,6 +41,7 @@ model Person {
   reconciliationManifestEntries IdentityReconciliationManifest[] @relation("ManifestSelectedPerson")
   user                          User?
   userRequests                  UserRequest[]
+  boardAppointments            BoardAppointment[]
 
   @@unique([identificationType, normalizedIdentification])
 }
@@ -166,6 +167,38 @@ model InstitutionalProfile {
   email                    String?
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
+  boardTerms               BoardTerm[]
+}
+
+model BoardTerm {
+  id                     Int                @id @default(autoincrement())
+  institutionalProfileId Int
+  startsOn               DateTime           @db.Date
+  endsOn                 DateTime           @db.Date
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  institutionalProfile   InstitutionalProfile @relation(fields: [institutionalProfileId], references: [id], onDelete: Restrict)
+  appointments           BoardAppointment[]
+
+  @@index([institutionalProfileId, startsOn])
+}
+
+model BoardAppointment {
+  id          Int           @id @default(autoincrement())
+  boardTermId Int
+  personId    Int
+  position    BoardPosition
+  seatNumber  Int?
+  startsOn    DateTime?     @db.Date
+  endsOn      DateTime?     @db.Date
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  boardTerm   BoardTerm     @relation(fields: [boardTermId], references: [id], onDelete: Restrict)
+  person      Person        @relation(fields: [personId], references: [id], onDelete: Restrict)
+
+  @@index([boardTermId])
+  @@index([personId])
+  @@index([position, seatNumber])
 }
 
 model PasswordResetToken {
@@ -779,4 +812,14 @@ enum InventoryLoanStatus {
 enum InstitutionalOrganizationType {
   INTEGRAL
   SPECIFIC
+}
+
+enum BoardPosition {
+  PRESIDENT
+  VICE_PRESIDENT
+  SECRETARY
+  TREASURER
+  VOCAL
+  FISCAL
+  SUPLENTE
 }
