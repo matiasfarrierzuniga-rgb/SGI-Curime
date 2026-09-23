@@ -17,6 +17,7 @@ describe('getErpNavigation', () => {
   { label: 'Justificaciones de ausencia', children: undefined },
   { label: 'Asambleas', children: undefined },
   { label: 'Perfil institucional', children: undefined },
+  { label: 'Junta Directiva', children: undefined },
   { label: 'Eventos', children: undefined }
 ] },
 
@@ -84,6 +85,12 @@ describe('getErpNavigation', () => {
     const findProfile = (role: string) => getErpNavigation(role).flatMap(section => section.items).find(item => item.label === 'Perfil institucional')
     expect(findProfile('Administrador')).toMatchObject({ path: '/app/admin/institutional-profile', capability: 'adm.institutional-profile.read' })
     for (const role of ['Tesorero', 'Gestor de Inventario', 'Vecino/Afiliado', 'Subscription_L1']) expect(findProfile(role)).toBeUndefined()
+  })
+
+  it('shows Junta Directiva only to Administrador with its dedicated capability', () => {
+    const findBoard = (role: string) => getErpNavigation(role).flatMap(section => section.items).find(item => item.label === 'Junta Directiva')
+    expect(findBoard('Administrador')).toMatchObject({ path: '/app/admin/institutional-board', capability: 'adm.institutional-board.read' })
+    for (const role of ['Tesorero', 'Gestor de Inventario', 'Vecino/Afiliado']) expect(findBoard(role)).toBeUndefined()
   })
 
   it('assigns event navigation to its management capability', () => {

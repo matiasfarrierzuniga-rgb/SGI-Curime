@@ -17,6 +17,8 @@ export const CAPABILITIES = [
   'adm.assemblies.manage',
   'adm.institutional-profile.read',
   'adm.institutional-profile.update',
+  'adm.institutional-board.read',
+  'adm.institutional-board.manage',
   'aud.logs.read',
   'inv.inventory.read',
   'pub.events.manage',

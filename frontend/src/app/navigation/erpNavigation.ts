@@ -20,6 +20,7 @@ import {
   TriangleAlert,
   UserRound,
   Users,
+  UserRoundCog,
   Wallet,
 } from 'lucide-react'
 import { hasCapability, type AccessCapability } from '@/shared/security/access'
@@ -114,6 +115,12 @@ const navigation: readonly ErpNavigationSection[] = [
         path: '/app/admin/institutional-profile',
         capability: 'adm.institutional-profile.read',
         icon: Building2,
+      },
+      {
+        label: 'Junta Directiva',
+        path: '/app/admin/institutional-board',
+        capability: 'adm.institutional-board.read',
+        icon: UserRoundCog,
       },
       {
         label: 'Eventos',

@@ -18,6 +18,8 @@ describe('shared security access policy', () => {
       'adm.assemblies.manage',
       'adm.institutional-profile.read',
       'adm.institutional-profile.update',
+      'adm.institutional-board.read',
+      'adm.institutional-board.manage',
       'adm.justifications.read',
       'abs.justifications.read',
       'aud.logs.read',
@@ -82,6 +84,13 @@ describe('shared security access policy', () => {
     for (const role of ['Tesorero', 'Gestor de Inventario', 'Vecino/Afiliado', 'Subscription_L1']) {
       expect(hasCapability(role, 'adm.institutional-profile.read')).toBe(false)
       expect(hasCapability(role, 'adm.institutional-profile.update')).toBe(false)
+    }
+  })
+
+  it('grants institutional board administration only to Administrador', () => {
+    for (const capability of ['adm.institutional-board.read', 'adm.institutional-board.manage']) {
+      expect(hasCapability('Administrador', capability)).toBe(true)
+      for (const role of ['Tesorero', 'Gestor de Inventario', 'Vecino/Afiliado']) expect(hasCapability(role, capability)).toBe(false)
     }
   })
 

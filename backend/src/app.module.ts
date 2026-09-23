@@ -25,6 +25,7 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { FinancialModule } from './financial/financial.module';
 import { DonationsModule } from './donations/donations.module';
 import { InstitutionalProfileModule } from './institutional-profile/institutional-profile.module';
+import { InstitutionalBoardModule } from './institutional-board/institutional-board.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { InstitutionalProfileModule } from './institutional-profile/institutiona
     FinancialModule,
     DonationsModule,
     InstitutionalProfileModule,
+    InstitutionalBoardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
