@@ -1,7 +1,8 @@
-import { AlertCircle, RefreshCw } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
+import { AlertTriangle, Boxes, CalendarCheck, CircleDollarSign, FileClock, FileText, HandCoins, PackageX, RefreshCw, Users } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { ErrorState } from '@/shared/ui/ErrorState'
+import { MetricCard } from '@/shared/ui/MetricCard'
 import { Skeleton } from '@/shared/ui/skeleton'
 import type { AdminDashboardData } from '../model/adminDashboard.types'
 import { useAdminDashboard } from '../hooks/useAdminDashboard'
@@ -19,8 +20,12 @@ export function AdminDashboard() {
     return (
       <section aria-labelledby="admin-indicators-title" aria-busy="true">
         <SectionHeading />
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Cargando indicadores administrativos">
-          {Array.from({ length: 8 }, (_, index) => <Skeleton key={index} className="h-28" />)}
+        <div className="mt-6 space-y-6" aria-label="Cargando indicadores administrativos">
+          <SkeletonGroup titleWidth="w-44" metrics={3} />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,1fr)]">
+            <SkeletonGroup titleWidth="w-36" metrics={4} />
+            <SkeletonGroup titleWidth="w-48" metrics={3} />
+          </div>
         </div>
       </section>
     )
@@ -30,14 +35,12 @@ export function AdminDashboard() {
     return (
       <section aria-labelledby="admin-indicators-title">
         <SectionHeading />
-        <Alert variant="destructive" className="mt-4">
-          <AlertCircle aria-hidden="true" />
-          <AlertTitle>No fue posible cargar los indicadores</AlertTitle>
-          <AlertDescription>Intente nuevamente para consultar el estado administrativo actual.</AlertDescription>
-          <Button className="mt-3 w-fit" variant="outline" size="sm" onClick={() => void dashboard.refetch()}>
-            <RefreshCw aria-hidden="true" /> Reintentar
-          </Button>
-        </Alert>
+        <ErrorState
+          className="mt-6"
+          title="No fue posible cargar los indicadores"
+          message="Intente nuevamente para consultar el estado administrativo actual."
+          action={<Button variant="outline" size="sm" onClick={() => void dashboard.refetch()}><RefreshCw aria-hidden="true" /> Reintentar</Button>}
+        />
       </section>
     )
   }
@@ -47,12 +50,11 @@ export function AdminDashboard() {
     return (
       <section aria-labelledby="admin-indicators-title">
         <SectionHeading />
-        <Card className="mt-4">
-          <CardContent>
-            <p className="font-semibold text-brand-ink">Aún no hay datos administrativos para mostrar.</p>
-            <p className="mt-1 text-sm text-foreground-muted">Los indicadores aparecerán cuando los módulos registren información.</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          className="mt-6"
+          title="Aún no hay datos administrativos para mostrar."
+          description="Los indicadores aparecerán cuando los módulos registren información."
+        />
       </section>
     )
   }
@@ -60,39 +62,55 @@ export function AdminDashboard() {
   return (
     <section aria-labelledby="admin-indicators-title">
       <SectionHeading generatedAt={metadata.generatedAt} />
-      <IndicatorGroup title="Gestión administrativa" indicators={[
-        ['Afiliados', data.affiliates.total],
-        ['Afiliados activos', data.affiliates.active],
-        ['Afiliados inactivos', data.affiliates.inactive],
-        ['Solicitudes pendientes', data.affiliateRequests.pending],
-        ['Justificaciones pendientes', data.justifications.pending],
-      ]} />
-      <IndicatorGroup title="Operación" indicators={[
-        ['Reservas totales', data.reservations.total],
-        ['Reservas pendientes', data.reservations.pending],
-        ['Reservas aprobadas', data.reservations.approved],
-        ['Reservas confirmadas', data.reservations.confirmed],
-        ['Artículos de inventario', data.inventory.totalItems],
-        ['Artículos con stock bajo', data.inventory.lowStockItems],
-        ['Artículos agotados', data.inventory.outOfStockItems],
-        ['Préstamos activos', data.inventory.activeLoans],
-        ['Préstamos vencidos', data.inventory.overdueLoans],
-      ]} />
-      <IndicatorGroup title="Actividad institucional" indicators={[
-        ['Asambleas programadas', data.assemblies.scheduled],
-        ['Asambleas en progreso', data.assemblies.in_progress],
-        ['Asambleas completadas', data.assemblies.completed],
-        ['Donaciones registradas', data.donations.total],
-        ['Donaciones confirmadas', data.donations.confirmed],
-      ]} />
-      <div className="mt-6">
-        <h3 className="text-heading-3 font-semibold text-brand-ink">Resumen financiero acumulado</h3>
-        <p className="mt-1 text-sm text-foreground-muted">Movimientos financieros de todo el historial, sin filtro de fecha. Las donaciones ya incluidas como ingresos no se suman nuevamente.</p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <Metric label="Ingresos" value={formatCurrency(data.financial.totalIncome, data.financial.currency)} />
-          <Metric label="Egresos" value={formatCurrency(data.financial.totalExpenses, data.financial.currency)} />
-          <Metric label="Balance" value={formatCurrency(data.financial.balance, data.financial.currency)} />
+      <div className="mt-6 space-y-8">
+        <section aria-labelledby="admin-queue-title">
+          <GroupHeading id="admin-queue-title" title="Cola operativa" description="Solicitudes que requieren seguimiento administrativo." />
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <Metric label="Solicitudes pendientes" value={data.affiliateRequests.pending} icon={Users} />
+            <Metric label="Justificaciones pendientes" value={data.justifications.pending} icon={FileText} />
+            <Metric label="Reservas pendientes" value={data.reservations.pending} icon={CalendarCheck} />
+          </div>
+        </section>
+
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,1fr)] xl:items-start">
+          <section aria-labelledby="admin-snapshot-title">
+            <GroupHeading id="admin-snapshot-title" title="Panorama institucional" description="Totales y actividad registrada en los módulos institucionales." />
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Metric label="Afiliados" value={data.affiliates.total} icon={Users} />
+              <Metric label="Afiliados activos" value={data.affiliates.active} />
+              <Metric label="Afiliados inactivos" value={data.affiliates.inactive} />
+              <Metric label="Reservas totales" value={data.reservations.total} icon={CalendarCheck} />
+              <Metric label="Reservas aprobadas" value={data.reservations.approved} />
+              <Metric label="Reservas confirmadas" value={data.reservations.confirmed} />
+              <Metric label="Artículos de inventario" value={data.inventory.totalItems} icon={Boxes} />
+              <Metric label="Préstamos activos" value={data.inventory.activeLoans} />
+              <Metric label="Asambleas programadas" value={data.assemblies.scheduled} />
+              <Metric label="Asambleas en progreso" value={data.assemblies.in_progress} />
+              <Metric label="Asambleas completadas" value={data.assemblies.completed} />
+              <Metric label="Donaciones registradas" value={data.donations.total} icon={HandCoins} />
+              <Metric label="Donaciones confirmadas" value={data.donations.confirmed} />
+            </div>
+          </section>
+
+          <section aria-labelledby="admin-risks-title">
+            <GroupHeading id="admin-risks-title" title="Atención requerida" description="Riesgos operativos que necesitan revisión." />
+            <div className="mt-4 space-y-3">
+              {data.inventory.outOfStockItems > 0 && <Metric label="Artículos agotados" value={data.inventory.outOfStockItems} icon={PackageX} state="danger" stateLabel="Sin existencias" />}
+              {data.inventory.overdueLoans > 0 && <Metric label="Préstamos vencidos" value={data.inventory.overdueLoans} icon={FileClock} state="danger" stateLabel="Préstamo vencido" />}
+              {data.inventory.lowStockItems > 0 && <Metric label="Artículos con stock bajo" value={data.inventory.lowStockItems} icon={AlertTriangle} state="warning" stateLabel="Stock bajo" />}
+              {data.inventory.lowStockItems === 0 && data.inventory.outOfStockItems === 0 && data.inventory.overdueLoans === 0 && <p className="rounded-surface border border-status-success-border bg-status-success-surface p-4 text-body-small text-status-success-foreground">No hay alertas de inventario ni préstamos vencidos.</p>}
+            </div>
+          </section>
         </div>
+
+        <section aria-labelledby="admin-financial-title">
+          <GroupHeading id="admin-financial-title" title="Resumen financiero acumulado" description="Movimientos financieros de todo el historial, sin filtro de fecha. Las donaciones ya incluidas como ingresos no se suman nuevamente." />
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <Metric label="Ingresos" value={formatCurrency(data.financial.totalIncome, data.financial.currency)} icon={CircleDollarSign} />
+            <Metric label="Egresos" value={formatCurrency(data.financial.totalExpenses, data.financial.currency)} />
+            <Metric label="Balance" value={formatCurrency(data.financial.balance, data.financial.currency)} />
+          </div>
+        </section>
       </div>
     </section>
   )
@@ -102,12 +120,18 @@ function SectionHeading({ generatedAt }: { generatedAt?: string }) {
   return <div><h2 id="admin-indicators-title" className="text-heading-2 font-bold text-brand-ink">Indicadores administrativos</h2><p className="mt-1 text-sm text-foreground-muted">Vista consolidada de la información registrada en SGI-Curime.{generatedAt ? ` Actualizada ${new Date(generatedAt).toLocaleString('es-CR')}.` : ''}</p></div>
 }
 
-function IndicatorGroup({ title, indicators }: { title: string; indicators: ReadonlyArray<readonly [string, number]> }) {
-  return <div className="mt-6"><h3 className="text-heading-3 font-semibold text-brand-ink">{title}</h3><div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{indicators.map(([label, value]) => <Metric key={label} label={label} value={value.toLocaleString('es-CR')} />)}</div></div>
+function GroupHeading({ id, title, description }: { id: string; title: string; description: string }) {
+  return <div><h3 id={id} className="text-heading-3 font-semibold text-brand-ink">{title}</h3><p className="mt-1 text-body-small text-foreground-muted">{description}</p></div>
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return <Card size="sm"><CardHeader><CardDescription>{label}</CardDescription><CardTitle className="mt-2 text-2xl font-bold tabular-nums">{value}</CardTitle></CardHeader></Card>
+function SkeletonGroup({ titleWidth, metrics }: { titleWidth: string; metrics: number }) {
+  return <div><Skeleton className={`h-6 ${titleWidth}`} /><Skeleton className="mt-2 h-4 w-64 max-w-full" /><div className="mt-4 grid gap-3 sm:grid-cols-3">{Array.from({ length: metrics }, (_, index) => <Skeleton key={index} className="h-30" />)}</div></div>
+}
+
+function Metric({ label, value, icon: Icon, state, stateLabel }: { label: string; value: string | number; icon?: typeof Users; state?: 'warning' | 'danger'; stateLabel?: string }) {
+  const metricValue = typeof value === 'number' ? value.toLocaleString('es-CR') : value
+  const icon = Icon ? <Icon className="size-5" /> : undefined
+  return state ? <MetricCard label={label} value={metricValue} icon={icon} state={state} stateLabel={stateLabel ?? ''} /> : <MetricCard label={label} value={metricValue} icon={icon} />
 }
 
 function hasData(data: AdminDashboardData) {
