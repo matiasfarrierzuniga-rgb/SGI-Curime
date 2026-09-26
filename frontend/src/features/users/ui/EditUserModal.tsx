@@ -1,4 +1,7 @@
-import { Modal } from "@/shared/ui/Modal";
+import { Button } from "@/shared/ui/button";
+import { FormField } from "@/shared/ui/FormField";
+import { Input } from "@/shared/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { digitsOnly, phoneNationalMaxLength } from "@/shared/lib/formValidation";
 
 export interface UserEditForm {
@@ -28,17 +31,19 @@ export function EditUserModal({
   onSubmit,
 }: EditUserModalProps) {
   return (
-    <Modal title="Editar usuario" onClose={onClose} busy={busy}>
+    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
+      <DialogContent showCloseButton={!busy}>
+        <DialogHeader><DialogTitle>Editar usuario</DialogTitle><DialogDescription>Actualice únicamente datos de contacto. El rol se gestiona por separado.</DialogDescription></DialogHeader>
       <form
-        className="form-grid"
+        className="grid gap-4"
+        aria-busy={busy}
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit();
         }}
       >
-        <label>
-          Nombre completo
-          <input
+        <FormField id="user-full-name" label="Nombre completo" required error={fieldErrors.fullName}>
+          <Input
             required
             minLength={2}
             maxLength={150}
@@ -46,11 +51,9 @@ export function EditUserModal({
             value={form.fullName}
             onChange={(e) => onFormChange({ ...form, fullName: e.target.value })}
           />
-          {fieldErrors.fullName && <span className="field-error" role="alert">{fieldErrors.fullName}</span>}
-        </label>
-        <label>
-          Correo electrónico
-          <input
+        </FormField>
+        <FormField id="user-email" label="Correo electrónico" required error={fieldErrors.email}>
+          <Input
             type="email"
             required
             maxLength={254}
@@ -58,27 +61,28 @@ export function EditUserModal({
             value={form.email}
             onChange={(e) => onFormChange({ ...form, email: e.target.value })}
           />
-          {fieldErrors.email && <span className="field-error" role="alert">{fieldErrors.email}</span>}
-        </label>
-        <label>Código país<input maxLength={5} autoComplete="tel-country-code" value={form.phoneCountryCode} onChange={(e) => onFormChange({ ...form, phoneCountryCode: e.target.value })} /></label>
-        <label>Número<input inputMode="numeric" autoComplete="tel-national" maxLength={phoneNationalMaxLength(form.phoneCountryCode)} value={form.phoneNationalNumber} onChange={(e) => onFormChange({ ...form, phoneNationalNumber: digitsOnly(e.target.value, phoneNationalMaxLength(form.phoneCountryCode)) })} />{fieldErrors.phoneNationalNumber && <span className="field-error" role="alert">{fieldErrors.phoneNationalNumber}</span>}</label>
-        <label>
-          Dirección
-          <input
+        </FormField>
+        <div className="grid gap-4 sm:grid-cols-[minmax(8rem,0.45fr)_minmax(0,1fr)]">
+          <FormField id="user-phone-country" label="Código país">
+            <Input maxLength={5} autoComplete="tel-country-code" value={form.phoneCountryCode} onChange={(e) => onFormChange({ ...form, phoneCountryCode: e.target.value })} />
+          </FormField>
+          <FormField id="user-phone-national" label="Número" error={fieldErrors.phoneNationalNumber}>
+            <Input inputMode="numeric" autoComplete="tel-national" maxLength={phoneNationalMaxLength(form.phoneCountryCode)} value={form.phoneNationalNumber} onChange={(e) => onFormChange({ ...form, phoneNationalNumber: digitsOnly(e.target.value, phoneNationalMaxLength(form.phoneCountryCode)) })} />
+          </FormField>
+        </div>
+        <FormField id="user-address" label="Dirección">
+          <Input
             maxLength={300}
             value={form.address}
             onChange={(e) => onFormChange({ ...form, address: e.target.value })}
           />
-        </label>
-        <div className="actions">
-          <button type="button" onClick={onClose}>
-            Cancelar
-          </button>
-          <button className="primary" disabled={busy}>
-            {busy ? "Guardando…" : "Guardar cambios"}
-          </button>
-        </div>
+        </FormField>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose} disabled={busy}>Cancelar</Button>
+          <Button type="submit" loading={busy}>Guardar cambios</Button>
+        </DialogFooter>
       </form>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 }

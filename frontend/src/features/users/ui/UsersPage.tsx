@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Pagination } from "@/shared/ui/Pagination";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
+import { Button } from "@/shared/ui/button";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { ErrorState } from "@/shared/ui/ErrorState";
+import { LoadingState } from "@/shared/ui/LoadingState";
+import { PageContainer } from "@/shared/ui/PageContainer";
+import { PageHeader } from "@/shared/ui/PageHeader";
 import type { UserStatus } from "../model/users.types";
 import { getErrorMessage } from "@/shared/lib/errors";
 import { useToast } from "@/shared/ui/Toast";
@@ -114,9 +120,23 @@ export function UsersPage() {
     }
   };
 
+  const clearFilters = () => {
+    setPage(1);
+    setName("");
+    setQuery("");
+    setStatus("");
+    setRoleId("");
+  };
+
+  const hasActiveFilters = Boolean(query || status || roleId);
+
   return (
-    <section>
-      <h1>Administración de usuarios</h1>
+    <PageContainer className="space-y-6">
+      <PageHeader
+        context="Administración"
+        title="Usuarios"
+        description="Consulte cuentas, revise su estado y gestione datos de contacto o roles."
+      />
       <UserFilters
         name={name}
         onNameChange={setName}
@@ -135,16 +155,23 @@ export function UsersPage() {
           setPage(1);
           setQuery(name.trim());
         }}
+        onClear={clearFilters}
       />
-      {error && (
-        <p className="message error" role="alert">
-          {error}
+      <div className="flex flex-col gap-1 border-b border-border-subtle pb-3 sm:flex-row sm:items-baseline sm:justify-between">
+        <p className="text-body-small font-semibold text-text-primary">
+          {loading ? "Cargando resultados…" : `${total} ${total === 1 ? "usuario encontrado" : "usuarios encontrados"}`}
         </p>
-      )}
-      {loading ? (
-        <p aria-live="polite">Cargando usuarios…</p>
-      ) : users.length === 0 ? (
-        <p className="card">No hay usuarios que coincidan con los filtros.</p>
+        <p className="text-body-small text-text-secondary">Desplácese horizontalmente para ver todas las columnas.</p>
+      </div>
+      {error ? <ErrorState message={error} action={<Button type="button" variant="outline" onClick={() => { void listQuery.refetch(); void rolesQuery.refetch(); }}>Reintentar</Button>} /> : null}
+      {!error && loading ? (
+        <LoadingState label="Cargando usuarios…" />
+      ) : !error && users.length === 0 ? (
+        <EmptyState
+          title={hasActiveFilters ? "No hay coincidencias" : "No hay usuarios registrados"}
+          description={hasActiveFilters ? "Ajuste la búsqueda o limpie los filtros para consultar nuevamente." : "Las cuentas registradas aparecerán en este listado."}
+          action={hasActiveFilters ? <Button type="button" variant="outline" onClick={clearFilters}>Limpiar filtros</Button> : undefined}
+        />
       ) : (
         <>
           <UsersTable users={users} onOpen={setSelectedId} />
@@ -156,7 +183,7 @@ export function UsersPage() {
           />
         </>
       )}
-      {selected && (
+      {selected && !mode && (
         <UserDetailsModal
           selected={selected}
           busy={busy}
@@ -201,6 +228,6 @@ export function UsersPage() {
           onConfirm={() => void run()}
         />
       )}
-    </section>
+    </PageContainer>
   );
 }

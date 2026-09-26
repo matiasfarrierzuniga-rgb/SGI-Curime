@@ -1,4 +1,7 @@
-import { Modal } from "@/shared/ui/Modal";
+import { Button } from "@/shared/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { FormField } from "@/shared/ui/FormField";
+import { Select } from "@/shared/ui/select";
 import type { RoleOption } from "../model/users.types";
 import type { UserEditForm } from "./EditUserModal";
 
@@ -20,30 +23,31 @@ export function ChangeRoleModal({
   onConfirm,
 }: ChangeRoleModalProps) {
   return (
-    <Modal title="Cambiar rol" onClose={onClose} busy={busy}>
-      <label>
-        Rol
-        <select
+    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
+      <DialogContent size="sm" showCloseButton={!busy}>
+        <DialogHeader>
+          <DialogTitle>Cambiar rol</DialogTitle>
+          <DialogDescription>El nuevo rol define los permisos disponibles para esta cuenta.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4">
+        <FormField id="user-role-change" label="Rol">
+          <Select
           value={form.roleId}
           onChange={(e) => onFormChange({ ...form, roleId: e.target.value })}
-        >
+          >
           {roles.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name}
             </option>
           ))}
-        </select>
-      </label>
-      <div className="actions">
-        <button onClick={onClose}>Cancelar</button>
-        <button
-          className="primary"
-          disabled={busy || !form.roleId}
-          onClick={onConfirm}
-        >
-          {busy ? "Guardando…" : "Confirmar cambio"}
-        </button>
-      </div>
-    </Modal>
+          </Select>
+        </FormField>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose} disabled={busy}>Cancelar</Button>
+          <Button type="button" loading={busy} disabled={!form.roleId} onClick={onConfirm}>Confirmar cambio</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

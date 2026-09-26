@@ -1,5 +1,8 @@
 import type { User } from "../model/users.types";
 import { statusLabel } from "../model/userStatus";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from "@/shared/ui/DataTable";
 
 interface UsersTableProps {
   users: User[];
@@ -8,43 +11,36 @@ interface UsersTableProps {
 
 export function UsersTable({ users, onOpen }: UsersTableProps) {
   return (
-    <div
-      className="table-wrap"
-      tabIndex={0}
-      aria-label="Tabla de usuarios, desplazable horizontalmente"
+    <DataTable
+      className="min-w-[720px]"
+      scrollLabel="Tabla de usuarios, desplazable horizontalmente"
     >
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Correo</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>
-              <span className="sr-only">Acciones</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
+      <DataTableHeader>
+        <DataTableRow className="hover:bg-surface-muted">
+          <DataTableHead>Nombre</DataTableHead>
+          <DataTableHead>Correo</DataTableHead>
+          <DataTableHead>Rol</DataTableHead>
+          <DataTableHead>Estado</DataTableHead>
+          <DataTableHead className="w-28 text-right"><span className="sr-only">Acciones</span></DataTableHead>
+        </DataTableRow>
+      </DataTableHeader>
+      <DataTableBody>
           {users.map((u) => (
-            <tr key={u.id}>
-              <td>{u.fullName}</td>
-              <td>{u.email}</td>
-              <td>{u.role.name}</td>
-              <td>
-                <span
-                  className={`badge ${u.isBlocked ? "warning" : u.status === "ACTIVE" ? "success" : "neutral"}`}
-                >
+            <DataTableRow key={u.id}>
+              <DataTableCell className="min-w-48 font-semibold text-text-primary">{u.fullName}</DataTableCell>
+              <DataTableCell className="min-w-56 break-all text-text-secondary">{u.email}</DataTableCell>
+              <DataTableCell className="whitespace-nowrap">{u.role.name}</DataTableCell>
+              <DataTableCell>
+                <Badge variant={u.isBlocked ? "warning" : u.status === "ACTIVE" ? "success" : "neutral"}>
                   {statusLabel(u)}
-                </span>
-              </td>
-              <td>
-                <button onClick={() => onOpen(u.id)}>Ver detalle</button>
-              </td>
-            </tr>
+                </Badge>
+              </DataTableCell>
+              <DataTableCell className="text-right">
+                <Button variant="outline" size="sm" type="button" onClick={() => onOpen(u.id)}>Ver detalle</Button>
+              </DataTableCell>
+            </DataTableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+      </DataTableBody>
+    </DataTable>
   );
 }

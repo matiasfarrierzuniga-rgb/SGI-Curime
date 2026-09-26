@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '@/shared/ui/Toast'
@@ -94,7 +94,8 @@ describe('UsersPage', () => {
     page()
     await screen.findByText('Ana Pérez')
 
-    fireEvent.change(screen.getByLabelText('Búsqueda por nombre'), { target: { value: 'Ana' } })
+    expect(screen.getByRole('search', { name: 'Buscar y filtrar usuarios' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Buscar por nombre'), { target: { value: 'Ana' } })
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'ACTIVE' } })
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }))
 
@@ -119,7 +120,8 @@ describe('UsersPage', () => {
     fireEvent.click(screen.getByRole('button', { name: openLabel }))
 
     if (openLabel === 'Editar datos') {
-      fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Nueva' } })
+      const editDialog = await screen.findByRole('dialog', { name: 'Editar usuario' })
+      fireEvent.change(within(editDialog).getByLabelText(/^Nombre completo/), { target: { value: 'Ana Nueva' } })
     }
 
     if (openLabel === 'Cambiar rol') {
@@ -134,8 +136,9 @@ describe('UsersPage', () => {
     page()
     await open()
     fireEvent.click(screen.getByRole('button', { name: 'Editar datos' }))
-    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: '' } })
-    const save = await screen.findByRole('button', { name: 'Guardar cambios' })
+    const editDialog = await screen.findByRole('dialog', { name: 'Editar usuario' })
+    fireEvent.change(within(editDialog).getByLabelText(/^Nombre completo/), { target: { value: '' } })
+    const save = within(editDialog).getByRole('button', { name: 'Guardar cambios' })
     await waitFor(() => expect(save).not.toBeDisabled())
     fireEvent.submit(save.closest('form')!)
     expect(await screen.findByRole('alert')).toBeInTheDocument()
