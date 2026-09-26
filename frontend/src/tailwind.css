@@ -22,12 +22,29 @@
   --color-brand-sage: #b8c4b4;
   --color-card-white: #fffdf9;
 
+  /* Semantic color foundation. Values remain raw so legacy aliases stay stable. */
+  --color-foreground-primary: #2b2723;
+  --color-foreground-secondary: #5f574f;
+  --color-foreground-muted: #766d64;
+  --color-foreground-disabled: #a69d92;
+  --color-foreground-brand: #2f4a38;
+  --color-foreground-institutional: #4a2f1a;
+  --color-background-app: #faf4ea;
+  --color-background-surface: #ffffff;
+  --color-background-subtle: #f4efe8;
+  --color-background-muted: #e9e2d9;
+  --color-background-selected: #f5e8cf;
+  --color-border-subtle: #e4ddd4;
+  --color-border-default: #d8d0c6;
+  --color-border-strong: #b8aea3;
+  --color-border-focus: #2f4a38;
+  --color-border-error: #b03a2e;
   --color-background: #faf4ea;
   --color-foreground: #4a2f1a;
   --color-surface: #fffdf9;
   --color-surface-muted: #f2eadf;
   --color-surface-elevated: #ffffff;
-  --color-foreground-muted: #6c5b4d;
+  --color-surface-overlay: rgba(74, 47, 26, 0.52);
   --color-foreground-subtle: #8b7c70;
   --color-focus: #b03a2e;
 
@@ -49,7 +66,6 @@
   --color-card-foreground: #4a2f1a;
 
   --color-border: #d9cbbc;
-  --color-border-subtle: #eee5da;
   --color-ring: #b03a2e;
 
   --color-muted: #f2eadf;
@@ -76,17 +92,40 @@
   --color-text-secondary: #6c5b4d;
   --color-text-muted: #6c5b4d;
   --color-text-inverse: #fffdf9;
-  --color-border-default: #d9cbbc;
+  --color-control: #fffdf9;
+  --color-control-disabled: #f2eadf;
+  --color-status-success-surface: #e7efe9;
+  --color-status-success-border: #afc3b4;
+  --color-status-success-foreground: #2f4a38;
+  --color-status-warning-surface: #f6ebd6;
+  --color-status-warning-border: #d7b56a;
+  --color-status-warning-foreground: #4a2f1a;
+  --color-status-error-surface: #f7e7e4;
+  --color-status-error-border: #d99a92;
+  --color-status-error-foreground: #b03a2e;
+  --color-status-info-surface: #e8eeec;
+  --color-status-info-border: #aabbb4;
+  --color-status-info-foreground: #2f4a38;
+  --color-status-neutral-surface: #f2eadf;
+  --color-status-neutral-border: #d9cbbc;
+  --color-status-neutral-foreground: #6c5b4d;
   --color-status-success: #2f6840;
   --color-status-success-surface: #e8f2e8;
   --color-status-warning: #72500f;
   --color-status-warning-surface: #fff2d8;
   --color-status-danger: #9d3027;
   --color-status-danger-surface: #fff0ed;
+  --color-status-danger-border: #d99b93;
+  --color-status-danger-foreground: #9d3027;
   --color-status-info: #1f5f8b;
   --color-status-info-surface: #e8f3f9;
   --color-status-neutral: #6c5b4d;
-  --color-status-neutral-surface: #f2eadf;
+  --color-interaction-primary-default: #2f4a38;
+  --color-interaction-primary-hover: #263d2e;
+  --color-interaction-primary-active: #1e3226;
+  --color-interaction-danger-default: #b03a2e;
+  --color-interaction-danger-hover: #922f26;
+  --color-interaction-danger-active: #78271f;
 
   --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
     --font-heading: "DM Serif Display", ui-serif, Georgia, serif;
@@ -121,6 +160,10 @@
   --text-caption--line-height: 1.4;
   --text-navigation: 0.9375rem;
   --text-navigation--line-height: 1.4;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 
   --leading-none: 1;
   --leading-tight: 1.25;
@@ -140,20 +183,40 @@
   --spacing-ui-3xl: 3rem;
   --spacing-ui-4xl: 4rem;
   --spacing-ui-5xl: 5rem;
+  --spacing-space-1: 0.25rem;
+  --spacing-space-2: 0.5rem;
+  --spacing-space-3: 0.75rem;
+  --spacing-space-4: 1rem;
+  --spacing-space-5: 1.5rem;
+  --spacing-space-6: 2rem;
+  --spacing-space-7: 2.5rem;
+  --spacing-space-8: 3rem;
+  --spacing-space-9: 4rem;
+  --spacing-space-10: 5rem;
+  --spacing-page-inline: 1rem;
+  --spacing-page-block: 1.5rem;
+  --spacing-control-x: 0.75rem;
+  --spacing-control-y: 0.5rem;
 
   --radius-sm: 0.375rem;
-  --radius-md: 0.625rem;
-  --radius-lg: 0.875rem;
-  --radius-xl: 1.125rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.875rem;
   --radius-full: 9999px;
-  --radius-control: 0.625rem;
-  --radius-surface: 0.875rem;
+  --radius-control: 0.5rem;
+  --radius-surface: 0.75rem;
+  --radius-overlay: 0.875rem;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 28px rgba(74, 47, 26, 0.1);
   --shadow-xl: 0 16px 40px rgba(74, 47, 26, 0.18);
   --shadow-surface: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-overlay: 0 20px 48px rgba(74, 47, 26, 0.2);
+  --shadow-elevation-0: none;
+  --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-elevation-2: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-elevation-3: 0 10px 28px rgba(74, 47, 26, 0.1);
 
   --breakpoint-xs: 320px;
   --breakpoint-sm: 375px;
@@ -170,7 +233,8 @@
 
   --container-max: 1280px;
   --size-control-compact: 2.75rem;
-  --size-control: 3rem;
+  --size-control: 2.75rem;
+  --size-control-lg: 3rem;
   --size-header-mobile: 4.5rem;
   --size-header-desktop: 5.75rem;
 
@@ -271,12 +335,21 @@
   }
 
   @media (min-width: 375px) {
+    :root {
+      --spacing-page-inline: 1.5rem;
+    }
+
     .public-container {
       padding-inline: 1.25rem;
     }
   }
 
   @media (min-width: 768px) {
+    :root {
+      --spacing-page-inline: 2rem;
+      --spacing-page-block: 2rem;
+    }
+
     .public-container {
       padding-inline: 1.5rem;
     }
@@ -287,6 +360,11 @@
   }
 
   @media (min-width: 1024px) {
+    :root {
+      --spacing-page-inline: 2rem;
+      --spacing-page-block: 2.5rem;
+    }
+
     .public-main,
     .public-main :target {
       scroll-margin-top: calc(var(--size-header-desktop) + var(--spacing-ui-md));
@@ -298,6 +376,10 @@
   }
 
   @media (min-width: 1440px) {
+    :root {
+      --spacing-page-inline: 2.5rem;
+    }
+
     .public-container {
       padding-inline: 3rem;
     }
