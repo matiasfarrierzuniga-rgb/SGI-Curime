@@ -35,17 +35,37 @@ describe('AdminDashboard', () => {
     expect(screen.getByLabelText('Cargando indicadores administrativos')).toBeInTheDocument()
   })
 
-  it('shows the principal administrative indicators and financial semantics', async () => {
+  it('groups every displayed metric into queue, attention, snapshot, and financial summaries', async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response })
     renderDashboard()
 
+    expect(await screen.findByRole('heading', { name: 'Cola operativa' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Atención requerida' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Panorama institucional' })).toBeInTheDocument()
     expect(await screen.findByText('Afiliados activos')).toBeInTheDocument()
+    expect(screen.getByText('Reservas confirmadas')).toBeInTheDocument()
     expect(screen.getByText('Artículos con stock bajo')).toBeInTheDocument()
+    const outOfStockRisk = screen.getByText('Artículos agotados')
+    const overdueLoanRisk = screen.getByText('Préstamos vencidos')
+    const lowStockRisk = screen.getByText('Artículos con stock bajo')
+    expect(outOfStockRisk.compareDocumentPosition(overdueLoanRisk) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(overdueLoanRisk.compareDocumentPosition(lowStockRisk) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByText('Asambleas en progreso')).toBeInTheDocument()
     expect(screen.getByText('Donaciones confirmadas')).toBeInTheDocument()
     expect(screen.getByText('₡110 000,00')).toBeInTheDocument()
     expect(screen.getByText(/donaciones ya incluidas como ingresos no se suman nuevamente/i)).toBeInTheDocument()
     expect(httpClient.get).toHaveBeenCalledWith('/admin-reports/dashboard')
+  })
+
+  it('omits zero-valued attention metrics and confirms the absence of operational risks', async () => {
+    const withoutRisks = { ...data, inventory: { ...data.inventory, lowStockItems: 0, outOfStockItems: 0, overdueLoans: 0 } }
+    vi.mocked(httpClient.get).mockResolvedValue({ data: { ...response, data: withoutRisks } })
+    renderDashboard()
+
+    expect(await screen.findByText('No hay alertas de inventario ni préstamos vencidos.')).toBeInTheDocument()
+    expect(screen.queryByText('Artículos con stock bajo')).not.toBeInTheDocument()
+    expect(screen.queryByText('Artículos agotados')).not.toBeInTheDocument()
+    expect(screen.queryByText('Préstamos vencidos')).not.toBeInTheDocument()
   })
 
   it('shows an accessible error state', async () => {

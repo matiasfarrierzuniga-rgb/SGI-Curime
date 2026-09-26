@@ -9,6 +9,8 @@ import { inventoryReportsService } from '@/services/inventoryReportsService'
 import type { InventoryReportSummary } from '@/types/inventory'
 import { Badge } from '@/shared/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { PageContainer } from '@/shared/ui/PageContainer'
+import { PageHeader } from '@/shared/ui/PageHeader'
 import { Skeleton } from '@/shared/ui/skeleton'
 
 const internalQuickActions = [
@@ -59,15 +61,13 @@ export function AppHomePage() {
   const firstName = user?.fullName?.trim().split(/\s+/)[0]
 
   return (
-    <div className="space-y-8">
-        <header className="flex flex-col justify-between gap-5 border-b border-border pb-6 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-primary">Inicio</p>
-          <h1 className="mt-2 font-heading text-heading-1 font-bold tracking-[-0.02em] text-brand-ink">{firstName ? `Hola, ${firstName}` : 'Mi cuenta'}</h1>
-          <p className="mt-2 max-w-2xl text-foreground-muted">{isCommunityUser ? 'Desde aquí puede solicitar servicios y consultar la información de su cuenta.' : 'Resumen de las áreas disponibles para su trabajo en SGI-Curime.'}</p>
-        </div>
-        {roleName && <Badge variant="secondary" className="w-fit">{roleName}</Badge>}
-      </header>
+    <PageContainer className="space-y-8">
+      <PageHeader
+        context="Inicio"
+        title={firstName ? `Hola, ${firstName}` : 'Mi cuenta'}
+        description={isCommunityUser ? 'Desde aquí puede solicitar servicios y consultar la información de su cuenta.' : 'Resumen de las áreas disponibles para su trabajo en SGI-Curime.'}
+        actions={roleName ? <Badge variant="secondary" className="w-fit">{roleName}</Badge> : undefined}
+      />
 
       {isAdministrator && <AdminDashboard />}
 
@@ -124,7 +124,7 @@ export function AppHomePage() {
           <Card className="mt-4"><CardContent><p className="font-semibold">No hay tareas pendientes disponibles.</p><p className="mt-1 text-sm text-foreground-muted">Utilice Mi perfil para consultar la información de su cuenta.</p></CardContent></Card>
         )}
       </section>}
-    </div>
+    </PageContainer>
   )
 }
 

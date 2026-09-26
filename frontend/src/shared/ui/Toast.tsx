@@ -1,6 +1,46 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
-type Kind = 'success' | 'error' | 'warning' | 'info'; type ToastItem = { id: number; message: string; kind: Kind }
-const ToastContext = createContext<{ notify: (message: string, kind?: Kind) => void } | undefined>(undefined)
-export function ToastProvider({ children }: { children: ReactNode }) { const [items, setItems] = useState<ToastItem[]>([]); const notify = useCallback((message: string, kind: Kind = 'info') => { const id = Date.now() + Math.random(); setItems(v => [...v, { id, message, kind }]); window.setTimeout(() => setItems(v => v.filter(x => x.id !== id)), 5000) }, []); return <ToastContext.Provider value={{ notify }}>{children}<div className="toast-region" aria-live="polite">{items.map(item => <div className={`toast ${item.kind}`} key={item.id} role={item.kind === 'error' ? 'alert' : 'status'}><span>{item.message}</span><button aria-label="Cerrar notificación" onClick={() => setItems(v => v.filter(x => x.id !== item.id))}>×</button></div>)}</div></ToastContext.Provider> }
-// oxlint-disable-next-line react/only-export-components -- hook is intentionally colocated with its provider
-export function useToast() { const value = useContext(ToastContext); if (!value) throw new Error('useToast debe usarse dentro de ToastProvider'); return value }
+import { createContext, useCallback, useContext, type ReactNode } from "react"
+import { Toaster as SonnerToaster, toast } from "sonner"
+
+type ToastKind = "success" | "error" | "warning" | "info"
+
+const ToastContext = createContext<{ notify: (message: string, kind?: ToastKind) => void } | undefined>(undefined)
+
+function ToastProvider({ children }: { children: ReactNode }) {
+  const notify = useCallback((message: string, kind: ToastKind = "info") => {
+    if (kind === "success") return toast.success(message)
+    if (kind === "error") return toast.error(message)
+    if (kind === "warning") return toast.warning(message)
+    return toast.info(message)
+  }, [])
+
+  return <ToastContext.Provider value={{ notify }}>{children}</ToastContext.Provider>
+}
+
+function Toaster() {
+  return (
+    <SonnerToaster
+      position="top-right"
+      closeButton
+      toastOptions={{
+        classNames: {
+          toast: "border-border bg-surface text-foreground shadow-overlay",
+          title: "font-semibold text-foreground",
+          description: "text-muted-foreground",
+          success: "border-status-success/30 bg-status-success-surface text-status-success",
+          error: "border-status-danger/30 bg-status-danger-surface text-status-danger",
+          warning: "border-status-warning/30 bg-status-warning-surface text-status-warning",
+          info: "border-status-info/30 bg-status-info-surface text-status-info",
+          closeButton: "border-border bg-surface text-foreground",
+        },
+      }}
+    />
+  )
+}
+
+function useToast() {
+  const value = useContext(ToastContext)
+  if (!value) throw new Error("useToast debe usarse dentro de ToastProvider")
+  return value
+}
+
+export { toast, Toaster, ToastProvider, useToast }

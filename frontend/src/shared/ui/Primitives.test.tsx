@@ -29,9 +29,9 @@ describe("shared UI primitives", () => {
       </>,
     )
 
-    expect(screen.getByRole("button", { name: "Guardar" })).toHaveClass("bg-primary", "h-12")
+    expect(screen.getByRole("button", { name: "Guardar" })).toHaveClass("bg-interaction-primary-default", "h-11")
     expect(screen.getByRole("button", { name: "Cancelar" })).toHaveClass("border-primary", "text-primary")
-    expect(screen.getByRole("button", { name: "Eliminar" })).toHaveClass("bg-destructive")
+    expect(screen.getByRole("button", { name: "Eliminar" })).toHaveClass("bg-interaction-danger-default")
     expect(screen.getByRole("combobox", { name: "Rol" })).toHaveValue("member")
     expect(screen.getByRole("textbox", { name: "Notas" })).toBeInTheDocument()
     expect(screen.getByRole("checkbox", { name: "Acepto términos" })).toBeInTheDocument()
