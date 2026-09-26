@@ -13,7 +13,7 @@ function ToastProvider({ children }: { children: ReactNode }) {
     return toast.info(message)
   }, [])
 
-  return <ToastContext.Provider value={{ notify }}>{children}</ToastContext.Provider>
+  return <ToastContext.Provider value={{ notify }}>{children}<Toaster /></ToastContext.Provider>
 }
 
 function Toaster() {

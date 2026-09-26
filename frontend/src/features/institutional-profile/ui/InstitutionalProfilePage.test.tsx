@@ -28,7 +28,7 @@ describe('InstitutionalProfilePage', () => {
     render(<InstitutionalProfilePage />)
     fireEvent.change(screen.getByLabelText(/Nombre legal/), { target: { value: '  Asociación de Desarrollo Integral de Prueba  ' } })
     fireEvent.change(screen.getByLabelText(/Correo institucional/), { target: { value: ' CONTACTO@PRUEBA.TEST ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ legalName: 'Asociación de Desarrollo Integral de Prueba', email: 'contacto@prueba.test', canton: null })))
     expect(await screen.findByRole('status')).toHaveTextContent('guardado correctamente')
   })
@@ -36,7 +36,7 @@ describe('InstitutionalProfilePage', () => {
   it('shows inline email validation and does not submit', async () => {
     render(<InstitutionalProfilePage />)
     fireEvent.change(screen.getByLabelText(/Correo institucional/), { target: { value: 'correo inválido' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
     expect(await screen.findByRole('alert')).toBeVisible()
     expect(mutateAsync).not.toHaveBeenCalled()
   })
@@ -45,7 +45,7 @@ describe('InstitutionalProfilePage', () => {
     mutateAsync.mockRejectedValue(new Error('Fallo de prueba'))
     render(<InstitutionalProfilePage />)
     fireEvent.change(screen.getByLabelText(/Nombre legal/), { target: { value: 'Asociación de Prueba' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
     expect(await screen.findByText('No fue posible guardar el perfil institucional.')).toBeVisible()
     expect(screen.getByLabelText(/Nombre legal/)).toHaveValue('Asociación de Prueba')
   })
@@ -53,7 +53,7 @@ describe('InstitutionalProfilePage', () => {
   it('disables the form and exposes saving state', () => {
     vi.mocked(useUpdateInstitutionalProfile).mockReturnValue({ mutateAsync, isPending: true } as never)
     render(<InstitutionalProfilePage />)
-    expect(screen.getByRole('button', { name: 'Guardando…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Guardando cambios/ })).toBeDisabled()
     expect(screen.getByLabelText(/Nombre legal/)).toBeDisabled()
   })
 
