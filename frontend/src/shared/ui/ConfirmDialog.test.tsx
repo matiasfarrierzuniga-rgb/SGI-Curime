@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ToastProvider, useToast } from './Toast'
@@ -60,7 +60,7 @@ describe('UI dialogs and toasts', () => {
     expect(close).toHaveBeenCalledOnce()
   })
 
-  it('shows success and error toasts and allows closing them', () => {
+  it('shows success and error toasts and allows closing them', async () => {
     const Demo = () => {
       const { notify } = useToast()
       return <><button onClick={() => notify('Guardado', 'success')}>ok</button><button onClick={() => notify('Falló', 'error')}>bad</button></>
@@ -68,9 +68,11 @@ describe('UI dialogs and toasts', () => {
     render(<ToastProvider><Demo /></ToastProvider>)
     fireEvent.click(screen.getByText('ok'))
     fireEvent.click(screen.getByText('bad'))
-    expect(screen.getByRole('status')).toHaveTextContent('Guardado')
-    expect(screen.getByRole('alert')).toHaveTextContent('Falló')
-    fireEvent.click(screen.getAllByLabelText('Cerrar notificación')[0])
-    expect(screen.queryByText('Guardado')).not.toBeInTheDocument()
+    const notifications = await screen.findByRole('region', { name: /notifications/i })
+    expect(notifications).toHaveAttribute('aria-live', 'polite')
+    expect(notifications).toHaveTextContent('Guardado')
+    expect(notifications).toHaveTextContent('Falló')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close toast' })[1])
+    await waitFor(() => expect(screen.queryByText('Guardado')).not.toBeInTheDocument())
   })
 })

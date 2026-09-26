@@ -135,7 +135,7 @@ describe('AppRoutes capability deep links', () => {
   it('renders /admin/users for administrators', async () => {
     renderRoute('/admin/users', 'Administrador')
 
-    expect(await screen.findByRole('heading', { name: 'Administración de usuarios' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeInTheDocument()
   })
 
   it('allows administrators to deep-link to audit logs', async () => {
