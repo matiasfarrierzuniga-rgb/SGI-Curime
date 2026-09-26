@@ -3,7 +3,7 @@
 - [x] 1.1 Start implementation from current `main`, preserve this OpenSpec change and archived DB-1 evidence, and prove the branch does not merge the DB-1 implementation migration unchanged.
 - [x] 1.2 Record immutable hashes for shared migrations `20260920120000_add_institutional_profile` and `20260922120000_add_institutional_board`, then add a guard proving neither file changes in the final diff.
 - [x] 1.3 Inventory every `InstitutionalProfile` reader/writer, DINADECO contract, profile/board route, capability, audit action, frontend consumer, and board foreign key against the current-main baseline.
-- [ ] 1.4 Implement a read-only preflight that classifies `MAIN_LEGACY_ONLY`, `CANONICAL_ONLY`, `BOTH_EQUIVALENT`, `BOTH_CONFLICTING`, `NEITHER`, and `HISTORY_MISMATCH` without logging institutional values.
+- [x] 1.4 Implement a read-only preflight that classifies `MAIN_LEGACY_ONLY`, `CANONICAL_ONLY`, `BOTH_EQUIVALENT`, `BOTH_CONFLICTING`, `NEITHER`, and `HISTORY_MISMATCH` without logging institutional values.
 - [ ] 1.5 Define and exercise abort behavior for unsupported migration history, multiple singleton rows, conflicting roots, unknown environment ownership, and unavailable authoritative configuration.
 - [ ] 1.6 Document and verify the database checkpoint/restore procedure required before any reconciliation mutation.
 
