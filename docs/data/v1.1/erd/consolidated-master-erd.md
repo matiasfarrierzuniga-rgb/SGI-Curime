@@ -386,5 +386,5 @@ erDiagram
 - The first 40 persistent entities and their relationships are inherited unchanged from Frozen V1.
 - Volunteering contributes 5 entities and 11 FK relationships.
 - Entrepreneurship contributes 4 entities and 5 FK relationships.
-- The transitional `IdentityReconciliationManifest -> Person` relation remains included in the Master relationship count.
+- `MASTER_RELATIONSHIPS=77` counts persistent Target relationships only. The transitional `IdentityReconciliationManifest -> Person` relation is documented separately and is not included in that count.
 - Mermaid does not encode partial unique indexes, conditional nullability, lifecycle checks, capacity concurrency, interval-overlap validation, or other cross-row invariants. Those are defined in the data dictionary and integrity catalog.
