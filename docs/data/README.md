@@ -111,6 +111,11 @@ inherited decisions; it is not overwritten by the v1.1 package.
 Prisma and the CURRENT model remain AS-IS until migration/implementation waves
 are derived from a refreshed AS-IS → Target v1.1 Gap Matrix and then verified.
 
+The restored `current-model.md` is a historical AS-IS snapshot tied to its
+declared baseline commit. It has not been revalidated against the current
+repository `main` by this documentation-only change; a refreshed AS-IS audit
+is required before V1.1 gap analysis.
+
 ### Recovered Frozen V1 source coverage
 
 The Frozen V1 canonical package above was restored from the audited source
