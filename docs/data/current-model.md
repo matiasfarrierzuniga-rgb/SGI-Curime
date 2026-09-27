@@ -7,6 +7,13 @@ last_reviewed: 2026-09-20
 
 # SGI-Curime Current Data Model
 
+> **Recovered baseline notice (2026-09-26):** this file is preserved from the
+> Frozen V1 audited documentation package. Its `CURRENT` label is relative to
+> the baseline commit declared in its front matter, not a claim that it has
+> been revalidated against the present repository `main`. A refreshed AS-IS
+> audit is required before V1.1 Gap Matrix work.
+
+
 ## 1. Purpose
 
 Este documento registra el modelo persistente **CURRENT / AS-IS** de SGI-Curime. Describe lo implementado en el baseline indicado, sin corregir conceptualmente el schema, proponer entidades Target ni convertir deuda actual en diseño aprobado.
