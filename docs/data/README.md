@@ -80,6 +80,37 @@ When earlier Target documentation contradicts this canonical package, the
 consolidated decision wins; earlier documents remain engineering history and
 rationale.
 
+## Canonical Relational Model v1.1
+
+**Status:** ACCEPTED / FROZEN
+
+Target v1.1 is an additive evolution of the preserved Frozen v1 baseline. The
+v1 package remains historical engineering evidence and the authority for
+inherited decisions; it is not overwritten by the v1.1 package.
+
+**Canonical package:**
+
+- [V1.1 Documentation Index](./v1.1/README.md)
+- [V1.1 Freeze Declaration](./v1.1/freeze-declaration.md)
+- [V1.1 Target Model](./v1.1/target-model.md)
+- [V1.1 Consolidated Relational Model](./v1.1/consolidated-relational-model.md)
+- [V1.1 Consolidated Data Dictionary](./v1.1/consolidated-data-dictionary.md)
+- [V1.1 Decision Register](./v1.1/target-model-decision-register.md)
+- [V1.1 Integrity Rules](./v1.1/integrity-rules.md)
+- [V1.1 Deferred / Excluded Registry](./v1.1/deferred-excluded-registry.md)
+- [V1.1 Consolidated Master ERD](./v1.1/erd/consolidated-master-erd.md)
+- [V1 → V1.1 Evolution Matrix](./v1.1/evolution/v1-to-v1.1-matrix.md)
+
+**Persistent entities:** 49  
+**Transitional entities:** 1  
+**Master relationships:** 77 persistent Target relationships
+
+**Implementation status:** NOT YET IMPLEMENTED AS A WHOLE  
+**Migration status:** V1.1 MIGRATION PLANNING NOT STARTED
+
+Prisma and the CURRENT model remain AS-IS until migration/implementation waves
+are derived from a refreshed AS-IS → Target v1.1 Gap Matrix and then verified.
+
 ## Documents
 
 ### CURRENT
