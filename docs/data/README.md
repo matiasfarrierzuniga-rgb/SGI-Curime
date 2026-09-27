@@ -111,6 +111,26 @@ inherited decisions; it is not overwritten by the v1.1 package.
 Prisma and the CURRENT model remain AS-IS until migration/implementation waves
 are derived from a refreshed AS-IS → Target v1.1 Gap Matrix and then verified.
 
+### Recovered Frozen V1 source coverage
+
+The Frozen V1 canonical package above was restored from the audited source
+snapshot used for the V1.1 reconciliation. That source snapshot did **not**
+contain the following earlier engineering-history documents that the historical
+README referenced:
+
+- `conceptual-model.md`
+- `logical-model.md`
+- `data-dictionary.md`
+- `evolution/current-target-gap-matrix.md`
+- `target-model-review.md`
+- `evolution/database-audit-2026-09.md`
+
+They are therefore **not reconstructed or fabricated by this documentation
+change**. References to those names in preserved Frozen V1 artifacts remain
+historical provenance, not evidence that the files were recovered in this
+branch. The canonical Frozen V1 relational package required for the V1.1
+baseline is present.
+
 ## Documents
 
 ### CURRENT
