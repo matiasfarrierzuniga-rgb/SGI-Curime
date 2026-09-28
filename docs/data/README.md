@@ -72,10 +72,12 @@ Cada documento debe declarar baseline y fecha de revisión cuando describa estad
 **Transitional entities:** 1
 **Master relationships:** 61
 
-**Implementation status:** NOT YET IMPLEMENTED AS A WHOLE
-**Migration status:** NOT STARTED
+**Historical freeze-time implementation status:** NOT YET IMPLEMENTED AS A WHOLE
+**Historical freeze-time migration status:** NOT STARTED
 
-Prisma remains AS-IS physical implementation until migration waves are applied.
+At the V1 freeze checkpoint, Prisma remained the pre-V1 Target AS-IS physical
+implementation. This statement is historical; current Prisma status is recorded
+in the V1.1 section below.
 When earlier Target documentation contradicts this canonical package, the
 consolidated decision wins; earlier documents remain engineering history and
 rationale.
@@ -86,7 +88,8 @@ rationale.
 
 Target v1.1 is an additive evolution of the preserved Frozen v1 baseline. The
 v1 package remains historical engineering evidence and the authority for
-inherited decisions; it is not overwritten by the v1.1 package.
+inherited decisions; it is not overwritten by the v1.1 package. Structural
+implementation is now merged at main@71aa989 (PR #102), verified and integrated.
 
 **Canonical package:**
 
@@ -101,20 +104,22 @@ inherited decisions; it is not overwritten by the v1.1 package.
 - [V1.1 Consolidated Master ERD](./v1.1/erd/consolidated-master-erd.md)
 - [V1 → V1.1 Evolution Matrix](./v1.1/evolution/v1-to-v1.1-matrix.md)
 
-**Persistent entities:** 49  
-**Transitional entities:** 1  
+**Persistent entities:** 49
+**Transitional entities:** 1
 **Master relationships:** 77 persistent Target relationships
 
-**Implementation status:** NOT YET IMPLEMENTED AS A WHOLE  
-**Migration status:** V1.1 MIGRATION PLANNING NOT STARTED
+**Implementation status:** IMPLEMENTED / VERIFIED / INTEGRATED AT `main@71aa989` (PR #102)
+**Cutover status:** HISTORICAL / EVIDENCE-DEPENDENT CLEANUP DEFERRED
 
-Prisma and the CURRENT model remain AS-IS until migration/implementation waves
-are derived from a refreshed AS-IS → Target v1.1 Gap Matrix and then verified.
+The merged implementation provides the V1.1 structural contract (49 persistent
+entities, 1 transitional entity, 77 relationships). Evidence-dependent cutover
+remains deferred per the documented gates (ID-01, ASM-ATT-01, FIN-ORIGIN-01,
+FIN-DON-01, INV-LEDGER-01, INV-LOAN-01, ASM-DATE-01, RES-STATUS-01). Do not
+treat structural implementation as completed historical reconciliation.
 
-The restored `current-model.md` is a historical AS-IS snapshot tied to its
-declared baseline commit. It has not been revalidated against the current
-repository `main` by this documentation-only change; a refreshed AS-IS audit
-is required before V1.1 gap analysis.
+Prisma at `main@71aa989` contains the implemented structural V1.1 contract.
+CURRENT documentation must describe that merged shape while keeping nullable
+compatibility links and legacy fields explicit until their approved gates pass.
 
 ### Recovered Frozen V1 source coverage
 

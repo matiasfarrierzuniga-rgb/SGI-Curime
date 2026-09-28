@@ -93,6 +93,18 @@ Las mutaciones invalidan listas y detalle de Donaciones según corresponda, adem
 
 Shared DatePicker integration deferred. El DatePicker compartido no existe en esta rama; se mantiene `datetime-local` hasta reconciliación posterior.
 
+**ADD_STATUS_NOTE: V1.1 package distinction and deferred gates**
+
+This Donations module documentation reflects the AS-IS state at merge checkpoint main@71aa989 (PR #102). The V1.1 package `IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989` provides the structural contract, but deferred cutover gates remain evidence-dependent:
+
+- `FIN-ORIGIN-01`: Explicit-origin reconciliation before generic `sourceId` removal
+- `FIN-DON-01`: Donation original/reversal evidence before redundant-field removal
+- `ID-01`: Person canonical mapping affects donation person linking
+
+Do not treat structural implementation as completed historical reconciliation. The V1 donations design (`IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE`) remains the historical authority; V1.1 additive structure is now merged, and final cutover requires evidence per each gate. The `FIN-DON-01` gate specifically addresses `Donation.originalMovementId NOT NULL` and removal of redundant reversal representation — structural implementation does not imply this gate is passed.
+
+Shared DatePicker integration deferred. El DatePicker compartido no existe en esta rama; se mantiene `datetime-local` hasta reconciliación posterior.
+
 ## Fuentes relacionadas
 
 - `backend/src/donations/`

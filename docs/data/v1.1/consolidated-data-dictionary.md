@@ -89,6 +89,29 @@ assembly/attendance identifiers.
 
 The Frozen V1 exclusions remain inherited by Target V1.1. Additional V1.1 deferred/excluded concepts are maintained in `deferred-excluded-registry.md`.
 
+## ADD_STATUS_NOTE: Logical dictionary valid; nullable legacy compatibility fields clarification
+
+This Consolidated Data Dictionary v1.1 preserves the logical Target v1.1 dictionary as designed. Field definitions, invariants, and classifications are correct as documented.
+
+**V1.1 implementation status:** The structural contract is now merged and verified at main@71aa989 (PR #102). The V1.1 package `IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989` reflects the merged checkpoint. The logical dictionary remains valid as-designed.
+
+**Nullable legacy compatibility fields:** The following fields remain TRANSITIONAL / nullable until their respective deferred gates are evidenced and enforced. Do not remove NOT NULL or retire LEGACY/TRANSITIONAL designations prematurely:
+
+- `Person.legacyFullName?` — remains TRANSITIONAL until `ID-01` closes
+- `User.personId` — nullable and unique at merge; final `NOT NULL` enforcement remains deferred under `ID-01`
+- `Affiliate.personId` — nullable and unique at merge; final `NOT NULL` enforcement remains deferred under `ID-01`
+- `Affiliate.roleId` — LEGACY; remains until `ID-01` closes and historical treatment is evidenced
+- `DonorName?` / `DonorIdentification?` on `Donation` — TRANSITIONAL; remains until `FIN-DON-01` closes
+- `FinancialMovement.source` / `sourceId` — LEGACY; remains until `FIN-ORIGIN-01` closes
+- `InventoryMovement.quantity` — unsigned; remains until `INV-LEDGER-01` closes and signed-delta conversion is enforced
+- `InventoryLoan.borrowerNameSnapshot` — remains; linked movements require evidence per `INV-LOAN-01`
+- `Assembly.heldAt?` — nullable; remains until `ASM-DATE-01` closes and evidence-backed backfill
+- `ReservationStatus.CONFIRMED` / `COMPLETED` — transitional legacy; remains until `RES-STATUS-01` closes and non-destructive removal
+
+**Package distinction:** V1 dictionary (`IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE`) preserves the frozen historical design. The V1.1 package (`IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989`) reflects the merged state, but deferred gates require evidence before field retirement or constraint enforcement.
+
+**Do not treat structural implementation as completed historical reconciliation.** The dictionary defines target destination; migration gates define sequencing. Current model reflects 49 persistent + 1 transitional at main@71aa989; rule enforcement waits on each gate's evidence exit criterion.
+
 
 ## Volunteering
 

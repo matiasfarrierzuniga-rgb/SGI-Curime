@@ -255,3 +255,24 @@ See `deferred-excluded-registry.md`.
 This document is Target, not Current.
 
 No Prisma schema, migration, seed, backend or frontend change is authorized solely by the relational freeze.
+
+## ADD_STATUS_NOTE: Counts/design correct; current implementation boundary note
+
+Frozen Target v1.1 relational design (49 persistent + 1 transitional + 77 master relationships) is preserved as the authoritative Target v1.1 contract. The design and counts are correct as documented.
+
+**Merged implementation status:** The structural contract is now merged and verified at main@71aa989 (PR #102). The V1.1 package `IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989` reflects this merged checkpoint. The 49 persistent entities, 1 transitional entity, and 77 persistent Target relationships represent the implemented boundary.
+
+**Deferred cutover gates:** The following evidence-dependent gates remain open and are not yet enforced as DB constraints. Structural implementation does not imply completed historical reconciliation:
+
+- `ID-01`: Person canonical mapping + duplicate-data removal
+- `ASM-ATT-01`: Complete parent mapping before new attendance/justification FKs
+- `FIN-ORIGIN-01`: Explicit-origin reconciliation before generic `sourceId` removal
+- `FIN-DON-01`: Donation original/reversal evidence before redundant-field removal
+- `INV-LEDGER-01`: Signed ledger enforcement before opening-balance backfill
+- `INV-LOAN-01`: Evidence-backed loan-movement links
+- `ASM-DATE-01`: Date evidence mapping before `heldAt` backfill/enforcement
+- `RES-STATUS-01`: Non-destructive `CONFIRMED`/`COMPLETED` removal
+
+**Current model boundary:** The CURRENT model at main@71aa989 reflects 49 persistent + 1 transitional entities as the physical implementation. The gap between the V1.1 Target design and the current physical shape is documented in the migration roadmap and gap matrix, not in this frozen baseline.
+
+**Do not treat structural implementation as completed historical reconciliation.** The V1.1 package distinguishes `IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989` from the V1 package's `IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE`. The V1 design remains the historical authority for inherited decisions; V1.1 adds structure that is now merged, and final cutover requires evidence per each gate.

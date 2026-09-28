@@ -186,3 +186,20 @@ Detalle de enforcement en [`integrity-rules.md`](./integrity-rules.md).
 ## 8. Implementation boundary
 
 Stage 2A aprueba estructura y dirección, no una migración. Gap Matrix y Migration Roadmap pertenecen a Stage 2B. DB-1 sólo puede iniciar después de revisar estos artefactos, cerrar campos/cardinalidades pendientes que afecten DDL y definir backfill, compatibilidad, validación y rollback. All FK `onDelete` and `onUpdate` actions follow the complete TM-D09 matrix in [`target-model-decision-register.md`](./target-model-decision-register.md); it is authoritative for relation-specific exceptions.
+
+## ADD_STATUS_NOTE: V1.1 inheritance and deferred finalization
+
+This Target v1 document inherits its structural contract through Frozen Target V1.1, now merged at main@71aa989 (PR #102). The v1 baseline (40 persistent + 1 transitional) is preserved as historical design authority; v1.1 extends it to 49 persistent entities, 1 transitional entity, and 77 persistent Target relationships.
+
+**Deferred finalization:** The structural contract is now implemented and verified. The following gates remain evidence-dependent deferred cutover points (not structural deficiencies):
+
+- `ID-01`: Person canonical mapping + duplicate-data removal
+- `ASM-ATT-01`: Complete parent mapping before new attendance/justification FKs
+- `FIN-ORIGIN-01`: Explicit-origin reconciliation before generic `sourceId` removal
+- `FIN-DON-01`: Donation original/reversal evidence before redundant-field removal
+- `INV-LEDGER-01`: Signed ledger enforcement before opening-balance backfill
+- `INV-LOAN-01`: Evidence-backed loan-movement links
+- `ASM-DATE-01`: Date evidence mapping before `heldAt` backfill/enforcement
+- `RES-STATUS-01`: Non-destructive `CONFIRMED`/`COMPLETED` removal
+
+Target v1.1 implementation does not imply completed historical reconciliation of v1 → v1.1 gaps. The v1 design remains the authority for inherited decisions; v1.1 additive structure is now merged, and final cutover requires evidence per each gate.

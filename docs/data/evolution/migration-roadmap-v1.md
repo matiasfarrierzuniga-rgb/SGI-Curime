@@ -288,3 +288,26 @@ Cada ítem (`NB-01..NB-09`) de `docs/data/target-model-review.md` recibe disposi
 - Stage 2A produjo el Target aceptado (`ACCEPTED_AND_RECONCILED`).
 - Stage 2B produce Gap Matrix y este Roadmap (`READY_FOR_REVIEW`).
 - El Gap Matrix y el Roadmap deben revisarse formalmente antes de un checkpoint final de Foundation y antes de iniciar DB-1.
+
+## UPDATE: Roadmap historical; V1.1 implementation documented
+
+This Migration Roadmap v1 is preserved as historical documentation. It records the sequencing from Frozen Target v1 (40 persistent + 1 transitional + 61 relationships) toward DB-12 legacy cleanup.
+
+**V1.1 structural implementation:** The roadmap now documents that Frozen Target V1.1 structural contract is merged and verified at main@71aa989 (PR #102). The 49 persistent entities, 1 transitional entity, and 77 persistent Target relationships represent the completed V1.1 implementation boundary.
+
+**Remaining deferred cleanup:** The following migration gates from the v1 roadmap remain evidence-dependent and are not yet enforced:
+
+- `ID-01`: Person canonical mapping + duplicate-data removal (blocks: identity enforcement, duplicate retirement)
+- `ASM-ATT-01`: Complete parent mapping before attendance/justification FKs (blocks: convocation/attendance/justification constraints)
+- `FIN-ORIGIN-01`: Explicit-origin reconciliation before generic `sourceId` removal (blocks: Payment/Donation/Disbursement origin constraints)
+- `FIN-DON-01`: Donation original/reversal evidence before redundant-field removal (blocks: Donation constraint enforcement)
+- `INV-LEDGER-01`: Signed ledger + opening-balance backfill (blocks: Inventory quantity constraints)
+- `INV-LOAN-01`: Evidence-backed loan-movement links (blocks: InventoryLoan FK enforcement)
+- `ASM-DATE-01`: Date evidence mapping before `heldAt` backfill (blocks: Assembly date/heldAt constraints)
+- `RES-STATUS-01`: Non-destructive `CONFIRMED`/`COMPLETED` removal (blocks: ReservationStatus enum cleanup)
+
+**Roadmap status:** This v1 roadmap is historical. It documents the v1 → v1.1 transition planning. The V1.1 package `IMPLEMENTATION_STATUS=IMPLEMENTED` at main@71aa989 provides the structural contract; the deferred gates require evidence before enforcement. The v1 roadmap does not authorize Gap Matrix work or DB wave initiation — those require the refreshed V1.1 gap matrix and roadmap.
+
+`MIGRATION_ROADMAP_V1_STATUS=HISTORICAL`
+`FROZEN_TARGET_V1.1_STRUCTURAL_IMPLEMENTATION=VERIFIED_INTEGRATED_AT_main@71aa989`
+`DEFERRED_GATES_REMAINING=ID-01,ASM-ATT-01,FIN-ORIGIN-01,FIN-DON-01,INV-LEDGER-01,INV-LOAN-01,ASM-DATE-01,RES-STATUS-01`

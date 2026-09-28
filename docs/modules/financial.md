@@ -342,7 +342,17 @@ No debe inferirse de este documento que estén terminados:
 - integración automática completa de donaciones como movimiento financiero;
 - generación automática de movimientos `RESERVATION_PAYMENT` a partir de cada pago.
 
-Estos puntos deben documentarse cuando exista implementación real en `main`.
+**ADD_STATUS_NOTE: V1.1 package distinction and deferred gates**
+
+This Financial module documentation reflects the AS-IS state at merge checkpoint main@71aa989 (PR #102). The V1.1 package `IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989` provides the structural contract for financial entities (49 persistent entities, 77 relationships), but deferred cutover gates remain evidence-dependent:
+
+- `FIN-ORIGIN-01`: Explicit-origin reconciliation before generic `sourceId` removal
+- `FIN-DON-01`: Donation original/reversal evidence before redundant-field removal
+- `RES-STATUS-01`: Non-destructive `CONFIRMED`/`COMPLETED` removal
+
+Do not treat structural implementation as completed historical reconciliation. The V1 financial design (`IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE`) remains the historical authority; V1.1 additive structure is now merged, and final cutover requires evidence per each gate.
+
+These pending items must be documented when corresponding implementation exists in `main`.
 
 ## Fuentes relacionadas
 

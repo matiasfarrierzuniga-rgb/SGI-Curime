@@ -17,10 +17,9 @@ STRUCTURAL_STATUS=CLOSED
 RELATIONAL_STATUS=CLOSED
 PHYSICAL_RECONCILIATION=CLOSED
 TARGET_V1_1_STATUS=FROZEN
-
+IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989
 PRISMA=UNCHANGED
 MIGRATIONS=NONE
-IMPLEMENTATION=NONE
 ```
 
 Core entity count: **5**.
@@ -32,6 +31,25 @@ Core entity count: **5**.
 - `VolunteerAttendance`
 
 No sixth persistent entity is required.
+
+## ADD_STATUS_NOTE: 5 entities now physically implemented; replace unqualified IMPLEMENTATION=NONE
+
+The Volunteering V1.1 relational model (5 entities, 11 master relationships) is now physically implemented and verified as part of the Frozen Target V1.1 merge at main@71aa989 (PR #102). The `IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989` reflects the merged checkpoint.
+
+**Deferred cutover:** The following gates remain evidence-dependent and are not yet enforced as DB constraints. Structural implementation does not imply completed historical reconciliation:
+
+- `ID-01`: Person canonical mapping affects volunteering person linking
+- `ASM-ATT-01`: Attendance/justification FKs may affect attendance enforcement
+- `INV-LEDGER-01` / `INV-LOAN-01`: Not applicable to volunteering (inventory gates)
+- `FIN-ORIGIN-01` / `FIN-DON-01`: Not applicable to volunteering (finance gates)
+- `RES-STATUS-01`: Not applicable to volunteering (reservation gates)
+
+The 5 entity counts and 11 relationship counts are now the V1.1 structural contract. Prior documentation referencing `IMPLEMENTATION=NONE` for volunteering has been replaced; the structural implementation is now merged and verified.
+
+`VOLUNTEERING_V1_1_ENTITY_COUNT=5`
+`VOLUNTEERING_V1_1_RELATION_COUNT=11`
+`VOLUNTEERING_V1_1_STRUCTURAL_IMPLEMENTATION=MERGED_AT_71aa989`
+`VOLUNTEERING_V1_1_DEFERRED_GATES=ID-01,ASM-ATT-01` (evidence-dependent)
 
 ## 2. Domain distinctions
 

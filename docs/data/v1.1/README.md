@@ -18,6 +18,13 @@ TARGET_STATUS=FROZEN
 IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE
 ```
 
+**Package freeze distinction:** The `IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE` marker in this V1.1 package distinguishes the frozen historical design from the actual merged implementation at main@71aa989 (PR #102). The structural implementation is now IMPLEMENTED/VERIFIED/INTEGRATED at the merged checkpoint, but the package itself records the boundary — it does not rewrite the V1 design, and it does not imply completed historical reconciliation.
+
+```text
+TARGET_STATUS=FROZEN
+IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989
+```
+
 ## Reading order
 
 1. [Freeze declaration](./freeze-declaration.md)
@@ -29,6 +36,7 @@ IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE
 7. [Deferred / excluded registry](./deferred-excluded-registry.md)
 8. [Consolidated Master ERD](./erd/consolidated-master-erd.md)
 9. [V1 → V1.1 evolution matrix](./evolution/v1-to-v1.1-matrix.md)
+10. [Implementation status](./implementation-status.md) — canonical bridge recording merge checkpoint, 49/1/77 counts, verification evidence, additive migration boundary, transitional compatibility state, and deferred gates
 
 Module evidence:
 
