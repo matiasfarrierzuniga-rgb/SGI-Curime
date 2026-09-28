@@ -15,13 +15,13 @@ export class InstitutionalProfileService {
   ) {}
 
   get() {
-    return this.prisma.institutionalProfile.findUniqueOrThrow({
+    return this.prisma.organizationProfile.findUniqueOrThrow({
       where: { id: PROFILE_ID },
     });
   }
 
   getForReport(client: Prisma.TransactionClient) {
-    return client.institutionalProfile.findUniqueOrThrow({
+    return client.organizationProfile.findUniqueOrThrow({
       where: { id: PROFILE_ID },
       select: {
         legalName: true,
@@ -47,7 +47,7 @@ export class InstitutionalProfileService {
     context: AuditContext = {},
   ) {
     return this.prisma.$transaction(async (tx) => {
-      const current = await tx.institutionalProfile.findUniqueOrThrow({
+      const current = await tx.organizationProfile.findUniqueOrThrow({
         where: { id: PROFILE_ID },
       });
       const changedFields = Object.keys(dto).filter((field) => {
@@ -55,7 +55,7 @@ export class InstitutionalProfileService {
         return dto[key] !== undefined && current[key] !== dto[key];
       });
 
-      const profile = await tx.institutionalProfile.update({
+      const profile = await tx.organizationProfile.update({
         where: { id: PROFILE_ID },
         data: dto,
       });
