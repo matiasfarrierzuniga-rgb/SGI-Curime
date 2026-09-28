@@ -8,16 +8,41 @@ datasource db {
   provider = "postgresql"
 }
 
-model Role {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  users       User[]
-  affiliates  Affiliate[]
-  assemblyConvocations AssemblyConvocation[]
+// Frozen Target V1.1: 49 persistent models plus one transitional manifest.
+// Nullable Target links marked by reconciliation gates remain nullable until
+// evidence-backed enforcement; legacy scalar snapshots remain for cutover.
+
+model OrganizationProfile {
+  id                                Int                            @id @default(1)
+  legalName                         String?
+  legalIdentification               String?
+  dinadecoRegistrationCode          String?
+  dinadecoRegion                    String?
+  organizationType                  InstitutionalOrganizationType?
+  province                          String?
+  canton                            String?
+  district                          String?
+  locality                          String?
+  correspondenceAddress             String?
+  phone                             String?
+  telefax                           String?
+  email                             String?
+  canonicalLegalName                String?                        @db.VarChar(200)
+  canonicalLegalIdentification      String?                        @db.VarChar(64)
+  canonicalDinadecoRegistrationCode String?                        @db.VarChar(64)
+  canonicalOrganizationType         String?                        @db.VarChar(100)
+  canonicalRegion                   String?                        @db.VarChar(100)
+  canonicalProvince                 String?                        @db.VarChar(100)
+  canonicalCanton                   String?                        @db.VarChar(100)
+  canonicalDistrict                 String?                        @db.VarChar(100)
+  canonicalPhysicalAddress          String?                        @db.VarChar(500)
+  canonicalNotificationPhone        String?                        @db.VarChar(40)
+  canonicalNotificationFax          String?                        @db.VarChar(40)
+  canonicalNotificationEmail        String?                        @db.VarChar(254)
+  createdAt                         DateTime                       @default(now())
+  updatedAt                         DateTime                       @updatedAt
+
+  @@map("InstitutionalProfile")
 }
 
 model Person {
@@ -36,85 +61,95 @@ model Person {
   address                       String?
   createdAt                     DateTime                         @default(now())
   updatedAt                     DateTime                         @updatedAt
-  affiliate                     Affiliate?
-  affiliateRequests             AffiliateRequest[]
-  reconciliationManifestEntries IdentityReconciliationManifest[] @relation("ManifestSelectedPerson")
   user                          User?
+  affiliate                     Affiliate?
   userRequests                  UserRequest[]
-  boardAppointments            BoardAppointment[]
+  affiliateRequests             AffiliateRequest[]
+  donations                     Donation[]
+  volunteerApplications         VolunteerApplication[]
+  volunteerParticipations       VolunteerParticipation[]
+  ventureAssociations           VentureAssociation[]
+  ventureRequests               VentureRequest[]
+  reconciliationManifestEntries IdentityReconciliationManifest[] @relation("ManifestSelectedPerson")
 
   @@unique([identificationType, normalizedIdentification])
 }
 
-model IdentityReconciliationManifest {
-  id                         Int                 @id @default(autoincrement())
-  manifestVersion            String
-  normalizationVersion       String
-  decisionVersion            String
-  sourceModel                String
-  sourceId                   Int
-  sourceFingerprint          String
-  rawIdentification          String?
-  identificationType         IdentificationType?
-  normalizedIdentification   String?
-  identityClusterKey         String?
-  classification             String
-  selectedPersonId           Int?
-  personCreationAllowed      Boolean
-  conflictCodes              Json
-  nameReconciliationRequired Boolean
-  reviewRequired             Boolean
-  sourceSnapshot             Json
-  reviewedAt                 DateTime?
-  reviewedBy                 String?
-  createdAt                  DateTime            @default(now())
-  updatedAt                  DateTime            @updatedAt
-  selectedPerson             Person?             @relation("ManifestSelectedPerson", fields: [selectedPersonId], references: [id])
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       User[]
+  permissions RolePermission[]
+}
 
-  @@unique([normalizationVersion, decisionVersion, sourceModel, sourceId])
-  @@index([identityClusterKey])
-  @@index([classification, reviewRequired])
-  @@index([selectedPersonId])
+model Permission {
+  id          Int              @id @default(autoincrement())
+  code        String           @unique
+  name        String
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
 }
 
 model User {
-  id                         Int                      @id @default(autoincrement())
-  fullName                   String
-  identification             String                   @unique
-  email                      String                   @unique
-  phone                      String?
-  address                    String?
-  passwordHash               String?
-  status                     UserStatus               @default(ACTIVE)
-  failedLoginAttempts        Int                      @default(0)
-  lockedAt                   DateTime?
-  lastLoginAt                DateTime?
-  roleId                     Int
-  createdAt                  DateTime                 @default(now())
-  updatedAt                  DateTime                 @updatedAt
-  identificationType         IdentificationType?
-  phoneCountryCode           String?
-  phoneNationalNumber        String?
-  personId                   Int?                     @unique
-  subscriptionExpirationDate DateTime?
-  reviewedJustifications     AbsenceJustification[]   @relation("JustificationReviewer")
-  activationTokens           AccountActivationToken[]
-  reviewedAffiliateRequests  AffiliateRequest[]       @relation("AffiliateRequestReviewer")
-  createdSanctions           AffiliateSanction[]      @relation("SanctionCreator")
-  auditLogs                  AuditLog[]
-  recordedFinancialMovements FinancialMovement[]      @relation("FinancialMovementRecorder")
-  recordedDonations          Donation[]               @relation("DonationRecorder")
-  cancelledDonations         Donation[]               @relation("DonationCanceller")
-  inventoryLoansCreated      InventoryLoan[]          @relation("LoanCreator")
-  inventoryLoansReceived     InventoryLoan[]          @relation("LoanReceiver")
-  inventoryMovements         InventoryMovement[]
-  passwordResetTokens        PasswordResetToken[]
-  recordedPayments           Payment[]                @relation("PaymentRecorder")
-  approvedReservations       Reservation[]            @relation("ReservationApprover")
-  requestedReservations      Reservation[]            @relation("ReservationRequester")
-  sessions                   Session[]
-  person                     Person?                  @relation(fields: [personId], references: [id], onDelete: Restrict)
-  role                       Role                     @relation(fields: [roleId], references: [id])
+  id                          Int                      @id @default(autoincrement())
+  fullName                    String
+  identification              String                   @unique
+  email                       String                   @unique
+  phone                       String?
+  address                     String?
+  passwordHash                String?
+  status                      UserStatus               @default(ACTIVE)
+  failedLoginAttempts         Int                      @default(0)
+  lockedAt                    DateTime?
+  lastLoginAt                 DateTime?
+  roleId                      Int
+  personId                    Int?                     @unique
+  identificationType          IdentificationType?
+  phoneCountryCode            String?
+  phoneNationalNumber         String?
+  subscriptionExpirationDate  DateTime?
+  createdAt                   DateTime                 @default(now())
+  updatedAt                   DateTime                 @updatedAt
+  role                        Role                     @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  person                      Person?                  @relation(fields: [personId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sessions                    Session[]
+  auditLogs                   AuditLog[]
+  passwordResetTokens         PasswordResetToken[]
+  activationTokens            AccountActivationToken[]
+  reviewedUserRequests        UserRequest[]            @relation("UserRequestReviewer")
+  reviewedAffiliateRequests   AffiliateRequest[]       @relation("AffiliateRequestReviewer")
+  createdSanctions            AffiliateSanction[]      @relation("SanctionCreator")
+  reviewedJustifications      AbsenceJustification[]   @relation("JustificationReviewer")
+  requestedReservations       Reservation[]            @relation("ReservationRequester")
+  approvedReservations        Reservation[]            @relation("ReservationApprover")
+  recordedPayments            Payment[]                @relation("PaymentRecorder")
+  recordedFinancialMovements  FinancialMovement[]      @relation("FinancialMovementRecorder")
+  voidedFinancialMovements    FinancialMovement[]      @relation("FinancialMovementVoider")
+  recordedDonations           Donation[]               @relation("DonationRecorder")
+  cancelledDonations          Donation[]               @relation("DonationCanceller")
+  inventoryMovements          InventoryMovement[]
+  inventoryLoansCreated       InventoryLoan[]          @relation("LoanCreator")
+  inventoryLoansReceived      InventoryLoan[]          @relation("LoanReceiver")
+  inventoryLoansCancelled     InventoryLoan[]          @relation("LoanCanceller")
+  volunteerOpportunities      VolunteerOpportunity[]
+  reviewedVolunteerApps       VolunteerApplication[]   @relation("VolunteerApplicationReviewer")
+  recordedVolunteerAttendance VolunteerAttendance[]
 }
 
 model Session {
@@ -125,7 +160,7 @@ model Session {
   revocationReason String?
   createdAt        DateTime  @default(now())
   userId           Int
-  user             User      @relation(fields: [userId], references: [id])
+  user             User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -142,63 +177,12 @@ model AuditLog {
   userAgent  String?
   createdAt  DateTime @default(now())
   userId     Int?
-  user       User?    @relation(fields: [userId], references: [id])
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([userId])
   @@index([action])
   @@index([module])
   @@index([createdAt])
-}
-
-model InstitutionalProfile {
-  id                       Int                       @id @default(1)
-  legalName                String?
-  legalIdentification      String?
-  dinadecoRegistrationCode String?
-  dinadecoRegion           String?
-  organizationType         InstitutionalOrganizationType?
-  province                 String?
-  canton                   String?
-  district                 String?
-  locality                 String?
-  correspondenceAddress    String?
-  phone                    String?
-  telefax                  String?
-  email                    String?
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
-  boardTerms               BoardTerm[]
-}
-
-model BoardTerm {
-  id                     Int                @id @default(autoincrement())
-  institutionalProfileId Int
-  startsOn               DateTime           @db.Date
-  endsOn                 DateTime           @db.Date
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
-  institutionalProfile   InstitutionalProfile @relation(fields: [institutionalProfileId], references: [id], onDelete: Restrict)
-  appointments           BoardAppointment[]
-
-  @@index([institutionalProfileId, startsOn])
-}
-
-model BoardAppointment {
-  id          Int           @id @default(autoincrement())
-  boardTermId Int
-  personId    Int
-  position    BoardPosition
-  seatNumber  Int?
-  startsOn    DateTime?     @db.Date
-  endsOn      DateTime?     @db.Date
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  boardTerm   BoardTerm     @relation(fields: [boardTermId], references: [id], onDelete: Restrict)
-  person      Person        @relation(fields: [personId], references: [id], onDelete: Restrict)
-
-  @@index([boardTermId])
-  @@index([personId])
-  @@index([position, seatNumber])
 }
 
 model PasswordResetToken {
@@ -208,7 +192,7 @@ model PasswordResetToken {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
   userId    Int
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -221,7 +205,7 @@ model AccountActivationToken {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
   userId    Int
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -239,50 +223,50 @@ model UserRequest {
   rejectionReason     String?
   reviewedAt          DateTime?
   reviewedById        Int?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
   identificationType  IdentificationType?
   phoneCountryCode    String?
   phoneNationalNumber String?
   personId            Int?
-  person              Person?             @relation(fields: [personId], references: [id])
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  reviewedBy          User?               @relation("UserRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  person              Person?             @relation(fields: [personId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([identification])
   @@index([email])
   @@index([status])
+  @@index([reviewedById])
   @@index([personId])
 }
 
 model Affiliate {
-  id                  Int                    @id @default(autoincrement())
-  fullName            String
-  identification      String                 @unique
-  birthDate           DateTime
-  gender              String?
-  phone               String?
-  email               String?                @unique
-  address             String
-  occupation          String?
-  workplace           String?
-  affiliateType       String?
-  affiliationDate     DateTime               @default(now())
-  status              AffiliateStatus        @default(ACTIVE)
-  createdAt           DateTime               @default(now())
-  updatedAt           DateTime               @updatedAt
-  identificationType  IdentificationType?
-  phoneCountryCode    String?
-  phoneNationalNumber String?
-  personId            Int?                   @unique
-  roleId              Int?
-  justifications      AbsenceJustification[]
-  person              Person?                @relation(fields: [personId], references: [id], onDelete: Restrict)
-  role                Role?                  @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  sanctions           AffiliateSanction[]
-  attendances         AssemblyAttendance[]
-  inventoryLoans      InventoryLoan[]
-  assemblyConvocations AssemblyConvocation[]
+  id                    Int                    @id @default(autoincrement())
+  fullName              String
+  identification        String                 @unique
+  birthDate             DateTime
+  gender                String?
+  phone                 String?
+  email                 String?                @unique
+  address               String
+  occupation            String?
+  workplace             String?
+  affiliateType         String?
+  affiliationDate       DateTime               @default(now())
+  status                AffiliateStatus        @default(ACTIVE)
+  identificationType    IdentificationType?
+  phoneCountryCode      String?
+  phoneNationalNumber   String?
+  personId              Int?                   @unique
+  legacyRoleId          Int?                   @map("roleId")
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  person                Person?                @relation(fields: [personId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sanctions             AffiliateSanction[]
+  governanceMemberships GovernanceMembership[]
+  assemblyConvocations  AssemblyConvocation[]
+  inventoryLoans        InventoryLoan[]
 
-  @@index([roleId])
+  @@index([legacyRoleId], map: "Affiliate_roleId_idx")
 }
 
 model AffiliateRequest {
@@ -301,14 +285,14 @@ model AffiliateRequest {
   rejectionReason     String?
   reviewedAt          DateTime?
   reviewedById        Int?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
   identificationType  IdentificationType?
   phoneCountryCode    String?
   phoneNationalNumber String?
   personId            Int?
-  person              Person?             @relation(fields: [personId], references: [id])
-  reviewedBy          User?               @relation("AffiliateRequestReviewer", fields: [reviewedById], references: [id])
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  reviewedBy          User?               @relation("AffiliateRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  person              Person?             @relation(fields: [personId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([identification])
   @@index([email])
@@ -317,44 +301,208 @@ model AffiliateRequest {
   @@index([personId])
 }
 
-model Assembly {
-  id             Int                    @id @default(autoincrement())
-  title          String
-  type           String?
-  date           DateTime
-  place          String
-  description    String?
-  status         AssemblyStatus         @default(SCHEDULED)
-  quorumType     AssemblyQuorumType?
-  quorumValue    Int?
-  convocationsLockedAt DateTime?
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  justifications AbsenceJustification[]
-  attendances    AssemblyAttendance[]
-  convocations   AssemblyConvocation[]
+model AffiliateSanction {
+  id          Int            @id @default(autoincrement())
+  reason      String
+  description String?
+  date        DateTime       @default(now())
+  status      SanctionStatus @default(ACTIVE)
+  affiliateId Int
+  createdById Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  affiliate   Affiliate      @relation(fields: [affiliateId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdBy   User           @relation("SanctionCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
+  @@index([affiliateId])
+  @@index([status])
   @@index([date])
+  @@index([createdById])
+}
+
+model GovernancePosition {
+  id          Int                    @id @default(autoincrement())
+  code        String                 @unique
+  name        String
+  description String?
+  isActive    Boolean                @default(true)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  memberships GovernanceMembership[]
+}
+
+model GovernanceTerm {
+  id                           Int                    @id @default(autoincrement())
+  legacyInstitutionalProfileId Int                    @map("institutionalProfileId")
+  startDate                    DateTime               @map("startsOn") @db.Date
+  endDate                      DateTime               @map("endsOn") @db.Date
+  status                       GovernanceTermStatus?
+  createdAt                    DateTime               @default(now())
+  updatedAt                    DateTime               @updatedAt
+  memberships                  GovernanceMembership[]
+
+  @@index([legacyInstitutionalProfileId, startDate], map: "BoardTerm_institutionalProfileId_startsOn_idx")
+  @@map("BoardTerm")
+}
+
+model GovernanceMembership {
+  id                    Int                   @id @default(autoincrement())
+  termId                Int                   @map("boardTermId")
+  legacyPersonId        Int                   @map("personId")
+  legacyPosition        BoardPosition         @map("position")
+  positionId            Int?
+  affiliateId           Int?
+  seatNumber            Int?
+  startedAt             DateTime?             @map("startsOn") @db.Date
+  endedAt               DateTime?             @map("endsOn") @db.Date
+  appointedByAssemblyId Int?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  term                  GovernanceTerm        @relation(fields: [termId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  position              GovernancePosition?   @relation(fields: [positionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  affiliate             Affiliate?            @relation(fields: [affiliateId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  appointedByAssembly   Assembly?             @relation("AssemblyAppointments", fields: [appointedByAssemblyId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  convocations          AssemblyConvocation[]
+
+  @@index([termId], map: "BoardAppointment_boardTermId_idx")
+  @@index([legacyPersonId], map: "BoardAppointment_personId_idx")
+  @@index([legacyPosition, seatNumber], map: "BoardAppointment_position_seatNumber_idx")
+  @@index([positionId])
+  @@index([affiliateId])
+  @@index([appointedByAssemblyId])
+  @@map("BoardAppointment")
+}
+
+model Assembly {
+  id                   Int                    @id @default(autoincrement())
+  title                String
+  type                 AssemblyType?          @map("assemblyType")
+  legacyType           String?                @map("type")
+  legacyDate           DateTime               @map("date")
+  scheduledAt          DateTime?
+  heldAt               DateTime?
+  place                String
+  description          String?
+  status               AssemblyStatus         @default(SCHEDULED)
+  legacyQuorumType     AssemblyQuorumType?    @map("quorumType")
+  legacyQuorumValue    Int?                   @map("quorumValue")
+  convocationsLockedAt DateTime?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  calls                AssemblyCall[]
+  convocations         AssemblyConvocation[]
+  minute               AssemblyMinute?
+  resolutions          AssemblyResolution[]
+  appointedMemberships GovernanceMembership[] @relation("AssemblyAppointments")
+
+  @@index([legacyDate], map: "Assembly_date_idx")
+  @@index([scheduledAt])
   @@index([status])
 }
 
+model AssemblyCall {
+  id          Int                @id @default(autoincrement())
+  assemblyId  Int
+  callNumber  Int
+  scheduledAt DateTime
+  quorumType  AssemblyQuorumType
+  quorumValue Int
+  startedAt   DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  assembly    Assembly           @relation(fields: [assemblyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([assemblyId, callNumber])
+  @@index([scheduledAt])
+}
+
 model AssemblyConvocation {
-  id               Int      @id @default(autoincrement())
-  assemblyId       Int
-  assembly         Assembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
-  affiliateId      Int
-  affiliate        Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
-  roleId           Int?
-  role             Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
-  roleNameSnapshot String
-  convenedAt       DateTime @default(now())
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                     Int                   @id @default(autoincrement())
+  assemblyId             Int
+  affiliateId            Int
+  legacyRoleId           Int?                  @map("roleId")
+  legacyRoleNameSnapshot String                @map("roleNameSnapshot")
+  governanceMembershipId Int?
+  positionNameSnapshot   String?
+  convenedAt             DateTime              @default(now())
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  assembly               Assembly              @relation(fields: [assemblyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  affiliate              Affiliate             @relation(fields: [affiliateId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  governanceMembership   GovernanceMembership? @relation(fields: [governanceMembershipId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  attendance             AssemblyAttendance?
 
   @@unique([assemblyId, affiliateId])
   @@index([assemblyId])
   @@index([affiliateId])
-  @@index([roleId])
+  @@index([legacyRoleId], map: "AssemblyConvocation_roleId_idx")
+  @@index([governanceMembershipId])
+}
+
+model AssemblyAttendance {
+  id                Int                   @id @default(autoincrement())
+  status            AttendanceStatus
+  registeredAt      DateTime              @default(now())
+  observations      String?
+  legacyAssemblyId  Int                   @map("assemblyId")
+  legacyAffiliateId Int                   @map("affiliateId")
+  convocationId     Int?                  @unique
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  convocation       AssemblyConvocation?  @relation(fields: [convocationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  justification     AbsenceJustification?
+
+  @@unique([legacyAssemblyId, legacyAffiliateId], map: "AssemblyAttendance_assemblyId_affiliateId_key")
+  @@index([legacyAssemblyId, status], map: "AssemblyAttendance_assemblyId_status_idx")
+  @@index([legacyAffiliateId], map: "AssemblyAttendance_affiliateId_idx")
+}
+
+model AbsenceJustification {
+  id                     Int                 @id @default(autoincrement())
+  reason                 String
+  status                 JustificationStatus @default(PENDING)
+  rejectionReason        String?
+  reviewedAt             DateTime?
+  legacyAssemblyId       Int                 @map("assemblyId")
+  legacyAffiliateId      Int                 @map("affiliateId")
+  attendanceId           Int?                @unique
+  reviewedById           Int?
+  decisionNote           String?
+  attachmentOriginalName String?
+  attachmentMimeType     String?
+  attachmentSize         Int?
+  attachmentUrl          String?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  attendance             AssemblyAttendance? @relation(fields: [attendanceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reviewedBy             User?               @relation("JustificationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([legacyAssemblyId, legacyAffiliateId], map: "AbsenceJustification_assemblyId_affiliateId_key")
+  @@index([status])
+  @@index([reviewedById])
+}
+
+model AssemblyMinute {
+  id         Int      @id @default(autoincrement())
+  assemblyId Int      @unique
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  assembly   Assembly @relation(fields: [assemblyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model AssemblyResolution {
+  id         Int       @id @default(autoincrement())
+  assemblyId Int
+  title      String
+  content    String
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  assembly   Assembly  @relation(fields: [assemblyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  expenses   Expense[]
+
+  @@index([assemblyId])
 }
 
 model Event {
@@ -383,10 +531,11 @@ model ReservableResource {
   location     String?
   capacity     Int?
   status       ReservableResourceStatus @default(ACTIVE)
+  price        Decimal?                 @db.Decimal(14, 2)
+  currency     String                   @default("CRC")
+  pricingType  ResourcePricingType      @default(FREE)
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
-  price        Decimal?                 @db.Decimal(14, 2)
-  pricingType  ResourcePricingType      @default(FREE)
   reservations Reservation[]
 
   @@index([status])
@@ -409,16 +558,28 @@ model Reservation {
   eventId            Int?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  resource           ReservableResource @relation(fields: [resourceId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  requester          User               @relation("ReservationRequester", fields: [requesterUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  approvedBy         User?              @relation("ReservationApprover", fields: [approvedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  event              Event?             @relation(fields: [eventId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   financialCharge    FinancialCharge?
-  approvedBy         User?              @relation("ReservationApprover", fields: [approvedById], references: [id])
-  event              Event?             @relation(fields: [eventId], references: [id])
-  requester          User               @relation("ReservationRequester", fields: [requesterUserId], references: [id])
-  resource           ReservableResource @relation(fields: [resourceId], references: [id])
 
   @@index([requesterUserId])
   @@index([eventId])
   @@index([status])
   @@index([resourceId, startAt, endAt])
+}
+
+model FinancialAccount {
+  id          Int                 @id @default(autoincrement())
+  code        String              @unique
+  name        String
+  description String?
+  currency    String              @default("CRC")
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  movements   FinancialMovement[]
 }
 
 model FinancialCharge {
@@ -430,7 +591,7 @@ model FinancialCharge {
   dueAt         DateTime?
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
-  reservation   Reservation           @relation(fields: [reservationId], references: [id])
+  reservation   Reservation           @relation(fields: [reservationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   payments      Payment[]
 
   @@index([status])
@@ -438,18 +599,21 @@ model FinancialCharge {
 }
 
 model Payment {
-  id           Int             @id @default(autoincrement())
-  chargeId     Int
-  amount       Decimal         @db.Decimal(14, 2)
-  status       PaymentStatus   @default(PENDING)
-  method       PaymentMethod
-  reference    String?
-  paidAt       DateTime?
-  recordedById Int?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  charge       FinancialCharge @relation(fields: [chargeId], references: [id])
-  recordedBy   User?           @relation("PaymentRecorder", fields: [recordedById], references: [id])
+  id              Int                @id @default(autoincrement())
+  chargeId        Int
+  movementId      Int?               @unique
+  amount          Decimal            @db.Decimal(14, 2)
+  status          PaymentStatus      @default(PENDING)
+  legacyMethod    PaymentMethod      @map("method")
+  financialMethod FinancialMethod?
+  reference       String?
+  paidAt          DateTime?
+  recordedById    Int?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  charge          FinancialCharge    @relation(fields: [chargeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  movement        FinancialMovement? @relation(fields: [movementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  recordedBy      User?              @relation("PaymentRecorder", fields: [recordedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([chargeId])
   @@index([status])
@@ -458,124 +622,140 @@ model Payment {
 }
 
 model FinancialMovement {
-  id           Int                     @id @default(autoincrement())
-  type         FinancialMovementType
-  source       FinancialMovementSource @default(MANUAL)
-  amount       Decimal                 @db.Decimal(14, 2)
-  currency     String                  @default("CRC")
-  description  String
-  reference    String?
-  occurredAt   DateTime
-  sourceId     Int?
-  recordedById Int?
-  createdAt    DateTime                @default(now())
-  updatedAt    DateTime                @updatedAt
-  recordedBy   User?                   @relation("FinancialMovementRecorder", fields: [recordedById], references: [id])
-  originalDonation Donation?           @relation("DonationOriginalMovement")
-  reversalDonation Donation?           @relation("DonationReversalMovement")
+  id                 Int                          @id @default(autoincrement())
+  accountId          Int?
+  type               FinancialMovementType
+  legacySource       FinancialMovementSource      @default(MANUAL) @map("source")
+  legacySourceId     Int?                         @map("sourceId")
+  originType         FinancialMovementOriginType?
+  amount             Decimal                      @db.Decimal(14, 2)
+  currency           String                       @default("CRC")
+  description        String
+  reference          String?
+  occurredAt         DateTime
+  recordedById       Int?
+  status             FinancialMovementStatus?
+  reversalOfId       Int?                         @unique
+  voidedAt           DateTime?
+  voidedById         Int?
+  voidReason         String?
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+  account            FinancialAccount?            @relation(fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  recordedBy         User?                        @relation("FinancialMovementRecorder", fields: [recordedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  voidedBy           User?                        @relation("FinancialMovementVoider", fields: [voidedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  reversalOf         FinancialMovement?           @relation("FinancialMovementReversal", fields: [reversalOfId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reversal           FinancialMovement?           @relation("FinancialMovementReversal")
+  payment            Payment?
+  originalDonation   Donation?                    @relation("DonationOriginalMovement")
+  disbursement       Disbursement?
+  fundingAllocations FundingAllocation[]
 
+  @@index([accountId])
   @@index([occurredAt])
   @@index([type, occurredAt])
-  @@index([source, sourceId])
+  @@index([legacySource, legacySourceId], map: "FinancialMovement_source_sourceId_idx")
   @@index([recordedById])
+  @@index([status, occurredAt])
 }
 
 model Donation {
-  id                  Int            @id @default(autoincrement())
-  donorName           String?
-  donorIdentification String?
-  amount              Decimal        @db.Decimal(14, 2)
-  currency            String         @default("CRC")
-  method              DonationMethod
-  reference           String?
-  description         String?
-  receivedAt          DateTime
-  status              DonationStatus @default(CONFIRMED)
+  id                       Int                @id @default(autoincrement())
+  donorPersonId            Int?
+  donorName                String?
+  donorIdentification      String?
+  amount                   Decimal            @db.Decimal(14, 2)
+  currency                 String             @default("CRC")
+  legacyMethod             DonationMethod     @map("method")
+  financialMethod          FinancialMethod?
+  reference                String?
+  description              String?
+  receivedAt               DateTime
+  status                   DonationStatus     @default(CONFIRMED)
+  recordedById             Int
+  cancelledById            Int?
+  cancelledAt              DateTime?
+  cancellationReason       String?
+  originalMovementId       Int?               @unique
+  legacyReversalMovementId Int?               @unique @map("reversalMovementId")
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  donorPerson              Person?            @relation(fields: [donorPersonId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  recordedBy               User               @relation("DonationRecorder", fields: [recordedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancelledBy              User?              @relation("DonationCanceller", fields: [cancelledById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  originalMovement         FinancialMovement? @relation("DonationOriginalMovement", fields: [originalMovementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  recordedById  Int
-  recordedBy    User  @relation("DonationRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
-  cancelledById Int?
-  cancelledBy   User? @relation("DonationCanceller", fields: [cancelledById], references: [id], onDelete: SetNull)
-  cancelledAt   DateTime?
-  cancellationReason String?
-
-  originalMovementId Int?               @unique
-  originalMovement   FinancialMovement? @relation("DonationOriginalMovement", fields: [originalMovementId], references: [id], onDelete: Restrict)
-  reversalMovementId Int?               @unique
-  reversalMovement   FinancialMovement? @relation("DonationReversalMovement", fields: [reversalMovementId], references: [id], onDelete: Restrict)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  @@index([donorPersonId])
   @@index([status])
-  @@index([method])
+  @@index([legacyMethod], map: "Donation_method_idx")
   @@index([receivedAt])
   @@index([recordedById])
   @@index([cancelledById])
   @@index([status, receivedAt])
 }
 
-model AssemblyAttendance {
-  id            Int                   @id @default(autoincrement())
-  status        AttendanceStatus
-  registeredAt  DateTime              @default(now())
-  observations  String?
-  assemblyId    Int
-  affiliateId   Int
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  justification AbsenceJustification?
-  affiliate     Affiliate             @relation(fields: [affiliateId], references: [id])
-  assembly      Assembly              @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+model Expense {
+  id                        Int                 @id @default(autoincrement())
+  description               String
+  amount                    Decimal             @db.Decimal(14, 2)
+  currency                  String              @default("CRC")
+  incurredAt                DateTime
+  status                    ExpenseStatus       @default(PENDING)
+  authorizationResolutionId Int?
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  authorizationResolution   AssemblyResolution? @relation(fields: [authorizationResolutionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  documents                 ExpenseDocument[]
+  disbursements             Disbursement[]
+  fundingAllocations        FundingAllocation[]
 
-  @@unique([assemblyId, affiliateId])
-  @@index([assemblyId, status])
-  @@index([affiliateId])
+  @@index([authorizationResolutionId])
+  @@index([status, incurredAt])
 }
 
-model AbsenceJustification {
-  id                     Int                 @id @default(autoincrement())
-  reason                 String
-  status                 JustificationStatus @default(PENDING)
-  rejectionReason        String?
-  reviewedAt             DateTime?
-  assemblyId             Int
-  affiliateId            Int
-  reviewedById           Int?
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
-  decisionNote           String?
-  attachmentOriginalName String?
-  attachmentMimeType     String?
-  attachmentSize         Int?
-  attachmentUrl          String?
-  affiliate              Affiliate           @relation(fields: [affiliateId], references: [id])
-  attendance             AssemblyAttendance  @relation(fields: [assemblyId, affiliateId], references: [assemblyId, affiliateId], onDelete: Cascade)
-  assembly               Assembly            @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
-  reviewedBy             User?               @relation("JustificationReviewer", fields: [reviewedById], references: [id])
+model ExpenseDocument {
+  id           Int      @id @default(autoincrement())
+  expenseId    Int
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  createdAt    DateTime @default(now())
+  expense      Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([assemblyId, affiliateId])
-  @@index([status])
-  @@index([reviewedById])
+  @@index([expenseId])
 }
 
-model AffiliateSanction {
-  id          Int            @id @default(autoincrement())
-  reason      String
-  description String?
-  date        DateTime       @default(now())
-  status      SanctionStatus @default(ACTIVE)
-  affiliateId Int
-  createdById Int
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  affiliate   Affiliate      @relation(fields: [affiliateId], references: [id])
-  createdBy   User           @relation("SanctionCreator", fields: [createdById], references: [id])
+model Disbursement {
+  id         Int               @id @default(autoincrement())
+  expenseId  Int
+  movementId Int               @unique
+  amount     Decimal           @db.Decimal(14, 2)
+  currency   String            @default("CRC")
+  method     FinancialMethod
+  reference  String?
+  paidAt     DateTime
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  expense    Expense           @relation(fields: [expenseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  movement   FinancialMovement @relation(fields: [movementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  @@index([affiliateId])
-  @@index([status])
-  @@index([date])
-  @@index([createdById])
+  @@index([expenseId])
+}
+
+model FundingAllocation {
+  id               Int                @id @default(autoincrement())
+  expenseId        Int
+  sourceType       FundingSourceType
+  amount           Decimal            @db.Decimal(14, 2)
+  incomeMovementId Int?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  expense          Expense            @relation(fields: [expenseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  incomeMovement   FinancialMovement? @relation(fields: [incomeMovementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([expenseId])
+  @@index([incomeMovementId])
 }
 
 model InventoryCategory {
@@ -604,9 +784,9 @@ model InventoryItem {
   categoryId      Int
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
-  category        InventoryCategory      @relation(fields: [categoryId], references: [id])
-  loans           InventoryLoan[]
+  category        InventoryCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   movements       InventoryMovement[]
+  loans           InventoryLoan[]
 
   @@index([categoryId])
   @@index([status])
@@ -614,17 +794,21 @@ model InventoryItem {
 }
 
 model InventoryMovement {
-  id          Int                   @id @default(autoincrement())
-  type        InventoryMovementType
-  quantity    Int
-  reason      String
-  reference   String?
-  notes       String?
-  itemId      Int
-  createdById Int?
-  createdAt   DateTime              @default(now())
-  createdBy   User?                 @relation(fields: [createdById], references: [id])
-  item        InventoryItem         @relation(fields: [itemId], references: [id])
+  id                Int                   @id @default(autoincrement())
+  type              InventoryMovementType
+  legacyQuantity    Int                   @map("quantity")
+  quantityDelta     Int?
+  reason            String
+  reference         String?
+  notes             String?
+  itemId            Int
+  createdById       Int?
+  createdAt         DateTime              @default(now())
+  item              InventoryItem         @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdBy         User?                 @relation(fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  checkoutLoans     InventoryLoan[]       @relation("LoanCheckoutMovement")
+  returnLoans       InventoryLoan[]       @relation("LoanReturnMovement")
+  cancellationLoans InventoryLoan[]       @relation("LoanCancellationMovement")
 
   @@index([itemId])
   @@index([type])
@@ -633,30 +817,258 @@ model InventoryMovement {
 }
 
 model InventoryLoan {
-  id                  Int                 @id @default(autoincrement())
-  quantity            Int
-  borrowerName        String
-  loanDate            DateTime            @default(now())
-  expectedReturnDate  DateTime
-  returnedAt          DateTime?
-  status              InventoryLoanStatus @default(ACTIVE)
-  notes               String?
-  itemId              Int
-  borrowerAffiliateId Int?
-  createdById         Int?
-  receivedById        Int?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  affiliate           Affiliate?          @relation(fields: [borrowerAffiliateId], references: [id])
-  createdBy           User?               @relation("LoanCreator", fields: [createdById], references: [id])
-  item                InventoryItem       @relation(fields: [itemId], references: [id])
-  receivedBy          User?               @relation("LoanReceiver", fields: [receivedById], references: [id])
+  id                     Int                 @id @default(autoincrement())
+  quantity               Int
+  borrowerNameSnapshot   String              @map("borrowerName")
+  loanDate               DateTime            @default(now())
+  expectedReturnDate     DateTime
+  returnedAt             DateTime?
+  status                 InventoryLoanStatus @default(ACTIVE)
+  notes                  String?
+  itemId                 Int
+  borrowerAffiliateId    Int?
+  createdById            Int?
+  receivedById           Int?
+  cancelledById          Int?
+  cancelledAt            DateTime?
+  cancellationReason     String?
+  checkoutMovementId     Int?                @unique
+  returnMovementId       Int?                @unique
+  cancellationMovementId Int?                @unique
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  item                   InventoryItem       @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  borrowerAffiliate      Affiliate?          @relation(fields: [borrowerAffiliateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdBy              User?               @relation("LoanCreator", fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  receivedBy             User?               @relation("LoanReceiver", fields: [receivedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  cancelledBy            User?               @relation("LoanCanceller", fields: [cancelledById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  checkoutMovement       InventoryMovement?  @relation("LoanCheckoutMovement", fields: [checkoutMovementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  returnMovement         InventoryMovement?  @relation("LoanReturnMovement", fields: [returnMovementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancellationMovement   InventoryMovement?  @relation("LoanCancellationMovement", fields: [cancellationMovementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([itemId])
   @@index([status])
   @@index([borrowerAffiliateId])
   @@index([createdById])
+  @@index([cancelledById])
   @@index([expectedReturnDate])
+}
+
+model VolunteerOpportunity {
+  id                  Int                        @id @default(autoincrement())
+  title               String
+  description         String?
+  location            String?
+  capacity            Int?
+  applicationDeadline DateTime?
+  status              VolunteerOpportunityStatus @default(DRAFT)
+  createdByUserId     Int
+  publishedAt         DateTime?
+  closedAt            DateTime?
+  completedAt         DateTime?
+  cancelledAt         DateTime?
+  cancellationReason  String?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  createdBy           User                       @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sessions            VolunteerSession[]
+  applications        VolunteerApplication[]
+  participations      VolunteerParticipation[]
+
+  @@index([createdByUserId])
+  @@index([status, applicationDeadline])
+}
+
+model VolunteerSession {
+  id                 Int                    @id @default(autoincrement())
+  opportunityId      Int
+  title              String?
+  description        String?
+  location           String?
+  startAt            DateTime
+  endAt              DateTime
+  status             VolunteerSessionStatus @default(SCHEDULED)
+  cancelledAt        DateTime?
+  cancellationReason String?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  opportunity        VolunteerOpportunity   @relation(fields: [opportunityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  attendances        VolunteerAttendance[]
+
+  @@index([opportunityId, startAt])
+}
+
+model VolunteerApplication {
+  id                                Int                        @id @default(autoincrement())
+  opportunityId                     Int
+  personId                          Int?
+  submittedFullName                 String
+  submittedIdentificationType       IdentificationType?
+  submittedIdentification           String?
+  submittedNormalizedIdentification String?
+  submittedEmail                    String?
+  submittedPhone                    String?
+  motivation                        String?
+  status                            VolunteerApplicationStatus @default(PENDING)
+  requestedAt                       DateTime                   @default(now())
+  reviewedByUserId                  Int?
+  reviewedAt                        DateTime?
+  rejectionReason                   String?
+  withdrawnAt                       DateTime?
+  createdAt                         DateTime                   @default(now())
+  updatedAt                         DateTime                   @updatedAt
+  opportunity                       VolunteerOpportunity       @relation(fields: [opportunityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  person                            Person?                    @relation(fields: [personId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  reviewedBy                        User?                      @relation("VolunteerApplicationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  participation                     VolunteerParticipation?
+
+  @@index([opportunityId, status])
+  @@index([personId, status])
+  @@index([submittedNormalizedIdentification])
+  @@index([reviewedByUserId])
+}
+
+model VolunteerParticipation {
+  id                 Int                          @id @default(autoincrement())
+  opportunityId      Int
+  personId           Int
+  applicationId      Int                          @unique
+  status             VolunteerParticipationStatus @default(CONFIRMED)
+  confirmedAt        DateTime                     @default(now())
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+  opportunity        VolunteerOpportunity         @relation(fields: [opportunityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  person             Person                       @relation(fields: [personId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  application        VolunteerApplication         @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  attendances        VolunteerAttendance[]
+
+  @@unique([opportunityId, personId])
+  @@index([personId, status])
+  @@index([opportunityId, status])
+}
+
+model VolunteerAttendance {
+  id               Int                       @id @default(autoincrement())
+  participationId  Int
+  sessionId        Int
+  status           VolunteerAttendanceStatus
+  checkInAt        DateTime?
+  checkOutAt       DateTime?
+  creditedHours    Decimal                   @default(0) @db.Decimal(8, 2)
+  notes            String?
+  recordedByUserId Int
+  recordedAt       DateTime                  @default(now())
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  participation    VolunteerParticipation    @relation(fields: [participationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  session          VolunteerSession          @relation(fields: [sessionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  recordedBy       User                      @relation(fields: [recordedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([participationId, sessionId])
+  @@index([sessionId, status])
+  @@index([recordedByUserId])
+}
+
+model Venture {
+  id                Int                      @id @default(autoincrement())
+  name              String
+  description       String?
+  offerDescription  String?
+  businessPhone     String?
+  businessEmail     String?
+  websiteUrl        String?
+  socialUrl         String?
+  locationText      String?
+  status            VentureStatus            @default(ACTIVE)
+  publicationStatus VenturePublicationStatus @default(UNPUBLISHED)
+  incorporatedAt    DateTime
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  associations      VentureAssociation[]
+  requests          VentureRequest[]
+
+  @@index([status, publicationStatus])
+}
+
+model VentureAssociation {
+  id        Int       @id @default(autoincrement())
+  personId  Int
+  ventureId Int
+  startedAt DateTime
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  person    Person    @relation(fields: [personId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  venture   Venture   @relation(fields: [ventureId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([personId])
+  @@index([ventureId])
+}
+
+model VentureRequest {
+  id                 Int                      @id @default(autoincrement())
+  purpose            VentureRequestPurpose
+  status             VentureRequestStatus     @default(SUBMITTED)
+  reconciledPersonId Int?
+  ventureId          Int?
+  resolvedAt         DateTime?
+  decisionReason     String?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  reconciledPerson   Person?                  @relation(fields: [reconciledPersonId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  venture            Venture?                 @relation(fields: [ventureId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  revisions          VentureRequestRevision[]
+
+  @@index([reconciledPersonId])
+  @@index([ventureId])
+  @@index([status, createdAt])
+}
+
+model VentureRequestRevision {
+  id             Int            @id @default(autoincrement())
+  requestId      Int
+  revisionNumber Int
+  payloadVersion Int
+  submittedData  Json
+  submittedAt    DateTime       @default(now())
+  createdAt      DateTime       @default(now())
+  request        VentureRequest @relation(fields: [requestId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([requestId, revisionNumber])
+}
+
+model IdentityReconciliationManifest {
+  id                         Int                 @id @default(autoincrement())
+  manifestVersion            String
+  normalizationVersion       String
+  decisionVersion            String
+  sourceModel                String
+  sourceId                   Int
+  sourceFingerprint          String
+  rawIdentification          String?
+  identificationType         IdentificationType?
+  normalizedIdentification   String?
+  identityClusterKey         String?
+  classification             String
+  selectedPersonId           Int?
+  personCreationAllowed      Boolean
+  conflictCodes              Json
+  nameReconciliationRequired Boolean
+  reviewRequired             Boolean
+  sourceSnapshot             Json
+  reviewedAt                 DateTime?
+  reviewedBy                 String?
+  createdAt                  DateTime            @default(now())
+  updatedAt                  DateTime            @updatedAt
+  selectedPerson             Person?             @relation("ManifestSelectedPerson", fields: [selectedPersonId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([normalizationVersion, decisionVersion, sourceModel, sourceId])
+  @@index([identityClusterKey])
+  @@index([classification, reviewRequired])
+  @@index([selectedPersonId])
 }
 
 enum RequestStatus {
@@ -681,6 +1093,18 @@ enum IdentificationType {
   DIMEX
 }
 
+enum GovernanceTermStatus {
+  PLANNED
+  ACTIVE
+  CLOSED
+  CANCELLED
+}
+
+enum AssemblyType {
+  ORDINARY
+  EXTRAORDINARY
+}
+
 enum AssemblyStatus {
   SCHEDULED
   IN_PROGRESS
@@ -693,10 +1117,36 @@ enum AssemblyQuorumType {
   PERCENTAGE
 }
 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  JUSTIFIED
+}
+
+enum JustificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SanctionStatus {
+  ACTIVE
+  RESOLVED
+  REVOKED
+}
+
 enum EventStatus {
   SCHEDULED
   CANCELLED
   COMPLETED
+}
+
+enum PublicationStatus {
+  INTERNAL
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
 }
 
 enum ReservableResourceStatus {
@@ -749,6 +1199,14 @@ enum DonationMethod {
   OTHER
 }
 
+enum FinancialMethod {
+  CASH
+  BANK_TRANSFER
+  SINPE_MOVIL
+  CHECK
+  OTHER
+}
+
 enum FinancialMovementType {
   INCOME
   EXPENSE
@@ -760,30 +1218,30 @@ enum FinancialMovementSource {
   DONATION
 }
 
-enum PublicationStatus {
-  INTERNAL
-  DRAFT
-  REVIEW
-  PUBLISHED
-  ARCHIVED
+enum FinancialMovementOriginType {
+  MANUAL
+  PAYMENT
+  DONATION
+  DISBURSEMENT
 }
 
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  JUSTIFIED
+enum FinancialMovementStatus {
+  POSTED
+  VOIDED
 }
 
-enum JustificationStatus {
+enum ExpenseStatus {
   PENDING
   APPROVED
   REJECTED
+  CANCELLED
 }
 
-enum SanctionStatus {
-  ACTIVE
-  RESOLVED
-  REVOKED
+enum FundingSourceType {
+  FONDO_POR_GIRAR
+  IMPUESTO_CEMENTO
+  OWN_FUNDS
+  OTHER
 }
 
 enum InventoryItemStatus {
@@ -798,6 +1256,7 @@ enum InventoryItemCondition {
 }
 
 enum InventoryMovementType {
+  OPENING_BALANCE
   ENTRY
   EXIT
   ADJUSTMENT
@@ -822,4 +1281,62 @@ enum BoardPosition {
   VOCAL
   FISCAL
   SUPLENTE
+}
+
+enum VolunteerOpportunityStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  COMPLETED
+  CANCELLED
+}
+
+enum VolunteerSessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum VolunteerApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum VolunteerParticipationStatus {
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum VolunteerAttendanceStatus {
+  PRESENT
+  ABSENT
+  EXCUSED
+}
+
+enum VentureStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum VenturePublicationStatus {
+  UNPUBLISHED
+  PUBLISHED
+}
+
+enum VentureRequestPurpose {
+  REGISTRATION
+  UPDATE
+}
+
+enum VentureRequestStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
 }
