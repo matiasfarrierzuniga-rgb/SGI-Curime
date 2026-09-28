@@ -47,10 +47,8 @@ const select = {
   attachmentOriginalName: true,
   attachmentMimeType: true,
   attachmentSize: true,
-  assemblyId: true,
-  affiliateId: true,
-  assembly: { select: { id: true, title: true, date: true } },
-  affiliate: { select: { id: true, fullName: true, identification: true } },
+  legacyAssemblyId: true,
+  legacyAffiliateId: true,
   reviewedBy: { select: { id: true, fullName: true, email: true } },
   createdAt: true,
   updatedAt: true,
@@ -85,13 +83,19 @@ export class AbsenceJustificationsService {
       }),
       this.prisma.assemblyAttendance.findUnique({
         where: {
-          assemblyId_affiliateId: { assemblyId, affiliateId: dto.affiliateId },
+          legacyAssemblyId_legacyAffiliateId: {
+            legacyAssemblyId: assemblyId,
+            legacyAffiliateId: dto.affiliateId,
+          },
         },
-        select: { status: true },
+        select: { id: true, status: true },
       }),
       this.prisma.absenceJustification.findUnique({
         where: {
-          assemblyId_affiliateId: { assemblyId, affiliateId: dto.affiliateId },
+          legacyAssemblyId_legacyAffiliateId: {
+            legacyAssemblyId: assemblyId,
+            legacyAffiliateId: dto.affiliateId,
+          },
         },
         select: { id: true },
       }),
@@ -114,7 +118,13 @@ export class AbsenceJustificationsService {
         'A justification already exists for this affiliate and assembly',
       );
     const item = await this.prisma.absenceJustification.create({
-      data: { assemblyId, ...dto, status: 'PENDING' },
+      data: {
+        legacyAssemblyId: assemblyId,
+        legacyAffiliateId: dto.affiliateId,
+        attendanceId: attendance.id,
+        reason: dto.reason,
+        status: 'PENDING',
+      },
       select,
     });
     await this.audit?.log({
@@ -125,7 +135,7 @@ export class AbsenceJustificationsService {
       entityId: item.id,
       ...context,
     });
-    return item;
+    return this.hydrate(item);
   }
 
   async registerFromAffiliate(
@@ -175,11 +185,21 @@ export class AbsenceJustificationsService {
         select: { id: true },
       }),
       this.prisma.assemblyAttendance.findUnique({
-        where: { assemblyId_affiliateId: { assemblyId, affiliateId } },
-        select: { status: true },
+        where: {
+          legacyAssemblyId_legacyAffiliateId: {
+            legacyAssemblyId: assemblyId,
+            legacyAffiliateId: affiliateId,
+          },
+        },
+        select: { id: true, status: true },
       }),
       this.prisma.absenceJustification.findUnique({
-        where: { assemblyId_affiliateId: { assemblyId, affiliateId } },
+        where: {
+          legacyAssemblyId_legacyAffiliateId: {
+            legacyAssemblyId: assemblyId,
+            legacyAffiliateId: affiliateId,
+          },
+        },
         select: { id: true },
       }),
     ]);
@@ -215,8 +235,9 @@ export class AbsenceJustificationsService {
 
       const item = await this.prisma.absenceJustification.create({
         data: {
-          assemblyId,
-          affiliateId,
+          legacyAssemblyId: assemblyId,
+          legacyAffiliateId: affiliateId,
+          attendanceId: attendance.id,
           reason,
           status: 'PENDING',
           attachmentOriginalName: file?.originalname,
@@ -237,7 +258,7 @@ export class AbsenceJustificationsService {
         ...context,
       });
 
-      return item;
+      return this.hydrate(item);
     } catch (error) {
       if (storedFileName) {
         await unlink(join(evidenceDirectory, storedFileName)).catch(
@@ -283,8 +304,8 @@ export class AbsenceJustificationsService {
   async findAll(q: QueryJustificationsDto) {
     const where = {
       status: q.status,
-      assemblyId: q.assemblyId,
-      affiliateId: q.affiliateId,
+      legacyAssemblyId: q.assemblyId,
+      legacyAffiliateId: q.affiliateId,
     };
     const [data, total] = await this.prisma.$transaction([
       this.prisma.absenceJustification.findMany({
@@ -296,7 +317,12 @@ export class AbsenceJustificationsService {
       }),
       this.prisma.absenceJustification.count({ where }),
     ]);
-    return { data, total, page: q.page, limit: q.limit };
+    return {
+      data: await Promise.all(data.map((item) => this.hydrate(item))),
+      total,
+      page: q.page,
+      limit: q.limit,
+    };
   }
   async findForAffiliate(
     affiliateId: number,
@@ -320,7 +346,7 @@ export class AbsenceJustificationsService {
       select,
     });
     if (!item) throw new NotFoundException('Absence justification not found');
-    return item;
+    return this.hydrate(item);
   }
 
   async getEvidence(id: number, actor: { id: number; role: string }) {
@@ -328,7 +354,8 @@ export class AbsenceJustificationsService {
       where: { id },
       select: {
         id: true,
-        affiliateId: true,
+        legacyAssemblyId: true,
+        legacyAffiliateId: true,
         status: true,
         reason: true,
         createdAt: true,
@@ -336,14 +363,6 @@ export class AbsenceJustificationsService {
         attachmentMimeType: true,
         attachmentSize: true,
         attachmentUrl: true,
-        assembly: { select: { id: true, title: true } },
-        affiliate: {
-          select: {
-            id: true,
-            fullName: true,
-            person: { select: { user: { select: { id: true } } } },
-          },
-        },
       },
     });
 
@@ -352,7 +371,21 @@ export class AbsenceJustificationsService {
     }
 
     const isAdmin = actor.role === 'Administrador';
-    const isOwner = item.affiliate.person?.user?.id === actor.id;
+    const [assembly, affiliate] = await Promise.all([
+      this.prisma.assembly.findUnique({
+        where: { id: item.legacyAssemblyId },
+        select: { id: true, title: true },
+      }),
+      this.prisma.affiliate.findUnique({
+        where: { id: item.legacyAffiliateId },
+        select: {
+          id: true,
+          fullName: true,
+          person: { select: { user: { select: { id: true } } } },
+        },
+      }),
+    ]);
+    const isOwner = affiliate?.person?.user?.id === actor.id;
 
     if (!isAdmin && !isOwner) {
       throw new ForbiddenException(
@@ -360,7 +393,14 @@ export class AbsenceJustificationsService {
       );
     }
 
-    return item;
+    const { legacyAssemblyId, legacyAffiliateId, ...rest } = item;
+    return {
+      ...rest,
+      assemblyId: legacyAssemblyId,
+      affiliateId: legacyAffiliateId,
+      assembly,
+      affiliate,
+    };
   }
 
   async getEvidenceFile(id: number, actor: { id: number; role: string }) {
@@ -425,32 +465,21 @@ export class AbsenceJustificationsService {
       if (status === JustificationStatus.APPROVED) {
         const attendance = await tx.assemblyAttendance.findUnique({
           where: {
-            assemblyId_affiliateId: {
-              assemblyId: item.assemblyId,
-              affiliateId: item.affiliateId,
+            legacyAssemblyId_legacyAffiliateId: {
+              legacyAssemblyId: item.legacyAssemblyId,
+              legacyAffiliateId: item.legacyAffiliateId,
             },
           },
           select: { status: true },
         });
-        if (attendance?.status !== 'ABSENT') {
+        if (
+          attendance?.status !== 'ABSENT' &&
+          attendance?.status !== 'PRESENT'
+        ) {
           throw new ConflictException(
-            'The attendance record must remain absent before approving the justification.',
+            'The attendance record must remain present or absent before approving the justification.',
           );
         }
-        await tx.assemblyAttendance.upsert({
-          where: {
-            assemblyId_affiliateId: {
-              assemblyId: item.assemblyId,
-              affiliateId: item.affiliateId,
-            },
-          },
-          create: {
-            assemblyId: item.assemblyId,
-            affiliateId: item.affiliateId,
-            status: 'JUSTIFIED',
-          },
-          update: { status: 'JUSTIFIED', registeredAt: new Date() },
-        });
       }
     });
 
@@ -498,5 +527,34 @@ export class AbsenceJustificationsService {
       actorId,
       context,
     );
+  }
+
+  private async hydrate<
+    T extends { legacyAssemblyId: number; legacyAffiliateId: number },
+  >(item: T) {
+    const [assembly, affiliate] = await Promise.all([
+      this.prisma.assembly.findUnique({
+        where: { id: item.legacyAssemblyId },
+        select: { id: true, title: true, legacyDate: true },
+      }),
+      this.prisma.affiliate.findUnique({
+        where: { id: item.legacyAffiliateId },
+        select: { id: true, fullName: true, identification: true },
+      }),
+    ]);
+    const { legacyAssemblyId, legacyAffiliateId, ...rest } = item;
+    return {
+      ...rest,
+      assemblyId: legacyAssemblyId,
+      affiliateId: legacyAffiliateId,
+      assembly: assembly
+        ? {
+            id: assembly.id,
+            title: assembly.title,
+            date: assembly.legacyDate,
+          }
+        : null,
+      affiliate,
+    };
   }
 }

@@ -164,7 +164,9 @@ export class PrismaUsersRepository implements UsersRepository {
       select: {
         person: {
           select: {
-            affiliate: { select: { id: true, status: true, roleId: true } },
+            affiliate: {
+              select: { id: true, status: true, legacyRoleId: true },
+            },
             affiliateRequests: {
               select: { status: true },
               orderBy: { createdAt: 'desc' },
@@ -178,7 +180,7 @@ export class PrismaUsersRepository implements UsersRepository {
     return {
       affiliateId: affiliate?.id ?? null,
       affiliateStatus: affiliate?.status ?? null,
-      affiliateRoleId: affiliate?.roleId ?? null,
+      affiliateRoleId: affiliate?.legacyRoleId ?? null,
       affiliateRequestStatus:
         account?.person?.affiliateRequests[0]?.status ?? null,
       hasPerson: account?.person !== null && account?.person !== undefined,
@@ -302,7 +304,7 @@ export class PrismaUsersRepository implements UsersRepository {
   ): Promise<void> {
     await this.db.affiliate.updateMany({
       where: { person: { user: { id } }, status: 'ACTIVE' },
-      data: { roleId },
+      data: { legacyRoleId: roleId },
     });
   }
 

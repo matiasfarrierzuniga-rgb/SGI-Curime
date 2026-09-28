@@ -106,13 +106,37 @@ describe('InventoryItemsService', () => {
       data: {
         itemId: 1,
         type: 'ENTRY',
-        quantity: 5,
+        legacyQuantity: 5,
+        quantityDelta: 5,
         reason: 'Initial inventory registration',
         reference: 'HER-001',
         createdById: undefined,
       },
     });
     expect(result).not.toHaveProperty('movements');
+  });
+
+  it('creates a zero-stock item without an inventory movement', async () => {
+    prisma.inventoryItem.create.mockResolvedValueOnce({
+      ...item,
+      currentQuantity: 0,
+    });
+
+    await expect(
+      service.create({
+        code: 'HER-000',
+        name: 'Inventario vacío',
+        categoryId: 1,
+        quantity: 0,
+      }),
+    ).resolves.toMatchObject({ currentQuantity: 0 });
+
+    expect(prisma.inventoryItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ currentQuantity: 0 }),
+      }),
+    );
+    expect(prisma.inventoryMovement.create).not.toHaveBeenCalled();
   });
 
   it('rejects a duplicated item code before opening the transaction', async () => {

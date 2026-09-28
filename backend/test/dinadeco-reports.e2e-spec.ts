@@ -24,9 +24,12 @@ describe('DINADECO annual report (e2e)', () => {
     clearLockout: jest.fn(),
   };
   const prisma = {
-    financialMovement: { groupBy: jest.fn(), findMany: jest.fn() },
-    institutionalProfile: { findUniqueOrThrow: jest.fn() },
-    $transaction: jest.fn((work: (client: unknown) => unknown) => work(prisma)),
+    financialMovement: {
+      groupBy: jest.fn<any, any>(),
+      findMany: jest.fn<any, any>(),
+    },
+    organizationProfile: { findUniqueOrThrow: jest.fn<any, any>() },
+    $transaction: jest.fn<any, any>(),
   };
 
   const institutionalProfile = {
@@ -47,8 +50,11 @@ describe('DINADECO annual report (e2e)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    prisma.$transaction.mockImplementation(
+      (work: (client: typeof prisma) => unknown) => work(prisma),
+    );
     account = authAccount('Administrador');
-    prisma.institutionalProfile.findUniqueOrThrow.mockResolvedValue(
+    prisma.organizationProfile.findUniqueOrThrow.mockResolvedValue(
       institutionalProfile,
     );
     prisma.financialMovement.groupBy
@@ -61,13 +67,13 @@ describe('DINADECO annual report (e2e)', () => {
       .mockResolvedValueOnce([
         {
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.DONATION,
+          legacySource: FinancialMovementSource.DONATION,
           _sum: { amount: new Prisma.Decimal('250.00') },
           _count: { _all: 1 },
         },
         {
           type: FinancialMovementType.EXPENSE,
-          source: FinancialMovementSource.MANUAL,
+          legacySource: FinancialMovementSource.MANUAL,
           _sum: { amount: new Prisma.Decimal('50.00') },
           _count: { _all: 1 },
         },
@@ -79,7 +85,7 @@ describe('DINADECO annual report (e2e)', () => {
         description: 'Ingreso ficticio para prueba E2E',
         amount: new Prisma.Decimal('250.00'),
         occurredAt: new Date('2026-03-15T14:30:00.000Z'),
-        source: FinancialMovementSource.DONATION,
+        legacySource: FinancialMovementSource.DONATION,
       },
       {
         id: 102,
@@ -87,7 +93,7 @@ describe('DINADECO annual report (e2e)', () => {
         description: 'Egreso ficticio para prueba E2E',
         amount: new Prisma.Decimal('50.00'),
         occurredAt: new Date('2026-04-20T16:45:00.000Z'),
-        source: FinancialMovementSource.MANUAL,
+        legacySource: FinancialMovementSource.MANUAL,
       },
     ]);
 
@@ -223,7 +229,7 @@ describe('DINADECO annual report (e2e)', () => {
   );
 
   it('preserves null institutional values without failing the report', async () => {
-    prisma.institutionalProfile.findUniqueOrThrow.mockResolvedValue(
+    prisma.organizationProfile.findUniqueOrThrow.mockResolvedValue(
       Object.fromEntries(
         Object.keys(institutionalProfile).map((field) => [field, null]),
       ),

@@ -7,7 +7,10 @@ import {
 import {
   DonationMethod,
   DonationStatus,
+  FinancialMethod,
+  FinancialMovementOriginType,
   FinancialMovementSource,
+  FinancialMovementStatus,
   FinancialMovementType,
   Prisma,
 } from '../../generated/prisma/client';
@@ -35,7 +38,7 @@ describe('DonationsService', () => {
     donorIdentification: '1-2345-6789',
     amount: new Prisma.Decimal(dto.amount),
     currency: 'CRC',
-    method: dto.method,
+    legacyMethod: dto.method,
     reference: 'SINPE-100',
     description: 'Aporte mensual',
     receivedAt,
@@ -49,8 +52,8 @@ describe('DonationsService', () => {
   const originalMovement = {
     id: movement.id,
     type: FinancialMovementType.INCOME,
-    source: FinancialMovementSource.DONATION,
-    sourceId: createdDonation.id,
+    legacySource: FinancialMovementSource.DONATION,
+    legacySourceId: createdDonation.id,
     amount: new Prisma.Decimal(dto.amount),
     currency: 'CRC',
   };
@@ -64,7 +67,7 @@ describe('DonationsService', () => {
     cancelledById: null,
     cancelledAt: null,
     cancellationReason: null,
-    reversalMovementId: null,
+    legacyReversalMovementId: null,
     recordedBy: { id: actorId, fullName: 'Tesorero' },
     cancelledBy: null,
   };
@@ -78,7 +81,7 @@ describe('DonationsService', () => {
     cancelledAt: new Date('2026-09-10T10:00:00.000Z'),
     cancelledById: actorId,
     cancellationReason: 'Registro duplicado',
-    reversalMovementId: reversalMovement.id,
+    legacyReversalMovementId: reversalMovement.id,
   };
   const tx = {
     donation: {
@@ -146,6 +149,8 @@ describe('DonationsService', () => {
           amount: expect.any(Prisma.Decimal),
           currency: 'CRC',
           status: DonationStatus.CONFIRMED,
+          legacyMethod: DonationMethod.SINPE_MOVIL,
+          financialMethod: FinancialMethod.SINPE_MOVIL,
           recordedById: actorId,
           originalMovementId: null,
         }),
@@ -155,8 +160,10 @@ describe('DonationsService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.DONATION,
-          sourceId: createdDonation.id,
+          legacySource: FinancialMovementSource.DONATION,
+          legacySourceId: createdDonation.id,
+          originType: FinancialMovementOriginType.DONATION,
+          status: FinancialMovementStatus.POSTED,
           amount: expect.any(Prisma.Decimal),
           currency: 'CRC',
           occurredAt: receivedAt,
@@ -284,7 +291,7 @@ describe('DonationsService', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           status: DonationStatus.CONFIRMED,
-          method: DonationMethod.CASH,
+          legacyMethod: DonationMethod.CASH,
           receivedAt: {
             gte: new Date('2026-09-01T00:00:00.000Z'),
             lte: new Date('2026-09-30T23:59:59.999Z'),
@@ -342,7 +349,7 @@ describe('DonationsService', () => {
       cancelledById: 18,
       cancelledAt: new Date('2026-09-10T10:00:00.000Z'),
       cancellationReason: 'Duplicate record',
-      reversalMovementId: 85,
+      legacyReversalMovementId: 85,
       cancelledBy: { id: 18, fullName: 'Administrador' },
     };
     prisma.donation.findUnique.mockResolvedValueOnce(cancelledDetail);
@@ -385,7 +392,11 @@ describe('DonationsService', () => {
     await service.update(linkedDonation.id, { [field]: value }, actorId, context);
 
     expect(tx.donation.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ [field]: expected }) }),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          [field === 'method' ? 'legacyMethod' : field]: expected,
+        }),
+      }),
     );
   });
 
@@ -468,17 +479,17 @@ describe('DonationsService', () => {
     [
       'with original movement source other than DONATION',
       linkedDonation,
-      { id: movement.id, type: FinancialMovementType.INCOME, source: FinancialMovementSource.MANUAL, sourceId: linkedDonation.id },
+      { id: movement.id, type: FinancialMovementType.INCOME, legacySource: FinancialMovementSource.MANUAL, legacySourceId: linkedDonation.id },
     ],
     [
       'with original movement sourceId for another donation',
       linkedDonation,
-      { id: movement.id, type: FinancialMovementType.INCOME, source: FinancialMovementSource.DONATION, sourceId: 999 },
+      { id: movement.id, type: FinancialMovementType.INCOME, legacySource: FinancialMovementSource.DONATION, legacySourceId: 999 },
     ],
     [
       'with original movement type other than INCOME',
       linkedDonation,
-      { id: movement.id, type: FinancialMovementType.EXPENSE, source: FinancialMovementSource.DONATION, sourceId: linkedDonation.id },
+      { id: movement.id, type: FinancialMovementType.EXPENSE, legacySource: FinancialMovementSource.DONATION, legacySourceId: linkedDonation.id },
     ],
   ])('rejects donation %s', async (_description, donation, originalMovement) => {
     tx.donation.findUnique.mockResolvedValueOnce(donation);
@@ -542,8 +553,11 @@ describe('DonationsService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           type: FinancialMovementType.EXPENSE,
-          source: FinancialMovementSource.DONATION,
-          sourceId: linkedDonation.id,
+          legacySource: FinancialMovementSource.DONATION,
+          legacySourceId: linkedDonation.id,
+          originType: FinancialMovementOriginType.DONATION,
+          status: FinancialMovementStatus.POSTED,
+          reversalOfId: movement.id,
           amount: originalMovement.amount,
           currency: originalMovement.currency,
           description: `Reversión de donación #${linkedDonation.id}`,
@@ -559,7 +573,8 @@ describe('DonationsService', () => {
           cancelledAt: expect.any(Date),
           cancelledById: actorId,
           cancellationReason: 'Registro duplicado',
-          reversalMovementId: reversalMovement.id,
+          legacyReversalMovementId: reversalMovement.id,
+          financialMethod: FinancialMethod.SINPE_MOVIL,
         }),
       }),
     );
@@ -617,8 +632,8 @@ describe('DonationsService', () => {
 
   it.each([
     ['without originalMovementId', { ...linkedDonation, originalMovementId: null }, undefined],
-    ['with source other than DONATION', linkedDonation, { ...originalMovement, source: FinancialMovementSource.MANUAL }],
-    ['with sourceId for another donation', linkedDonation, { ...originalMovement, sourceId: 999 }],
+    ['with source other than DONATION', linkedDonation, { ...originalMovement, legacySource: FinancialMovementSource.MANUAL }],
+    ['with sourceId for another donation', linkedDonation, { ...originalMovement, legacySourceId: 999 }],
     ['with type other than INCOME', linkedDonation, { ...originalMovement, type: FinancialMovementType.EXPENSE }],
     ['with inconsistent amount', linkedDonation, { ...originalMovement, amount: new Prisma.Decimal('1.00') }],
     ['with inconsistent currency', linkedDonation, { ...originalMovement, currency: 'USD' }],
@@ -714,7 +729,7 @@ describe('DonationsService', () => {
     ],
     [
       'with a reversal movement',
-      { ...linkedDonation, reversalMovementId: reversalMovement.id },
+      { ...linkedDonation, legacyReversalMovementId: reversalMovement.id },
       new ConflictException('DONATION_HAS_FINANCIAL_EFFECTS'),
     ],
     [
@@ -733,8 +748,8 @@ describe('DonationsService', () => {
 
   it.each([
     ['without original movement', null],
-    ['with source other than DONATION', { ...originalMovement, source: FinancialMovementSource.MANUAL }],
-    ['with sourceId for another donation', { ...originalMovement, sourceId: 999 }],
+    ['with source other than DONATION', { ...originalMovement, legacySource: FinancialMovementSource.MANUAL }],
+    ['with sourceId for another donation', { ...originalMovement, legacySourceId: 999 }],
     ['with type other than INCOME', { ...originalMovement, type: FinancialMovementType.EXPENSE }],
     ['with inconsistent amount', { ...originalMovement, amount: new Prisma.Decimal('1.00') }],
     ['with inconsistent currency', { ...originalMovement, currency: 'USD' }],

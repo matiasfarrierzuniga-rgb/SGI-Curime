@@ -14,7 +14,7 @@ const activeItem = {
 const movement = {
   id: 10,
   type: InventoryMovementType.ENTRY,
-  quantity: 3,
+  legacyQuantity: 3,
   reason: 'Compra',
   reference: null,
   notes: null,
@@ -70,7 +70,8 @@ describe('InventoryMovementsService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           type: InventoryMovementType.ENTRY,
-          quantity: 3,
+          legacyQuantity: 3,
+          quantityDelta: 3,
           reason: 'Compra',
           createdById: undefined,
         }),
@@ -91,7 +92,8 @@ describe('InventoryMovementsService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           type: InventoryMovementType.EXIT,
-          quantity: 2,
+          legacyQuantity: 2,
+          quantityDelta: -2,
         }),
       }),
     );
@@ -146,7 +148,8 @@ describe('InventoryMovementsService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           type: InventoryMovementType.ADJUSTMENT,
-          quantity: 3,
+          legacyQuantity: 3,
+          quantityDelta: 3,
           reason: 'Conteo físico',
         }),
       }),
@@ -158,6 +161,14 @@ describe('InventoryMovementsService', () => {
     await expect(
       service.recordAdjustment(1, { newQuantity: 8, reason: 'Conteo físico' }),
     ).rejects.toBeInstanceOf(ConflictException);
+    expect(prisma.inventoryMovement.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a no-op adjustment before updating stock', async () => {
+    await expect(
+      service.recordAdjustment(1, { newQuantity: 5, reason: 'Sin cambio' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(prisma.inventoryItem.updateMany).not.toHaveBeenCalled();
     expect(prisma.inventoryMovement.create).not.toHaveBeenCalled();
   });
 

@@ -20,7 +20,7 @@ import { QueryMovementsDto } from './dto/query-movements.dto';
 const movementSelect = {
   id: true,
   type: true,
-  quantity: true,
+  legacyQuantity: true,
   reason: true,
   reference: true,
   notes: true,
@@ -71,7 +71,8 @@ export class InventoryMovementsService {
         data: {
           itemId,
           type: InventoryMovementType.ENTRY,
-          quantity: dto.quantity,
+          legacyQuantity: dto.quantity,
+          quantityDelta: dto.quantity,
           reason: dto.reason,
           reference: dto.reference ?? null,
           notes: dto.notes ?? null,
@@ -93,7 +94,7 @@ export class InventoryMovementsService {
       },
       ...context,
     });
-    return movement;
+    return this.serializeMovement(movement);
   }
 
   async recordExit(
@@ -118,7 +119,8 @@ export class InventoryMovementsService {
         data: {
           itemId,
           type: InventoryMovementType.EXIT,
-          quantity: dto.quantity,
+          legacyQuantity: dto.quantity,
+          quantityDelta: -dto.quantity,
           reason: dto.reason,
           reference: dto.reference ?? null,
           notes: dto.notes ?? null,
@@ -140,7 +142,7 @@ export class InventoryMovementsService {
       },
       ...context,
     });
-    return movement;
+    return this.serializeMovement(movement);
   }
 
   async recordAdjustment(
@@ -151,6 +153,12 @@ export class InventoryMovementsService {
   ) {
     const movement = await this.prisma.$transaction(async (tx) => {
       const item = await this.requireActiveItem(tx, itemId);
+      const quantityDelta = dto.newQuantity - item.currentQuantity;
+      if (quantityDelta === 0) {
+        throw new ConflictException(
+          'Adjustment quantity must differ from current stock',
+        );
+      }
       const result = await tx.inventoryItem.updateMany({
         where: {
           id: itemId,
@@ -167,7 +175,8 @@ export class InventoryMovementsService {
         data: {
           itemId,
           type: InventoryMovementType.ADJUSTMENT,
-          quantity: dto.newQuantity - item.currentQuantity,
+          legacyQuantity: quantityDelta,
+          quantityDelta,
           reason: dto.reason,
           reference: null,
           notes: dto.notes ?? null,
@@ -188,7 +197,7 @@ export class InventoryMovementsService {
       },
       ...context,
     });
-    return movement;
+    return this.serializeMovement(movement);
   }
 
   async findAll(query: QueryMovementsDto) {
@@ -216,7 +225,12 @@ export class InventoryMovementsService {
       }),
       this.prisma.inventoryMovement.count({ where }),
     ]);
-    return { data, total, page: query.page, limit: query.limit };
+    return {
+      data: data.map((movement) => this.serializeMovement(movement)),
+      total,
+      page: query.page,
+      limit: query.limit,
+    };
   }
 
   async findItemMovements(itemId: number, query: QueryMovementsDto) {
@@ -248,7 +262,12 @@ export class InventoryMovementsService {
       }),
       this.prisma.inventoryMovement.count({ where }),
     ]);
-    return { data, total, page: query.page, limit: query.limit };
+    return {
+      data: data.map((movement) => this.serializeMovement(movement)),
+      total,
+      page: query.page,
+      limit: query.limit,
+    };
   }
 
   private async requireActiveItem(
@@ -264,6 +283,11 @@ export class InventoryMovementsService {
       throw new ConflictException('Inventory item is inactive');
     }
     return item;
+  }
+
+  private serializeMovement<T extends { legacyQuantity: number }>(movement: T) {
+    const { legacyQuantity, ...rest } = movement;
+    return { ...rest, quantity: legacyQuantity };
   }
 }
 

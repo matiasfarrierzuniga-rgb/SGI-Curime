@@ -112,25 +112,25 @@ describe('DinadecoReportsService', () => {
       .mockResolvedValueOnce([
         {
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.MANUAL,
+          legacySource: FinancialMovementSource.MANUAL,
           _sum: { amount: decimal('300.20') },
           _count: { _all: 2 },
         },
         {
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.RESERVATION_PAYMENT,
+          legacySource: FinancialMovementSource.RESERVATION_PAYMENT,
           _sum: { amount: decimal('400.30') },
           _count: { _all: 1 },
         },
         {
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.DONATION,
+          legacySource: FinancialMovementSource.DONATION,
           _sum: { amount: decimal('500.40') },
           _count: { _all: 3 },
         },
         {
           type: FinancialMovementType.EXPENSE,
-          source: FinancialMovementSource.MANUAL,
+          legacySource: FinancialMovementSource.MANUAL,
           _sum: { amount: decimal('100.15') },
           _count: { _all: 1 },
         },
@@ -145,8 +145,8 @@ describe('DinadecoReportsService', () => {
       _sum: { amount: true },
     });
     expect(prisma.financialMovement.groupBy).toHaveBeenNthCalledWith(2, {
-      by: ['type', 'source'],
-      orderBy: [{ type: 'asc' }, { source: 'asc' }],
+      by: ['type', 'legacySource'],
+      orderBy: [{ type: 'asc' }, { legacySource: 'asc' }],
       where: {
         occurredAt: {
           gte: new Date('2026-01-01T00:00:00.000Z'),
@@ -191,7 +191,7 @@ describe('DinadecoReportsService', () => {
 
   const movement = (
     id: number,
-    type = FinancialMovementType.INCOME,
+    type: FinancialMovementType = FinancialMovementType.INCOME,
     date = '2026-01-01T00:00:00.000Z',
   ) => ({
     id,
@@ -199,7 +199,7 @@ describe('DinadecoReportsService', () => {
     description: `Movimiento ${id}`,
     amount: decimal('0.10'),
     occurredAt: new Date(date),
-    source: FinancialMovementSource.MANUAL,
+    legacySource: FinancialMovementSource.MANUAL,
   });
 
   it('queries only annual detail in deterministic date/id order and separates income, expenses and donation once', async () => {
@@ -215,7 +215,7 @@ describe('DinadecoReportsService', () => {
     );
     const donation = {
       ...movement(2),
-      source: FinancialMovementSource.DONATION,
+      legacySource: FinancialMovementSource.DONATION,
     };
     const rows = [
       nextYear,
@@ -239,7 +239,7 @@ describe('DinadecoReportsService', () => {
           description: true,
           amount: true,
           occurredAt: true,
-          source: true,
+          legacySource: true,
         });
         return rows
           .filter(
@@ -260,19 +260,19 @@ describe('DinadecoReportsService', () => {
       .mockResolvedValueOnce([
         {
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.MANUAL,
+          legacySource: FinancialMovementSource.MANUAL,
           _sum: { amount: decimal('0.10') },
           _count: { _all: 1 },
         },
         {
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.DONATION,
+          legacySource: FinancialMovementSource.DONATION,
           _sum: { amount: decimal('0.10') },
           _count: { _all: 1 },
         },
         {
           type: FinancialMovementType.EXPENSE,
-          source: FinancialMovementSource.MANUAL,
+          legacySource: FinancialMovementSource.MANUAL,
           _sum: { amount: decimal('0.10') },
           _count: { _all: 1 },
         },
@@ -332,7 +332,7 @@ describe('DinadecoReportsService', () => {
         .mockResolvedValueOnce([
           {
             type,
-            source: FinancialMovementSource.MANUAL,
+            legacySource: FinancialMovementSource.MANUAL,
             _sum: { amount: decimal('0.10').times(count) },
             _count: { _all: count },
           },

@@ -18,7 +18,7 @@ const past = new Date('2020-01-01');
 const loan = {
   id: 5,
   quantity: 2,
-  borrowerName: 'Vecino Prestatario',
+  borrowerNameSnapshot: 'Vecino Prestatario',
   borrowerAffiliateId: null,
   loanDate: new Date(),
   expectedReturnDate: future,
@@ -35,7 +35,7 @@ const loan = {
     unit: 'unidad',
     category: { id: 1, name: 'Herramientas' },
   },
-  affiliate: null,
+  borrowerAffiliate: null,
   createdBy: { id: 2, fullName: 'Operador', email: 'op@example.com' },
   receivedBy: null,
 };
@@ -103,9 +103,16 @@ describe('InventoryLoansService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           type: InventoryMovementType.EXIT,
-          quantity: 2,
+          legacyQuantity: 2,
+          quantityDelta: -2,
           reference: 'LOAN-5',
         }),
+      }),
+    );
+    expect(prisma.inventoryLoan.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 5 },
+        data: { checkoutMovementId: 1 },
       }),
     );
     expect(result.id).toBe(5);
@@ -216,6 +223,7 @@ describe('InventoryLoansService', () => {
         data: expect.objectContaining({
           status: InventoryLoanStatus.RETURNED,
           returnedAt: expect.any(Date),
+          returnMovementId: 1,
         }),
       }),
     );
@@ -275,6 +283,10 @@ describe('InventoryLoansService', () => {
         data: expect.objectContaining({
           status: InventoryLoanStatus.CANCELLED,
           receivedById: 2,
+          cancelledById: 2,
+          cancelledAt: expect.any(Date),
+          cancellationReason: 'Préstamo cancelado',
+          cancellationMovementId: 1,
         }),
       }),
     );
@@ -288,7 +300,8 @@ describe('InventoryLoansService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           type: InventoryMovementType.ENTRY,
-          quantity: 2,
+          legacyQuantity: 2,
+          quantityDelta: 2,
           reference: 'LOAN-5',
         }),
       }),

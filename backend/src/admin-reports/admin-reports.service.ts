@@ -120,7 +120,7 @@ export class AdminReportsService {
     const assemblies = await this.prisma.assembly.findMany({
       where: {
         id: q.assemblyId,
-        date:
+        legacyDate:
           q.dateFrom || q.dateTo
             ? { gte: q.dateFrom, lte: q.dateTo }
             : undefined,
@@ -128,26 +128,32 @@ export class AdminReportsService {
       select: {
         id: true,
         title: true,
-        date: true,
+        legacyDate: true,
         status: true,
-        attendances: { select: { status: true } },
+        convocations: {
+          where: { attendance: { isNot: null } },
+          select: { attendance: { select: { status: true } } },
+        },
         _count: { select: { convocations: true } },
       },
-      orderBy: { date: 'desc' },
+      orderBy: { legacyDate: 'desc' },
     });
     const data = assemblies.map((a) => {
       const convokedCount = a._count.convocations;
-      const present = a.attendances.filter(
+      const attendances = a.convocations.flatMap((item) =>
+          item.attendance ? [item.attendance] : [],
+        ),
+        present = attendances.filter(
           (x) => x.status === 'PRESENT',
         ).length,
-        absent = a.attendances.filter((x) => x.status === 'ABSENT').length,
-        justified = a.attendances.filter(
+        absent = attendances.filter((x) => x.status === 'ABSENT').length,
+        justified = attendances.filter(
           (x) => x.status === 'JUSTIFIED',
         ).length;
       return {
         id: a.id,
         title: a.title,
-        date: a.date,
+        date: a.legacyDate,
         status: a.status,
         convokedCount,
         denominatorAvailable: convokedCount > 0,

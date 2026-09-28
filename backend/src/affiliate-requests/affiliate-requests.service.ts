@@ -232,7 +232,7 @@ export class AffiliateRequestsService {
               address: request.address,
               occupation: request.occupation,
               workplace: request.workplace,
-              roleId,
+              legacyRoleId: roleId,
             },
           });
           await tx.user.update({

@@ -23,11 +23,19 @@ function setup(
         convocations: options.convoked === false ? [] : [{ id: 2 }],
       }),
     },
-    affiliate: { findFirst: jest.fn().mockResolvedValue({ id: 7 }) },
+    affiliate: {
+      findFirst: jest.fn().mockResolvedValue({ id: 7 }),
+      findUnique: jest.fn().mockResolvedValue({
+        id: 7,
+        fullName: 'Afiliada',
+        identification: '1',
+      }),
+    },
     assemblyAttendance: {
       findUnique: jest
         .fn()
-        .mockResolvedValue({ status: options.attendanceStatus ?? 'ABSENT' }),
+        .mockResolvedValue({ id: 4, status: options.attendanceStatus ?? 'ABSENT' }),
+      upsert: jest.fn(),
     },
     absenceJustification: {
       findUnique: jest
@@ -35,17 +43,21 @@ function setup(
         .mockResolvedValue(options.existing ? { id: 3 } : null),
       create: jest.fn().mockResolvedValue({
         id: 3,
-        assemblyId: 1,
-        affiliateId: 7,
+        legacyAssemblyId: 1,
+        legacyAffiliateId: 7,
         status: 'PENDING',
       }),
       findMany: jest.fn().mockResolvedValue([]),
       count: jest.fn().mockResolvedValue(0),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
-    $transaction: jest.fn(async (items: Promise<unknown>[]) =>
-      Promise.all(items),
-    ),
+    $transaction: jest.fn(),
   };
+  prisma.$transaction.mockImplementation(async (work: unknown) =>
+    typeof work === 'function'
+      ? (work as (tx: unknown) => unknown)(prisma)
+      : Promise.all(work as Promise<unknown>[]),
+  );
   return { prisma, service: new AbsenceJustificationsService(prisma as never) };
 }
 
@@ -65,7 +77,11 @@ describe('Own absence justification', () => {
     );
     expect(prisma.absenceJustification.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ affiliateId: 7, assemblyId: 1 }),
+        data: expect.objectContaining({
+          legacyAffiliateId: 7,
+          legacyAssemblyId: 1,
+          attendanceId: 4,
+        }),
       }),
     );
   });
@@ -96,8 +112,28 @@ describe('Own absence justification', () => {
     await service.findMine({ page: 1, limit: 20 }, 42);
     expect(prisma.absenceJustification.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ affiliateId: 7 }),
+        where: expect.objectContaining({ legacyAffiliateId: 7 }),
       }),
     );
   });
+
+  it.each(['ABSENT', 'PRESENT'])(
+    'approves justification without rewriting %s attendance',
+    async (attendanceStatus) => {
+      const { prisma, service } = setup({ attendanceStatus });
+      prisma.absenceJustification.findUnique.mockResolvedValue({
+        id: 3,
+        legacyAssemblyId: 1,
+        legacyAffiliateId: 7,
+        status: 'PENDING',
+      });
+
+      await service.approve(3, null, 42);
+
+      expect(prisma.absenceJustification.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'APPROVED' }) }),
+      );
+      expect(prisma.assemblyAttendance.upsert).not.toHaveBeenCalled();
+    },
+  );
 });

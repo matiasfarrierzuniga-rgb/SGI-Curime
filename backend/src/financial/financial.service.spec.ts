@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import {
   FinancialChargeStatus,
+  FinancialMethod,
+  FinancialMovementOriginType,
   FinancialMovementSource,
+  FinancialMovementStatus,
   FinancialMovementType,
   PaymentMethod,
   PaymentStatus,
@@ -36,7 +39,7 @@ function payment(overrides: Record<string, unknown> = {}) {
     chargeId: 1,
     amount: new Prisma.Decimal('2500.00'),
     status: PaymentStatus.CONFIRMED,
-    method: PaymentMethod.CASH,
+    legacyMethod: PaymentMethod.CASH,
     reference: null,
     paidAt: now,
     recordedById: 7,
@@ -50,13 +53,13 @@ function movement(overrides: Record<string, unknown> = {}) {
   return {
     id: 2,
     type: FinancialMovementType.INCOME,
-    source: FinancialMovementSource.RESERVATION_PAYMENT,
+    legacySource: FinancialMovementSource.RESERVATION_PAYMENT,
     amount: new Prisma.Decimal('2500.00'),
     currency: 'CRC',
     description: 'Pago de reserva #10',
     reference: null,
     occurredAt: now,
-    sourceId: 1,
+    legacySourceId: 1,
     recordedById: 7,
     createdAt: now,
     updatedAt: now,
@@ -74,6 +77,7 @@ describe('FinancialService', () => {
     },
     payment: {
       create: jest.fn(),
+      update: jest.fn(),
     },
     financialMovement: {
       create: jest.fn(),
@@ -100,6 +104,7 @@ describe('FinancialService', () => {
       charge({ status: FinancialChargeStatus.PAID }),
     );
     prisma.payment.create.mockResolvedValue(payment());
+    prisma.payment.update.mockResolvedValue({ id: 1 });
     prisma.financialMovement.create.mockResolvedValue(movement());
   });
 
@@ -171,7 +176,8 @@ describe('FinancialService', () => {
           chargeId: 1,
           amount: new Prisma.Decimal('2500.00'),
           status: PaymentStatus.CONFIRMED,
-          method: PaymentMethod.BANK_TRANSFER,
+          legacyMethod: PaymentMethod.BANK_TRANSFER,
+          financialMethod: FinancialMethod.BANK_TRANSFER,
           reference: 'SINPE-123',
           recordedById: 7,
           paidAt: expect.any(Date),
@@ -187,8 +193,10 @@ describe('FinancialService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.RESERVATION_PAYMENT,
-          sourceId: 1,
+          legacySource: FinancialMovementSource.RESERVATION_PAYMENT,
+          legacySourceId: 1,
+          originType: FinancialMovementOriginType.PAYMENT,
+          status: FinancialMovementStatus.POSTED,
           amount: new Prisma.Decimal('2500.00'),
           currency: 'CRC',
           description: 'Pago de reserva #10',
@@ -201,6 +209,11 @@ describe('FinancialService', () => {
     const movementOccurredAt =
       prisma.financialMovement.create.mock.calls[0][0].data.occurredAt;
     expect(movementOccurredAt).toBe(paymentPaidAt);
+    expect(prisma.payment.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { movementId: 2 },
+      select: { id: true },
+    });
     expect(result.charge.status).toBe(FinancialChargeStatus.PAID);
   });
 

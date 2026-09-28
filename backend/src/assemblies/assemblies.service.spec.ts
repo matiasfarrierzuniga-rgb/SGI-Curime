@@ -12,13 +12,13 @@ import {
 const assembly = {
   id: 1,
   title: 'Asamblea general',
-  type: null,
-  date: new Date('2026-09-20T18:00:00Z'),
+  legacyType: null,
+  legacyDate: new Date('2026-09-20T18:00:00Z'),
   place: 'Salón comunal',
   description: null,
   status: 'SCHEDULED',
-  quorumType: 'FIXED',
-  quorumValue: 1,
+  legacyQuorumType: 'FIXED',
+  legacyQuorumValue: 1,
   convocationsLockedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -47,6 +47,7 @@ function prismaMock(overrides: Record<string, unknown> = {}) {
       update: jest.fn(),
     },
     affiliate: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn() },
+    role: { findMany: jest.fn().mockResolvedValue([]) },
     user: { findUnique: jest.fn() },
     assemblyConvocation: {
       count: jest.fn().mockResolvedValue(0),
@@ -95,6 +96,7 @@ describe('Assemblies authorization and DTO validation', () => {
       serviceFor(prisma).create(
         {
           title: 'Asamblea',
+          type: 'ORDINARY',
           date: new Date(),
           place: 'Salón',
           quorumType: quorumType as 'FIXED' | 'PERCENTAGE',
@@ -124,6 +126,7 @@ describe('Assemblies authorization and DTO validation', () => {
     await serviceFor(prisma).create(
       {
         title: 'Asamblea',
+        type: 'ORDINARY',
         date: new Date(),
         place: 'Salón',
         quorumType: 'FIXED',
@@ -132,6 +135,16 @@ describe('Assemblies authorization and DTO validation', () => {
       9,
     );
     expect(tx.assembly.create).toHaveBeenCalled();
+    expect(tx.assembly.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: 'ORDINARY',
+          legacyType: 'ORDINARY',
+          legacyDate: expect.any(Date),
+          scheduledAt: expect.any(Date),
+        }),
+      }),
+    );
     expect(audit.log).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 9, action: 'ASSEMBLY_CREATED' }),
       tx,
@@ -140,18 +153,18 @@ describe('Assemblies authorization and DTO validation', () => {
 });
 
 describe('Assembly convocations', () => {
-  const eligible = { id: 7, roleId: 3, role: { name: 'Fiscal' } };
+  const eligible = { id: 7, legacyRoleId: 3 };
 
   it('accepts an active affiliate with an active role and snapshots its name', async () => {
     const { prisma, tx } = prismaMock();
     prisma.affiliate.findMany.mockResolvedValue([eligible]);
+    prisma.role.findMany.mockResolvedValue([{ id: 3, name: 'Fiscal' }]);
     await serviceFor(prisma).replaceConvocations(1, [7], 9);
     expect(prisma.affiliate.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           status: 'ACTIVE',
-          roleId: { not: null },
-          role: { isActive: true },
+          legacyRoleId: { not: null },
         }),
       }),
     );
@@ -160,8 +173,8 @@ describe('Assembly convocations', () => {
         {
           assemblyId: 1,
           affiliateId: 7,
-          roleId: 3,
-          roleNameSnapshot: 'Fiscal',
+          legacyRoleId: 3,
+          legacyRoleNameSnapshot: 'Fiscal',
         },
       ],
     });
@@ -188,6 +201,7 @@ describe('Assembly convocations', () => {
   it('is editable while scheduled and unlocked', async () => {
     const { prisma, tx } = prismaMock();
     prisma.affiliate.findMany.mockResolvedValue([eligible]);
+    prisma.role.findMany.mockResolvedValue([{ id: 3, name: 'Fiscal' }]);
     await expect(
       serviceFor(prisma).replaceConvocations(1, [7], 9),
     ).resolves.toEqual([]);
@@ -198,7 +212,7 @@ describe('Assembly convocations', () => {
     [{ convocationsLockedAt: new Date() }, 'explicit lock'],
     [{ status: 'COMPLETED' }, 'completed'],
     [{ status: 'CANCELLED' }, 'cancelled'],
-  ])('rejects replacement when %s', async (change) => {
+  ])('rejects replacement when %s', async (change, _reason) => {
     const { prisma } = prismaMock();
     prisma.assembly.findUnique.mockResolvedValue({ ...assembly, ...change });
     await expect(
@@ -211,8 +225,8 @@ describe('Assembly convocations', () => {
     prisma.assemblyConvocation.findMany.mockResolvedValue([
       {
         id: 1,
-        roleNameSnapshot: 'Fiscal',
-        roleId: 3,
+        legacyRoleNameSnapshot: 'Fiscal',
+        legacyRoleId: 3,
         affiliate: { id: 7, fullName: 'Ana' },
       },
     ]);
@@ -228,6 +242,45 @@ describe('Assembly convocations', () => {
         data: expect.objectContaining({
           status: 'CANCELLED',
           convocationsLockedAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
+
+  it('dual-writes changed type and date during update', async () => {
+    const { prisma, tx } = prismaMock();
+    const date = new Date('2026-10-15T18:00:00.000Z');
+
+    await serviceFor(prisma).update(
+      1,
+      { type: 'EXTRAORDINARY', date },
+      9,
+    );
+
+    expect(tx.assembly.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: 'EXTRAORDINARY',
+          legacyType: 'EXTRAORDINARY',
+          legacyDate: date,
+          scheduledAt: date,
+        }),
+      }),
+    );
+  });
+
+  it('does not clear target type or scheduled date for omitted fields', async () => {
+    const { prisma, tx } = prismaMock();
+
+    await serviceFor(prisma).update(1, { title: 'Nuevo título' }, 9);
+
+    expect(tx.assembly.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: undefined,
+          legacyType: undefined,
+          legacyDate: undefined,
+          scheduledAt: undefined,
         }),
       }),
     );
@@ -284,7 +337,17 @@ describe('Assembly lifecycle, deletion and attendance', () => {
     expect(tx.assembly.delete).toHaveBeenCalledWith({ where: { id: 1 } });
   });
 
-  it.each([
+  it.each<
+    [
+      string,
+      {
+        attendance?: number;
+        justification?: number;
+        status?: string;
+        locked?: boolean;
+      },
+    ]
+  >([
     ['attendance', { attendance: 1 }],
     ['justification', { justification: 1 }],
     ['completed', { status: 'COMPLETED' }],
@@ -315,13 +378,20 @@ describe('Assembly lifecycle, deletion and attendance', () => {
       status: 'IN_PROGRESS',
       convocationsLockedAt: new Date(),
     });
-    prisma.assemblyConvocation.count.mockResolvedValue(1);
+    prisma.assemblyConvocation.findMany.mockResolvedValue([
+      { id: 11, affiliateId: 7 },
+    ]);
     await serviceFor(prisma).recordAttendance(
       1,
       { entries: [{ affiliateId: 7, status: 'PRESENT' }] },
       9,
     );
-    expect(prisma.assemblyAttendance.upsert).toHaveBeenCalled();
+    expect(prisma.assemblyAttendance.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ convocationId: 11 }),
+        update: expect.objectContaining({ convocationId: 11 }),
+      }),
+    );
   });
 
   it('rejects attendance before start, after completion, for non-convoked people and manual JUSTIFIED', async () => {
@@ -374,7 +444,9 @@ describe('Assembly lifecycle, deletion and attendance', () => {
       status: 'IN_PROGRESS',
       convocationsLockedAt: new Date(),
     });
-    prisma.assemblyConvocation.count.mockResolvedValue(1);
+    prisma.assemblyConvocation.findMany.mockResolvedValue([
+      { id: 11, affiliateId: 7 },
+    ]);
     await serviceFor(prisma).recordAttendance(
       1,
       { entries: [{ affiliateId: 7, status: 'ABSENT' }] },
@@ -410,10 +482,17 @@ describe('Assembly lifecycle, deletion and attendance', () => {
     });
     prisma.assemblyConvocation.count.mockResolvedValue(3);
     prisma.assemblyAttendance.count.mockResolvedValue(3);
-    await serviceFor(prisma).complete(1, 9);
+    const result = await serviceFor(prisma).complete(1, 9);
     expect(tx.assembly.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: 'COMPLETED' } }),
     );
+    expect(result).toMatchObject({
+      type: null,
+      date: assembly.legacyDate,
+      quorumType: 'FIXED',
+      quorumValue: 1,
+    });
+    expect(result).not.toHaveProperty('legacyDate');
   });
 });
 
@@ -435,8 +514,8 @@ describe('Assembly quorum', () => {
       const { prisma } = prismaMock();
       prisma.assembly.findUnique.mockResolvedValue({
         ...assembly,
-        quorumType: 'PERCENTAGE',
-        quorumValue: 50,
+        legacyQuorumType: 'PERCENTAGE',
+        legacyQuorumValue: 50,
       });
       prisma.assemblyConvocation.count.mockResolvedValue(11);
       prisma.assemblyAttendance.count.mockResolvedValue(presentCount);
@@ -454,8 +533,8 @@ describe('Assembly quorum', () => {
     const { prisma } = prismaMock();
     prisma.assembly.findUnique.mockResolvedValue({
       ...assembly,
-      quorumType: null,
-      quorumValue: null,
+      legacyQuorumType: null,
+      legacyQuorumValue: null,
     });
     prisma.assemblyConvocation.count.mockResolvedValue(0);
     prisma.assemblyAttendance.count.mockResolvedValue(3);
@@ -508,7 +587,7 @@ describe('My assemblies privacy', () => {
       person: { affiliate: { id: 7 } },
     });
     prisma.assemblyConvocation.findUnique.mockResolvedValue({
-      roleNameSnapshot: 'Fiscal',
+      legacyRoleNameSnapshot: 'Fiscal',
     });
     const result = await serviceFor(prisma).findOneAllowed(
       1,

@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import {
   FinancialChargeStatus,
+  FinancialMethod,
+  FinancialMovementOriginType,
   FinancialMovementSource,
+  FinancialMovementStatus,
   FinancialMovementType,
   PaymentStatus,
   Prisma,
@@ -37,7 +40,7 @@ const paymentSelect = {
   chargeId: true,
   amount: true,
   status: true,
-  method: true,
+  legacyMethod: true,
   reference: true,
   paidAt: true,
   recordedById: true,
@@ -53,13 +56,13 @@ const chargeDetailSelect = {
 const financialMovementSelect = {
   id: true,
   type: true,
-  source: true,
+  legacySource: true,
   amount: true,
   currency: true,
   description: true,
   reference: true,
   occurredAt: true,
-  sourceId: true,
+  legacySourceId: true,
   recordedById: true,
   createdAt: true,
   updatedAt: true,
@@ -109,6 +112,10 @@ export class FinancialService {
     if (!charge) throw new NotFoundException('Financial charge not found');
     return {
       ...charge,
+      payments: charge.payments.map(({ legacyMethod, ...payment }) => ({
+        ...payment,
+        method: legacyMethod,
+      })),
       balance:
         charge.status === FinancialChargeStatus.PENDING
           ? charge.amount.toFixed(2)
@@ -150,7 +157,8 @@ export class FinancialService {
           chargeId: charge.id,
           amount,
           status: PaymentStatus.CONFIRMED,
-          method: dto.method,
+          legacyMethod: dto.method,
+          financialMethod: dto.method as FinancialMethod,
           reference,
           paidAt,
           recordedById: actorId,
@@ -162,11 +170,13 @@ export class FinancialService {
         data: { status: FinancialChargeStatus.PAID },
         select: chargeListSelect,
       });
-      await tx.financialMovement.create({
+      const movement = await tx.financialMovement.create({
         data: {
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.RESERVATION_PAYMENT,
-          sourceId: payment.id,
+          legacySource: FinancialMovementSource.RESERVATION_PAYMENT,
+          legacySourceId: payment.id,
+          originType: FinancialMovementOriginType.PAYMENT,
+          status: FinancialMovementStatus.POSTED,
           amount,
           currency: charge.currency,
           description: `Pago de reserva #${charge.reservationId}`,
@@ -176,9 +186,14 @@ export class FinancialService {
         },
         select: financialMovementSelect,
       });
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: { movementId: movement.id },
+        select: { id: true },
+      });
 
       return {
-        payment,
+        payment: this.serializePayment(payment),
         charge: { ...updatedCharge, balance: '0.00' },
       };
     });
@@ -192,8 +207,10 @@ export class FinancialService {
     const created = await this.prisma.financialMovement.create({
       data: {
         type: dto.type,
-        source: FinancialMovementSource.MANUAL,
-        sourceId: null,
+        legacySource: FinancialMovementSource.MANUAL,
+        legacySourceId: null,
+        originType: FinancialMovementOriginType.MANUAL,
+        status: FinancialMovementStatus.POSTED,
         amount: new Prisma.Decimal(dto.amount),
         currency: 'CRC',
         description: dto.description.trim(),
@@ -299,8 +316,22 @@ export class FinancialService {
 
   private serializeMovement<T extends { amount: Prisma.Decimal }>(
     movement: T,
-  ): Omit<T, 'amount'> & { amount: string } {
-    return { ...movement, amount: movement.amount.toFixed(2) };
+  ) {
+    const { legacySource, legacySourceId, ...rest } = movement as T & {
+      legacySource?: FinancialMovementSource;
+      legacySourceId?: number | null;
+    };
+    return {
+      ...rest,
+      ...(legacySource !== undefined ? { source: legacySource } : {}),
+      ...(legacySourceId !== undefined ? { sourceId: legacySourceId } : {}),
+      amount: movement.amount.toFixed(2),
+    };
+  }
+
+  private serializePayment<T extends { legacyMethod: unknown }>(payment: T) {
+    const { legacyMethod, ...rest } = payment;
+    return { ...rest, method: legacyMethod };
   }
 
   private parseAmount(value: unknown): Prisma.Decimal {
