@@ -24,11 +24,11 @@ const emptyProfile = {
 
 describe('InstitutionalProfileService', () => {
   const tx = {
-    institutionalProfile: { findUniqueOrThrow: jest.fn(), update: jest.fn() },
+    organizationProfile: { findUniqueOrThrow: jest.fn(), update: jest.fn() },
     auditLog: { create: jest.fn() },
   };
   const prisma = {
-    institutionalProfile: { findUniqueOrThrow: jest.fn() },
+    organizationProfile: { findUniqueOrThrow: jest.fn() },
     $transaction: jest.fn((work: (client: typeof tx) => unknown) => work(tx)),
   };
   const audit = { log: jest.fn() };
@@ -39,11 +39,11 @@ describe('InstitutionalProfileService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    prisma.institutionalProfile.findUniqueOrThrow.mockResolvedValue(
+    prisma.organizationProfile.findUniqueOrThrow.mockResolvedValue(
       emptyProfile,
     );
-    tx.institutionalProfile.findUniqueOrThrow.mockResolvedValue(emptyProfile);
-    tx.institutionalProfile.update.mockImplementation(({ data }) =>
+    tx.organizationProfile.findUniqueOrThrow.mockResolvedValue(emptyProfile);
+    tx.organizationProfile.update.mockImplementation(({ data }) =>
       Promise.resolve({ ...emptyProfile, ...data }),
     );
     audit.log.mockResolvedValue({ id: 1 });
@@ -51,7 +51,7 @@ describe('InstitutionalProfileService', () => {
 
   it('returns the singleton with nullable fields', async () => {
     await expect(service.get()).resolves.toEqual(emptyProfile);
-    expect(prisma.institutionalProfile.findUniqueOrThrow).toHaveBeenCalledWith({
+    expect(prisma.organizationProfile.findUniqueOrThrow).toHaveBeenCalledWith({
       where: { id: 1 },
     });
   });
@@ -72,12 +72,12 @@ describe('InstitutionalProfileService', () => {
       telefax: null,
       email: null,
     };
-    tx.institutionalProfile.findUniqueOrThrow.mockResolvedValue(reportProfile);
+    tx.organizationProfile.findUniqueOrThrow.mockResolvedValue(reportProfile);
 
     await expect(service.getForReport(tx as never)).resolves.toEqual(
       reportProfile,
     );
-    expect(tx.institutionalProfile.findUniqueOrThrow).toHaveBeenCalledWith({
+    expect(tx.organizationProfile.findUniqueOrThrow).toHaveBeenCalledWith({
       where: { id: 1 },
       select: {
         legalName: true,
@@ -96,7 +96,7 @@ describe('InstitutionalProfileService', () => {
       },
     });
     expect(
-      prisma.institutionalProfile.findUniqueOrThrow,
+      prisma.organizationProfile.findUniqueOrThrow,
     ).not.toHaveBeenCalled();
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
@@ -116,7 +116,7 @@ describe('InstitutionalProfileService', () => {
       canton: null,
       legalName: 'Asociación de Desarrollo Integral de Prueba',
     });
-    expect(tx.institutionalProfile.update).toHaveBeenCalledWith({
+    expect(tx.organizationProfile.update).toHaveBeenCalledWith({
       where: { id: 1 },
       data: {
         legalName: 'Asociación de Desarrollo Integral de Prueba',
@@ -139,12 +139,12 @@ describe('InstitutionalProfileService', () => {
   });
 
   it('allows nullable fields to be cleared', async () => {
-    tx.institutionalProfile.findUniqueOrThrow.mockResolvedValue({
+    tx.organizationProfile.findUniqueOrThrow.mockResolvedValue({
       ...emptyProfile,
       phone: '+506 2222 2222',
     });
     await service.update({ phone: null }, 7);
-    expect(tx.institutionalProfile.update).toHaveBeenCalledWith({
+    expect(tx.organizationProfile.update).toHaveBeenCalledWith({
       where: { id: 1 },
       data: { phone: null },
     });
@@ -153,7 +153,7 @@ describe('InstitutionalProfileService', () => {
   it('audits a no-op patch without creating another organization', async () => {
     const result = await service.update({}, 7);
     expect(result).toEqual(emptyProfile);
-    expect(tx.institutionalProfile.update).toHaveBeenCalledWith({
+    expect(tx.organizationProfile.update).toHaveBeenCalledWith({
       where: { id: 1 },
       data: {},
     });

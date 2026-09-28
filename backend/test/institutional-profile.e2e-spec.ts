@@ -15,18 +15,18 @@ describe('Institutional profile access (e2e)', () => {
   let app: INestApplication<App>;
   let jwt: JwtService;
   let account: AuthAccount;
-  const tx = { institutionalProfile: { findUniqueOrThrow: jest.fn(), update: jest.fn() }, auditLog: { create: jest.fn() } };
+  const tx = { organizationProfile: { findUniqueOrThrow: jest.fn(), update: jest.fn() }, auditLog: { create: jest.fn() } };
   const prisma = {
-    institutionalProfile: { findUniqueOrThrow: jest.fn() },
+    organizationProfile: { findUniqueOrThrow: jest.fn() },
     $transaction: jest.fn((work: (client: typeof tx) => unknown) => work(tx)),
   };
   const authRepository = { findCredentialsById: jest.fn(() => Promise.resolve(account)), clearLockout: jest.fn() };
 
   beforeEach(async () => {
     account = authAccount('Administrador');
-    prisma.institutionalProfile.findUniqueOrThrow.mockResolvedValue(profile);
-    tx.institutionalProfile.findUniqueOrThrow.mockResolvedValue(profile);
-    tx.institutionalProfile.update.mockImplementation(({ data }) => Promise.resolve({ ...profile, ...data }));
+    prisma.organizationProfile.findUniqueOrThrow.mockResolvedValue(profile);
+    tx.organizationProfile.findUniqueOrThrow.mockResolvedValue(profile);
+    tx.organizationProfile.update.mockImplementation(({ data }) => Promise.resolve({ ...profile, ...data }));
     tx.auditLog.create.mockResolvedValue({ id: 1 });
     const module = await Test.createTestingModule({ imports: [InstitutionalProfileModule] })
       .overrideProvider(PrismaService).useValue(prisma)

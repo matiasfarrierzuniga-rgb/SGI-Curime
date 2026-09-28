@@ -80,16 +80,19 @@ export class InventoryItemsService {
           },
           select: itemSelect,
         });
-        await tx.inventoryMovement.create({
-          data: {
-            itemId: item.id,
-            type: InventoryMovementType.ENTRY,
-            quantity: dto.quantity,
-            reason: 'Initial inventory registration',
-            reference: item.code,
-            createdById: actorId,
-          },
-        });
+        if (dto.quantity > 0) {
+          await tx.inventoryMovement.create({
+            data: {
+              itemId: item.id,
+              type: InventoryMovementType.ENTRY,
+              legacyQuantity: dto.quantity,
+              quantityDelta: dto.quantity,
+              reason: 'Initial inventory registration',
+              reference: item.code,
+              createdById: actorId,
+            },
+          });
+        }
         return item;
       });
       await this.audit?.log({

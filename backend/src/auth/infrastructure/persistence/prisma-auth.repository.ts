@@ -38,7 +38,7 @@ function toAuthAccount(user: AccountRow): AuthAccount {
     roleIsActive: user.role.isActive,
     hasPerson: user.person !== null,
     affiliateStatus: user.person?.affiliate?.status ?? null,
-    affiliateRoleId: user.person?.affiliate?.roleId ?? null,
+    affiliateRoleId: user.person?.affiliate?.legacyRoleId ?? null,
     subscriptionExpirationDate: user.subscriptionExpirationDate,
   };
 }

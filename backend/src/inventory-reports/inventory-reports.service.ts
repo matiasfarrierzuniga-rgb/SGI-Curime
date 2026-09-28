@@ -154,8 +154,8 @@ export class InventoryReportsService {
     const grouped = await this.prisma.inventoryMovement.groupBy({
       by: ['type'],
       where,
-      _count: true,
-      _sum: { quantity: true },
+      _count: { _all: true },
+      _sum: { legacyQuantity: true },
     });
     const period = {
       dateFrom: query.dateFrom ?? null,
@@ -174,8 +174,8 @@ export class InventoryReportsService {
             ? 'exits'
             : 'adjustments';
       summary[key] = {
-        count: row._count,
-        quantity: row._sum.quantity ?? 0,
+        count: row._count._all,
+        quantity: row._sum.legacyQuantity ?? 0,
       };
     }
     return {

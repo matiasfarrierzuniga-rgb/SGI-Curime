@@ -13,7 +13,7 @@ import {
 
 type AnnualGroup = {
   type: FinancialMovementType;
-  source: FinancialMovementSource;
+  legacySource: FinancialMovementSource;
   _sum: { amount: Prisma.Decimal | null };
   _count: { _all: number };
 };
@@ -49,8 +49,8 @@ export class DinadecoReportsService {
               _sum: { amount: true },
             }),
             tx.financialMovement.groupBy({
-              by: ['type', 'source'],
-              orderBy: [{ type: 'asc' }, { source: 'asc' }],
+              by: ['type', 'legacySource'],
+              orderBy: [{ type: 'asc' }, { legacySource: 'asc' }],
               where: { occurredAt: { gte: from, lt: to } },
               _sum: { amount: true },
               _count: { _all: true },
@@ -64,7 +64,7 @@ export class DinadecoReportsService {
                 description: true,
                 amount: true,
                 occurredAt: true,
-                source: true,
+                legacySource: true,
               },
             }),
           ]),
@@ -97,10 +97,10 @@ export class DinadecoReportsService {
     const lines = (type: FinancialMovementType) =>
       movements
         .filter((movement) => movement.type === type)
-        .map(({ id, description, source, amount, occurredAt }) => ({
+        .map(({ id, description, legacySource, amount, occurredAt }) => ({
           id,
           description,
-          source,
+          source: legacySource,
           amount: amount.toFixed(2),
           occurredAt: occurredAt.toISOString(),
         }));
@@ -160,7 +160,10 @@ export class DinadecoReportsService {
       const amount = group._sum.amount ?? new Prisma.Decimal(0);
       total = total.plus(amount);
       count += group._count._all;
-      bySource[group.source] = { total: amount, count: group._count._all };
+      bySource[group.legacySource] = {
+        total: amount,
+        count: group._count._all,
+      };
     }
     return { total, count, bySource };
   }

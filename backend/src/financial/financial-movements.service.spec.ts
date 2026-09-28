@@ -1,6 +1,8 @@
 import { NotFoundException } from '@nestjs/common';
 import {
   FinancialMovementSource,
+  FinancialMovementOriginType,
+  FinancialMovementStatus,
   FinancialMovementType,
   Prisma,
 } from '../../generated/prisma/client';
@@ -16,13 +18,13 @@ function movement(overrides: Record<string, unknown> = {}) {
   return {
     id: 10,
     type: FinancialMovementType.INCOME,
-    source: FinancialMovementSource.MANUAL,
+    legacySource: FinancialMovementSource.MANUAL,
     amount: new Prisma.Decimal('25000.00'),
     currency: 'CRC',
     description: 'Alquiler del salón comunal',
     reference: 'SINPE 123456',
     occurredAt,
-    sourceId: null,
+    legacySourceId: null,
     recordedById: 17,
     createdAt,
     updatedAt: createdAt,
@@ -81,8 +83,10 @@ describe('FinancialService movements', () => {
       expect(prisma.financialMovement.create).toHaveBeenCalledWith({
         data: {
           type,
-          source: FinancialMovementSource.MANUAL,
-          sourceId: null,
+          legacySource: FinancialMovementSource.MANUAL,
+          legacySourceId: null,
+          originType: FinancialMovementOriginType.MANUAL,
+          status: FinancialMovementStatus.POSTED,
           amount: new Prisma.Decimal('25000.00'),
           currency: 'CRC',
           description: 'Alquiler del salón comunal',

@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import {
   DonationStatus,
+  FinancialMethod,
+  FinancialMovementOriginType,
   FinancialMovementSource,
+  FinancialMovementStatus,
   FinancialMovementType,
   Prisma,
 } from '../../generated/prisma/client';
@@ -25,7 +28,7 @@ const donationSelect = {
   donorIdentification: true,
   amount: true,
   currency: true,
-  method: true,
+  legacyMethod: true,
   reference: true,
   description: true,
   receivedAt: true,
@@ -42,7 +45,7 @@ const donationListSelect = {
   donorIdentification: true,
   amount: true,
   currency: true,
-  method: true,
+  legacyMethod: true,
   reference: true,
   receivedAt: true,
   status: true,
@@ -51,7 +54,7 @@ const donationListSelect = {
   cancelledAt: true,
   cancellationReason: true,
   originalMovementId: true,
-  reversalMovementId: true,
+  legacyReversalMovementId: true,
   createdAt: true,
   updatedAt: true,
   recordedBy: { select: { id: true, fullName: true } },
@@ -69,12 +72,12 @@ const donationCancellationSelect = {
   cancelledById: true,
   cancelledAt: true,
   cancellationReason: true,
-  reversalMovementId: true,
+  legacyReversalMovementId: true,
 } satisfies Prisma.DonationSelect;
 
 const donationDeletionSelect = {
   ...donationSelect,
-  reversalMovementId: true,
+  legacyReversalMovementId: true,
 } satisfies Prisma.DonationSelect;
 
 @Injectable()
@@ -101,7 +104,8 @@ export class DonationsService {
           ),
           amount,
           currency: 'CRC',
-          method: dto.method,
+          legacyMethod: dto.method,
+          financialMethod: dto.method as FinancialMethod,
           reference: this.normalizeOptionalString(dto.reference),
           description: this.normalizeOptionalString(dto.description),
           receivedAt,
@@ -115,8 +119,10 @@ export class DonationsService {
       const movement = await tx.financialMovement.create({
         data: {
           type: FinancialMovementType.INCOME,
-          source: FinancialMovementSource.DONATION,
-          sourceId: createdDonation.id,
+          legacySource: FinancialMovementSource.DONATION,
+          legacySourceId: createdDonation.id,
+          originType: FinancialMovementOriginType.DONATION,
+          status: FinancialMovementStatus.POSTED,
           amount,
           currency: 'CRC',
           description: 'Donación recibida',
@@ -142,7 +148,7 @@ export class DonationsService {
           entityId: updatedDonation.id,
           details: {
             amount: updatedDonation.amount.toFixed(2),
-            method: updatedDonation.method,
+            method: updatedDonation.legacyMethod,
             originalMovementId: movement.id,
           },
           ...context,
@@ -168,7 +174,7 @@ export class DonationsService {
     const limit = query.limit ?? 20;
     const where: Prisma.DonationWhereInput = {
       status: query.status,
-      method: query.method,
+      legacyMethod: query.method,
       receivedAt:
         dateFrom || dateTo
           ? {
@@ -256,7 +262,16 @@ export class DonationsService {
         dto.donorIdentification,
         current.donorIdentification,
       );
-      this.assignUpdatedValue(data, changedFields, 'method', dto.method, current.method);
+      this.assignUpdatedValue(
+        data,
+        changedFields,
+        'legacyMethod',
+        dto.method,
+        current.legacyMethod,
+      );
+      if (dto.method !== undefined) {
+        data.financialMethod = dto.method as FinancialMethod;
+      }
       this.assignUpdatedString(data, changedFields, 'reference', dto.reference, current.reference);
       this.assignUpdatedString(
         data,
@@ -281,13 +296,18 @@ export class DonationsService {
         }
         const originalMovement = await tx.financialMovement.findUnique({
           where: { id: current.originalMovementId },
-          select: { id: true, type: true, source: true, sourceId: true },
+          select: {
+            id: true,
+            type: true,
+            legacySource: true,
+            legacySourceId: true,
+          },
         });
         if (
           !originalMovement ||
           originalMovement.type !== FinancialMovementType.INCOME ||
-          originalMovement.source !== FinancialMovementSource.DONATION ||
-          originalMovement.sourceId !== current.id
+          originalMovement.legacySource !== FinancialMovementSource.DONATION ||
+          originalMovement.legacySourceId !== current.id
         ) {
           throw new InternalServerErrorException('DONATION_ORIGINAL_MOVEMENT_INVALID');
         }
@@ -357,8 +377,8 @@ export class DonationsService {
         select: {
           id: true,
           type: true,
-          source: true,
-          sourceId: true,
+          legacySource: true,
+          legacySourceId: true,
           amount: true,
           currency: true,
         },
@@ -366,8 +386,8 @@ export class DonationsService {
       if (
         !originalMovement ||
         originalMovement.type !== FinancialMovementType.INCOME ||
-        originalMovement.source !== FinancialMovementSource.DONATION ||
-        originalMovement.sourceId !== current.id ||
+        originalMovement.legacySource !== FinancialMovementSource.DONATION ||
+        originalMovement.legacySourceId !== current.id ||
         !originalMovement.amount.equals(current.amount) ||
         originalMovement.currency !== current.currency
       ) {
@@ -378,8 +398,11 @@ export class DonationsService {
       const reversal = await tx.financialMovement.create({
         data: {
           type: FinancialMovementType.EXPENSE,
-          source: FinancialMovementSource.DONATION,
-          sourceId: current.id,
+          legacySource: FinancialMovementSource.DONATION,
+          legacySourceId: current.id,
+          originType: FinancialMovementOriginType.DONATION,
+          status: FinancialMovementStatus.POSTED,
+          reversalOfId: originalMovement.id,
           amount: originalMovement.amount,
           currency: originalMovement.currency,
           description: `Reversión de donación #${current.id}`,
@@ -396,7 +419,8 @@ export class DonationsService {
           cancelledAt,
           cancelledById: actorId,
           cancellationReason,
-          reversalMovementId: reversal.id,
+          financialMethod: current.legacyMethod as FinancialMethod,
+          legacyReversalMovementId: reversal.id,
         },
         select: donationCancellationSelect,
       });
@@ -438,7 +462,7 @@ export class DonationsService {
       if (donation.status !== DonationStatus.CONFIRMED) {
         throw new ConflictException('CANCELLED_DONATION_CANNOT_BE_DELETED');
       }
-      if (donation.reversalMovementId) {
+      if (donation.legacyReversalMovementId) {
         throw new ConflictException('DONATION_HAS_FINANCIAL_EFFECTS');
       }
       if (!donation.originalMovementId) {
@@ -450,8 +474,8 @@ export class DonationsService {
         select: {
           id: true,
           type: true,
-          source: true,
-          sourceId: true,
+          legacySource: true,
+          legacySourceId: true,
           amount: true,
           currency: true,
         },
@@ -459,8 +483,8 @@ export class DonationsService {
       if (
         !originalMovement ||
         originalMovement.type !== FinancialMovementType.INCOME ||
-        originalMovement.source !== FinancialMovementSource.DONATION ||
-        originalMovement.sourceId !== donation.id ||
+        originalMovement.legacySource !== FinancialMovementSource.DONATION ||
+        originalMovement.legacySourceId !== donation.id ||
         !originalMovement.amount.equals(donation.amount) ||
         originalMovement.currency !== donation.currency
       ) {
@@ -469,8 +493,8 @@ export class DonationsService {
 
       const donationMovements = await tx.financialMovement.findMany({
         where: {
-          source: FinancialMovementSource.DONATION,
-          sourceId: donation.id,
+          legacySource: FinancialMovementSource.DONATION,
+          legacySourceId: donation.id,
         },
         select: { id: true },
       });
@@ -490,7 +514,7 @@ export class DonationsService {
           entityId: donation.id,
           details: {
             amount: donation.amount.toFixed(2),
-            method: donation.method,
+            method: donation.legacyMethod,
             originalMovementId: originalMovement.id,
           },
           ...context,
@@ -546,7 +570,9 @@ export class DonationsService {
     }
   }
 
-  private assignUpdatedValue<T extends keyof Pick<Prisma.DonationUpdateInput, 'method'>>(
+  private assignUpdatedValue<
+    T extends keyof Pick<Prisma.DonationUpdateInput, 'legacyMethod'>,
+  >(
     data: Prisma.DonationUpdateInput,
     changedFields: string[],
     field: T,
@@ -555,7 +581,7 @@ export class DonationsService {
   ) {
     if (value !== undefined && value !== currentValue) {
       data[field] = value;
-      changedFields.push(field);
+      changedFields.push('method');
     }
   }
 
@@ -580,8 +606,19 @@ export class DonationsService {
 
   private serializeDonation<T extends { amount: Prisma.Decimal }>(
     donation: T,
-  ): Omit<T, 'amount'> & { amount: string } {
-    return { ...donation, amount: donation.amount.toFixed(2) };
+  ) {
+    const { legacyMethod, legacyReversalMovementId, ...rest } = donation as T & {
+      legacyMethod?: unknown;
+      legacyReversalMovementId?: number | null;
+    };
+    return {
+      ...rest,
+      ...(legacyMethod !== undefined ? { method: legacyMethod } : {}),
+      ...(legacyReversalMovementId !== undefined
+        ? { reversalMovementId: legacyReversalMovementId }
+        : {}),
+      amount: donation.amount.toFixed(2),
+    };
   }
 }
 

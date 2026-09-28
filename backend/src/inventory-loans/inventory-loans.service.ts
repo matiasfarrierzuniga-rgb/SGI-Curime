@@ -21,7 +21,7 @@ import { QueryLoansDto } from './dto/query-loans.dto';
 const loanSelect = {
   id: true,
   quantity: true,
-  borrowerName: true,
+  borrowerNameSnapshot: true,
   borrowerAffiliateId: true,
   loanDate: true,
   expectedReturnDate: true,
@@ -40,7 +40,7 @@ const loanSelect = {
       category: { select: { id: true, name: true } },
     },
   },
-  affiliate: {
+  borrowerAffiliate: {
     select: { id: true, fullName: true, identification: true },
   },
   createdBy: {
@@ -56,9 +56,16 @@ type SafeLoan = Prisma.InventoryLoanGetPayload<{ select: typeof loanSelect }>;
 function withOverdue(
   loan: SafeLoan,
   now = new Date(),
-): SafeLoan & { isOverdue: boolean } {
+): Omit<SafeLoan, 'borrowerNameSnapshot' | 'borrowerAffiliate'> & {
+  borrowerName: string;
+  affiliate: SafeLoan['borrowerAffiliate'];
+  isOverdue: boolean;
+} {
+  const { borrowerNameSnapshot, borrowerAffiliate, ...rest } = loan;
   return {
-    ...loan,
+    ...rest,
+    borrowerName: borrowerNameSnapshot,
+    affiliate: borrowerAffiliate,
     isOverdue:
       loan.status === InventoryLoanStatus.ACTIVE &&
       loan.expectedReturnDate < now,
@@ -107,7 +114,7 @@ export class InventoryLoansService {
         data: {
           itemId: dto.itemId,
           quantity: dto.quantity,
-          borrowerName: dto.borrowerName,
+          borrowerNameSnapshot: dto.borrowerName,
           borrowerAffiliateId: dto.borrowerAffiliateId ?? null,
           loanDate,
           expectedReturnDate,
@@ -123,18 +130,24 @@ export class InventoryLoansService {
       if (reserved.count !== 1) {
         throw new ConflictException('Insufficient stock');
       }
-      await tx.inventoryMovement.create({
+      const checkoutMovement = await tx.inventoryMovement.create({
         data: {
           itemId: dto.itemId,
           type: InventoryMovementType.EXIT,
-          quantity: dto.quantity,
+          legacyQuantity: dto.quantity,
+          quantityDelta: -dto.quantity,
           reason: 'Préstamo',
           reference: `LOAN-${created.id}`,
           notes: dto.notes ?? null,
           createdById: actorId,
         },
+        select: { id: true },
       });
-      return created;
+      return tx.inventoryLoan.update({
+        where: { id: created.id },
+        data: { checkoutMovementId: checkoutMovement.id },
+        select: loanSelect,
+      });
     });
     await this.audit?.log({
       userId: actorId,
@@ -219,21 +232,6 @@ export class InventoryLoansService {
           'Loan is not active; it cannot be returned twice',
         );
       }
-      const updatedLoan = await tx.inventoryLoan.update({
-        where: { id },
-        data: {
-          status: InventoryLoanStatus.RETURNED,
-          returnedAt: new Date(),
-          receivedById: actorId,
-          notes:
-            dto.returnNotes !== undefined
-              ? loan.notes
-                ? `${loan.notes}\n${dto.returnNotes}`
-                : dto.returnNotes
-              : undefined,
-        },
-        select: loanSelect,
-      });
       await tx.inventoryItem.update({
         where: { id: loan.itemId },
         data: { currentQuantity: { increment: loan.quantity } },
@@ -246,18 +244,35 @@ export class InventoryLoansService {
           select: { id: true },
         });
       }
-      await tx.inventoryMovement.create({
+      const returnMovement = await tx.inventoryMovement.create({
         data: {
           itemId: loan.itemId,
           type: InventoryMovementType.ENTRY,
-          quantity: loan.quantity,
+          legacyQuantity: loan.quantity,
+          quantityDelta: loan.quantity,
           reason: 'Devolución de préstamo',
           reference: `LOAN-${id}`,
           notes: dto.returnNotes ?? null,
           createdById: actorId,
         },
+        select: { id: true },
       });
-      return updatedLoan;
+      return tx.inventoryLoan.update({
+        where: { id },
+        data: {
+          status: InventoryLoanStatus.RETURNED,
+          returnedAt: new Date(),
+          receivedById: actorId,
+          returnMovementId: returnMovement.id,
+          notes:
+            dto.returnNotes !== undefined
+              ? loan.notes
+                ? `${loan.notes}\n${dto.returnNotes}`
+                : dto.returnNotes
+              : undefined,
+        },
+        select: loanSelect,
+      });
     });
     await this.audit?.log({
       userId: actorId,
@@ -289,34 +304,40 @@ export class InventoryLoansService {
           'Loan is not active; it cannot be cancelled',
         );
       }
-      const updatedLoan = await tx.inventoryLoan.update({
+      await tx.inventoryItem.update({
+        where: { id: loan.itemId },
+        data: { currentQuantity: { increment: loan.quantity } },
+        select: { id: true },
+      });
+      const cancellationMovement = await tx.inventoryMovement.create({
+        data: {
+          itemId: loan.itemId,
+          type: InventoryMovementType.ENTRY,
+          legacyQuantity: loan.quantity,
+          quantityDelta: loan.quantity,
+          reason: 'Cancelación de préstamo',
+          reference: `LOAN-${id}`,
+          notes: null,
+          createdById: actorId,
+        },
+        select: { id: true },
+      });
+      const cancelledAt = new Date();
+      return tx.inventoryLoan.update({
         where: { id },
         data: {
           status: InventoryLoanStatus.CANCELLED,
           receivedById: actorId,
+          cancelledById: actorId,
+          cancelledAt,
+          cancellationReason: 'Préstamo cancelado',
+          cancellationMovementId: cancellationMovement.id,
           notes: loan.notes
             ? `${loan.notes}\nPréstamo cancelado`
             : 'Préstamo cancelado',
         },
         select: loanSelect,
       });
-      await tx.inventoryItem.update({
-        where: { id: loan.itemId },
-        data: { currentQuantity: { increment: loan.quantity } },
-        select: { id: true },
-      });
-      await tx.inventoryMovement.create({
-        data: {
-          itemId: loan.itemId,
-          type: InventoryMovementType.ENTRY,
-          quantity: loan.quantity,
-          reason: 'Cancelación de préstamo',
-          reference: `LOAN-${id}`,
-          notes: null,
-          createdById: actorId,
-        },
-      });
-      return updatedLoan;
     });
     await this.audit?.log({
       userId: actorId,

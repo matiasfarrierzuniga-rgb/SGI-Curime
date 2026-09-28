@@ -22,13 +22,13 @@ const itemAlertSelect = {
 const loanAlertSelect = {
   id: true,
   quantity: true,
-  borrowerName: true,
+  borrowerNameSnapshot: true,
   loanDate: true,
   expectedReturnDate: true,
   item: {
     select: { id: true, code: true, name: true, unit: true },
   },
-  affiliate: {
+  borrowerAffiliate: {
     select: { id: true, fullName: true },
   },
 } satisfies Prisma.InventoryLoanSelect;
@@ -97,7 +97,13 @@ export class InventoryAlertsService {
       },
       lowStock,
       outOfStock,
-      overdueLoans,
+      overdueLoans: overdueLoans.map(
+        ({ borrowerNameSnapshot, borrowerAffiliate, ...loan }) => ({
+          ...loan,
+          borrowerName: borrowerNameSnapshot,
+          affiliate: borrowerAffiliate,
+        }),
+      ),
       inactiveItems,
       damagedItems,
     };
