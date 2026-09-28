@@ -16,15 +16,34 @@ This document records the Entrepreneurship relational candidate incorporated int
 STRUCTURAL_STATUS=CLOSED
 RELATIONAL_STATUS=CLOSED
 TARGET_V1_1_STATUS=FROZEN
+IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989
 
 PRISMA=UNCHANGED
 MIGRATIONS=NONE
-IMPLEMENTATION=NONE
 ```
 
 The subsystem manages institutional incorporation, validation, canonical-person linkage, public presence and community participation of local ventures.
 
 It is not private-business accounting and it is not a marketplace.
+
+## ADD_STATUS_NOTE: 4 entities now physically implemented; replace unqualified IMPLEMENTATION=NONE
+
+The Entrepreneurship V1.1 relational model (4 entities, 5 master relationships) is now physically implemented and verified as part of the Frozen Target V1.1 merge at main@71aa989 (PR #102). The `IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989` reflects the merged checkpoint.
+
+**Deferred cutover:** The following gates remain evidence-dependent and are not yet enforced as DB constraints. Structural implementation does not imply completed historical reconciliation:
+
+- `ID-01`: Person canonical mapping affects venture person linking
+- `ASM-ATT-01`: Not directly applicable to entrepreneurship (assembly gates)
+- `FIN-ORIGIN-01` / `FIN-DON-01`: Not applicable to entrepreneurship (finance gates)
+- `INV-LEDGER-01` / `INV-LOAN-01`: Not applicable to entrepreneurship (inventory gates)
+- `RES-STATUS-01`: Not applicable to entrepreneurship (reservation gates)
+
+The 4 entity counts and 5 relationship counts are now the V1.1 structural contract. Prior documentation referencing `IMPLEMENTATION=NONE` for entrepreneurship has been replaced; the structural implementation is now merged and verified.
+
+`ENTREPRENEURSHIP_V1_1_ENTITY_COUNT=4`
+`ENTREPRENEURSHIP_V1_1_RELATION_COUNT=5`
+`ENTREPRENEURSHIP_V1_1_STRUCTURAL_IMPLEMENTATION=MERGED_AT_71aa989`
+`ENTREPRENEURSHIP_V1_1_DEFERRED_GATES=ID-01` (evidence-dependent, finance/inventory/assembly gates not applicable)
 
 ## 2. Core distinction
 

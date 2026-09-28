@@ -381,10 +381,40 @@ erDiagram
   transition gates, or cross-row movement compatibility.
 
 
-## V1.1 notes
+## ADD_STATUS_NOTE: ERD design reference; post-merge implementation note
 
-- The first 40 persistent entities and their relationships are inherited unchanged from Frozen V1.
-- Volunteering contributes 5 entities and 11 FK relationships.
-- Entrepreneurship contributes 4 entities and 5 FK relationships.
-- `MASTER_RELATIONSHIPS=77` counts persistent Target relationships only. The transitional `IdentityReconciliationManifest -> Person` relation is documented separately and is not included in that count.
-- Mermaid does not encode partial unique indexes, conditional nullability, lifecycle checks, capacity concurrency, interval-overlap validation, or other cross-row invariants. Those are defined in the data dictionary and integrity catalog.
+This Consolidated Master ERD v1.1 preserves the Target v1.1 design as the
+authoritative architectural reference. The ERD diagram itself is unchanged — it
+records the v1.1 global architecture view (49 persistent + 1 transitional + 77
+relationships).
+
+**Merged implementation status:** The structural contract is now merged and
+verified at main@71aa989 (PR #102). The V1.1 package `IMPLEMENTATION_STATUS=
+IMPLEMENTED_BY_MERGE_AT_71aa989` reflects this merged checkpoint. The 49
+persistent entities, 1 transitional entity, and 77 persistent Target relationships
+represent the implemented boundary.
+
+**Deferred cutover gates:** The following evidence-dependent gates remain open
+and are not yet enforced as DB constraints. Structural implementation does not
+imply completed historical reconciliation:
+
+- `ID-01`: Person canonical mapping + duplicate-data removal
+- `ASM-ATT-01`: Complete parent mapping before new attendance/justification FKs
+- `FIN-ORIGIN-01`: Explicit-origin reconciliation before generic `sourceId`
+  removal
+- `FIN-DON-01`: Donation original/reversal evidence before redundant-field
+  removal
+- `INV-LEDGER-01`: Signed ledger enforcement before opening-balance backfill
+- `INV-LOAN-01`: Evidence-backed loan-movement links
+- `ASM-DATE-01`: Date evidence mapping before `heldAt` backfill/enforcement
+- `RES-STATUS-01`: Non-destructive `CONFIRMED`/`COMPLETED` removal
+
+**Do not modify the ERD diagram** to add or remove entities or relationships.
+The v1.1 extension is recorded additively in the implementation-status canonical
+bridge and the V1.1 evolution matrix, not by altering the frozen v1.1 ERD
+diagram. The diagram remains the v1.1 canonical view; deferred gates define the
+sequencing toward full cutover.
+
+**Package distinction:** This ERD is the v1.1 design reference
+(`IMPLEMENTATION_STATUS=IMPLEMENTED_BY_MERGE_AT_71aa989`). It must be
+distinguished from the v1 ERD (`IMPLEMENTATION_STATUS=frozen historical`).

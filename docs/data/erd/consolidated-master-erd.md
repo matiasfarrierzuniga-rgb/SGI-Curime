@@ -300,3 +300,28 @@ erDiagram
   availability constraints are documented in the consolidated model/dictionary.
 - Mermaid does not encode singleton enforcement, aggregate allocation caps,
   transition gates, or cross-row movement compatibility.
+
+## ADD_STATUS_NOTE: ERD design reference; post-merge implementation note
+
+This Consolidated Master ERD preserves the Target v1 design as historical
+architecture reference. The ERD diagram itself is unchanged — it records the
+v1 global architecture view (40 persistent + 1 transitional + 61 relationships).
+
+**V1.1 structural implementation:** The merged implementation at main@71aa989
+(PR #102) provides the V1.1 structural contract (49 persistent + 1 transitional
++ 77 persistent Target relationships). The ERD design reference remains correct
+as v1 architecture; however, the following deferred gates represent evidence-
+dependent cutover points that extend the v1 shape:
+
+- `ID-01`: Person canonical mapping + duplicate-data removal
+- `ASM-ATT-01`: Complete parent mapping before new attendance/justification FKs
+- `FIN-ORIGIN-01`: Explicit-origin reconciliation before generic `sourceId` removal
+- `FIN-DON-01`: Donation original/reversal evidence before redundant-field removal
+- `INV-LEDGER-01`: Signed ledger enforcement before opening-balance backfill
+- `INV-LOAN-01`: Evidence-backed loan-movement links
+- `ASM-DATE-01`: Date evidence mapping before `heldAt` backfill/enforcement
+- `RES-STATUS-01`: Non-destructive `CONFIRMED`/`COMPLETED` removal
+
+**Package distinction:** This ERD is the v1 design reference (`IMPLEMENTATION_STATUS=frozen historical`). The V1.1 package records the merged implementation separately. Do not treat the v1.1 structural count as an update to this ERD diagram — the diagram remains v1 canonical view, and v1.1 extension is documented additively.
+
+**Do not modify the ERD diagram** to add v1.1 entities or relationships. The v1.1 extension is recorded in the V1.1 evolution matrix and the implementation-status canonical bridge, not by altering the frozen v1 ERD.

@@ -699,6 +699,27 @@ This pass records confirmed decisions and separates final design status from mig
 - **Migration gate status:** `OPEN`
 - **Status:** `CLOSED_WITH_MIGRATION_GATE`
 
+## ADD_STATUS_NOTE: V1.1 inheritance and deferred finalization
+
+This Decision Register inherits its structural contract through Frozen Target V1.1, now merged at main@71aa989 (PR #102). The v1 baseline decisions (TM-D01..TM-D13) are preserved as historical design authority; v1.1 extends additive structure to 49 persistent entities, 1 transitional entity, and 77 persistent Target relationships.
+
+**Deferred finalization:** The structural contract is now implemented and verified. The following migration gates remain evidence-dependent deferred cutover points (not structural deficiencies):
+
+- `ID-01`: Person canonical mapping + duplicate-data removal (blocks: `TM-B01`, `TM-B02`, `TM-B09`, `TM-B13`, matrix rows with `personId`)
+- `ASM-ATT-01`: Complete parent mapping before new attendance/justification FKs (blocks: `TM-B08`, `TM-B09`, matrix rows with `convocationId`/`attendanceId`)
+- `FIN-ORIGIN-01`: Explicit-origin reconciliation before generic `sourceId` removal (blocks: `TM-B11`, `TM-B13`, matrix rows with `movementId`)
+- `FIN-DON-01`: Donation original/reversal evidence before redundant-field removal (blocks: `TM-B12`, matrix rows with `originalMovementId`)
+- `INV-LEDGER-01`: Signed ledger enforcement before opening-balance backfill (blocks: `TM-B10`, `TM-B14`, matrix rows with `quantityDelta`)
+- `INV-LOAN-01`: Evidence-backed loan-movement links (blocks: `TM-B10`, `TM-B16`, matrix rows with `checkoutMovementId`/`returnMovementId`/`cancellationMovementId`)
+- `ASM-DATE-01`: Date evidence mapping before `heldAt` backfill/enforcement (blocks: `TM-B04`, `TM-D05`)
+- `RES-STATUS-01`: Non-destructive `CONFIRMED`/`COMPLETED` removal (blocks: `TM-B15`, `TM-D13`, enum cleanup)
+
+Target v1.1 implementation does not imply completed historical reconciliation of v1 → v1.1 gaps. The v1 design decisions remain the authority for inherited choices; v1.1 additive structure is now merged, and final cutover requires evidence per each gate. No decision in this register is reopened by the v1.1 merge.
+
+`TARGET_V1.1_STRUCTURAL_IMPLEMENTATION=YES`
+`TARGET_V1.1_DEFERRED_GATES=ID-01,ASM-ATT-01,FIN-ORIGIN-01,FIN-DON-01,INV-LEDGER-01,INV-LOAN-01,ASM-DATE-01,RES-STATUS-01`
+`TARGET_V1.1_HISTORICAL_RECONCILIATION=PENDING evidence-dependent cutover`
+
 ### TM-D12 — Inventory quantity and loan evidence
 
 - **Related blockers:** `TM-B10`, `TM-B14`, `TM-B16`

@@ -196,3 +196,22 @@ Clasificación:
 ## 11. Implementation boundary
 
 Este catálogo define destino, no secuencia. Current-to-Target Gap Matrix y Migration Roadmap se crearán en Stage 2B. Ninguna regla marcada como Target debe reportarse implementada hasta validación contra schema, migraciones y base reconciliada.
+
+## ADD_STATUS_NOTE: Target/gate definitions preserved; implemented vs deferred clarified
+
+Frozen Target v1 integrity rules (IDs ORG-01 through INV-R11, plus transition gates ID-01, ASM-DATE-01, ASM-ATT-01, FIN-ORIGIN-01, FIN-DON-01, INV-LEDGER-01, INV-LOAN-01, RES-STATUS-01) remain the preserved historical design baseline. These rule definitions and their gate statuses are unchanged.
+
+**V1.1 structural implementation:** The merged implementation at main@71aa989 (PR #102) provides the V1.1 structural contract. The following gates remain evidence-dependent deferred cutover points, not yet enforced as DB constraints:
+
+- `ID-01`: Person canonical mapping + duplicate-data removal
+- `ASM-ATT-01`: Complete parent mapping before new attendance/justification FKs
+- `FIN-ORIGIN-01`: Explicit-origin reconciliation before generic `sourceId` removal
+- `FIN-DON-01`: Donation original/reversal evidence before redundant-field removal
+- `INV-LEDGER-01`: Signed ledger enforcement before opening-balance backfill
+- `INV-LOAN-01`: Evidence-backed loan-movement links
+- `ASM-DATE-01`: Date evidence mapping before `heldAt` backfill/enforcement
+- `RES-STATUS-01`: Non-destructive `CONFIRMED`/`COMPLETED` removal
+
+**Package distinction:** V1 integrity rules (`IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE`) distinguish the frozen historical design from the actual merged V1.1 implementation. The V1.1 package records `IMPLEMENTATION_STATUS=IMPLEMENTED` at the merged checkpoint, but deferred gates require evidence before enforcement.
+
+**Do not treat structural implementation as completed historical reconciliation.** The integrity rules define target destination; migration gates define sequencing. Current model reflects 49 persistent + 1 transitional at main@71aa989; rule enforcement waits on each gate's evidence exit criterion.

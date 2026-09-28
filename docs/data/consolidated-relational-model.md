@@ -219,3 +219,31 @@ inventory.
 
 No Prisma schema, migration, seed, backend, or frontend change is authorized
 by this document.
+
+## ADD_STATUS_NOTE: V1.1 post-merge status
+
+Frozen Target v1 (40 persistent + 1 transitional + 61 relationships) remains
+the historical design baseline. Frozen Target v1.1 (49 persistent + 1
+transitional + 77 persistent Target relationships) is now merged at main@71aa989
+(PR #102). Structural implementation is verified and integrated.
+
+**V1 baseline preserved:** 40 persistent entities, 1 transitional entity
+(`IdentityReconciliationManifest`), 61 master relationships. These counts and
+design decisions are frozen as historical engineering evidence.
+
+**V1.1 structural implementation:** 49 persistent entities, 1 transitional
+entity, 77 persistent Target relationships. The merged implementation provides
+the V1.1 structural contract. Evidence-dependent cutover remains deferred per
+the documented gates (ID-01, ASM-ATT-01, FIN-ORIGIN-01, FIN-DON-01, INV-LEDGER-01,
+INV-LOAN-01, ASM-DATE-01, RES-STATUS-01). Do not treat structural
+implementation as completed historical reconciliation.
+
+**Package distinction:** V1 package (`IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE`)
+distinguishes the frozen historical design from the actual merged V1.1
+implementation. The V1.1 package `IMPLEMENTATION_STATUS=IMPLEMENTED` reflects
+the merged state at main@71aa989.
+
+**Current model:** Reflects physical implementation at main@71aa989 with 49
+persistent entities and 1 transitional entity. The gap between current
+physical shape and V1.1 Target shape is documented in the migration roadmap
+and gap matrix, not in this frozen baseline.

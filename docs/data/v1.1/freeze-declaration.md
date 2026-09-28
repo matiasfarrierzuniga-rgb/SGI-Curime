@@ -143,3 +143,12 @@ Validation
 ```
 
 Until that work is completed, CURRENT documentation and implementation artifacts must not claim V1.1 is implemented.
+
+## 9. Post-merge status note
+
+The block above preserves this declaration's status at freeze time. Structural
+implementation occurred later and is merged, verified and integrated at
+`main@71aa989` through PR #102: 49 persistent entities, 1 transitional entity
+and 77 persistent relationships. Historical/evidence-dependent cutover remains
+incomplete under the approved eight deferred gates. See
+[`implementation-status.md`](./implementation-status.md).

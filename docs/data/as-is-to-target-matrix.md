@@ -132,3 +132,27 @@ not authorization to change schema or data.
   entities.
 - Official templates influence fields and invariants only; they do not add
   tables beyond the frozen 40.
+
+## ADD_STATUS_NOTE: Baseline historical; point to refreshed evidence
+
+This AS-IS to Target v1 matrix is preserved as historical baseline documentation.
+It records the v1 design transition from 26 current models to 40 Target persistent
+entities, with 1 transitional entity (`IdentityReconciliationManifest`).
+
+**V1.1 implementation status:** The structural contract is now merged at main@71aa989
+(PR #102) with 49 persistent entities, 1 transitional entity, and 77 persistent
+Target relationships. This matrix no longer describes the current implementation
+boundary.
+
+**Current model reference:** For the AS-IS state at merge, refer to
+`current-model.md` (49 persistent + 1 transitional, verified at main@71aa989).
+
+**V1.1 implementation status note:** The V1.1 package records `IMPLEMENTATION_STATUS=IMPLEMENTED`
+at the merged checkpoint, but evidence-dependent cutover remains deferred per
+gates ID-01, ASM-ATT-01, FIN-ORIGIN-01, FIN-DON-01, INV-LEDGER-01, INV-LOAN-01,
+ASM-DATE-01, RES-STATUS-01. Structural implementation does not imply completed
+historical reconciliation of AS-IS → Target v1.1 gaps.
+
+**Do not use this matrix for V1.1 gap analysis.** Use the V1.1 evolution matrix
+(`docs/data/v1.1/evolution/v1-to-v1.1-matrix.md`) and the refreshed current-model
+for implementation boundary assessment.

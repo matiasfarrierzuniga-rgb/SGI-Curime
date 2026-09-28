@@ -2,7 +2,9 @@
 
 ## Propósito
 
-`InstitutionalProfile` es la fuente canónica de los datos legales e institucionales de la única Asociación administrada por esta instalación de SGI-Curime. `FinancialMovement` continúa siendo la fuente financiera. El contenido de `publicSiteContent.ts` es branding y contenido público, no una fuente legal.
+`OrganizationProfile` es la fuente canónica de los datos legales e institucionales de la única Asociación administrada por esta instalación de SGI-Curime. `FinancialMovement` continúa siendo la fuente financiera. El contenido de `publicSiteContent.ts` es branding y contenido público, no una fuente legal.
+
+**Nombre físico vs. lógico:** El schema Prisma declara el modelo como `OrganizationProfile` (nombre lógico/Target), pero la tabla física se conserva como `InstitutionalProfile` (nombre heredado). El rename `InstitutionalProfile → OrganizationProfile` está **deferido** y no se realiza en esta ola; ambos nombres coexisten hasta que se complete la reconciliación de datos y se actualicen todos los repositorios, endpoints y queries dependientes. No invoque `db push` ni migraciones nuevas solo para este rename.
 
 ## Persistencia y singleton
 
@@ -29,8 +31,8 @@ El reporte anual DINADECO consume internamente los trece campos institucionales 
 
 Este consumo no amplía las capabilities administrativas: Administrador y Tesorero pueden recibir la identidad institucional como parte del reporte mediante `fin.dinadeco.read`, pero solo Administrador conserva acceso a los endpoints y la pantalla administrativa del perfil.
 
-`InstitutionalProfile` es la fuente institucional y `FinancialMovement` continúa siendo la fuente financiera. En la metadata DINADECO, `dataSource: FINANCIAL_MOVEMENT` describe exclusivamente esa fuente financiera.
+`OrganizationProfile` es la fuente institucional y `FinancialMovement` continúa siendo la fuente financiera. En la metadata DINADECO, `dataSource: FINANCIAL_MOVEMENT` describe exclusivamente esa fuente financiera.
 
 ## Límites de esta fase
 
-La integración no constituye un formulario oficial completo, conciliación bancaria, firma, sello, exportación oficial ni envío a DINADECO. Junta Directiva, representación legal, nombramientos, vigencias, firmas, sellos, anexos bancarios y conciliación permanecen fuera de alcance.
+La integración no constituye un formulario oficial completo, conciliación bancaria, firma, sello, exportación oficial ni envío a DINADECO. Junta Directiva, representación legal, nombramientos, vigencias, firmas, sellos, anexos bancarios y conciliación permanecen fuera de alcance. El rename `InstitutionalProfile → OrganizationProfile` está deferred hasta después de la captura de datos y la actualización de repositorios, endpoints y queries dependientes.

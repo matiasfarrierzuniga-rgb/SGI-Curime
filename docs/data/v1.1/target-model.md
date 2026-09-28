@@ -187,6 +187,8 @@ The complete matrix is documented in the V1.1 consolidated relational package an
 
 Target V1.1 freezes destination semantics only.
 
+The structural contract (49 persistent + 1 transitional + 77 relationships) is now merged and verified at main@71aa989 (PR #102). This is the implemented boundary.
+
 The next implementation-planning stage is:
 
 ```text
@@ -198,4 +200,4 @@ Frozen Target V1.1
 → validation
 ```
 
-No migration or Prisma change is authorized merely by this document.
+No migration or Prisma change is authorized merely by this document. Final evidence-dependent cleanup remains deferred per gates ID-01, ASM-ATT-01, FIN-ORIGIN-01, FIN-DON-01, INV-LEDGER-01, INV-LOAN-01, ASM-DATE-01, RES-STATUS-01. Structural implementation does not imply completed historical reconciliation.

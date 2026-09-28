@@ -90,3 +90,31 @@ assembly/attendance identifiers.
 No `Project`, `PlanWork`, `Provider`, `AffiliateSignature`, `Warehouse`,
 `StockLocation`, `InventoryAsset`, `InventoryLoanLine`, `UnitOfMeasure`,
 `UserPermission`, or `UserRole` entity belongs to Target v1.
+
+## ADD_STATUS_NOTE: Logical dictionary preserved; implementation status note
+
+This Consolidated Data Dictionary preserves the logical Target v1 dictionary as
+historical design authority. Field definitions, invariants, and classifications
+are unchanged.
+
+**V1.1 implementation status:** The structural contract is now merged at main@71aa989
+(PR #102) with 49 persistent entities, 1 transitional entity, and 77 persistent
+Target relationships. The logical dictionary remains valid as-designed; however,
+the following deferred gates represent evidence-dependent cutover points that
+affect which fields become NOT NULL, which LEGACY/TRANSITIONAL fields are
+retired, and which invariants are enforced:
+
+- `ID-01`: Person canonical mapping affects `Person.legacyFullName?`, `User.personId NOT NULL`, `Affiliate.personId NOT NULL`
+- `ASM-ATT-01`: Attendance/justification FKs affect `AssemblyAttendance.convocationId`, `AbsenceJustification.attendanceId`, `AttendanceStatus`
+- `FIN-ORIGIN-01`: Explicit origins affect `FinancialMovement.originType`, `FinancialMovement.source/sourceId`, `Payment.movementId`, `Donation.originalMovementId`
+- `FIN-DON-01`: Donation original/reversal affects `Donation.originalMovementId NOT NULL`, `Donation.reversalMovementId` retirement
+- `INV-LEDGER-01`: Signed ledger affects `InventoryMovement.quantityDelta`, `InventoryItem.currentQuantity NOT NULL`, `INV-R04`
+- `INV-LOAN-01`: Loan movement FKs affect `InventoryLoan.checkoutMovementId/returnMovementId/cancellationMovementId`
+- `ASM-DATE-01`: Date mapping affects `Assembly.scheduledAt`, `Assembly.heldAt`, `ASM-R02A`
+- `RES-STATUS-01`: Enum cleanup affects `ReservationStatus`, `RES-09`, `RES-10`
+
+**Package distinction:** V1 dictionary (`IMPLEMENTATION_STATUS=NOT_IMPLEMENTED_BY_THIS_PACKAGE`) preserves the frozen historical design. The V1.1 package (`IMPLEMENTATION_STATUS=IMPLEMENTED`) reflects the merged state at main@71aa989, but deferred gates require evidence before field retirement or constraint enforcement.
+
+**Current model:** 49 persistent + 1 transitional at main@71aa989. The gap between the V1 dictionary and the current physical shape is documented in the migration roadmap and gap matrix, not in this frozen baseline.
+
+Do not treat structural implementation as completed historical reconciliation.
