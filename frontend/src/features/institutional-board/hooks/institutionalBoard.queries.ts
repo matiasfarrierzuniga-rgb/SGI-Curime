@@ -5,6 +5,7 @@ export const useBoardTerms = () => useQuery({ queryKey: boardKeys.terms, queryFn
 export const usePersonCandidates = (query: string) => useQuery({ queryKey: boardKeys.candidates(query), queryFn: () => institutionalBoardApi.candidates(query), enabled: query.trim().length >= 2 })
 export function useBoardMutations() { const client = useQueryClient(); const refresh = () => client.invalidateQueries({ queryKey: boardKeys.terms }); return {
   createTerm: useMutation({ mutationFn: institutionalBoardApi.createTerm, onSuccess: refresh }),
+  updateTerm: useMutation({ mutationFn: ({ id, input }: { id: number; input: { startsOn?: string; endsOn?: string } }) => institutionalBoardApi.updateTerm(id, input), onSuccess: refresh }),
   createAppointment: useMutation({ mutationFn: ({ termId, input }: { termId: number; input: AppointmentInput }) => institutionalBoardApi.createAppointment(termId, input), onSuccess: refresh }),
   updateAppointment: useMutation({ mutationFn: ({ id, input }: { id: number; input: UpdateAppointmentInput }) => institutionalBoardApi.updateAppointment(id, input), onSuccess: refresh }),
 } }

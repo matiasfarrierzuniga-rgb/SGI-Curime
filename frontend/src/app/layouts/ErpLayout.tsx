@@ -13,7 +13,7 @@ export function ErpLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const roleName = getRoleName(user?.role)
-  const navigation = getErpNavigation(roleName)
+  const navigation = getErpNavigation(user?.permissionCodes)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tabletCollapsed, setTabletCollapsed] = useState(true)
   const pageLabel = findCurrentLabel(navigation, location.pathname)

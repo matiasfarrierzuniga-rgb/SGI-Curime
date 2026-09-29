@@ -31,8 +31,6 @@ export type ErpNavigationItem = {
   capability?: AccessCapability
   icon?: LucideIcon
   children?: readonly ErpNavigationItem[]
-  role?: string
-  excludedRole?: string
 }
 
 export type ErpNavigationSection = { label: string; items: readonly ErpNavigationItem[] }
@@ -54,25 +52,21 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Solicitar una reserva',
         path: '/servicios/reservas',
-        role: 'Vecino/Afiliado',
         icon: CalendarPlus,
       },
       {
         label: 'Afiliación',
         path: '/afiliacion',
-        role: 'Vecino/Afiliado',
         icon: Handshake,
       },
       {
         label: 'Eventos',
         path: '/eventos',
-        role: 'Vecino/Afiliado',
         icon: CalendarDays,
       },
       {
         label: 'Mis asambleas',
         path: '/app/assemblies/mine',
-        excludedRole: 'Administrador',
         icon: CalendarCheck,
       },
     ],
@@ -136,7 +130,6 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Solicitar una reserva',
         path: '/servicios/reservas',
-        excludedRole: 'Vecino/Afiliado',
         icon: CalendarPlus,
       },
       {
@@ -213,36 +206,30 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Enviar justificación',
         path: '/app/affiliate/absence-justifications/new',
-        role: 'Vecino/Afiliado',
         icon: FileCheck2,
       },
       {
         label: 'Mis justificaciones',
         path: '/app/affiliate/justifications',
-        role: 'Vecino/Afiliado',
         icon: FileCheck2,
       },
     ],
   },
 ]
 
-function isVisible(item: ErpNavigationItem, role: string | null | undefined): boolean {
-  return (
-    (item.role === undefined || item.role === role) &&
-    item.excludedRole !== role &&
-    (item.capability === undefined || hasCapability(role, item.capability))
-  )
+function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] | null | undefined): boolean {
+  return item.capability === undefined || hasCapability(permissionCodes, item.capability)
 }
 
-export function getErpNavigation(role: string | null | undefined): ErpNavigationSection[] {
+export function getErpNavigation(permissionCodes: readonly string[] | null | undefined): ErpNavigationSection[] {
   return navigation.flatMap((section) => {
     const items = section.items.flatMap((item) => {
-      if (!isVisible(item, role)) return []
+      if (!isVisible(item, permissionCodes)) return []
 
       return [
         {
           ...item,
-          children: item.children?.filter((child) => isVisible(child, role)),
+          children: item.children?.filter((child) => isVisible(child, permissionCodes)),
         },
       ]
     })

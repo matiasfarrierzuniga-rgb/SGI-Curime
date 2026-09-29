@@ -60,7 +60,7 @@ describe('PrismaUsersRepository registration methods', () => {
   it('projects non-sensitive affiliation context for /users/me', async () => {
     db.user.findUnique.mockResolvedValue({
       person: {
-        affiliate: { id: 22, status: 'ACTIVE', roleId: 4 },
+        affiliate: { id: 22, status: 'ACTIVE', legacyRoleId: 4 },
         affiliateRequests: [{ status: 'APPROVED' }],
       },
     });

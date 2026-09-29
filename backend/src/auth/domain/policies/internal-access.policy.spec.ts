@@ -3,22 +3,18 @@ import { canAccessErp } from './internal-access.policy';
 describe('canAccessErp', () => {
   const validAffiliate = {
     userStatus: 'ACTIVE',
-    userRoleId: 2,
     userRoleName: 'Vecino/Afiliado',
     userRoleIsActive: true,
     hasPerson: true,
     affiliateStatus: 'ACTIVE',
-    affiliateRoleId: 2,
   };
 
   const administrator = {
     userStatus: 'ACTIVE',
-    userRoleId: 1,
     userRoleName: 'Administrador',
     userRoleIsActive: true,
     hasPerson: false,
     affiliateStatus: null,
-    affiliateRoleId: null,
   };
 
   it('allows an active administrator with an active role without a person or affiliate', () => {
@@ -41,9 +37,7 @@ describe('canAccessErp', () => {
     expect(
       canAccessErp({
         ...validAffiliate,
-        userRoleId: 1,
         userRoleName: 'Subscription_L1',
-        affiliateRoleId: 1,
       }),
     ).toBe(false);
   });
@@ -52,49 +46,56 @@ describe('canAccessErp', () => {
     expect(
       canAccessErp({
         ...validAffiliate,
-        userRoleId: 3,
         userRoleName: 'Tesorero',
         hasPerson: false,
         affiliateStatus: null,
-        affiliateRoleId: null,
       }),
     ).toBe(false);
   });
 
-  it('allows a treasurer with a consistent active affiliate', () => {
+  it('allows a treasurer with an active affiliate', () => {
     expect(
       canAccessErp({
         ...validAffiliate,
-        userRoleId: 3,
         userRoleName: 'Tesorero',
-        affiliateRoleId: 3,
       }),
     ).toBe(true);
   });
 
-  it('allows a Vecino/Afiliado with a consistent active affiliate', () => {
+  it('allows a Vecino/Afiliado with an active affiliate', () => {
     expect(canAccessErp(validAffiliate)).toBe(true);
+  });
+
+  it('does not use null or different affiliate legacy roles as ERP authority', () => {
+    expect(
+      canAccessErp({
+        ...validAffiliate,
+        affiliateRoleId: null,
+      }),
+    ).toBe(true);
+    expect(
+      canAccessErp({
+        ...validAffiliate,
+        affiliateRoleId: 999,
+      }),
+    ).toBe(true);
   });
 
   it.each([
     [
       'general account without affiliate',
       {
-        userRoleId: 1,
         userRoleName: 'Subscription_L1',
         hasPerson: false,
         affiliateStatus: null,
-        affiliateRoleId: null,
       },
     ],
     ['inactive affiliate', { affiliateStatus: 'INACTIVE' }],
-    ['historical affiliate without role', { affiliateRoleId: null }],
-    ['role mismatch', { userRoleId: 3 }],
     ['inactive role', { userRoleIsActive: false }],
     ['inactive user', { userStatus: 'INACTIVE' }],
     [
       'inconsistent Subscription_L1 affiliate',
-      { userRoleId: 1, userRoleName: 'Subscription_L1', affiliateRoleId: 1 },
+      { userRoleName: 'Subscription_L1' },
     ],
   ])('denies %s', (_label, overrides) => {
     expect(canAccessErp({ ...validAffiliate, ...overrides })).toBe(false);

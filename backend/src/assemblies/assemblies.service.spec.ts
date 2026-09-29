@@ -155,7 +155,7 @@ describe('Assemblies authorization and DTO validation', () => {
 describe('Assembly convocations', () => {
   const eligible = { id: 7, legacyRoleId: 3 };
 
-  it('accepts an active affiliate with an active role and snapshots its name', async () => {
+  it('accepts an active affiliate regardless of legacy role and snapshots it only when present', async () => {
     const { prisma, tx } = prismaMock();
     prisma.affiliate.findMany.mockResolvedValue([eligible]);
     prisma.role.findMany.mockResolvedValue([{ id: 3, name: 'Fiscal' }]);
@@ -164,7 +164,6 @@ describe('Assembly convocations', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           status: 'ACTIVE',
-          legacyRoleId: { not: null },
         }),
       }),
     );
@@ -180,7 +179,7 @@ describe('Assembly convocations', () => {
     });
   });
 
-  it.each(['INACTIVE affiliate', 'null roleId', 'inactive role'])(
+  it.each(['INACTIVE affiliate'])(
     'rejects an ineligible affiliate: %s',
     async () => {
       const { prisma } = prismaMock();
@@ -190,6 +189,23 @@ describe('Assembly convocations', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     },
   );
+
+  it('accepts an active affiliate without a legacy role', async () => {
+    const { prisma, tx } = prismaMock();
+    prisma.affiliate.findMany.mockResolvedValue([{ id: 7, legacyRoleId: null }]);
+
+    await serviceFor(prisma).replaceConvocations(1, [7], 9);
+
+    expect(tx.assemblyConvocation.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          affiliateId: 7,
+          legacyRoleId: null,
+          legacyRoleNameSnapshot: '',
+        }),
+      ],
+    });
+  });
 
   it('rejects duplicate affiliate ids', async () => {
     const { prisma } = prismaMock();

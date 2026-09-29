@@ -110,10 +110,8 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="adm.institutional-board.read" />}>
             <Route path="/app/admin/institutional-board" element={<InstitutionalBoardPage />} />
           </Route>
-          <Route element={<RoleRoute role="Vecino/Afiliado" />}>
-            <Route path="/app/affiliate/absence-justifications/new" element={<AffiliateAbsenceJustificationPage />} />
-            <Route path="/app/affiliate/justifications" element={<AffiliateJustificationsPage />} />
-          </Route>
+          <Route path="/app/affiliate/absence-justifications/new" element={<AffiliateAbsenceJustificationPage />} />
+          <Route path="/app/affiliate/justifications" element={<AffiliateJustificationsPage />} />
           <Route element={<RoleRoute capability="aud.logs.read" />}>
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
           </Route>

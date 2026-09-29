@@ -92,7 +92,7 @@ export function ReservationRequestPage() {
       <CheckCircle2 className="size-10 text-success" aria-hidden="true" />
       <div><h1 id="reservation-confirmation-title" className="text-heading-2 font-bold text-foreground">Solicitud enviada</h1><p className="mt-2 text-body-large text-foreground">Su solicitud fue enviada y será revisada por la Asociación.</p></div>
       <dl className="grid gap-3 text-sm sm:grid-cols-2"><Summary label="Espacio" value={confirmation.resourceName} /><Summary label="Fecha y hora" value={`${formatLocalDate(confirmation.startAt)} a ${formatLocalDate(confirmation.endAt)}`} /></dl>
-      <p className="text-sm text-foreground-muted">La aprobación de la reserva no significa que un pago esté realizado. La Asociación le indicará si corresponde algún costo y cómo pagarlo.</p>
+      <p className="text-sm text-foreground-muted">La aprobación de la reserva no significa que un pago esté realizado.</p>
       <Button type="button" size="lg" onClick={() => setConfirmation(null)}>Solicitar otra reserva</Button>
     </CardContent></Card>
   </section>
@@ -119,7 +119,7 @@ export function ReservationRequestPage() {
           <FormField label="Cantidad de personas (opcional)" id="reservation-attendees" errorId="estimatedAttendees-error" error={form.formState.errors.estimatedAttendees?.message}><input id="reservation-attendees" className="min-h-11" type="number" min="1" inputMode="numeric" {...field('estimatedAttendees')} {...form.register('estimatedAttendees')} /></FormField>
           <FormField label="Notas adicionales (opcional)" id="reservation-notes" errorId="notes-error" error={form.formState.errors.notes?.message}><textarea id="reservation-notes" className="min-h-24" maxLength={5000} {...field('notes')} {...form.register('notes')} /></FormField>
         </div>
-        <div className="rounded-lg border border-info/30 bg-info-bg p-4 text-sm text-foreground"><p className="font-semibold">Costo y aprobación</p><p className="mt-1">La Asociación le informará si este espacio tiene algún costo. Aprobar la solicitud no significa que el pago esté realizado.</p></div>
+        {selectedResource ? <div className="rounded-lg border border-info/30 bg-info-bg p-4 text-sm text-foreground"><p className="font-semibold">Costo y aprobación</p><p className="mt-1">{selectedResource.pricingType === 'FREE' ? 'Este espacio no tiene costo.' : selectedResource.price ? `Costo fijo: ${selectedResource.price} ${selectedResource.currency}.` : 'Este espacio tiene costo fijo; el monto no fue informado.'} Aprobar la solicitud no significa que el pago esté realizado.</p></div> : null}
         <Button className="w-full sm:w-fit" size="lg" type="submit" disabled={submitting || availability !== 'available'}>{submitting ? 'Enviando solicitud…' : 'Enviar solicitud'}</Button>
       </fieldset>
     </form>
@@ -131,7 +131,7 @@ function FormField({ label, id, errorId, error, children }: { label: string; id:
 }
 
 function ResourceSummary({ resource }: { resource: ReservableResource }) {
-  return <Card className="bg-brand-ivory"><CardContent className="space-y-2 p-4"><p className="font-bold text-brand-ink">Está reservando: {resource.name}</p>{resource.description ? <p className="text-sm text-foreground-muted">{resource.description}</p> : null}<div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-foreground-muted">{resource.location ? <span className="inline-flex items-center gap-1"><MapPin className="size-4" aria-hidden="true" />{resource.location}</span> : null}{resource.capacity ? <span className="inline-flex items-center gap-1"><UsersRound className="size-4" aria-hidden="true" />Capacidad: {resource.capacity} personas</span> : null}</div></CardContent></Card>
+  return <Card className="bg-brand-ivory"><CardContent className="space-y-2 p-4"><p className="font-bold text-brand-ink">Está reservando: {resource.name}</p>{resource.description ? <p className="text-sm text-foreground-muted">{resource.description}</p> : null}<div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-foreground-muted">{resource.location ? <span className="inline-flex items-center gap-1"><MapPin className="size-4" aria-hidden="true" />{resource.location}</span> : null}{resource.capacity ? <span className="inline-flex items-center gap-1"><UsersRound className="size-4" aria-hidden="true" />Capacidad: {resource.capacity} personas</span> : null}<span>{resource.pricingType === 'FREE' ? 'Sin costo' : resource.price ? `Costo fijo: ${resource.price} ${resource.currency}` : 'Costo fijo sin monto informado'}</span></div></CardContent></Card>
 }
 
 function Summary({ label, value }: { label: string; value: string }) { return <div><dt className="font-semibold text-foreground-muted">{label}</dt><dd className="mt-1 text-foreground">{value}</dd></div> }

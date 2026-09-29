@@ -42,6 +42,8 @@ const userSelect = {
   subscriptionExpirationDate: true,
   lockedAt: true,
   roleId: true,
+  personId: true,
+  person: { select: { affiliate: { select: { id: true } } } },
   role: {
     select: {
       id: true,
@@ -72,6 +74,11 @@ function toUser(user: SafeUser): User {
     lockedAt: user.lockedAt,
     roleId: user.roleId,
     role: user.role,
+    personId: user.personId === null ? null : String(user.personId),
+    affiliateId:
+      user.person?.affiliate?.id === undefined
+        ? null
+        : String(user.person.affiliate.id),
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

@@ -10,6 +10,7 @@ export interface AuthAccount {
   roleName: string;
   roleId: number;
   roleIsActive: boolean;
+  permissionCodes?: readonly string[];
   hasPerson: boolean;
   affiliateStatus: string | null;
   affiliateRoleId: number | null;

@@ -32,12 +32,10 @@ export class GetUserUseCase {
         affiliateRequestStatus: affiliation.affiliateRequestStatus,
         canAccessErp: canAccessErp({
           userStatus: user.status,
-          userRoleId: user.roleId,
           userRoleName: user.role.name,
           userRoleIsActive: user.role.isActive,
           hasPerson: affiliation.hasPerson,
           affiliateStatus: affiliation.affiliateStatus,
-          affiliateRoleId: affiliation.affiliateRoleId,
         }),
       },
     };

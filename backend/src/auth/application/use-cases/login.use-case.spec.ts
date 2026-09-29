@@ -14,6 +14,7 @@ const account = {
   roleName: 'Administrador',
   roleId: 2,
   roleIsActive: true,
+  permissionCodes: ['usr.users.read'],
   hasPerson: true,
   affiliateStatus: 'ACTIVE',
   affiliateRoleId: 2,
@@ -207,6 +208,7 @@ describe('LoginUseCase', () => {
         email: 'admin@example.com',
         status: 'ACTIVE',
         role: 'Administrador',
+        permissionCodes: ['usr.users.read'],
         canAccessErp: true,
       },
     });
@@ -232,14 +234,6 @@ describe('LoginUseCase', () => {
         affiliateStatus: 'INACTIVE',
       },
     ],
-    [
-      'an affiliate without a role',
-      { roleId: 3, roleName: 'Tesorero', affiliateRoleId: null },
-    ],
-    [
-      'inconsistent user and affiliate roles',
-      { roleId: 3, roleName: 'Tesorero', affiliateRoleId: 2 },
-    ],
   ])('returns canAccessErp=false for %s', async (_label, overrides) => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
       ...account,
@@ -250,6 +244,33 @@ describe('LoginUseCase', () => {
       useCase.execute('admin@example.com', 'secret'),
     ).resolves.toMatchObject({ user: { canAccessErp: false } });
   });
+
+  it.each([
+    ['a null legacy affiliate role', null],
+    ['a different legacy affiliate role', 999],
+  ])(
+    'keeps ERP access for %s when persisted capabilities grant access',
+    async (_label, affiliateRoleId) => {
+      repository.findCredentialsByEmail.mockResolvedValueOnce({
+        ...account,
+        roleId: 3,
+        roleName: 'Tesorero',
+        hasPerson: true,
+        affiliateStatus: 'ACTIVE',
+        affiliateRoleId,
+        permissionCodes: ['fin.charges.read'],
+      });
+
+      await expect(
+        useCase.execute('admin@example.com', 'secret'),
+      ).resolves.toMatchObject({
+        user: {
+          canAccessErp: true,
+          permissionCodes: ['fin.charges.read'],
+        },
+      });
+    },
+  );
 
   it('delivers login credentials when the post-commit audit fails', async () => {
     audit.record.mockRejectedValueOnce(new Error('audit unavailable'));

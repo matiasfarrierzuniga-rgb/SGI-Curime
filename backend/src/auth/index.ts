@@ -6,9 +6,12 @@ export {
   CAPABILITIES,
   ROLE_CAPABILITIES,
   hasCapability,
+  hasPersistedCapability,
+  isKnownCapability,
   type Capability,
 } from './presentation/capabilities/capability-policy';
 export { RequireCapabilities } from './presentation/decorators/require-capabilities.decorator';
+export { RequireCapabilityByBodyValue } from './presentation/decorators/require-capability-by-body-value.decorator';
 export { RolesGuard } from './presentation/guards/roles.guard';
 export type { AuthenticatedUser } from './domain/entities/auth-user';
 export { canAccessErp, GENERAL_ACCOUNT_ROLE } from './domain/policies/internal-access.policy';

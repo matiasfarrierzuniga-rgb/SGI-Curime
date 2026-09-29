@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
@@ -14,6 +16,8 @@ const dateLabel = (value: string) => new Intl.DateTimeFormat('es-CR', { dateStyl
 const statusLabel = (value: string) => value === 'SCHEDULED' ? 'Programada' : value === 'IN_PROGRESS' ? 'En curso' : value === 'COMPLETED' ? 'Finalizada' : 'Cancelada'
 
 export function AssembliesAdminPage() {
+  const { user } = useAuth()
+  const canManage = hasCapability(user?.permissionCodes, 'adm.assemblies.manage')
   const list = useAssemblies()
   const mutations = useAssemblyMutations()
   const { notify } = useToast()
@@ -31,7 +35,7 @@ export function AssembliesAdminPage() {
   const people = useMemo(() => (eligible.data ?? []).filter((item) => item.fullName.toLocaleLowerCase('es').includes(search.toLocaleLowerCase('es'))), [eligible.data, search])
 
   const submit = async (event: React.FormEvent) => {
-    event.preventDefault(); setError('')
+    event.preventDefault(); if (!canManage) return; setError('')
     if (!form.title.trim() || !form.date || !form.place.trim()) return setError('Complete el título, la fecha y el lugar.')
     if (!Number.isInteger(form.quorumValue) || form.quorumValue <= 0 || (form.quorumType === 'PERCENTAGE' && form.quorumValue > 100)) return setError(form.quorumType === 'PERCENTAGE' ? 'El porcentaje debe ser un entero entre 1 y 100.' : 'La cantidad fija debe ser un entero mayor que cero.')
     try {
@@ -47,17 +51,18 @@ export function AssembliesAdminPage() {
   }
 
   const remove = async () => {
-    if (!selectedId) return
+    if (!canManage || !selectedId) return
     await run(async () => { await mutations.remove.mutateAsync(selectedId); setDeleteOpen(false); setSelectedId(null); notify('La asamblea fue eliminada.', 'success') }, 'No fue posible eliminar la asamblea porque contiene información histórica.')
   }
 
   const setAttendance = (affiliateId: number, status: 'PRESENT' | 'ABSENT') => {
-    if (!selectedId) return
+    if (!canManage || !selectedId) return
     void run(() => mutations.attendance.mutateAsync({ id: selectedId, entries: [{ affiliateId, status }] }), 'No fue posible actualizar la asistencia.')
   }
 
   const item = detail.data
   return <section className="space-y-6">
+    {!canManage ? <p className="rounded-md border border-border bg-surface-muted p-3 text-sm text-foreground-muted">Tiene acceso de consulta. Gestionar asambleas requiere permiso de administración.</p> : null}
     <PageHeader context="Gestión administrativa" title={item ? item.title : 'Asambleas'} description={item ? `${dateLabel(item.date)} · ${item.place}` : 'Organice asambleas, personas convocadas, asistencia y cuórum.'} actions={item ? <button className="min-h-11 rounded-md border border-border px-4 font-semibold" type="button" onClick={() => setSelectedId(null)}>Volver al listado</button> : <button className="min-h-11 rounded-md bg-brand-deep px-4 font-semibold text-brand-ivory" type="button" onClick={() => { setEditingId(null); setForm(initial); setCreating((value) => !value) }}>{creating ? 'Cerrar formulario' : 'Crear asamblea'}</button>} />
     {error ? <p role="alert" className="rounded-md border border-danger p-3 text-danger">{error}</p> : null}
     {creating ? <form className="grid gap-4 rounded-xl border border-border bg-surface p-5 md:grid-cols-2" onSubmit={submit} noValidate>

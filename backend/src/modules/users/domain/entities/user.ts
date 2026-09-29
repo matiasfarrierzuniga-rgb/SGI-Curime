@@ -26,6 +26,8 @@ export interface User {
   lockedAt: Date | null;
   roleId: number;
   role: UserRole;
+  personId: string | null;
+  affiliateId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

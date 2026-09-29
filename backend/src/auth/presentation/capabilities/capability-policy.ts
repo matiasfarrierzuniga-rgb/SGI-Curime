@@ -15,6 +15,9 @@ export const CAPABILITIES = [
   'adm.requests.read',
   'adm.assemblies.read',
   'adm.assemblies.manage',
+  'adm.justifications.read',
+  'adm.justifications.approve',
+  'adm.justifications.reject',
   'adm.institutional-profile.read',
   'adm.institutional-profile.update',
   'adm.institutional-board.read',
@@ -40,6 +43,10 @@ export const CAPABILITIES = [
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
+
+export function isKnownCapability(capability: string): capability is Capability {
+  return CAPABILITIES.includes(capability as Capability);
+}
 
 const ROLE_ADMIN = 'Administrador';
 const ROLE_INVENTORY_MANAGER = 'Gestor de Inventario';
@@ -72,8 +79,23 @@ export function hasCapability(
   capability: string,
 ): boolean {
   return (
-    CAPABILITIES.includes(capability as Capability) &&
+    isKnownCapability(capability) &&
     role !== undefined &&
     ROLE_CAPABILITIES[role]?.includes(capability as Capability) === true
+  );
+}
+
+/**
+ * Runtime authorization source. ROLE_CAPABILITIES/hasCapability remain only
+ * as seed and equivalence-reference data during the RBAC cutover.
+ */
+export function hasPersistedCapability(
+  permissionCodes: readonly string[] | undefined,
+  capability: string,
+): boolean {
+  return (
+    isKnownCapability(capability) &&
+    Array.isArray(permissionCodes) &&
+    permissionCodes.includes(capability)
   );
 }

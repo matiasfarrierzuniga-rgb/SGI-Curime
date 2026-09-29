@@ -186,31 +186,14 @@ export class AssembliesService {
 
   async listEligibleAffiliates() {
     const affiliates = await this.prisma.affiliate.findMany({
-      where: {
-        status: 'ACTIVE',
-        legacyRoleId: { not: null },
-      },
+      where: { status: 'ACTIVE' },
       select: {
         id: true,
         fullName: true,
-        legacyRoleId: true,
       },
       orderBy: { fullName: 'asc' },
     });
-    const roles = await this.prisma.role.findMany({
-      where: {
-        id: { in: affiliates.map((item) => item.legacyRoleId!) },
-        isActive: true,
-      },
-      select: { id: true, name: true },
-    });
-    const byId = new Map(roles.map((role) => [role.id, role]));
-    return affiliates
-      .filter((item) => byId.has(item.legacyRoleId!))
-      .map(({ legacyRoleId, ...item }) => ({
-        ...item,
-        role: byId.get(legacyRoleId!),
-      }));
+    return affiliates;
   }
 
   async findOneAllowed(id: number, userId: number, role: string) {
@@ -341,24 +324,21 @@ export class AssembliesService {
       where: {
         id: { in: affiliateIds },
         status: 'ACTIVE',
-        legacyRoleId: { not: null },
       },
       select: { id: true, legacyRoleId: true },
     });
     const roles = await this.prisma.role.findMany({
       where: {
         id: { in: eligible.map((item) => item.legacyRoleId!) },
-        isActive: true,
       },
       select: { id: true, name: true },
     });
     const roleById = new Map(roles.map((role) => [role.id, role]));
     if (
-      eligible.length !== affiliateIds.length ||
-      eligible.some((item) => !roleById.has(item.legacyRoleId!))
+      eligible.length !== affiliateIds.length
     )
       throw new BadRequestException(
-        'Every convoked affiliate must be active and have an active role',
+        'Every convoked affiliate must be active',
       );
     if (
       assembly.quorumType === 'FIXED' &&
@@ -377,7 +357,8 @@ export class AssembliesService {
             assemblyId,
             affiliateId: item.id,
             legacyRoleId: item.legacyRoleId,
-            legacyRoleNameSnapshot: roleById.get(item.legacyRoleId!)!.name,
+            legacyRoleNameSnapshot:
+              roleById.get(item.legacyRoleId ?? -1)?.name ?? '',
           })),
         });
       await this.audit.log(

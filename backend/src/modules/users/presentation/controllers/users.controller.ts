@@ -65,7 +65,11 @@ export class UsersController {
       const { user, affiliation } = await this.getUser.executeWithAffiliation(
         req.user.id,
       );
-      return { ...toUserResponse(user), ...affiliation };
+      return {
+        ...toUserResponse(user),
+        ...affiliation,
+        permissionCodes: [...(req.user.permissionCodes ?? [])],
+      };
     });
   }
 

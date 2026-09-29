@@ -1,6 +1,8 @@
 import { CheckCircle2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 import { emailError, normalizeEmail, normalizeText } from '@/shared/lib/formValidation'
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
@@ -34,6 +36,8 @@ function toPayload(form: FormState): UpdateInstitutionalProfileInput {
 
 export function InstitutionalProfilePage() {
   const profile = useInstitutionalProfile()
+  const { user } = useAuth()
+  const canUpdate = hasCapability(user?.permissionCodes, 'adm.institutional-profile.update')
   const update = useUpdateInstitutionalProfile()
   const [form, setForm] = useState<FormState>(emptyForm)
   const [emailMessage, setEmailMessage] = useState('')
@@ -45,7 +49,7 @@ export function InstitutionalProfilePage() {
   const setField = (field: keyof FormState, value: string) => { setForm(current => ({ ...current, [field]: value })); setSuccess('') }
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    if (update.isPending) return
+    if (!canUpdate || update.isPending) return
     const nextEmailError = form.email ? emailError(form.email) : ''
     setEmailMessage(nextEmailError)
     if (nextEmailError) return
@@ -73,7 +77,8 @@ export function InstitutionalProfilePage() {
         <form className="space-y-8" onSubmit={submit} noValidate>
           {saveState === 'ERROR' ? <ErrorState title="No fue posible guardar los cambios" message={requestError} /> : null}
           {saveState === 'SUCCESS' ? <Alert className="border-status-success-border bg-status-success-surface text-status-success" role="status"><CheckCircle2 aria-hidden="true" /><AlertTitle>Datos guardados</AlertTitle><AlertDescription className="text-status-success">{success}</AlertDescription></Alert> : null}
-          <fieldset className="space-y-8" disabled={saveState === 'SUBMITTING'}>
+           {!canUpdate ? <p className="rounded-control border border-border bg-surface-subtle p-3 text-sm text-foreground-muted">Tiene acceso de consulta. Guardar cambios requiere permiso de actualización.</p> : null}
+           <fieldset className="space-y-8" disabled={!canUpdate || saveState === 'SUBMITTING'}>
             <legend className="sr-only">Información institucional</legend>
             <FormSection headingId="legal-identity-heading" title="Identificación legal" description="Datos que identifican formalmente a la Asociación ante entidades y registros.">
               <FormField id="legalName" label={<><span>Nombre legal</span> <Optional /></>}>
@@ -114,7 +119,7 @@ export function InstitutionalProfilePage() {
             </FormSection>
           </fieldset>
           <div className="flex justify-stretch border-t border-border-subtle pt-6 sm:justify-end">
-            <Button type="submit" className="w-full sm:min-w-48 sm:w-auto" loading={saveState === 'SUBMITTING'} disabled={saveState === 'SUBMITTING'}>{saveState === 'SUBMITTING' ? 'Guardando cambios…' : 'Guardar cambios'}</Button>
+             <Button type="submit" className="w-full sm:min-w-48 sm:w-auto" loading={saveState === 'SUBMITTING'} disabled={!canUpdate || saveState === 'SUBMITTING'}>{saveState === 'SUBMITTING' ? 'Guardando cambios…' : 'Guardar cambios'}</Button>
           </div>
         </form>
       </CardContent>

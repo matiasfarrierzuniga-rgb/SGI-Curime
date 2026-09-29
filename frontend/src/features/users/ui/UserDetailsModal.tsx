@@ -50,10 +50,12 @@ export function UserDetailsModal({
             <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Cuenta</dt>
             <dd className="mt-1"><Badge variant={selected.isBlocked ? "warning" : selected.status === "ACTIVE" ? "success" : "neutral"}>{statusLabel(selected)}</Badge></dd>
           </div>
-          <div className="rounded-control bg-surface-muted p-3">
-            <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Creado</dt>
-            <dd className="mt-1 font-medium text-text-primary">{new Date(selected.createdAt).toLocaleString()}</dd>
-          </div>
+           <div className="rounded-control bg-surface-muted p-3">
+             <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Creado</dt>
+             <dd className="mt-1 font-medium text-text-primary">{new Date(selected.createdAt).toLocaleString()}</dd>
+           </div>
+           {selected.personId ? <div className="rounded-control bg-surface-muted p-3"><dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Persona vinculada</dt><dd className="mt-1 break-all font-medium text-text-primary">{selected.personId}</dd></div> : null}
+           {selected.affiliateId ? <div className="rounded-control bg-surface-muted p-3"><dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Afiliación vinculada</dt><dd className="mt-1 break-all font-medium text-text-primary">{selected.affiliateId}</dd></div> : null}
         </dl>
         <DialogFooter className="sm:justify-between">
           <div className="flex flex-wrap gap-2">

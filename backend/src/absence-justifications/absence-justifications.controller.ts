@@ -15,7 +15,13 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
-import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import {
+  CapabilityGuard,
+  hasPersistedCapability,
+  JwtAuthGuard,
+  RequireCapabilityByBodyValue,
+  RequireCapabilities,
+} from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { AbsenceJustificationsService } from './absence-justifications.service';
 import {
@@ -30,8 +36,8 @@ type AuthRequest = Request & { user: AuthenticatedUser };
 @Controller()
 export class AbsenceJustificationsController {
   constructor(private readonly service: AbsenceJustificationsService) {}
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
+  @RequireCapabilities('adm.assemblies.manage')
   @Post('assemblies/:assemblyId/justifications')
   create(
     @Param('assemblyId', ParseIntPipe) assemblyId: number,
@@ -91,8 +97,8 @@ export class AbsenceJustificationsController {
       this.context(req),
     );
   }
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
+  @RequireCapabilities('adm.justifications.read')
   @Get('absence-justifications')
   findAll(@Query() q: QueryJustificationsDto) {
     return this.service.findAll(q);
@@ -105,7 +111,13 @@ export class AbsenceJustificationsController {
     @Req() req: AuthRequest,
   ): Promise<StreamableFile> {
     return this.service
-      .getEvidenceFile(id, { id: req.user.id, role: req.user.role })
+      .getEvidenceFile(id, {
+        id: req.user.id,
+        canReadJustifications: hasPersistedCapability(
+          req.user.permissionCodes,
+          'adm.justifications.read',
+        ),
+      })
       .then(
         ({ stream, mimeType, fileName }) =>
           new StreamableFile(stream, {
@@ -125,8 +137,8 @@ export class AbsenceJustificationsController {
     return this.service.findForAffiliate(affiliateId, q, req.user.id);
   }
 
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
+  @RequireCapabilities('adm.justifications.read')
   @Get('absence-justifications/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
@@ -137,12 +149,18 @@ export class AbsenceJustificationsController {
   getEvidence(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.getEvidence(id, {
       id: req.user.id,
-      role: req.user.role,
+      canReadJustifications: hasPersistedCapability(
+        req.user.permissionCodes,
+        'adm.justifications.read',
+      ),
     });
   }
 
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
+  @RequireCapabilityByBodyValue('status', {
+    APPROVED: 'adm.justifications.approve',
+    REJECTED: 'adm.justifications.reject',
+  })
   @Patch('absence-justifications/:id/decision')
   decide(
     @Param('id', ParseIntPipe) id: number,
@@ -158,8 +176,8 @@ export class AbsenceJustificationsController {
     );
   }
 
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
+  @RequireCapabilities('adm.justifications.approve')
   @Patch('absence-justifications/:id/approve')
   approve(
     @Param('id', ParseIntPipe) id: number,
@@ -174,8 +192,8 @@ export class AbsenceJustificationsController {
     );
   }
 
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
+  @RequireCapabilities('adm.justifications.reject')
   @Patch('absence-justifications/:id/reject')
   reject(
     @Param('id', ParseIntPipe) id: number,
