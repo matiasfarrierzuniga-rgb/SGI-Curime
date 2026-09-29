@@ -1,5 +1,5 @@
-import type { User } from "../model/users.types";
-export function statusLabel(u: User) {
+import type { AccountAccess } from "../model/users.types";
+export function statusLabel(u: AccountAccess) {
   return u.isTemporarilyLocked
     ? "Bloqueo temporal"
     : u.isAdministrativelyBlocked

@@ -15,7 +15,7 @@ export function InventoryMovementsPage() {
   const isAdmin = user?.role === 'Administrador'
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [items, setItems] = useState<InventoryItem[]>([])
-  const [users, setUsers] = useState<{ id: number; fullName: string }[]>([])
+  const [users, setUsers] = useState<{ id: number; label: string }[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [form, setForm] = useState({ itemId: '', type: '', dateFrom: '', dateTo: '', userId: '' })
@@ -67,7 +67,12 @@ export function InventoryMovementsPage() {
     usersService
       .list({ page: 1, limit: 100 })
       .then((r) => {
-        if (active) setUsers(r.data)
+        if (active) {
+          setUsers(r.data.flatMap((person) => person.access ? [{
+            id: person.access.id,
+            label: person.fullName ?? person.person.contactEmail ?? 'Sin nombre',
+          }] : []))
+        }
       })
       .catch(() => {
         /* optional filter; ignored when unavailable */
@@ -107,7 +112,7 @@ export function InventoryMovementsPage() {
         {isAdmin && (
           <label>Registrado por<select value={form.userId} onChange={(e) => setForm({ ...form, userId: e.target.value })}>
             <option value="">Todos</option>
-            {users.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
+            {users.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
           </select></label>
         )}
         <label>Desde<input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} /></label>

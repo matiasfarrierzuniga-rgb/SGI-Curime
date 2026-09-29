@@ -10,7 +10,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard, Roles, RolesGuard } from '../../../../auth';
+import {
+  CapabilityGuard,
+  JwtAuthGuard,
+  RequireCapabilities,
+  Roles,
+  RolesGuard,
+} from '../../../../auth';
 import type { AuthenticatedUser } from '../../../../auth';
 import { UserStatus } from '../../domain/entities/user';
 import type { UserQuery } from '../../domain/repositories/users-repository';
@@ -27,12 +33,14 @@ import { QueryUsersDto } from '../dto/query-users.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UpdateIsActiveDto } from '../dto/update-is-active.dto';
 import { UpdateSubscriptionExpirationDto } from '../dto/update-subscription-expiration.dto';
-import { toUserResponse } from '../mappers/user-response.mapper';
+import {
+  toAdminUserResponse,
+  toUserResponse,
+} from '../mappers/user-response.mapper';
 import { toHttpError } from '../mappers/users-error.mapper';
 
 @Controller('users')
-@Roles('Administrador')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
 export class UsersController {
   constructor(
     private readonly listUsers: ListUsersUseCase,
@@ -46,11 +54,15 @@ export class UsersController {
   ) {}
 
   @Get()
-  findAll(@Query() query: QueryUsersDto) {
+  @RequireCapabilities('usr.users.read')
+  findAll(
+    @Query() query: QueryUsersDto,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
     return this.run(async () => {
       const page = await this.listUsers.execute(this.toQuery(query));
       return {
-        data: page.data.map(toUserResponse),
+        data: page.data.map((user) => this.toAdminResponse(user, req.user)),
         total: page.total,
         page: page.page,
         limit: page.limit,
@@ -74,14 +86,19 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  @RequireCapabilities('usr.users.read')
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
     return this.run(async () => {
-      const user = await this.getUser.execute(id);
-      return toUserResponse(user);
+      const person = await this.getUser.executeAdminPerson(id);
+      return this.toAdminResponse(person, req.user);
     });
   }
 
   @Patch(':id/is-active')
+  @Roles('Administrador')
   updateIsActive(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateIsActiveDto,
@@ -96,6 +113,7 @@ export class UsersController {
   }
 
   @Patch(':id/subscription-expiration')
+  @Roles('Administrador')
   updateSubscriptionExpirationDate(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateSubscriptionExpirationDto,
@@ -113,6 +131,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @Roles('Administrador')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
@@ -130,6 +149,7 @@ export class UsersController {
   }
 
   @Patch(':id/role')
+  @Roles('Administrador')
   changeRole(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ChangeRoleDto,
@@ -147,6 +167,7 @@ export class UsersController {
   }
 
   @Patch(':id/activate')
+  @Roles('Administrador')
   activate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: Request & { user: AuthenticatedUser },
@@ -162,6 +183,7 @@ export class UsersController {
   }
 
   @Patch(':id/deactivate')
+  @Roles('Administrador')
   deactivate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: Request & { user: AuthenticatedUser },
@@ -177,6 +199,7 @@ export class UsersController {
   }
 
   @Patch(':id/unlock')
+  @Roles('Administrador')
   unlock(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: Request & { user: AuthenticatedUser },
@@ -201,6 +224,18 @@ export class UsersController {
       blocked: query.blocked,
       page: query.page,
       limit: query.limit,
+    };
+  }
+
+  private toAdminResponse(
+    person: Parameters<typeof toAdminUserResponse>[0],
+    actor: AuthenticatedUser,
+  ) {
+    return {
+      ...toAdminUserResponse(person),
+      actions: {
+        read: actor.permissionCodes?.includes('usr.users.read') === true,
+      },
     };
   }
 

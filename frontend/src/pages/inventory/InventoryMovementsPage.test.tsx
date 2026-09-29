@@ -31,7 +31,7 @@ describe('InventoryMovementsPage', () => {
     vi.clearAllMocks()
     vi.mocked(inventoryMovementsService.list).mockResolvedValue({ data: [movement], total: 1, page: 1, limit: 20 })
     vi.mocked(inventoryItemsService.list).mockResolvedValue({ data: [{ id: 1, name: 'Martillo', code: 'HER-001' }] as never, total: 1, page: 1, limit: 100 })
-    vi.mocked(usersService.list).mockResolvedValue({ data: [{ id: 1, fullName: 'Ana Pérez' } as never], total: 1, page: 1, limit: 100 })
+    vi.mocked(usersService.list).mockResolvedValue({ data: [{ id: 1, fullName: 'Ana Pérez', person: { id: 1, contactEmail: 'ana@test.com' }, access: { id: 10 } } as never], total: 1, page: 1, limit: 100 })
   })
 
   it('lists movements with readable Spanish labels', async () => {
@@ -51,6 +51,18 @@ describe('InventoryMovementsPage', () => {
     await waitFor(() =>
       expect(inventoryMovementsService.list).toHaveBeenLastCalledWith(
         expect.objectContaining({ type: 'EXIT' }),
+      ),
+    )
+  })
+
+  it('filters movements with account ID from person-root users', async () => {
+    page()
+    await screen.findByRole('option', { name: 'Ana Pérez' })
+    fireEvent.change(screen.getByLabelText('Registrado por'), { target: { value: '10' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }))
+    await waitFor(() =>
+      expect(inventoryMovementsService.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({ userId: 10 }),
       ),
     )
   })

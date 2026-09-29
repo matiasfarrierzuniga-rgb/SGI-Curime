@@ -1,11 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
-import { ROLE_ADMIN, ROLE_INVENTORY_MANAGER } from '../../../shared/security/roles'
 import { RoleRoute } from './RoleRoute'
 
 const auth = vi.hoisted(() => ({
-  user: { role: 'Administrador', canAccessErp: true } as { role: string; canAccessErp: boolean } | null,
+  user: { permissionCodes: [] as string[], canAccessErp: true } as { permissionCodes: string[]; canAccessErp: boolean } | null,
   isAuthenticated: true,
 }))
 
@@ -31,18 +30,18 @@ function renderRoute(props: React.ComponentProps<typeof RoleRoute>) {
 }
 
 describe('RoleRoute', () => {
-  it('redirects unauthenticated legacy roles to /403', () => {
+  it('redirects unauthenticated capability routes to /403', () => {
     auth.user = null
     auth.isAuthenticated = false
 
-    renderRoute({ role: ROLE_ADMIN })
+    renderRoute({ capability: 'usr.users.read' })
 
     expect(screen.queryByText('Permitido')).not.toBeInTheDocument()
     expect(screen.getByText('/403')).toBeInTheDocument()
   })
 
   it('renders capability route for administrator usr.users.read', () => {
-    auth.user = { role: ROLE_ADMIN, canAccessErp: true }
+    auth.user = { permissionCodes: ['usr.users.read'], canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'usr.users.read' })
@@ -51,7 +50,7 @@ describe('RoleRoute', () => {
   })
 
   it('renders reservation administration route for administrator capability', () => {
-    auth.user = { role: ROLE_ADMIN, canAccessErp: true }
+    auth.user = { permissionCodes: ['res.reservations.read'], canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'res.reservations.read' })
@@ -60,7 +59,7 @@ describe('RoleRoute', () => {
   })
 
   it('denies reservation administration route without reservation capability', () => {
-    auth.user = { role: ROLE_INVENTORY_MANAGER, canAccessErp: true }
+    auth.user = { permissionCodes: [], canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'res.reservations.read' })
@@ -69,7 +68,7 @@ describe('RoleRoute', () => {
   })
 
   it('redirects inventory manager from usr.users.read', () => {
-    auth.user = { role: ROLE_INVENTORY_MANAGER, canAccessErp: true }
+    auth.user = { permissionCodes: [], canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'usr.users.read' })
@@ -77,17 +76,17 @@ describe('RoleRoute', () => {
     expect(screen.getByText('/403')).toBeInTheDocument()
   })
 
-  it('redirects unknown role from privileged route', () => {
-    auth.user = { role: 'Rol desconocido', canAccessErp: true }
+  it('redirects user without required capability from privileged route', () => {
+    auth.user = { permissionCodes: [], canAccessErp: true }
     auth.isAuthenticated = true
 
-    renderRoute({ role: ROLE_ADMIN })
+    renderRoute({ capability: 'usr.users.read' })
 
     expect(screen.getByText('/403')).toBeInTheDocument()
   })
 
   it('redirects unknown capability', () => {
-    auth.user = { role: ROLE_ADMIN, canAccessErp: true }
+    auth.user = { permissionCodes: ['usr.users.read'], canAccessErp: true }
     auth.isAuthenticated = true
 
     renderRoute({ capability: 'unknown.capability' })
@@ -95,20 +94,20 @@ describe('RoleRoute', () => {
     expect(screen.getByText('/403')).toBeInTheDocument()
   })
 
-  it('prioritizes denied capability over allowed legacy role', () => {
-    auth.user = { role: ROLE_ADMIN, canAccessErp: true }
+  it('denies capability absent from permission codes', () => {
+    auth.user = { permissionCodes: ['usr.users.read'], canAccessErp: true }
     auth.isAuthenticated = true
 
-    renderRoute({ role: ROLE_ADMIN, capability: 'unknown.capability' })
+    renderRoute({ capability: 'unknown.capability' })
 
     expect(screen.getByText('/403')).toBeInTheDocument()
   })
 
-  it('allows legacy role arrays', () => {
-    auth.user = { role: ROLE_INVENTORY_MANAGER, canAccessErp: true }
+  it('allows routes without a capability requirement', () => {
+    auth.user = { permissionCodes: [], canAccessErp: true }
     auth.isAuthenticated = true
 
-    renderRoute({ role: [ROLE_ADMIN, ROLE_INVENTORY_MANAGER] })
+    renderRoute({})
 
     expect(screen.getByText('Permitido')).toBeInTheDocument()
   })

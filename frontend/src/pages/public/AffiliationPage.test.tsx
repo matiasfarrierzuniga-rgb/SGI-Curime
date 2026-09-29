@@ -14,7 +14,7 @@ function fillForm() {
   fireEvent.change(screen.getByLabelText('Número de identificación'), { target: { value: '123456789' } })
   fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } })
   fireEvent.change(screen.getByLabelText('Primer apellido'), { target: { value: 'Pérez' } })
-  fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: '1990-01-01' } })
+  fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: '01/01/1990' } })
   fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Curime Centro' } })
   fireEvent.change(screen.getByLabelText('¿Por qué desea afiliarse?'), { target: { value: ' Participar en la comunidad ' } })
 }
@@ -30,11 +30,11 @@ describe('AffiliationPage public flow', () => {
 
   it('sends visitor identity and optional contact values in the supported payload', async () => {
     renderPage(); fillForm()
-    fireEvent.change(screen.getByRole('combobox', { name: 'País' }), { target: { value: 'CR' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Número de teléfono del país' }), { target: { value: 'CR' } })
     fireEvent.change(screen.getByLabelText('Teléfono (opcional)'), { target: { value: '88888888' } })
     fireEvent.change(screen.getByLabelText('Correo electrónico (opcional)'), { target: { value: ' ANA@EXAMPLE.COM ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
-    await waitFor(() => expect(affiliateRequestsService.create).toHaveBeenCalledWith(expect.objectContaining({ identificationType: 'NATIONAL', identification: '123456789', firstName: 'Ana', firstSurname: 'Pérez', birthDate: '1990-01-01', address: 'Curime Centro', affiliationReason: 'Participar en la comunidad', phoneCountryCode: '+506', phoneNationalNumber: '88888888', email: 'ana@example.com' })))
+    await waitFor(() => expect(affiliateRequestsService.create).toHaveBeenCalledWith(expect.objectContaining({ identificationType: 'NATIONAL', identification: '123456789', firstName: 'Ana', firstSurname: 'Pérez', birthDate: expect.stringMatching(/^1990-01-01T\d{2}:\d{2}:\d{2}\.\d{3}Z$/), address: 'Curime Centro', affiliationReason: 'Participar en la comunidad', phoneCountryCode: '+506', phoneNationalNumber: '88888888', email: 'ana@example.com' })))
     const payload = vi.mocked(affiliateRequestsService.create).mock.calls[0][0]
     expect(payload).not.toHaveProperty('userId'); expect(payload).not.toHaveProperty('personId')
     expect(await screen.findByRole('heading', { name: 'Recibimos su solicitud' })).toBeVisible()

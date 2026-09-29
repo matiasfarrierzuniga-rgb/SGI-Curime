@@ -2,7 +2,7 @@ process.env.MAX_LOGIN_ATTEMPTS = '3';
 process.env.ACCOUNT_LOCKOUT_MINUTES = '15';
 
 import { UserStatus } from '../../domain/entities/user';
-import { toUserResponse } from './user-response.mapper';
+import { toAdminUserResponse, toUserResponse } from './user-response.mapper';
 
 const domainUser = {
   id: 2,
@@ -15,9 +15,14 @@ const domainUser = {
   phone: null,
   address: null,
   status: UserStatus.ACTIVE,
+  subscriptionExpirationDate: null,
   lockedAt: null,
   roleId: 2,
   role: { id: 2, name: 'Tesorero', description: null, isActive: true },
+  personId: null,
+  affiliateId: null,
+  person: null,
+  affiliate: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -49,5 +54,60 @@ describe('user-response.mapper', () => {
 
     expect(response.isBlocked).toBe(true);
     expect(response.isTemporarilyLocked).toBe(true);
+  });
+
+  it('separates canonical Person contact from linked User access email', () => {
+    const response = toAdminUserResponse({
+      id: '12',
+      fullName: 'Persona Usuaria',
+      identification: '222222222',
+      identificationType: 'NATIONAL',
+      contactEmail: 'person@example.com',
+      phoneCountryCode: null,
+      phoneNationalNumber: null,
+      address: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      access: { ...domainUser, email: 'access@example.com' },
+      affiliate: { id: '22', status: 'ACTIVE', legacyRoleId: 4 },
+    });
+
+    expect(response).toMatchObject({
+      person: { id: '12', contactEmail: 'person@example.com' },
+      access: {
+        id: 2,
+        email: 'access@example.com',
+        status: 'ACTIVE',
+        role: { id: 2, name: 'Tesorero' },
+      },
+      affiliate: { id: '22', status: 'ACTIVE', legacyRoleId: 4 },
+    });
+    expect(response).not.toHaveProperty('email');
+  });
+
+  it('returns person-only rows without account affordances or sensitive fields', () => {
+    const response = toAdminUserResponse({
+      id: '12',
+      fullName: 'Solo Persona',
+      identification: '222222222',
+      identificationType: 'NATIONAL',
+      contactEmail: 'person@example.com',
+      phoneCountryCode: null,
+      phoneNationalNumber: null,
+      address: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      access: null,
+      affiliate: null,
+    });
+
+    expect(response.person).toEqual({
+      id: '12',
+      contactEmail: 'person@example.com',
+    });
+    expect(response.access).toBeNull();
+    expect(response.affiliate).toBeNull();
+    expect(response).not.toHaveProperty('passwordHash');
+    expect(response).not.toHaveProperty('failedLoginAttempts');
   });
 });

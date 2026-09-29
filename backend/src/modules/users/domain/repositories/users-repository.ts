@@ -1,4 +1,9 @@
-import { User, UserRole, UserStatus } from '../entities/user';
+import {
+  AdminPersonReadModel,
+  User,
+  UserRole,
+  UserStatus,
+} from '../entities/user';
 import { RegistrationConflictError } from '../errors/registration-conflict.error';
 import type {
   RuntimePersonIdentityInput,
@@ -19,7 +24,7 @@ export interface UserQuery {
 }
 
 export interface UserPage {
-  data: User[];
+  data: AdminPersonReadModel[];
   total: number;
   page: number;
   limit: number;
@@ -85,6 +90,7 @@ export interface UsersRepository {
   ): Promise<T>;
   findPage(query: UserQuery): Promise<UserPage>;
   findById(id: number): Promise<User | null>;
+  findAdminPersonById(id: number): Promise<AdminPersonReadModel | null>;
   findAffiliationContext(id: number): Promise<UserAffiliationContext>;
   findByEmail(
     email: string,

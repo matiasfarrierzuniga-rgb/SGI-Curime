@@ -20,6 +20,12 @@ export class GetUserUseCase {
     return user;
   }
 
+  async executeAdminPerson(id: number) {
+    const person = await this.repository.findAdminPersonById(id);
+    if (!person) throw new UserNotFoundError();
+    return person;
+  }
+
   async executeWithAffiliation(id: number) {
     const user = await this.execute(id);
     const affiliation = await this.repository.findAffiliationContext(id);
