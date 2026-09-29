@@ -31,30 +31,46 @@ describe('AffiliateRequestsService phase 1', () => {
   };
   const account = {
     id: 7,
-    fullName: pending.fullName,
+    fullName: 'Legacy Name',
+    identification: 'legacy-id',
+    identificationType: null,
+    email: pending.email,
+    phoneCountryCode: null,
+    phoneNationalNumber: null,
+    address: 'Legacy address',
+    personId: 5,
+    person: {
+      id: 5,
+      firstName: 'Ana',
+      firstSurname: 'Pérez',
+      secondSurname: null,
+      identification: pending.identification,
+      identificationType: pending.identificationType,
+      phoneCountryCode: pending.phoneCountryCode,
+      phoneNationalNumber: pending.phoneNationalNumber,
+      address: pending.address,
+    },
+  };
+  const linkedPerson = {
+    id: 5,
+    firstName: 'Ana',
+    firstSurname: 'Pérez',
+    secondSurname: null,
     identification: pending.identification,
     identificationType: pending.identificationType,
+    birthDate: pending.birthDate,
     email: pending.email,
     phoneCountryCode: pending.phoneCountryCode,
     phoneNationalNumber: pending.phoneNationalNumber,
     address: pending.address,
-    personId: 5,
-    person: { id: 5 },
-  };
-  const linkedPerson = {
-    id: 5,
     user: {
       id: 7,
       personId: 5,
-      fullName: pending.fullName,
-      identification: pending.identification,
-      identificationType: pending.identificationType,
-      email: pending.email,
     },
   };
   const tx = {
     user: { findUnique: jest.fn(), update: jest.fn() },
-    person: { findUnique: jest.fn() },
+    person: { findUnique: jest.fn(), update: jest.fn() },
     role: { findUnique: jest.fn() },
     affiliate: { findFirst: jest.fn(), create: jest.fn() },
     affiliateRequest: {
@@ -95,6 +111,11 @@ describe('AffiliateRequestsService phase 1', () => {
     tx.affiliateRequest.findUnique.mockResolvedValue(pending);
     tx.affiliateRequest.updateMany.mockResolvedValue({ count: 1 });
     tx.affiliateRequest.create.mockResolvedValue(pending);
+    tx.person.update.mockResolvedValue({
+      id: 5,
+      birthDate: dto.birthDate,
+      address: dto.address,
+    });
     tx.affiliate.create.mockResolvedValue({
       id: 20,
       roleId: 4,
@@ -118,13 +139,81 @@ describe('AffiliateRequestsService phase 1', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           personId: 5,
-          fullName: account.fullName,
-          identification: account.identification,
+          fullName: pending.fullName,
+          identification: pending.identification,
           email: account.email,
           address: dto.address,
         }),
       }),
     );
+    expect(tx.user.update.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        where: { id: 7 },
+        data: expect.objectContaining({
+          fullName: pending.fullName,
+          identification: pending.identification,
+          address: dto.address,
+        }),
+      }),
+    );
+    expect(tx.user.update.mock.calls[0][0].data).not.toHaveProperty('email');
+  });
+
+  it('creates an affiliation request when Person email is null and User email is valid', async () => {
+    tx.user.findUnique.mockResolvedValue({
+      ...account,
+      person: { ...account.person, email: null },
+    });
+
+    await service.create(dto, 7);
+
+    expect(tx.affiliateRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ email: account.email }),
+      }),
+    );
+  });
+
+  it('does not change User email when Person contact email differs', async () => {
+    tx.user.findUnique.mockResolvedValue({
+      ...account,
+      email: 'login@example.com',
+      person: { ...account.person, email: 'contact@example.com' },
+    });
+
+    await service.create(dto, 7);
+
+    expect(tx.user.update.mock.calls[0][0].data).not.toHaveProperty('email');
+    expect(tx.affiliateRequest.create.mock.calls[0][0].data.email).toBe(
+      'login@example.com',
+    );
+  });
+
+  it('does not copy Person email to Affiliate during approval', async () => {
+    tx.person.findUnique.mockResolvedValue({
+      ...linkedPerson,
+      email: 'person-contact@example.com',
+    });
+
+    await service.approve(10, 4, 1);
+
+    expect(tx.affiliate.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ email: null }),
+      }),
+    );
+  });
+
+  it('creates Affiliate with a valid null brownfield email', async () => {
+    tx.person.findUnique.mockResolvedValue({
+      ...linkedPerson,
+      email: null,
+    });
+
+    await expect(service.approve(10, 4, 1)).resolves.toMatchObject({
+      affiliate: { id: 20 },
+    });
+    expect(tx.affiliate.create.mock.calls[0][0].data.email).toBeNull();
   });
 
   it('rejects an authenticated account without Person', async () => {
@@ -164,7 +253,7 @@ describe('AffiliateRequestsService phase 1', () => {
     const result = await service.approve(10, 4, 1);
     expect(tx.affiliate.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ personId: 5, roleId: 4 }),
+        data: expect.objectContaining({ personId: 5, legacyRoleId: 4 }),
       }),
     );
     expect(tx.user.update).toHaveBeenCalledWith({
@@ -186,10 +275,10 @@ describe('AffiliateRequestsService phase 1', () => {
     expect(audit.log).not.toHaveBeenCalled();
   });
 
-  it('rejects inconsistent request and account identity', async () => {
+  it('rejects inconsistent request and Person identity', async () => {
     tx.person.findUnique.mockResolvedValue({
       ...linkedPerson,
-      user: { ...linkedPerson.user, email: 'other@example.com' },
+      firstName: 'Otra',
     });
     await expect(service.approve(10, 4, 1)).rejects.toBeInstanceOf(
       ConflictException,

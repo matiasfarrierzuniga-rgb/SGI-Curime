@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Optional,
@@ -13,6 +14,7 @@ import { ApproveUserRequestDto } from './dto/review-user-request.dto';
 import { QueryUserRequestDto } from './dto/query-user-request.dto';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
+import { RuntimePersonResolverService } from '../identity/runtime-person-resolver.service';
 
 const requestSelect = {
   id: true,
@@ -39,6 +41,7 @@ export class UserRequestsService {
     private readonly prisma: PrismaService,
     private readonly tokenService: ActivationTokenService,
     private readonly tokenDelivery: ActivationTokenDeliveryService,
+    private readonly personResolver: RuntimePersonResolverService,
     @Optional() private readonly audit?: AuditService,
   ) {}
 
@@ -46,9 +49,52 @@ export class UserRequestsService {
     await this.assertNoUserDuplicates(dto.email, dto.identification);
     await this.assertNoPendingDuplicates(dto.email, dto.identification);
 
-    const created = await this.prisma.userRequest.create({
-      data: { ...dto, status: 'PENDING' },
-      select: requestSelect,
+    const { firstName, firstSurname, secondSurname, ...requestData } = dto;
+    const hasStructuredName = Boolean(
+      firstName || firstSurname || secondSurname,
+    );
+    const created = await this.prisma.$transaction(async (tx) => {
+      let personId: number | undefined;
+      let canonicalFullName = requestData.fullName;
+      if (hasStructuredName) {
+        const resolution = await this.personResolver.resolveWithinTransaction(
+          {
+            identificationType: dto.identificationType,
+            identification: dto.identification,
+            firstName,
+            firstSurname,
+            secondSurname,
+            phoneCountryCode: dto.phoneCountryCode,
+            phoneNationalNumber: dto.phoneNationalNumber,
+            address: dto.address,
+          },
+          tx,
+        );
+        if (
+          resolution.status !== 'PERSON_CREATED' &&
+          resolution.status !== 'PERSON_REUSED'
+        ) {
+          throw new BadRequestException(
+            `Unable to resolve person identity: ${resolution.status}`,
+          );
+        }
+        if (resolution.profileEnrichmentRequired) {
+          throw new ConflictException('Person identity requires manual review');
+        }
+        personId = resolution.person.id;
+        canonicalFullName = [firstName, firstSurname, secondSurname]
+          .filter((part): part is string => Boolean(part))
+          .join(' ');
+      }
+      return tx.userRequest.create({
+        data: {
+          ...requestData,
+          fullName: canonicalFullName,
+          personId,
+          status: 'PENDING',
+        },
+        select: requestSelect,
+      });
     });
     await this.audit?.log({
       action: AuditAction.USER_REQUEST_CREATED,
@@ -152,15 +198,70 @@ export class UserRequestsService {
       if (claimed.count !== 1) {
         throw new ConflictException('User request has already been resolved');
       }
+      if (userRequest.personId === null) {
+        throw new ConflictException(
+          'User request has no safely resolved person identity',
+        );
+      }
+      const person = await tx.person.findUnique({
+        where: { id: userRequest.personId },
+      });
+      if (!person) {
+        throw new ConflictException('User request person identity is missing');
+      }
+      if (
+        !person.firstName ||
+        !person.firstSurname ||
+        !person.identification ||
+        !person.identificationType
+      ) {
+        throw new ConflictException('User request person identity is invalid');
+      }
+      const resolution = await this.personResolver.resolveWithinTransaction(
+        {
+          identificationType: userRequest.identificationType,
+          identification: userRequest.identification,
+          firstName: person.firstName,
+          firstSurname: person.firstSurname,
+          secondSurname: person.secondSurname,
+          phoneCountryCode: person.phoneCountryCode,
+          phoneNationalNumber: person.phoneNationalNumber,
+          address: person.address,
+        },
+        tx,
+      );
+      if (
+        (resolution.status !== 'PERSON_CREATED' &&
+          resolution.status !== 'PERSON_REUSED') ||
+        resolution.person.id !== userRequest.personId ||
+        resolution.profileEnrichmentRequired
+      ) {
+        throw new ConflictException('User request person identity is invalid');
+      }
+      const existingUser = await tx.user.findUnique({
+        where: { personId: resolution.person.id },
+        select: { id: true },
+      });
+      if (existingUser) {
+        throw new ConflictException('Person identity already has a user');
+      }
+      const fullName = [
+        person.firstName,
+        person.firstSurname,
+        person.secondSurname,
+      ]
+        .filter((part): part is string => Boolean(part))
+        .join(' ');
       const user = await tx.user.create({
         data: {
-          fullName: userRequest.fullName,
-          identification: userRequest.identification,
-          identificationType: userRequest.identificationType,
+          personId: resolution.person.id,
+          fullName,
+          identification: person.identification,
+          identificationType: person.identificationType,
           email: userRequest.email,
-          phoneCountryCode: userRequest.phoneCountryCode,
-          phoneNationalNumber: userRequest.phoneNationalNumber,
-          address: userRequest.address,
+          phoneCountryCode: person.phoneCountryCode,
+          phoneNationalNumber: person.phoneNationalNumber,
+          address: person.address,
           passwordHash: null,
           status: 'INACTIVE',
           roleId: role.id,

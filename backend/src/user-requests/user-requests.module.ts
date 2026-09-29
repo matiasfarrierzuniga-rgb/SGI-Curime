@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth';
 import { PublicRequestRateLimitModule } from '../common/rate-limit/public-request-rate-limit.module';
 import { NotificationsModule } from '../modules/notifications/notifications.module';
+import { IdentityModule } from '../identity/identity.module';
 import { ActivationTokenDeliveryService } from './activation-token-delivery.service';
 import { ActivationTokenService } from './activation-token.service';
 import { UserRequestsController } from './user-requests.controller';
@@ -10,6 +11,7 @@ import { UserRequestsService } from './user-requests.service';
 @Module({
   imports: [
     AuthModule,
+    IdentityModule,
     PublicRequestRateLimitModule,
     NotificationsModule.forRoot({
       baseUrl: publicAppUrl(),

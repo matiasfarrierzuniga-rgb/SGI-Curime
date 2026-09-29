@@ -19,6 +19,30 @@ import { trim, trimLowercase } from '../../common/validation/normalizers';
 
 export class CreateUserRequestDto {
   @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  @Matches(FULL_NAME_PATTERN)
+  firstName?: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  @Matches(FULL_NAME_PATTERN)
+  firstSurname?: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  @Matches(FULL_NAME_PATTERN)
+  secondSurname?: string;
+
+  @Transform(trim)
   @IsString()
   @IsNotEmpty()
   @MinLength(2)

@@ -68,7 +68,19 @@ export class AffiliateRequestsService {
           phoneNationalNumber: true,
           address: true,
           personId: true,
-          person: { select: { id: true } },
+          person: {
+            select: {
+              id: true,
+              firstName: true,
+              firstSurname: true,
+              secondSurname: true,
+              identification: true,
+              identificationType: true,
+              phoneCountryCode: true,
+              phoneNationalNumber: true,
+              address: true,
+            },
+          },
         },
       });
       if (!account?.personId || !account.person) {
@@ -78,19 +90,54 @@ export class AffiliateRequestsService {
       }
 
       const personId = account.personId;
-      await this.assertNoAffiliateByPerson(tx, personId, account.email);
-      await this.assertNoPendingRequest(tx, personId, account.email);
+      const person = account.person;
+      if (
+        !person.firstName ||
+        !person.firstSurname ||
+        !person.identification ||
+        !person.identificationType
+      ) {
+        throw new ConflictException(
+          'The linked person identity is incomplete.',
+        );
+      }
+      const fullName = personFullName(person);
+      await this.assertNoAffiliateByPerson(tx, personId);
+      await this.assertNoPendingRequest(tx, personId);
+      const authoritativePerson = await tx.person.update({
+        where: { id: personId },
+        data: {
+          birthDate: dto.birthDate,
+          address: dto.address,
+        },
+        select: {
+          id: true,
+          birthDate: true,
+          address: true,
+        },
+      });
+      await tx.user.update({
+        where: { id: account.id },
+        data: {
+          fullName,
+          identification: person.identification,
+          identificationType: person.identificationType,
+          phoneCountryCode: person.phoneCountryCode,
+          phoneNationalNumber: person.phoneNationalNumber,
+          address: authoritativePerson.address,
+        },
+      });
       return tx.affiliateRequest.create({
         data: {
-          fullName: account.fullName,
-          identification: account.identification,
-          identificationType: account.identificationType,
-          birthDate: dto.birthDate,
+          fullName,
+          identification: person.identification,
+          identificationType: person.identificationType,
+          birthDate: authoritativePerson.birthDate!,
           gender: dto.gender,
-          phoneCountryCode: account.phoneCountryCode,
-          phoneNationalNumber: account.phoneNationalNumber,
+          phoneCountryCode: person.phoneCountryCode,
+          phoneNationalNumber: person.phoneNationalNumber,
           email: account.email,
-          address: dto.address || account.address || '',
+          address: authoritativePerson.address || '',
           occupation: dto.occupation,
           workplace: dto.workplace,
           affiliationReason: dto.affiliationReason,
@@ -178,14 +225,19 @@ export class AffiliateRequestsService {
               where: { id: request.personId },
               select: {
                 id: true,
+                firstName: true,
+                firstSurname: true,
+                secondSurname: true,
+                identification: true,
+                identificationType: true,
+                birthDate: true,
+                phoneCountryCode: true,
+                phoneNationalNumber: true,
+                address: true,
                 user: {
                   select: {
                     id: true,
                     personId: true,
-                    fullName: true,
-                    identification: true,
-                    identificationType: true,
-                    email: true,
                   },
                 },
               },
@@ -203,10 +255,15 @@ export class AffiliateRequestsService {
               'The affiliation request is not linked to a user account.',
             );
           if (
-            user.fullName !== request.fullName ||
-            user.identification !== request.identification ||
-            user.identificationType !== request.identificationType ||
-            user.email.toLowerCase() !== request.email?.toLowerCase()
+            !person.firstName ||
+            !person.firstSurname ||
+            !person.identification ||
+            !person.identificationType ||
+            !person.birthDate ||
+            personFullName(person) !== request.fullName ||
+            person.identification !== request.identification ||
+            person.identificationType !== request.identificationType ||
+            person.birthDate.getTime() !== request.birthDate.getTime()
           ) {
             throw new ConflictException(
               'Affiliation identity is inconsistent.',
@@ -215,21 +272,20 @@ export class AffiliateRequestsService {
           await this.assertNoAffiliateForApproval(
             tx,
             request.personId,
-            request.identification,
-            request.email,
+            person.identification,
           );
           const affiliate = await tx.affiliate.create({
             data: {
               personId: request.personId,
-              fullName: request.fullName,
-              identification: request.identification,
-              identificationType: request.identificationType,
-              birthDate: request.birthDate,
+              fullName: personFullName(person),
+              identification: person.identification,
+              identificationType: person.identificationType,
+              birthDate: person.birthDate,
               gender: request.gender,
-              phoneCountryCode: request.phoneCountryCode,
-              phoneNationalNumber: request.phoneNationalNumber,
-              email: request.email,
-              address: request.address,
+              phoneCountryCode: person.phoneCountryCode,
+              phoneNationalNumber: person.phoneNationalNumber,
+              email: null,
+              address: person.address || request.address,
               occupation: request.occupation,
               workplace: request.workplace,
               legacyRoleId: roleId,
@@ -357,17 +413,11 @@ export class AffiliateRequestsService {
   private async assertNoPendingRequest(
     tx: Prisma.TransactionClient,
     personId: number,
-    email?: string,
   ) {
     const duplicate = await tx.affiliateRequest.findFirst({
       where: {
         status: 'PENDING',
-        OR: [
-          { personId },
-          ...(email
-            ? [{ email: { equals: email, mode: 'insensitive' as const } }]
-            : []),
-        ],
+        personId,
       },
       select: { id: true },
     });
@@ -377,16 +427,10 @@ export class AffiliateRequestsService {
   private async assertNoAffiliateByPerson(
     tx: Prisma.TransactionClient,
     personId: number,
-    email?: string | null,
   ) {
     const duplicate = await tx.affiliate.findFirst({
       where: {
-        OR: [
-          { personId },
-          ...(email
-            ? [{ email: { equals: email, mode: 'insensitive' as const } }]
-            : []),
-        ],
+        personId,
       },
       select: { id: true },
     });
@@ -397,16 +441,12 @@ export class AffiliateRequestsService {
     tx: Prisma.TransactionClient,
     personId: number,
     identification: string,
-    email?: string | null,
   ) {
     const duplicate = await tx.affiliate.findFirst({
       where: {
         OR: [
           { personId },
           { identification },
-          ...(email
-            ? [{ email: { equals: email, mode: 'insensitive' as const } }]
-            : []),
         ],
       },
       select: { id: true },
@@ -428,4 +468,14 @@ function isAffiliateUniqueConflict(error: unknown): boolean {
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === 'P2002'
   );
+}
+
+function personFullName(person: {
+  firstName: string | null;
+  firstSurname: string | null;
+  secondSurname: string | null;
+}): string {
+  return [person.firstName, person.firstSurname, person.secondSurname]
+    .filter((part): part is string => Boolean(part))
+    .join(' ');
 }

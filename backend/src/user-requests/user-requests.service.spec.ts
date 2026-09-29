@@ -6,6 +6,7 @@ import { UserRequestsService } from './user-requests.service';
 describe('UserRequestsService', () => {
   const pending = {
     id: 10,
+    personId: 12,
     fullName: 'Persona Solicitante',
     identificationType: 'NATIONAL' as const,
     identification: '123456789',
@@ -23,10 +24,12 @@ describe('UserRequestsService', () => {
   };
   const tx = {
     userRequest: {
+      create: jest.fn(),
       updateMany: jest.fn(),
       findUniqueOrThrow: jest.fn(),
     },
-    user: { create: jest.fn() },
+    user: { create: jest.fn(), findUnique: jest.fn() },
+    person: { findUnique: jest.fn() },
     accountActivationToken: { create: jest.fn() },
   };
   const prisma = {
@@ -54,10 +57,24 @@ describe('UserRequestsService', () => {
   };
   const tokenService = { generate: jest.fn(() => generated) };
   const delivery = { deliver: jest.fn() };
+  const person = {
+    id: 12,
+    firstName: 'Persona',
+    firstSurname: 'Solicitante',
+    secondSurname: null,
+    identification: pending.identification,
+    identificationType: pending.identificationType,
+    normalizedIdentification: pending.identification,
+    phoneCountryCode: null,
+    phoneNationalNumber: null,
+    address: null,
+  };
+  const personResolver = { resolveWithinTransaction: jest.fn() };
   const service = new UserRequestsService(
     prisma as never,
     tokenService,
     delivery as never,
+    personResolver as never,
   );
 
   beforeEach(() => {
@@ -70,6 +87,7 @@ describe('UserRequestsService', () => {
     prisma.userRequest.updateMany.mockResolvedValue({ count: 1 });
     prisma.role.findUnique.mockResolvedValue({ id: 2, isActive: true });
     tx.userRequest.updateMany.mockResolvedValue({ count: 1 });
+    tx.userRequest.create.mockResolvedValue(pending);
     tx.userRequest.findUniqueOrThrow.mockResolvedValue({
       ...pending,
       status: 'APPROVED',
@@ -80,6 +98,13 @@ describe('UserRequestsService', () => {
       email: pending.email,
       status: 'INACTIVE',
       roleId: 2,
+    });
+    tx.user.findUnique.mockResolvedValue(null);
+    tx.person.findUnique.mockResolvedValue(person);
+    personResolver.resolveWithinTransaction.mockResolvedValue({
+      status: 'PERSON_REUSED',
+      person,
+      profileEnrichmentRequired: false,
     });
     tx.accountActivationToken.create.mockResolvedValue({ id: 4 });
     delivery.deliver.mockResolvedValue(undefined);
@@ -93,12 +118,40 @@ describe('UserRequestsService', () => {
       email: pending.email,
       reason: pending.reason,
     });
-    expect(prisma.userRequest.create).toHaveBeenCalledWith(
+    expect(tx.userRequest.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: 'PENDING' }),
       }),
     );
     expect(tx.user.create).not.toHaveBeenCalled();
+  });
+
+  it('resolves and links Person atomically when structured identity is supplied', async () => {
+    await service.create({
+      firstName: person.firstName,
+      firstSurname: person.firstSurname,
+      fullName: pending.fullName,
+      identificationType: pending.identificationType,
+      identification: pending.identification,
+      email: pending.email,
+      reason: pending.reason,
+    });
+
+    expect(personResolver.resolveWithinTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        firstName: person.firstName,
+        firstSurname: person.firstSurname,
+      }),
+      tx,
+    );
+    expect(tx.userRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          fullName: 'Persona Solicitante',
+          personId: person.id,
+        }),
+      }),
+    );
   });
 
   it.each([
@@ -165,11 +218,18 @@ describe('UserRequestsService', () => {
     );
   });
 
-  it('approves atomically and creates an inactive user and hashed token', async () => {
+  it('approves Person-first and creates an inactive user and hashed token', async () => {
+    prisma.userRequest.findUnique.mockResolvedValue({
+      ...pending,
+      fullName: 'Historical display name',
+    });
+
     const result = await service.approve(10, { roleId: 2 }, 1);
     expect(tx.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          personId: person.id,
+          fullName: 'Persona Solicitante',
           passwordHash: null,
           status: 'INACTIVE',
           roleId: 2,
@@ -199,6 +259,20 @@ describe('UserRequestsService', () => {
       }),
     );
     expect(result.userRequest.status).toBe('APPROVED');
+  });
+
+  it('does not approve a request without a safely resolved Person', async () => {
+    prisma.userRequest.findUnique.mockResolvedValue({
+      ...pending,
+      personId: null,
+    });
+
+    await expect(service.approve(10, { roleId: 2 }, 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(tx.user.create).not.toHaveBeenCalled();
+    expect(tx.accountActivationToken.create).not.toHaveBeenCalled();
+    expect(delivery.deliver).not.toHaveBeenCalled();
   });
 
   it('does not create another token when post-commit delivery fails', async () => {

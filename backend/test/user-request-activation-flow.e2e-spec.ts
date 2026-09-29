@@ -13,6 +13,7 @@ describe('User request activation flow (e2e)', () => {
   it('approves, emails through the fake provider, activates once, and keeps only the hash', async () => {
     const requestRecord = {
       id: 10,
+      personId: 12,
       fullName: 'Persona <Curime>',
       identification: '123456789',
       identificationType: 'NATIONAL',
@@ -45,6 +46,17 @@ describe('User request activation flow (e2e)', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    const person = {
+      id: requestRecord.personId,
+      firstName: 'Persona',
+      firstSurname: '<Curime>',
+      secondSurname: null,
+      identification: requestRecord.identification,
+      identificationType: requestRecord.identificationType,
+      phoneCountryCode: null,
+      phoneNationalNumber: null,
+      address: null,
+    };
     const tokenRecord: {
       id: number;
       userId: number;
@@ -69,7 +81,9 @@ describe('User request activation flow (e2e)', () => {
       },
       user: {
         create: jest.fn(async () => user),
+        findUnique: jest.fn(async () => null),
       },
+      person: { findUnique: jest.fn(async () => person) },
       accountActivationToken: {
         create: jest.fn(
           async ({
@@ -103,6 +117,13 @@ describe('User request activation flow (e2e)', () => {
       prisma as never,
       new ActivationTokenService(),
       new ActivationTokenDeliveryService(notifications),
+      {
+        resolveWithinTransaction: jest.fn(async () => ({
+          status: 'PERSON_REUSED',
+          person,
+          profileEnrichmentRequired: false,
+        })),
+      } as never,
     );
 
     await approval.approve(requestRecord.id, { roleId: 2 }, 1);
