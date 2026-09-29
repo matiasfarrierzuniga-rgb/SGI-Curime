@@ -3,6 +3,8 @@ import { useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { homePathForRole } from '@/shared/security/roles'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
+import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
 import { useAuth } from '../model/AuthContext'
 
 export function LoginPage() {
@@ -43,7 +45,7 @@ export function LoginPage() {
       <StatusMessage error={error} />
       <form className="mt-8 grid gap-5" onSubmit={submit}>
         <label className="grid gap-2 text-sm font-bold text-brand-brown" htmlFor="login-email">Correo electrónico
-          <input id="login-email" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus:border-brand-red focus:bg-card-white focus:outline-none" type="email" inputMode="email" autoComplete="username" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} />
+          <Input id="login-email" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus:border-brand-red focus:bg-card-white focus:outline-none" type="email" inputMode="email" autoComplete="username" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} />
         </label>
         <div className="grid gap-2">
           <div className="flex items-center justify-between gap-3">
@@ -51,13 +53,13 @@ export function LoginPage() {
             <Link className="rounded-sm text-sm font-bold text-brand-red underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red" to="/forgot-password">¿Olvidó su contraseña?</Link>
           </div>
           <div className="relative">
-            <input id="login-password" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 pr-12 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus:border-brand-red focus:bg-card-white focus:outline-none" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
-            <button type="button" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)} className="absolute right-1 top-1 inline-flex size-10 items-center justify-center rounded-md border-0 bg-transparent p-0 text-brand-brown transition-colors hover:bg-brand-maize/15 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-red">
+            <Input id="login-password" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 pr-12 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus:border-brand-red focus:bg-card-white focus:outline-none" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
+            <Button type="button" variant="ghost" size="icon" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)} className="absolute right-1 top-1 size-10 rounded-md border-0 bg-transparent p-0 text-brand-brown transition-colors hover:bg-brand-maize/15 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-red">
               {showPassword ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
-            </button>
+            </Button>
           </div>
         </div>
-        <button className="min-h-12 w-full rounded-lg border border-brand-red bg-linear-to-r from-brand-red to-brand-maize px-5 py-3 font-bold text-brand-ivory shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red disabled:cursor-not-allowed disabled:opacity-55" disabled={loading}>{loading ? 'Ingresando…' : 'Iniciar sesión'}</button>
+        <Button className="min-h-12 w-full rounded-lg border border-brand-red bg-linear-to-r from-brand-red to-brand-maize px-5 py-3 font-bold text-brand-ivory shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red disabled:cursor-not-allowed disabled:opacity-55" disabled={loading}>{loading ? 'Ingresando…' : 'Iniciar sesión'}</Button>
       </form>
       <div className="mt-8 border-t border-border-subtle pt-6 text-center">
         <p className="text-sm text-foreground-muted">¿Todavía no tiene una cuenta?</p>

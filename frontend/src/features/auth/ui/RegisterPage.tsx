@@ -14,7 +14,10 @@ import {
   type IdentificationType,
 } from '@/shared/lib/formValidation'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
+import { Button } from '@/shared/ui/button'
 import { PhoneField } from '@/shared/ui/forms/PhoneField'
+import { Input } from '@/shared/ui/input'
+import { Select } from '@/shared/ui/select'
 import { authService } from '../api/auth.api'
 import type { RegisterUser } from '../model/auth.types'
 
@@ -214,23 +217,23 @@ export function RegisterPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-bold" htmlFor="first-name">Nombre
-                <input id="first-name" className={inputClass} required minLength={2} maxLength={150} autoComplete="given-name" aria-invalid={Boolean(errors.firstName)} aria-describedby={errors.firstName ? 'first-name-error' : undefined} {...field('firstName')} />
+                <Input id="first-name" className={inputClass} required minLength={2} maxLength={150} autoComplete="given-name" aria-invalid={Boolean(errors.firstName)} aria-describedby={errors.firstName ? 'first-name-error' : undefined} {...field('firstName')} />
                 {errors.firstName && <span id="first-name-error" className="field-error" role="alert">{errors.firstName}</span>}
               </label>
               <label className="grid gap-2 text-sm font-bold" htmlFor="first-surname">Primer apellido
-                <input id="first-surname" className={inputClass} required minLength={2} maxLength={150} autoComplete="family-name" aria-invalid={Boolean(errors.firstSurname)} aria-describedby={errors.firstSurname ? 'first-surname-error' : undefined} {...field('firstSurname')} />
+                <Input id="first-surname" className={inputClass} required minLength={2} maxLength={150} autoComplete="family-name" aria-invalid={Boolean(errors.firstSurname)} aria-describedby={errors.firstSurname ? 'first-surname-error' : undefined} {...field('firstSurname')} />
                 {errors.firstSurname && <span id="first-surname-error" className="field-error" role="alert">{errors.firstSurname}</span>}
               </label>
             </div>
 
             <label className="grid gap-2 text-sm font-bold" htmlFor="second-surname">Segundo apellido <span className="font-normal text-foreground-muted">(opcional)</span>
-              <input id="second-surname" className={inputClass} minLength={2} maxLength={150} autoComplete="family-name" aria-invalid={Boolean(errors.secondSurname)} aria-describedby={errors.secondSurname ? 'second-surname-error' : undefined} {...field('secondSurname')} />
+              <Input id="second-surname" className={inputClass} minLength={2} maxLength={150} autoComplete="family-name" aria-invalid={Boolean(errors.secondSurname)} aria-describedby={errors.secondSurname ? 'second-surname-error' : undefined} {...field('secondSurname')} />
               {errors.secondSurname && <span id="second-surname-error" className="field-error" role="alert">{errors.secondSurname}</span>}
             </label>
 
             <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
               <label className="grid gap-2 text-sm font-bold" htmlFor="identification-type">Tipo de identificación
-                <select
+                <Select
                   id="identification-type"
                   className={inputClass}
                   value={idType}
@@ -241,10 +244,10 @@ export function RegisterPage() {
                 >
                   <option value="NATIONAL">Cédula nacional</option>
                   <option value="DIMEX">DIMEX</option>
-                </select>
+                </Select>
               </label>
               <label className="grid gap-2 text-sm font-bold" htmlFor="identification">Número de identificación
-                <input id="identification" className={inputClass} type="text" inputMode="numeric" required maxLength={identificationMaxLength(idType)} aria-invalid={Boolean(errors.identification)} aria-describedby={errors.identification ? 'identification-error' : undefined} value={form.identification} onChange={(event) => { setForm((current) => ({ ...current, identification: digitsOnly(event.target.value, identificationMaxLength(idType)) })); if (errors.identification) setErrors((current) => ({ ...current, identification: '' })) }} />
+                <Input id="identification" className={inputClass} type="text" inputMode="numeric" required maxLength={identificationMaxLength(idType)} aria-invalid={Boolean(errors.identification)} aria-describedby={errors.identification ? 'identification-error' : undefined} value={form.identification} onChange={(event) => { setForm((current) => ({ ...current, identification: digitsOnly(event.target.value, identificationMaxLength(idType)) })); if (errors.identification) setErrors((current) => ({ ...current, identification: '' })) }} />
                 {errors.identification && <span id="identification-error" className="field-error" role="alert">{errors.identification}</span>}
               </label>
             </div>
@@ -260,7 +263,7 @@ export function RegisterPage() {
             </div>
 
             <label className="grid gap-2 text-sm font-bold" htmlFor="register-email">Correo electrónico
-              <input id="register-email" className={inputClass} type="email" inputMode="email" autoComplete="email" required maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'register-email-error' : undefined} {...field('email')} />
+              <Input id="register-email" className={inputClass} type="email" inputMode="email" autoComplete="email" required maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'register-email-error' : undefined} {...field('email')} />
               {errors.email && <span id="register-email-error" className="field-error" role="alert">{errors.email}</span>}
             </label>
 
@@ -297,20 +300,20 @@ export function RegisterPage() {
 
             <label className="grid gap-2 text-sm font-bold" htmlFor="register-password">Contraseña
               <div className="relative">
-                <input id="register-password" className={`${inputClass} pr-12`} type={showPassword ? 'text' : 'password'} required minLength={10} maxLength={128} autoComplete="new-password" aria-describedby="password-requirements" aria-invalid={Boolean(errors.password)} {...field('password')} />
-                <button type="button" className="absolute right-1 top-1 grid size-10 place-items-center rounded-md text-foreground-muted hover:bg-brand-soft/25 hover:text-brand-deep" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+                <Input id="register-password" className={`${inputClass} pr-12`} type={showPassword ? 'text' : 'password'} required minLength={10} maxLength={128} autoComplete="new-password" aria-describedby="password-requirements" aria-invalid={Boolean(errors.password)} {...field('password')} />
+                <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1 size-10 rounded-md text-foreground-muted hover:bg-brand-soft/25 hover:text-brand-deep" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
                   {showPassword ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
-                </button>
+                </Button>
               </div>
               {errors.password && <span className="field-error" role="alert">{errors.password}</span>}
             </label>
 
             <label className="grid gap-2 text-sm font-bold" htmlFor="register-password-confirmation">Confirmar contraseña
               <div className="relative">
-                <input id="register-password-confirmation" className={`${inputClass} pr-12`} type={showConfirmation ? 'text' : 'password'} required minLength={10} maxLength={128} autoComplete="new-password" aria-invalid={Boolean(errors.passwordConfirmation)} {...field('passwordConfirmation')} />
-                <button type="button" className="absolute right-1 top-1 grid size-10 place-items-center rounded-md text-foreground-muted hover:bg-brand-soft/25 hover:text-brand-deep" onClick={() => setShowConfirmation((current) => !current)} aria-label={showConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}>
+                <Input id="register-password-confirmation" className={`${inputClass} pr-12`} type={showConfirmation ? 'text' : 'password'} required minLength={10} maxLength={128} autoComplete="new-password" aria-invalid={Boolean(errors.passwordConfirmation)} {...field('passwordConfirmation')} />
+                <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1 size-10 rounded-md text-foreground-muted hover:bg-brand-soft/25 hover:text-brand-deep" onClick={() => setShowConfirmation((current) => !current)} aria-label={showConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}>
                   {showConfirmation ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
-                </button>
+                </Button>
               </div>
               {errors.passwordConfirmation && <span className="field-error" role="alert">{errors.passwordConfirmation}</span>}
             </label>
@@ -319,19 +322,19 @@ export function RegisterPage() {
 
         <div className="mt-7 flex items-center justify-between gap-3 border-t border-border pt-5">
           {step > 1 ? (
-            <button type="button" className="inline-flex min-h-12 items-center gap-2 rounded-lg px-4 font-bold text-brand-deep hover:bg-brand-soft/25" onClick={previousStep} disabled={loading}>
+            <Button type="button" variant="ghost" className="inline-flex min-h-12 items-center gap-2 rounded-lg px-4 font-bold text-brand-deep hover:bg-brand-soft/25" onClick={previousStep} disabled={loading}>
               <ArrowLeft className="size-4" aria-hidden="true" /> Atrás
-            </button>
+            </Button>
           ) : <span />}
 
           {step < 3 ? (
-            <button type="button" className="primary inline-flex min-h-12 items-center gap-2 rounded-lg px-5 py-3 font-bold" onClick={nextStep}>
+            <Button type="button" className="primary inline-flex min-h-12 items-center gap-2 rounded-lg px-5 py-3 font-bold" onClick={nextStep}>
               Continuar <ArrowRight className="size-4" aria-hidden="true" />
-            </button>
+            </Button>
           ) : (
-            <button className="primary min-h-12 rounded-lg px-6 py-3 font-bold" disabled={loading}>
+            <Button className="primary min-h-12 rounded-lg px-6 py-3 font-bold" disabled={loading}>
               {loading ? 'Creando cuenta…' : 'Crear cuenta'}
-            </button>
+            </Button>
           )}
         </div>
       </form>

@@ -30,11 +30,11 @@ describe('AffiliationPage public flow', () => {
 
   it('sends visitor identity and optional contact values in the supported payload', async () => {
     renderPage(); fillForm()
-    fireEvent.change(screen.getByLabelText('Código de país (opcional)'), { target: { value: '+506' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'País' }), { target: { value: 'CR' } })
     fireEvent.change(screen.getByLabelText('Teléfono (opcional)'), { target: { value: '88888888' } })
     fireEvent.change(screen.getByLabelText('Correo electrónico (opcional)'), { target: { value: ' ANA@EXAMPLE.COM ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
-    await waitFor(() => expect(affiliateRequestsService.create).toHaveBeenCalledWith(expect.objectContaining({ identificationType: 'NATIONAL', identification: '123456789', firstName: 'Ana', firstSurname: 'Pérez', address: 'Curime Centro', affiliationReason: 'Participar en la comunidad', phoneCountryCode: '+506', phoneNationalNumber: '88888888', email: 'ana@example.com' })))
+    await waitFor(() => expect(affiliateRequestsService.create).toHaveBeenCalledWith(expect.objectContaining({ identificationType: 'NATIONAL', identification: '123456789', firstName: 'Ana', firstSurname: 'Pérez', birthDate: '1990-01-01', address: 'Curime Centro', affiliationReason: 'Participar en la comunidad', phoneCountryCode: '+506', phoneNationalNumber: '88888888', email: 'ana@example.com' })))
     const payload = vi.mocked(affiliateRequestsService.create).mock.calls[0][0]
     expect(payload).not.toHaveProperty('userId'); expect(payload).not.toHaveProperty('personId')
     expect(await screen.findByRole('heading', { name: 'Recibimos su solicitud' })).toBeVisible()

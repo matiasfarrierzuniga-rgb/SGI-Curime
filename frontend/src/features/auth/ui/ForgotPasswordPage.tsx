@@ -1,6 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
+import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
 import { authService } from '../api/auth.api'
 
 export function ForgotPasswordPage() {
@@ -36,9 +38,9 @@ export function ForgotPasswordPage() {
       <StatusMessage error={error} success={success} />
       <form className="mt-7 grid gap-5" onSubmit={submit}>
         <label className="grid gap-2 text-sm font-bold" htmlFor="forgot-email">Correo electrónico
-          <input id="forgot-email" className="min-h-12 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" type="email" inputMode="email" autoComplete="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} />
+          <Input id="forgot-email" className="min-h-12 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" type="email" inputMode="email" autoComplete="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} />
         </label>
-        <button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold" disabled={loading}>{loading ? 'Enviando…' : 'Enviar instrucciones'}</button>
+        <Button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold" disabled={loading}>{loading ? 'Enviando…' : 'Enviar instrucciones'}</Button>
       </form>
       <div className="mt-7 border-t border-border pt-5 text-center">
         <Link className="inline-flex min-h-11 items-center font-bold text-brand-primary underline-offset-4 hover:underline" to="/login">Volver a iniciar sesión</Link>
