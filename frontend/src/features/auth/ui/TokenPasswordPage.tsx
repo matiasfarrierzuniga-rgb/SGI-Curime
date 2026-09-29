@@ -55,7 +55,7 @@ export function TokenPasswordPage({ mode }: { mode: 'activate' | 'reset' }) {
         <label className="grid gap-2 text-sm font-bold" htmlFor="confirm-password">Confirmar contraseña
           <Input id="confirm-password" className="min-h-12 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" type="password" required minLength={10} maxLength={128} autoComplete="new-password" aria-describedby="password-requirements" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} />
         </label>
-        <Button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold" disabled={loading}>{loading ? 'Procesando…' : title}</Button>
+        <Button type="submit" className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold" disabled={loading}>{loading ? 'Procesando…' : title}</Button>
       </form>
       <div className="mt-7 border-t border-border pt-5 text-center">
         <Link className="inline-flex min-h-11 items-center font-bold text-brand-primary underline-offset-4 hover:underline" to="/login">Volver a iniciar sesión</Link>

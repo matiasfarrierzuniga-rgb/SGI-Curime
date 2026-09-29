@@ -332,7 +332,7 @@ export function RegisterPage() {
               Continuar <ArrowRight className="size-4" aria-hidden="true" />
             </Button>
           ) : (
-            <Button className="primary min-h-12 rounded-lg px-6 py-3 font-bold" disabled={loading}>
+            <Button type="submit" className="primary min-h-12 rounded-lg px-6 py-3 font-bold" disabled={loading}>
               {loading ? 'Creando cuenta…' : 'Crear cuenta'}
             </Button>
           )}

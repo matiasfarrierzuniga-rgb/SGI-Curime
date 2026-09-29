@@ -40,7 +40,7 @@ export function ForgotPasswordPage() {
         <label className="grid gap-2 text-sm font-bold" htmlFor="forgot-email">Correo electrónico
           <Input id="forgot-email" className="min-h-12 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" type="email" inputMode="email" autoComplete="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} />
         </label>
-        <Button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold" disabled={loading}>{loading ? 'Enviando…' : 'Enviar instrucciones'}</Button>
+        <Button type="submit" className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold" disabled={loading}>{loading ? 'Enviando…' : 'Enviar instrucciones'}</Button>
       </form>
       <div className="mt-7 border-t border-border pt-5 text-center">
         <Link className="inline-flex min-h-11 items-center font-bold text-brand-primary underline-offset-4 hover:underline" to="/login">Volver a iniciar sesión</Link>

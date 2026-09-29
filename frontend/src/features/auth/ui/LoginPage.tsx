@@ -59,7 +59,7 @@ export function LoginPage() {
             </Button>
           </div>
         </div>
-        <Button className="min-h-12 w-full rounded-lg border border-brand-red bg-linear-to-r from-brand-red to-brand-maize px-5 py-3 font-bold text-brand-ivory shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red disabled:cursor-not-allowed disabled:opacity-55" disabled={loading}>{loading ? 'Ingresando…' : 'Iniciar sesión'}</Button>
+        <Button type="submit" className="min-h-12 w-full rounded-lg border border-brand-red bg-linear-to-r from-brand-red to-brand-maize px-5 py-3 font-bold text-brand-ivory shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red disabled:cursor-not-allowed disabled:opacity-55" disabled={loading}>{loading ? 'Ingresando…' : 'Iniciar sesión'}</Button>
       </form>
       <div className="mt-8 border-t border-border-subtle pt-6 text-center">
         <p className="text-sm text-foreground-muted">¿Todavía no tiene una cuenta?</p>
