@@ -1,46 +1,74 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AffiliateRequestDetail } from './AffiliateRequestDetail'
-import { useAffiliateApprovalRoles, useAffiliateRequestDetail, useAffiliateRequestMutations } from '../hooks/useAffiliateRequestsQueries'
+import { useAffiliateRequestDetail, useAffiliateRequestMutations } from '../hooks/useAffiliateRequestsQueries'
 
-vi.mock('../hooks/useAffiliateRequestsQueries', () => ({ useAffiliateApprovalRoles: vi.fn(), useAffiliateRequestDetail: vi.fn(), useAffiliateRequestMutations: vi.fn(), useAffiliateRequestsList: vi.fn() }))
+vi.mock('../hooks/useAffiliateRequestsQueries', () => ({ useAffiliateRequestDetail: vi.fn(), useAffiliateRequestMutations: vi.fn(), useAffiliateRequestsList: vi.fn() }))
 
 const request = { id: 7, fullName: 'Ana Pérez', identification: '123456789', identificationType: 'NATIONAL', birthDate: '1990-01-01T00:00:00.000Z', gender: null, phoneCountryCode: '+506', phoneNationalNumber: '88888888', phone: null, email: 'ana@example.com', address: 'Curime', occupation: null, workplace: null, affiliationReason: 'Participar', status: 'PENDING', rejectionReason: null, reviewedAt: null, reviewedById: null, reviewedBy: null, createdAt: '2026-01-01', updatedAt: '2026-01-01' } as const
-const roles = [{ id: 1, name: 'Administrador' }, { id: 4, name: 'Vecino/Afiliado' }, { id: 6, name: 'Miembro de Junta Directiva' }]
-
-describe('AffiliateRequestDetail role approval', () => {
+describe('AffiliateRequestDetail approval', () => {
   const approve = { mutateAsync: vi.fn(), isPending: false }; const reject = { mutateAsync: vi.fn(), isPending: false }
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useAffiliateRequestDetail).mockReturnValue({ data: request, isPending: false, isError: false, refetch: vi.fn() } as never)
-    vi.mocked(useAffiliateApprovalRoles).mockReturnValue({ data: roles, isPending: false, isError: false, refetch: vi.fn() } as never)
     vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject } as never)
   })
 
-  it('requires a functional role and never shows Subscription_L1', () => {
+  it('allows approval without role selector', () => {
     render(<AffiliateRequestDetail requestId={7} onClose={vi.fn()} />)
-    expect(screen.getByRole('button', { name: 'Aprobar solicitud' })).toBeDisabled()
-    expect(screen.queryByRole('option', { name: 'Subscription_L1' })).not.toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Miembro de Junta Directiva' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Aprobar solicitud' })).toBeEnabled()
+    expect(screen.queryByLabelText('Rol funcional')).not.toBeInTheDocument()
   })
 
-  it('approves once with the selected roleId', async () => {
+  it('approves once with request id', async () => {
     approve.mutateAsync.mockResolvedValue({})
     render(<AffiliateRequestDetail requestId={7} onClose={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText('Rol funcional'), { target: { value: '6' } })
     fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' }))
     const confirm = screen.getByRole('button', { name: 'Aprobar' }); fireEvent.click(confirm); fireEvent.click(confirm)
     await waitFor(() => expect(approve.mutateAsync).toHaveBeenCalledTimes(1))
-    expect(approve.mutateAsync).toHaveBeenCalledWith({ id: 7, payload: { roleId: 6 } })
+    expect(approve.mutateAsync).toHaveBeenCalledWith(7)
   })
 
-  it('preserves the selected role after a recoverable approval error', async () => {
+  it('shows recoverable approval error', async () => {
     approve.mutateAsync.mockRejectedValue(new Error('fallo'))
     render(<AffiliateRequestDetail requestId={7} onClose={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText('Rol funcional'), { target: { value: '4' } })
     fireEvent.click(screen.getByRole('button', { name: 'Aprobar solicitud' })); fireEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
     expect(await screen.findByRole('alert')).toBeVisible()
-    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
-    expect(screen.getByLabelText('Rol funcional')).toHaveValue('4')
+  })
+
+  it('rejects with required reason and no role payload', async () => {
+    reject.mutateAsync.mockResolvedValue({})
+    render(<AffiliateRequestDetail requestId={7} onClose={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar solicitud' }))
+    fireEvent.change(screen.getByLabelText('Motivo de rechazo'), { target: { value: 'Información incompleta' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }))
+
+    await waitFor(() => expect(reject.mutateAsync).toHaveBeenCalledTimes(1))
+    expect(reject.mutateAsync).toHaveBeenCalledWith({ id: 7, payload: { rejectionReason: 'Información incompleta' } })
+    expect(reject.mutateAsync.mock.calls[0][0]).not.toHaveProperty('role')
+  })
+
+  it('renders rejection and review metadata when provided', () => {
+    vi.mocked(useAffiliateRequestDetail).mockReturnValue({
+      data: {
+        ...request,
+        status: 'REJECTED',
+        rejectionReason: 'Información incompleta',
+        reviewedAt: '2026-01-15T12:00:00.000Z',
+        reviewedById: 3,
+        reviewedBy: { id: 3, fullName: 'Luis Mora', email: 'luis@example.com' },
+      },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as never)
+
+    render(<AffiliateRequestDetail requestId={7} onClose={vi.fn()} />)
+
+    expect(screen.getByText('Rechazada')).toBeVisible()
+    expect(screen.getByText('Información incompleta')).toBeVisible()
+    expect(screen.getByText('Luis Mora (luis@example.com)')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Aprobar solicitud' })).not.toBeInTheDocument()
   })
 })

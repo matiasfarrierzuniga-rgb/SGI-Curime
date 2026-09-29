@@ -1,16 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { affiliateRequestsApi } from '../api/affiliateRequests.api'
-import { rolesService } from '@/features/roles'
-import type { AffiliateRequestListFilters, ApproveAffiliateRequestPayload, RejectAffiliateRequestPayload } from '../model/affiliateRequests.types'
-
-const functionalRoleNames = new Set(['Administrador', 'Tesorero', 'Gestor de Inventario', 'Vecino/Afiliado', 'Miembro de Junta Directiva'])
-
-export function useAffiliateApprovalRoles() {
-  return useQuery({
-    queryKey: ['roles', 'affiliate-approval'],
-    queryFn: async () => (await rolesService.listActive()).filter((role) => functionalRoleNames.has(role.name)),
-  })
-}
+import type { AffiliateRequestListFilters, RejectAffiliateRequestPayload } from '../model/affiliateRequests.types'
 
 function normalizeFilters(filters: AffiliateRequestListFilters): Required<Pick<AffiliateRequestListFilters, 'page' | 'limit'>> & Omit<AffiliateRequestListFilters, 'page' | 'limit'> {
   return {
@@ -65,7 +55,7 @@ export function useAffiliateRequestMutations() {
   }
 
   const approve = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: ApproveAffiliateRequestPayload }) => affiliateRequestsApi.approve(id, payload),
+    mutationFn: (id: number) => affiliateRequestsApi.approve(id),
     onSuccess: invalidate,
   })
   const reject = useMutation({
