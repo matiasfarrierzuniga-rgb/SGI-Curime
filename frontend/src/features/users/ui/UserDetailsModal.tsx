@@ -3,26 +3,37 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import type { User } from "../model/users.types";
 import { statusLabel } from "../model/userStatus";
+import { ErrorState } from "@/shared/ui/ErrorState";
+import { LoadingState } from "@/shared/ui/LoadingState";
 
 interface UserDetailsModalProps {
-  selected: User;
-  busy: boolean;
+  selected: User | null;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
   onClose: () => void;
 }
 
 export function UserDetailsModal({
   selected,
-  busy,
+  loading,
+  error,
+  onRetry,
   onClose,
 }: UserDetailsModalProps) {
   return (
-    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
-      <DialogContent size="lg" showCloseButton={!busy}>
-        <DialogHeader><DialogTitle>Persona: {selected.fullName || "Sin nombre registrado"}</DialogTitle><DialogDescription>Identidad, cuenta SGI y afiliación se muestran como registros independientes.</DialogDescription></DialogHeader>
-        <dl className="grid grid-cols-1 gap-4 text-body-small sm:grid-cols-2">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size="lg">
+        <DialogHeader>
+          <DialogTitle>{selected ? `Persona: ${selected.fullName || "Sin nombre registrado"}` : "Detalle de persona"}</DialogTitle>
+          <DialogDescription>Identidad, cuenta SGI y afiliación se muestran como registros independientes y de solo lectura.</DialogDescription>
+        </DialogHeader>
+        {loading ? <LoadingState label="Cargando detalle de la persona…" /> : error ? (
+          <ErrorState message={error} action={<Button type="button" variant="outline" onClick={onRetry}>Reintentar</Button>} />
+        ) : selected ? <dl className="grid grid-cols-1 gap-4 text-body-small sm:grid-cols-2">
           <div className="min-w-0 rounded-control bg-surface-muted p-3">
             <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Identificación</dt>
-            <dd className="mt-1 break-words font-medium text-text-primary">{selected.identification}</dd>
+            <dd className="mt-1 break-words font-medium text-text-primary">{selected.identification || "Sin identificación registrada"}</dd>
           </div>
           <div className="min-w-0 rounded-control bg-surface-muted p-3">
             <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Teléfono de persona</dt>
@@ -48,8 +59,8 @@ export function UserDetailsModal({
             <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Afiliación</dt>
             <dd className="mt-1 font-medium text-text-primary">{selected.affiliate ? selected.affiliate.status === "ACTIVE" ? "Afiliación activa" : "Afiliación inactiva" : "No afiliada"}</dd>
           </div>
-        </dl>
-        <DialogFooter><p className="mr-auto text-body-small text-text-secondary">Acciones de edición y administración no disponibles: contrato no entrega capacidad de escritura.</p><Button type="button" variant="outline" onClick={onClose} disabled={busy}>Cerrar</Button></DialogFooter>
+        </dl> : null}
+        <DialogFooter><p className="mr-auto text-body-small text-text-secondary">Solo consulta. No hay acciones de escritura disponibles.</p><Button type="button" variant="outline" onClick={onClose}>Cerrar</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

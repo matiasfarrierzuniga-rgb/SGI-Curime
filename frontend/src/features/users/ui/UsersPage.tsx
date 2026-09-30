@@ -42,7 +42,6 @@ export function UsersPage() {
         ? getErrorMessage(rolesQuery.error, "No fue posible cargar los roles.")
         : "";
   const selected = detailQuery.data ?? null;
-  const busy = detailQuery.isFetching;
 
   const clearFilters = () => {
     setPage(1);
@@ -59,7 +58,7 @@ export function UsersPage() {
       <PageHeader
         context="Administración"
         title="Usuarios"
-        description="Consulte personas y distinga su contacto, cuenta SGI y afiliación institucional."
+        description="Consulte personas, sus cuentas SGI y la afiliación disponible."
       />
       <UserFilters
         name={name}
@@ -107,10 +106,12 @@ export function UsersPage() {
           />
         </>
       )}
-      {selected && (
+      {selectedId !== null && (
         <UserDetailsModal
           selected={selected}
-          busy={busy}
+          loading={detailQuery.isPending}
+          error={detailQuery.error ? getErrorMessage(detailQuery.error, "No fue posible cargar el detalle de la persona.") : null}
+          onRetry={() => { void detailQuery.refetch(); }}
           onClose={() => {
             setSelectedId(null);
           }}

@@ -127,7 +127,7 @@ describe('UsersPage', () => {
   it('hides every write action because read contract exposes no write capability', async () => {
     page()
     await open()
-    expect(screen.getByText(/contrato no entrega capacidad de escritura/i)).toBeInTheDocument()
+    expect(screen.getByText(/Solo consulta. No hay acciones de escritura disponibles/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Editar|Cambiar rol|Activar|Inactivar|Desbloquear/ })).not.toBeInTheDocument()
   })
 })
