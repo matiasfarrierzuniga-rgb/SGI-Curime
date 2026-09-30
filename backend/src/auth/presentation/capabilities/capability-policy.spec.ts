@@ -4,6 +4,20 @@ import {
 } from './capability-policy';
 
 describe('donation capability policy', () => {
+  it('grants user-management capabilities only to Administrador', () => {
+    for (const capability of [
+      'usr.users.update',
+      'usr.users.role.change',
+      'usr.users.lifecycle.manage',
+      'usr.users.unlock',
+    ]) {
+      expect(hasCapability('Administrador', capability)).toBe(true);
+      expect(hasCapability('Tesorero', capability)).toBe(false);
+      expect(hasCapability('Gestor de Inventario', capability)).toBe(false);
+      expect(hasCapability('Vecino/Afiliado', capability)).toBe(false);
+    }
+  });
+
   it('grants institutional profile administration only to Administrador', () => {
     for (const capability of ['adm.institutional-profile.read', 'adm.institutional-profile.update']) {
       expect(hasCapability('Administrador', capability)).toBe(true);

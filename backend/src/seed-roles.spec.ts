@@ -63,8 +63,8 @@ describe('initial role seed', () => {
   });
 
   it('persists every compatibility capability and mapped role grant idempotently', async () => {
-    expect(INITIAL_PERMISSIONS).toHaveLength(33);
-    expect(ROLE_CAPABILITIES.Administrador).toHaveLength(33);
+    expect(INITIAL_PERMISSIONS).toHaveLength(37);
+    expect(ROLE_CAPABILITIES.Administrador).toHaveLength(37);
     expect(INITIAL_PERMISSIONS).toEqual(
       expect.arrayContaining([
         { code: 'adm.justifications.read', name: 'adm.justifications.read' },
@@ -76,6 +76,16 @@ describe('initial role seed', () => {
           code: 'adm.justifications.reject',
           name: 'adm.justifications.reject',
         },
+        { code: 'usr.users.update', name: 'usr.users.update' },
+        {
+          code: 'usr.users.role.change',
+          name: 'usr.users.role.change',
+        },
+        {
+          code: 'usr.users.lifecycle.manage',
+          name: 'usr.users.lifecycle.manage',
+        },
+        { code: 'usr.users.unlock', name: 'usr.users.unlock' },
       ]),
     );
     expect(ROLE_CAPABILITIES['Gestor de Inventario']).toHaveLength(3);

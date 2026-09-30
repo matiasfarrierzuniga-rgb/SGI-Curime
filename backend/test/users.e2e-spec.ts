@@ -17,6 +17,7 @@ import { UnlockUserUseCase } from '../src/modules/users/application/use-cases/un
 import { UpdateUserUseCase } from '../src/modules/users/application/use-cases/update-user.use-case';
 import { UpdateSubscriptionExpirationUseCase } from '../src/modules/users/application/use-cases/update-subscription-expiration.use-case';
 import { SelfDeactivationError } from '../src/modules/users/domain/errors/self-deactivation.error';
+import { ROLE_CAPABILITIES } from '../src/auth/presentation/capabilities/capability-policy';
 
 const auditContextWithIpAddress = {
   asymmetricMatch(value: unknown): boolean {
@@ -33,10 +34,15 @@ describe('UsersController (e2e)', () => {
   let app: INestApplication<App>;
   let jwt: JwtService;
   let role = 'Administrador';
+  let permissionCodes: readonly string[] | undefined;
   let status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE';
   let subscriptionExpirationDate: Date | null = null;
   const listUsers = { execute: jest.fn() };
-  const getUser = { execute: jest.fn(), executeWithAffiliation: jest.fn() };
+  const getUser = {
+    execute: jest.fn(),
+    executeAdminPerson: jest.fn(),
+    executeWithAffiliation: jest.fn(),
+  };
   const updateUser = { execute: jest.fn() };
   const changeUserRole = { execute: jest.fn() };
   const activateUser = { execute: jest.fn() };
@@ -72,7 +78,13 @@ describe('UsersController (e2e)', () => {
           status,
           subscriptionExpirationDate,
           lockedAt: null,
-          role: { ...user.role, name: role },
+          role: {
+            ...user.role,
+            name: role,
+            permissions: (permissionCodes ?? ROLE_CAPABILITIES[role] ?? []).map(
+              (code) => ({ permission: { code } }),
+            ),
+          },
         }),
       ),
     },
@@ -81,6 +93,7 @@ describe('UsersController (e2e)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     role = 'Administrador';
+    permissionCodes = undefined;
     status = 'ACTIVE';
     subscriptionExpirationDate = null;
     listUsers.execute.mockResolvedValue({
@@ -90,6 +103,26 @@ describe('UsersController (e2e)', () => {
       limit: 20,
     });
     getUser.execute.mockResolvedValue(user);
+    getUser.executeAdminPerson.mockResolvedValue({
+      id: '2',
+      fullName: user.fullName,
+      identification: user.identification,
+      identificationType: user.identificationType,
+      contactEmail: user.email,
+      phoneCountryCode: user.phoneCountryCode,
+      phoneNationalNumber: user.phoneNationalNumber,
+      address: user.address,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      access: {
+        ...user,
+        personId: '2',
+        affiliateId: null,
+        person: { id: '2', contactEmail: user.email },
+        affiliate: null,
+      },
+      affiliate: null,
+    });
     getUser.executeWithAffiliation.mockResolvedValue({
       user,
       affiliation: {
@@ -180,10 +213,55 @@ describe('UsersController (e2e)', () => {
       .get('/users/2')
       .set('Authorization', await authorization())
       .expect(200);
+    expect(getUser.executeAdminPerson).toHaveBeenCalledWith(2);
     await request(app.getHttpServer())
       .get('/users/not-a-number')
       .set('Authorization', await authorization())
       .expect(400);
+  });
+
+  it('maps account mutation grants to their persisted capabilities', async () => {
+    role = 'Administrador';
+
+    permissionCodes = ['usr.users.update'];
+    await request(app.getHttpServer())
+      .patch('/users/2')
+      .set('Authorization', await authorization())
+      .send({ fullName: 'Nombre Nuevo' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .patch('/users/2/subscription-expiration')
+      .set('Authorization', await authorization())
+      .send({ subscriptionExpirationDate: '2027-01-01T00:00:00.000Z' })
+      .expect(200);
+
+    permissionCodes = ['usr.users.role.change'];
+    await request(app.getHttpServer())
+      .patch('/users/2/role')
+      .set('Authorization', await authorization())
+      .send({ roleId: 2 })
+      .expect(200);
+
+    permissionCodes = ['usr.users.lifecycle.manage'];
+    await request(app.getHttpServer())
+      .patch('/users/2/is-active')
+      .set('Authorization', await authorization())
+      .send({ isActive: true })
+      .expect(200);
+    await request(app.getHttpServer())
+      .patch('/users/2/activate')
+      .set('Authorization', await authorization())
+      .expect(200);
+    await request(app.getHttpServer())
+      .patch('/users/2/deactivate')
+      .set('Authorization', await authorization())
+      .expect(200);
+
+    permissionCodes = ['usr.users.unlock'];
+    await request(app.getHttpServer())
+      .patch('/users/2/unlock')
+      .set('Authorization', await authorization())
+      .expect(200);
   });
 
   it('returns current authenticated user for GET /users/me', async () => {

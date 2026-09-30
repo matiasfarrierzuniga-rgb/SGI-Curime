@@ -9,6 +9,10 @@ export const DONATION_CAPABILITIES = {
 export const CAPABILITIES = [
   'erp.dashboard.read',
   'usr.users.read',
+  'usr.users.update',
+  'usr.users.role.change',
+  'usr.users.lifecycle.manage',
+  'usr.users.unlock',
   'usr.roles.read',
   'usr.profile.read',
   'adm.affiliates.read',

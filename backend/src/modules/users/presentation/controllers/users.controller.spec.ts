@@ -82,7 +82,7 @@ describe('UsersController F0 response contracts', () => {
     });
   });
 
-  it('adds only supported read authorization to admin read responses', async () => {
+  it('adds actor-aware account actions to admin read responses', async () => {
     listUsers.execute.mockResolvedValue({
       data: [user],
       total: 1,
@@ -93,12 +93,28 @@ describe('UsersController F0 response contracts', () => {
     await expect(
       controller.findAll(
         { page: 1, limit: 20 } as never,
-        { user: { permissionCodes: ['usr.users.read'] } } as never,
+        {
+          user: {
+            permissionCodes: [
+              'usr.users.read',
+              'usr.users.update',
+              'usr.users.role.change',
+              'usr.users.lifecycle.manage',
+              'usr.users.unlock',
+            ],
+          },
+        } as never,
       ),
     ).resolves.toMatchObject({
       data: [
         {
-          actions: { read: true },
+          actions: {
+            read: true,
+            update: true,
+            changeRole: true,
+            manageLifecycle: true,
+            unlock: true,
+          },
           id: '12',
           access: { id: 7, email: 'account@example.com', status: 'ACTIVE' },
         },
@@ -106,7 +122,7 @@ describe('UsersController F0 response contracts', () => {
     });
   });
 
-  it('returns Person-only detail by Person id with no User action target', async () => {
+  it('returns Person-only detail by Person id with no account mutation actions', async () => {
     getUser.executeAdminPerson.mockResolvedValue({
       ...user,
       id: '19',
@@ -117,14 +133,30 @@ describe('UsersController F0 response contracts', () => {
     await expect(
       controller.findOne(
         19,
-        { user: { permissionCodes: ['usr.users.read'] } } as never,
+        {
+          user: {
+            permissionCodes: [
+              'usr.users.read',
+              'usr.users.update',
+              'usr.users.role.change',
+              'usr.users.lifecycle.manage',
+              'usr.users.unlock',
+            ],
+          },
+        } as never,
       ),
     ).resolves.toMatchObject({
       id: '19',
       person: { id: '19', contactEmail: 'person@example.com' },
       access: null,
       affiliate: null,
-      actions: { read: true },
+      actions: {
+        read: true,
+        update: false,
+        changeRole: false,
+        manageLifecycle: false,
+        unlock: false,
+      },
     });
     expect(getUser.executeAdminPerson).toHaveBeenCalledWith(19);
     expect(getUser.execute).not.toHaveBeenCalled();
@@ -143,6 +175,18 @@ describe('UsersController F0 response contracts', () => {
         { page: 1, limit: 20 } as never,
         { user: { permissionCodes: [] } } as never,
       ),
-    ).resolves.toMatchObject({ data: [{ actions: { read: false } }] });
+    ).resolves.toMatchObject({
+      data: [
+        {
+          actions: {
+            read: false,
+            update: false,
+            changeRole: false,
+            manageLifecycle: false,
+            unlock: false,
+          },
+        },
+      ],
+    });
   });
 });
