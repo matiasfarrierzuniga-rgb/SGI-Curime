@@ -25,16 +25,18 @@ interface UserActionsCellProps {
 
 function UserActionsCell({ user, menuOpen, menuTriggerRef, onOpen, onManage, onToggleMenu }: UserActionsCellProps) {
   const name = user.fullName || "persona sin nombre registrado";
-  const hasAccount = user.access !== null;
+  const access = user.access;
   const canView = user.actions.read;
-  const canEdit = hasAccount && user.actions.update;
-  const roleAction = hasAccount && user.actions.changeRole ? { label: "Cambiar rol", action: "role" as const, icon: ShieldCheck } : null;
-  const lifecycleAction = hasAccount && user.actions.manageLifecycle && user.access.status === "INACTIVE"
-    ? { label: "Activar cuenta", action: "activate" as const, icon: UserRoundCheck }
-    : hasAccount && user.actions.manageLifecycle && user.access.status === "ACTIVE"
-      ? { label: "Desactivar cuenta", action: "deactivate" as const, icon: UserRoundX }
-      : null;
-  const unlockAction = hasAccount && user.actions.unlock && user.access.isTemporarilyLocked
+  const canEdit = access !== null && user.actions.update;
+  const roleAction = access !== null && user.actions.changeRole ? { label: "Cambiar rol", action: "role" as const, icon: ShieldCheck } : null;
+  const lifecycleAction = access === null || !user.actions.manageLifecycle
+    ? null
+    : access.status === "INACTIVE"
+      ? { label: "Activar cuenta", action: "activate" as const, icon: UserRoundCheck }
+      : access.status === "ACTIVE"
+        ? { label: "Desactivar cuenta", action: "deactivate" as const, icon: UserRoundX }
+        : null;
+  const unlockAction = access !== null && user.actions.unlock && access.isTemporarilyLocked
     ? { label: "Desbloquear cuenta", action: "unlock" as const, icon: ShieldCheck }
     : null;
   const hasAccountOperations = Boolean(canEdit || roleAction || lifecycleAction || unlockAction);
