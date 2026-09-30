@@ -35,26 +35,26 @@ export function PublicHeader() {
   const accessTo = !isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'
   const accessLabel = !isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'
   const desktopGrid = isAuthenticated
-    ? 'min-[1440px]:grid-cols-[10rem_minmax(0,1fr)_auto] min-[1440px]:gap-x-5'
-    : 'xl:grid-cols-[11.5rem_minmax(0,1fr)_auto] xl:gap-x-6'
+    ? 'min-[1200px]:grid-cols-[10rem_minmax(0,1fr)_auto] min-[1200px]:gap-x-5'
+    : 'lg:grid-cols-[10rem_minmax(0,1fr)_auto] lg:gap-x-5'
   const desktopNav = isAuthenticated
-    ? 'min-[1440px]:col-auto min-[1440px]:mt-0 min-[1440px]:flex min-[1440px]:w-auto min-[1440px]:flex-row min-[1440px]:justify-self-start min-[1440px]:gap-1 min-[1440px]:border-0 min-[1440px]:bg-transparent min-[1440px]:p-0 min-[1440px]:shadow-none'
-    : 'xl:col-auto xl:mt-0 xl:flex xl:w-auto xl:flex-row xl:justify-self-start xl:gap-1.5 xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none'
+    ? 'min-[1200px]:col-auto min-[1200px]:mt-0 min-[1200px]:flex min-[1200px]:w-auto min-[1200px]:flex-row min-[1200px]:justify-self-start min-[1200px]:gap-0.5 min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none'
+    : 'lg:col-auto lg:mt-0 lg:flex lg:w-auto lg:flex-row lg:justify-self-start lg:gap-0.5 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none'
   const desktopItem = isAuthenticated
-    ? 'min-[1440px]:px-1.5 min-[1440px]:py-2 min-[1440px]:text-xs 2xl:px-2.5 2xl:text-sm'
-    : 'xl:px-2 xl:py-2 xl:text-xs 2xl:px-3 2xl:text-sm'
+    ? 'min-[1200px]:min-h-10 min-[1200px]:px-2 min-[1200px]:py-2 min-[1200px]:text-xs 2xl:px-2.5 2xl:text-sm'
+    : 'lg:min-h-10 lg:px-2 lg:py-2 lg:text-xs 2xl:px-2.5 2xl:text-sm'
   const handleLogout = () => {
     close()
     void logout()
   }
 
   return (
-    <header className="sticky top-0 z-[var(--z-nav)] border-b border-border bg-brand-ivory/95 font-sans text-brand-deep backdrop-blur-sm">
-      <div className={`public-container grid min-h-[4.5rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 ${desktopGrid}`}>
+    <header className="sticky top-0 z-[var(--z-nav)] border-b border-border/90 bg-brand-ivory/95 font-sans text-brand-deep backdrop-blur-sm">
+      <div className={`public-container grid min-h-[4.25rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 ${desktopGrid}`}>
         <Link
           to="/"
           aria-label="ADI Curime, inicio"
-            className="flex h-10 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-12 sm:w-44 min-[1440px]:h-[52px] min-[1440px]:w-40 2xl:h-[60px] 2xl:w-[200px]"
+          className="flex h-10 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-11 sm:w-40 min-[1200px]:h-12 min-[1200px]:w-40 2xl:w-44"
         >
           <img
             src="/brand/adi-curime-logo-horizontal-color-header-tight.png"
@@ -76,7 +76,7 @@ export function PublicHeader() {
           }
           aria-expanded={open}
           aria-controls={id}
-          className={`inline-flex size-11 items-center justify-center rounded-control border border-primary text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring ${isAuthenticated ? 'min-[1440px]:hidden' : 'xl:hidden'}`}
+          className={`inline-flex size-11 items-center justify-center rounded-control border border-primary text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring ${isAuthenticated ? 'min-[1200px]:hidden' : 'lg:hidden'}`}
         >
           {open ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
         </button>
@@ -103,23 +103,23 @@ export function PublicHeader() {
             render={<Link to={accessTo} />}
             onClick={close}
             size="sm"
-            className={`mt-2 w-full ${isAuthenticated ? 'min-[1440px]:hidden' : 'xl:hidden'}`}
+            className={`mt-2 w-full ${isAuthenticated ? 'min-[1200px]:hidden' : 'lg:hidden'}`}
           >
             {accessLabel}
           </Button>
           {isAuthenticated && (
-            <Button onClick={handleLogout} size="sm" variant="outline" className="mt-2 w-full min-[1440px]:hidden">
+            <Button onClick={handleLogout} size="sm" variant="outline" className="mt-2 w-full min-[1200px]:hidden">
               <LogOut className="size-4" aria-hidden="true" />Cerrar sesión
             </Button>
           )}
         </nav>
 
-        <div className={`hidden items-center justify-self-end gap-3 ${isAuthenticated ? 'min-[1440px]:flex' : 'xl:flex'}`}>
-          <Button nativeButton={false} render={<Link to={accessTo} />} size="sm" className="px-4">
+        <div className={`hidden items-center justify-self-end gap-2.5 ${isAuthenticated ? 'min-[1200px]:flex' : 'lg:flex'}`}>
+          <Button nativeButton={false} render={<Link to={accessTo} />} size="sm" className="px-3.5">
             <LogIn className="size-4" aria-hidden="true" />{accessLabel}
           </Button>
           {isAuthenticated && (
-            <Button onClick={handleLogout} size="sm" variant="outline" className="px-4">
+            <Button onClick={handleLogout} size="sm" variant="outline" className="px-3.5">
               <LogOut className="size-4" aria-hidden="true" />Cerrar sesión
             </Button>
           )}
