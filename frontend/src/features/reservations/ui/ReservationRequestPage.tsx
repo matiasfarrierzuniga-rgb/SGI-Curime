@@ -110,21 +110,21 @@ export function ReservationRequestPage() {
       <Card className="gap-0">
         <CardHeader className="border-b pb-4"><CardTitle>Complete su solicitud</CardTitle><p className="text-sm text-muted-foreground">Podrá revisar toda la información antes de enviar.</p></CardHeader>
         <fieldset disabled={submitting}>
-          <CardContent className="space-y-8 pt-6">
-            <FormSection title="1. Espacio" description="Seleccione el lugar que desea solicitar.">
+          <CardContent className="space-y-9 pt-7 sm:space-y-10">
+            <FormSection className="gap-5" title="1. Espacio" description="Seleccione el lugar que desea solicitar.">
               <FormField id="reservation-resource" label="Espacio" error={form.formState.errors.resourceId?.message} required>
                 <Select {...form.register('resourceId', { onChange: invalidateAvailability })}><option value="">Seleccione un espacio</option>{resources.data.map(resource => <option key={resource.id} value={resource.id}>{resource.name}{resource.location ? ` · ${resource.location}` : ''}</option>)}</Select>
               </FormField>
               {selectedResource ? <ResourceSummary resource={selectedResource} /> : null}
             </FormSection>
-            <FormSection title="2. Fecha y horario" description="Indique cuándo necesita el espacio y consulte antes de continuar.">
+            <FormSection className="gap-5" title="2. Fecha y horario" description="Indique cuándo necesita el espacio y consulte antes de continuar.">
               <div className="grid gap-5 sm:grid-cols-2">
                 <FormField id="reservation-start" label="Fecha y hora de inicio" error={form.formState.errors.startAt?.message} required><Input type="datetime-local" {...form.register('startAt', { onChange: invalidateAvailability })} /></FormField>
                 <FormField id="reservation-end" label="Fecha y hora de finalización" error={form.formState.errors.endAt?.message} required><Input type="datetime-local" {...form.register('endAt', { onChange: invalidateAvailability })} /></FormField>
               </div>
               <AvailabilityStatus status={availability} onCheck={() => void checkAvailability()} disabled={availability === 'checking' || availabilityQuery.isFetching} />
             </FormSection>
-            <FormSection title="Datos de la solicitud" description="Explique el uso previsto y agregue detalles si son necesarios.">
+            <FormSection className="gap-5 rounded-surface border border-border bg-subtle/50 p-4 sm:p-5" title="Datos de la solicitud" description="Explique el uso previsto y agregue detalles si son necesarios.">
               <FormField id="reservation-purpose" label="Motivo" error={form.formState.errors.purpose?.message} required><Textarea maxLength={1000} {...form.register('purpose')} /></FormField>
               <div className="grid gap-5 sm:grid-cols-2">
                 <FormField id="reservation-attendees" label="Cantidad de personas (opcional)" error={form.formState.errors.estimatedAttendees?.message}><Input type="number" min="1" inputMode="numeric" {...form.register('estimatedAttendees')} /></FormField>
@@ -133,7 +133,7 @@ export function ReservationRequestPage() {
             </FormSection>
             {selectedResource ? <CostNotice resource={selectedResource} /> : null}
           </CardContent>
-          <CardFooter className="mt-6 flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="text-sm text-muted-foreground"><p className="font-semibold text-foreground">Paso 3: revise antes de enviar</p><p className="mt-1">La solicitud queda pendiente de revisión; no reserva ni aprueba el espacio.</p></div><Button className="w-full sm:w-auto" size="lg" type="submit" disabled={availability !== 'available'}>Revisar solicitud</Button></CardFooter>
+          <CardFooter className="mt-7 flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="text-sm text-muted-foreground"><p className="font-semibold text-foreground">Paso 3: revise antes de enviar</p><p id="review-requirement" className="mt-1">Confirme disponibilidad para habilitar la revisión. La solicitud queda pendiente de revisión; no reserva ni aprueba el espacio.</p></div><Button className="w-full sm:w-auto" size="lg" type="submit" disabled={availability !== 'available'} aria-describedby="review-requirement">Revisar solicitud</Button></CardFooter>
         </fieldset>
       </Card>
     </form>}
@@ -145,14 +145,14 @@ function ReservationProcessStepper({ completedSteps, reviewing, completed }: { c
   return <ol className="grid gap-2 sm:grid-cols-3" aria-label="Progreso de la solicitud">{steps.map((step, index) => {
     const complete = completed || index < completedSteps
     const current = !completed && (reviewing ? index === 2 : index === completedSteps)
-    return <li key={step} className={`flex min-h-12 items-center gap-3 rounded-control border px-3 py-2.5 text-sm ${complete ? 'border-success/30 bg-success-bg text-foreground' : current ? 'border-primary bg-primary/5 text-foreground' : 'border-border bg-surface text-muted-foreground'}`} aria-current={current ? 'step' : undefined}><span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${complete ? 'bg-success text-white' : current ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{complete ? <Check className="size-4" aria-hidden="true" /> : index + 1}</span><span className="font-semibold">{step}</span></li>
+    return <li key={step} className={`flex min-h-12 items-center gap-3 rounded-control border px-3 py-2.5 text-sm ${complete ? 'border-success/30 bg-success-bg text-foreground' : current ? 'border-primary bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/15' : 'border-border bg-surface text-muted-foreground'}`} aria-current={current ? 'step' : undefined}><span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${complete ? 'bg-success text-white' : current ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{complete ? <Check className="size-4" aria-hidden="true" /> : index + 1}</span><span className="font-semibold">{step}</span></li>
   })}</ol>
 }
 
 function AvailabilityStatus({ status, onCheck, disabled }: { status: Availability; onCheck: () => void; disabled: boolean }) {
   const copy = { idle: 'Aún no ha consultado la disponibilidad.', checking: 'Consultando disponibilidad…', available: 'Disponible en este horario. Puede revisar su solicitud.', unavailable: 'No disponible en este horario. Elija otra fecha u hora.', error: 'No fue posible consultar la disponibilidad. Inténtelo nuevamente.' }[status]
-  const tone = status === 'available' ? 'border-success/30 bg-success-bg text-success' : status === 'unavailable' || status === 'error' ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-border bg-muted/50 text-muted-foreground'
-  return <div className={`rounded-control border p-4 ${tone}`} role="status" aria-live="polite"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="font-medium">{copy}</p><Button variant="outline" type="button" onClick={onCheck} disabled={disabled} loading={status === 'checking'}>{status === 'checking' ? 'Consultando disponibilidad' : 'Consultar disponibilidad'}</Button></div></div>
+  const tone = status === 'available' ? 'border-success/35 bg-success-bg text-success' : status === 'unavailable' ? 'border-destructive/25 bg-destructive/5 text-destructive' : status === 'error' ? 'border-destructive/25 bg-transparent text-destructive' : status === 'checking' ? 'border-border bg-muted/50 text-muted-foreground' : 'border-dashed border-border bg-transparent text-muted-foreground'
+  return <div className={`rounded-control border px-4 py-3.5 ${tone}`} role="status" aria-live="polite"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="font-medium">{copy}</p><Button variant="outline" type="button" onClick={onCheck} disabled={disabled} loading={status === 'checking'}>{status === 'checking' ? 'Consultando disponibilidad' : 'Consultar disponibilidad'}</Button></div></div>
 }
 
 function ReservationReview({ values, resource, availability, submitting, onEdit, onSubmit }: { values: Values; resource?: ReservableResource; availability: Availability; submitting: boolean; onEdit: () => void; onSubmit: () => void }) {
