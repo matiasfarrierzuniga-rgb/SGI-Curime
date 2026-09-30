@@ -3,13 +3,11 @@ import { HeroSection } from '../components/HeroSection'
 import { ServicesSection } from '../components/ServicesSection'
 import { AboutSection } from '../components/AboutSection'
 import { TransparencySection } from '../components/TransparencySection'
+import { AgendaSection } from '../components/AgendaSection'
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '@/features/auth'
 
 export function LandingPage() {
-  const { isAuthenticated, user } = useAuth()
-  const accessTo = !isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'
-  const accessLabel = !isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'
   useEffect(() => {
     document.title = 'Portal comunitario | ADI Curime'
     const description = 'Portal comunitario de la Asociación de Desarrollo Integral de Curime, Nicoya, Guanacaste.'
@@ -25,26 +23,29 @@ export function LandingPage() {
   return (
     <div className="overflow-clip bg-brand-ivory font-sans text-brand-ink">
       <HeroSection />
-      <ServicesSection />
-      <TransparencySection />
       <AboutSection />
-      <section aria-labelledby="portal-access-title" className="border-t border-brand-sage/70 bg-surface-muted/55 py-14 md:py-20 xl:py-24">
-        <div className="public-container max-w-5xl border-y border-brand-deep/15 py-10 text-center md:py-12">
-          <p className="public-eyebrow text-brand-primary">Acceso privado</p>
-          <h2 id="portal-access-title" className="public-heading mx-auto mt-3 max-w-[24ch] text-brand-ink">
-            ¿Ya tiene acceso al Sistema de Gestión Integral?
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-body-large text-brand-ink/80">
-            Ingrese al SGI para utilizar las herramientas disponibles para su cuenta.
-          </p>
-          <Link
-            to={accessTo}
-            className="mt-8 inline-flex min-h-12 items-center justify-center rounded-md bg-brand-deep px-6 py-3 font-bold text-brand-ivory shadow-sm transition-[background-color,box-shadow] hover:bg-brand-primary hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep"
-          >
-            {accessLabel}
-          </Link>
+      <ServicesSection />
+      <section aria-labelledby="community-title" className="border-y border-brand-sage/70 bg-surface-muted py-12 md:py-16 xl:py-20">
+        <div className="public-container grid gap-8 md:grid-cols-[minmax(14rem,5fr)_minmax(0,7fr)] md:items-center md:gap-12 lg:gap-20 xl:gap-28">
+          <figure className="relative aspect-[5/4] overflow-hidden rounded-surface border border-brand-sage/80 bg-brand-ivory md:aspect-[4/5]">
+            <div className="flex size-full items-end bg-background-subtle p-5">
+              <figcaption className="max-w-[24ch] border-l-2 border-brand-accent pl-3 text-body-small leading-relaxed text-brand-ink/75">
+                Fotografía comunitaria pendiente de autorización.
+              </figcaption>
+            </div>
+          </figure>
+          <div className="max-w-xl md:py-6">
+            <p className="public-eyebrow text-brand-primary">Comunidad</p>
+            <h2 id="community-title" className="public-heading mt-3 text-brand-ink">Un espacio para encontrarnos</h2>
+            <p className="mt-4 max-w-[50ch] text-body leading-relaxed text-brand-ink/75">Conozca los canales públicos y espacios de participación de la Asociación.</p>
+            <Link to="/comunidad" className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-brand-deep px-6 py-3 font-bold text-brand-deep transition-colors hover:bg-brand-deep hover:text-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">
+              Visitar comunidad <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </div>
         </div>
       </section>
+      <AgendaSection />
+      <TransparencySection />
     </div>
   )
 }
