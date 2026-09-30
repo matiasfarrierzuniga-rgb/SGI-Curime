@@ -1,13 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, CheckCircle2, MapPin, UsersRound } from 'lucide-react'
-import { useRef, useState, type ReactNode } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ErrorState } from '@/shared/ui/ErrorState'
+import { FormField } from '@/shared/ui/FormField'
+import { FormSection } from '@/shared/ui/FormSection'
+import { Input } from '@/shared/ui/input'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Select } from '@/shared/ui/select'
+import { Textarea } from '@/shared/ui/textarea'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card'
 import { useCreateReservation, useReservableResources, useReservationAvailability } from '../hooks/useReservations'
@@ -15,7 +20,7 @@ import type { ReservableResource } from '../model/reservations.types'
 
 type Values = { resourceId: string; startAt: string; endAt: string; purpose: string; estimatedAttendees: string; notes: string }
 type Confirmation = { resourceName: string; startAt: string; endAt: string }
-type Availability = 'idle' | 'available' | 'unavailable' | 'error'
+type Availability = 'idle' | 'checking' | 'available' | 'unavailable' | 'error'
 
 const blank: Values = { resourceId: '', startAt: '', endAt: '', purpose: '', estimatedAttendees: '', notes: '' }
 const localCostaRica = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
@@ -43,21 +48,22 @@ export function ReservationRequestPage() {
   const resources = useReservableResources()
   const create = useCreateReservation()
   const [availability, setAvailability] = useState<Availability>('idle')
+  const [reviewing, setReviewing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
   const submitLock = useRef(false)
   const form = useForm<Values>({ defaultValues: blank, resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange', shouldFocusError: true })
   const values = form.watch()
   const selectedResource = resources.data?.find(resource => resource.id === Number(values.resourceId))
-  const validInput = Boolean(values.resourceId && toUtc(values.startAt) && toUtc(values.endAt) && !form.formState.errors.startAt && !form.formState.errors.endAt)
-  const availabilityQuery = useReservationAvailability(validInput ? { resourceId: Number(values.resourceId), startAt: toUtc(values.startAt)!.toISOString(), endAt: toUtc(values.endAt)!.toISOString() } : null)
-  const resetAvailability = () => setAvailability('idle')
-  const completedSteps = values.startAt && values.endAt ? 2 : values.resourceId ? 1 : 0
+  const validAvailabilityInput = Boolean(values.resourceId && toUtc(values.startAt) && toUtc(values.endAt) && !form.formState.errors.startAt && !form.formState.errors.endAt)
+  const availabilityQuery = useReservationAvailability(validAvailabilityInput ? { resourceId: Number(values.resourceId), startAt: toUtc(values.startAt)!.toISOString(), endAt: toUtc(values.endAt)!.toISOString() } : null)
+  const invalidateAvailability = () => { setAvailability('idle'); setReviewing(false) }
+  const completedSteps = confirmation || reviewing ? 2 : availability === 'available' ? 2 : values.startAt && values.endAt ? 1 : values.resourceId ? 1 : 0
 
   async function checkAvailability() {
     const valid = await form.trigger(['resourceId', 'startAt', 'endAt'])
     if (!valid) return
-    resetAvailability()
+    setAvailability('checking')
     try {
       const result = await availabilityQuery.refetch()
       if (result.isError) return setAvailability('error')
@@ -65,20 +71,29 @@ export function ReservationRequestPage() {
     } catch { setAvailability('error') }
   }
 
+  async function openReview() {
+    const valid = await form.trigger()
+    if (!valid) return
+    if (availability !== 'available') return
+    setReviewing(true)
+  }
+
   async function submit(value: Values) {
-    if (availability !== 'available' || submitLock.current) return
+    if (!reviewing || availability !== 'available' || submitLock.current) return
     submitLock.current = true
     setSubmitting(true)
     try {
       await create.mutateAsync({ resourceId: Number(value.resourceId), startAt: toUtc(value.startAt)!.toISOString(), endAt: toUtc(value.endAt)!.toISOString(), purpose: value.purpose.trim(), ...(value.estimatedAttendees ? { estimatedAttendees: Number(value.estimatedAttendees) } : {}), ...(value.notes.trim() ? { notes: value.notes.trim() } : {}) })
       setConfirmation({ resourceName: selectedResource?.name ?? 'Espacio seleccionado', startAt: value.startAt, endAt: value.endAt })
-      form.reset(blank)
-      setAvailability('idle')
     } catch (error) {
       if ((error as { response?: { status?: number } }).response?.status === 409) {
         setAvailability('unavailable')
+        setReviewing(false)
         toast.error('Ese espacio ya no está disponible en el horario elegido. Consulte nuevamente.')
-      } else toast.error(getErrorMessage(error, 'No fue posible enviar la solicitud. Sus datos siguen en el formulario para que pueda intentarlo de nuevo.'))
+      } else {
+        setReviewing(false)
+        toast.error(getErrorMessage(error, 'No fue posible enviar la solicitud. Sus datos siguen en el formulario para que pueda intentarlo de nuevo.'))
+      }
     } finally {
       submitLock.current = false
       setSubmitting(false)
@@ -88,87 +103,66 @@ export function ReservationRequestPage() {
   if (resources.isPending) return <LoadingState label="Cargando espacios disponibles..." />
   if (resources.isError) return <ErrorState title="No fue posible cargar los espacios" message={getErrorMessage(resources.error)} action={<Button variant="outline" type="button" onClick={() => void resources.refetch()}>Reintentar</Button>} />
 
-  if (confirmation) return <section className="mx-auto max-w-2xl space-y-6" aria-labelledby="reservation-confirmation-title">
-    <Card className="border-success/40 bg-success-bg"><CardContent className="space-y-5 p-6 sm:p-8">
-      <CheckCircle2 className="size-10 text-success" aria-hidden="true" />
-      <div><h1 id="reservation-confirmation-title" className="text-heading-2 font-bold text-foreground">Solicitud enviada</h1><p className="mt-2 text-body-large text-foreground">Su solicitud fue enviada y será revisada por la Asociación.</p></div>
-      <dl className="grid gap-3 text-sm sm:grid-cols-2"><Summary label="Espacio" value={confirmation.resourceName} /><Summary label="Fecha y hora" value={`${formatLocalDate(confirmation.startAt)} a ${formatLocalDate(confirmation.endAt)}`} /></dl>
-      <p className="text-sm text-foreground-muted">La aprobación de la reserva no significa que un pago esté realizado.</p>
-      <Button type="button" size="lg" onClick={() => setConfirmation(null)}>Solicitar otra reserva</Button>
-    </CardContent></Card>
-  </section>
-
-  const field = (name: keyof Values) => ({ 'aria-invalid': Boolean(form.formState.errors[name]), 'aria-describedby': form.formState.errors[name] ? `${name}-error` : undefined })
-  return <section className="space-y-6">
-    <PageHeader context="Servicios" title="Solicitar una reserva" description="Elija el espacio y el horario. Luego confirme que esté disponible antes de enviar la solicitud." />
-    <ReservationProcessStepper completedSteps={completedSteps} />
-    <form className="mx-auto max-w-3xl" noValidate onSubmit={form.handleSubmit(submit)} aria-busy={submitting}>
+  return <section className="mx-auto max-w-3xl space-y-6">
+    <PageHeader context="Servicios" title="Solicitar una reserva" description="Elija el espacio y horario. Verifique disponibilidad, revise datos y envíe su solicitud para revisión." />
+    <ReservationProcessStepper completedSteps={completedSteps} reviewing={reviewing} completed={Boolean(confirmation)} />
+    {confirmation ? <ReservationSubmitted confirmation={confirmation} onNewRequest={() => { form.reset(blank); setAvailability('idle'); setConfirmation(null); setReviewing(false) }} /> : reviewing ? <ReservationReview values={values} resource={selectedResource} availability={availability} submitting={submitting} onEdit={() => setReviewing(false)} onSubmit={form.handleSubmit(submit)} /> : <form noValidate onSubmit={event => { event.preventDefault(); void openReview() }} aria-busy={submitting}>
       <Card className="gap-0">
-        <CardHeader className="border-b pb-4">
-          <CardTitle>Complete su solicitud</CardTitle>
-          <p className="text-sm text-foreground-muted">Todos los pasos permanecen visibles para que pueda revisar la información antes de enviarla.</p>
-        </CardHeader>
+        <CardHeader className="border-b pb-4"><CardTitle>Complete su solicitud</CardTitle><p className="text-sm text-muted-foreground">Podrá revisar toda la información antes de enviar.</p></CardHeader>
         <fieldset disabled={submitting}>
           <CardContent className="space-y-8 pt-6">
-            <ProcessSection title="Espacio" description="Seleccione el lugar que desea solicitar.">
-              <FormField label="Espacio" id="reservation-resource" errorId="resourceId-error" error={form.formState.errors.resourceId?.message}>
-                <select id="reservation-resource" className="min-h-11" {...field('resourceId')} {...form.register('resourceId', { onChange: resetAvailability })}><option value="">Seleccione un espacio</option>{resources.data.map(resource => <option key={resource.id} value={resource.id}>{resource.name}{resource.location ? ` · ${resource.location}` : ''}</option>)}</select>
+            <FormSection title="1. Espacio" description="Seleccione el lugar que desea solicitar.">
+              <FormField id="reservation-resource" label="Espacio" error={form.formState.errors.resourceId?.message} required>
+                <Select {...form.register('resourceId', { onChange: invalidateAvailability })}><option value="">Seleccione un espacio</option>{resources.data.map(resource => <option key={resource.id} value={resource.id}>{resource.name}{resource.location ? ` · ${resource.location}` : ''}</option>)}</Select>
               </FormField>
               {selectedResource ? <ResourceSummary resource={selectedResource} /> : null}
-            </ProcessSection>
-            <ProcessSection title="Fecha y horario" description="Indique cuándo necesita el espacio.">
+            </FormSection>
+            <FormSection title="2. Fecha y horario" description="Indique cuándo necesita el espacio y consulte antes de continuar.">
               <div className="grid gap-5 sm:grid-cols-2">
-                <FormField label="Fecha y hora de inicio" id="reservation-start" errorId="startAt-error" error={form.formState.errors.startAt?.message}><input id="reservation-start" className="min-h-11" type="datetime-local" {...field('startAt')} {...form.register('startAt', { onChange: resetAvailability })} /></FormField>
-                <FormField label="Fecha y hora de finalización" id="reservation-end" errorId="endAt-error" error={form.formState.errors.endAt?.message}><input id="reservation-end" className="min-h-11" type="datetime-local" {...field('endAt')} {...form.register('endAt', { onChange: resetAvailability })} /></FormField>
+                <FormField id="reservation-start" label="Fecha y hora de inicio" error={form.formState.errors.startAt?.message} required><Input type="datetime-local" {...form.register('startAt', { onChange: invalidateAvailability })} /></FormField>
+                <FormField id="reservation-end" label="Fecha y hora de finalización" error={form.formState.errors.endAt?.message} required><Input type="datetime-local" {...form.register('endAt', { onChange: invalidateAvailability })} /></FormField>
               </div>
-              <div className="rounded-lg border border-border bg-surface-muted p-4">
-                <Button variant="outline" type="button" size="lg" onClick={() => void checkAvailability()} disabled={availabilityQuery.isFetching}>{availabilityQuery.isFetching ? 'Consultando disponibilidad…' : 'Consultar disponibilidad'}</Button>
-                <p className={`mt-3 text-sm font-semibold ${availability === 'available' ? 'text-success' : availability === 'unavailable' || availability === 'error' ? 'text-danger' : 'text-foreground-muted'}`} aria-live="polite" role="status">{availability === 'available' ? 'Disponible en este horario.' : availability === 'unavailable' ? 'No disponible en este horario. Elija otra fecha u hora.' : availability === 'error' ? 'No fue posible consultar la disponibilidad. Inténtelo nuevamente.' : 'Debe consultar la disponibilidad antes de enviar.'}</p>
-              </div>
-            </ProcessSection>
-            <ProcessSection title="Datos de la solicitud" description="Explique el uso previsto y agregue detalles si son necesarios.">
-              <FormField label="Motivo" id="reservation-purpose" errorId="purpose-error" error={form.formState.errors.purpose?.message}><textarea id="reservation-purpose" className="min-h-28" maxLength={1000} {...field('purpose')} {...form.register('purpose')} /></FormField>
+              <AvailabilityStatus status={availability} onCheck={() => void checkAvailability()} disabled={availability === 'checking' || availabilityQuery.isFetching} />
+            </FormSection>
+            <FormSection title="Datos de la solicitud" description="Explique el uso previsto y agregue detalles si son necesarios.">
+              <FormField id="reservation-purpose" label="Motivo" error={form.formState.errors.purpose?.message} required><Textarea maxLength={1000} {...form.register('purpose')} /></FormField>
               <div className="grid gap-5 sm:grid-cols-2">
-                <FormField label="Cantidad de personas (opcional)" id="reservation-attendees" errorId="estimatedAttendees-error" error={form.formState.errors.estimatedAttendees?.message}><input id="reservation-attendees" className="min-h-11" type="number" min="1" inputMode="numeric" {...field('estimatedAttendees')} {...form.register('estimatedAttendees')} /></FormField>
-                <FormField label="Notas adicionales (opcional)" id="reservation-notes" errorId="notes-error" error={form.formState.errors.notes?.message}><textarea id="reservation-notes" className="min-h-24" maxLength={5000} {...field('notes')} {...form.register('notes')} /></FormField>
+                <FormField id="reservation-attendees" label="Cantidad de personas (opcional)" error={form.formState.errors.estimatedAttendees?.message}><Input type="number" min="1" inputMode="numeric" {...form.register('estimatedAttendees')} /></FormField>
+                <FormField id="reservation-notes" label="Notas adicionales (opcional)" error={form.formState.errors.notes?.message}><Textarea className="min-h-24" maxLength={5000} {...form.register('notes')} /></FormField>
               </div>
-            </ProcessSection>
-            {selectedResource ? <div className="rounded-lg border border-info/30 bg-info-bg p-4 text-sm text-foreground"><p className="font-semibold">Costo y aprobación</p><p className="mt-1">{selectedResource.pricingType === 'FREE' ? 'Este espacio no tiene costo.' : selectedResource.price ? `Costo fijo: ${selectedResource.price} ${selectedResource.currency}.` : 'Este espacio tiene costo fijo; el monto no fue informado.'} Aprobar la solicitud no significa que el pago esté realizado.</p></div> : null}
+            </FormSection>
+            {selectedResource ? <CostNotice resource={selectedResource} /> : null}
           </CardContent>
-          <CardFooter className="mt-6 flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-foreground-muted"><p className="font-semibold text-foreground">Revise y continúe</p><p className="mt-1">La solicitud se enviará para revisión; no confirma la reserva.</p></div>
-            <Button className="w-full sm:w-auto" size="lg" type="submit" disabled={submitting || availability !== 'available'}>{submitting ? 'Enviando solicitud…' : 'Enviar solicitud'}</Button>
-          </CardFooter>
+          <CardFooter className="mt-6 flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="text-sm text-muted-foreground"><p className="font-semibold text-foreground">Paso 3: revise antes de enviar</p><p className="mt-1">La solicitud queda pendiente de revisión; no reserva ni aprueba el espacio.</p></div><Button className="w-full sm:w-auto" size="lg" type="submit" disabled={availability !== 'available'}>Revisar solicitud</Button></CardFooter>
         </fieldset>
       </Card>
-    </form>
+    </form>}
   </section>
 }
 
-function ReservationProcessStepper({ completedSteps }: { completedSteps: number }) {
-  const steps = ['Elegir espacio', 'Fecha y horario', 'Confirmar']
-  return <ol className="mx-auto grid max-w-3xl gap-3 sm:grid-cols-3" aria-label="Progreso de la solicitud">
-    {steps.map((step, index) => {
-      const complete = index < completedSteps
-      const current = index === completedSteps && completedSteps < steps.length
-      return <li key={step} className={`flex items-center gap-3 rounded-lg border px-3 py-3 text-sm ${complete ? 'border-success/30 bg-success-bg text-foreground' : current ? 'border-primary bg-primary/5 text-foreground' : 'border-border bg-surface text-foreground-muted'}`} aria-current={current ? 'step' : undefined}>
-        <span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${complete ? 'bg-success text-white' : current ? 'bg-primary text-primary-foreground' : 'bg-surface-muted text-foreground-muted'}`}>{complete ? <Check className="size-4" aria-hidden="true" /> : `${index + 1}.`}</span>
-        <span className="font-semibold">{step}</span>
-      </li>
-    })}
-  </ol>
+function ReservationProcessStepper({ completedSteps, reviewing, completed }: { completedSteps: number; reviewing: boolean; completed: boolean }) {
+  const steps = ['Elegir espacio', 'Fecha y horario', 'Revisar y enviar']
+  return <ol className="grid gap-2 sm:grid-cols-3" aria-label="Progreso de la solicitud">{steps.map((step, index) => {
+    const complete = completed || index < completedSteps
+    const current = !completed && (reviewing ? index === 2 : index === completedSteps)
+    return <li key={step} className={`flex min-h-12 items-center gap-3 rounded-control border px-3 py-2.5 text-sm ${complete ? 'border-success/30 bg-success-bg text-foreground' : current ? 'border-primary bg-primary/5 text-foreground' : 'border-border bg-surface text-muted-foreground'}`} aria-current={current ? 'step' : undefined}><span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${complete ? 'bg-success text-white' : current ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{complete ? <Check className="size-4" aria-hidden="true" /> : index + 1}</span><span className="font-semibold">{step}</span></li>
+  })}</ol>
 }
 
-function ProcessSection({ title, description, children }: { title: string; description: string; children: ReactNode }) {
-  return <section className="space-y-5"><div><h2 className="text-heading-3 font-semibold text-foreground">{title}</h2><p className="mt-1 text-sm text-foreground-muted">{description}</p></div>{children}</section>
+function AvailabilityStatus({ status, onCheck, disabled }: { status: Availability; onCheck: () => void; disabled: boolean }) {
+  const copy = { idle: 'Aún no ha consultado la disponibilidad.', checking: 'Consultando disponibilidad…', available: 'Disponible en este horario. Puede revisar su solicitud.', unavailable: 'No disponible en este horario. Elija otra fecha u hora.', error: 'No fue posible consultar la disponibilidad. Inténtelo nuevamente.' }[status]
+  const tone = status === 'available' ? 'border-success/30 bg-success-bg text-success' : status === 'unavailable' || status === 'error' ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-border bg-muted/50 text-muted-foreground'
+  return <div className={`rounded-control border p-4 ${tone}`} role="status" aria-live="polite"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="font-medium">{copy}</p><Button variant="outline" type="button" onClick={onCheck} disabled={disabled} loading={status === 'checking'}>{status === 'checking' ? 'Consultando disponibilidad' : 'Consultar disponibilidad'}</Button></div></div>
 }
 
-function FormField({ label, id, errorId, error, children }: { label: string; id: string; errorId: string; error?: string; children: ReactNode }) {
-  return <div className="grid gap-2"><label className="font-semibold text-foreground" htmlFor={id}>{label}</label>{children}{error ? <p id={errorId} role="alert" className="field-error">{error}</p> : null}</div>
+function ReservationReview({ values, resource, availability, submitting, onEdit, onSubmit }: { values: Values; resource?: ReservableResource; availability: Availability; submitting: boolean; onEdit: () => void; onSubmit: () => void }) {
+  return <form noValidate onSubmit={onSubmit} aria-busy={submitting}><Card className="gap-0"><CardHeader className="border-b pb-4"><CardTitle><h2>3. Revise su solicitud</h2></CardTitle><p className="text-sm text-muted-foreground">Verifique datos. Enviar es una acción final y crea una solicitud pendiente de revisión.</p></CardHeader><CardContent className="space-y-6 pt-6"><AvailabilityStatus status={availability} onCheck={() => undefined} disabled /><dl className="grid gap-5 text-sm sm:grid-cols-2"><Summary label="Espacio" value={resource?.name ?? 'Espacio seleccionado'} /><Summary label="Fecha y hora" value={`${formatLocalDate(values.startAt)} a ${formatLocalDate(values.endAt)}`} /><Summary label="Motivo" value={values.purpose} /><Summary label="Personas estimadas" value={values.estimatedAttendees || 'No indicado'} />{values.notes.trim() ? <Summary label="Notas adicionales" value={values.notes} /> : null}</dl>{resource ? <CostNotice resource={resource} /> : null}</CardContent><CardFooter className="mt-6 flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between"><Button variant="outline" type="button" onClick={onEdit} disabled={submitting}>Volver a editar</Button><Button className="w-full sm:w-auto" size="lg" type="submit" loading={submitting} disabled={availability !== 'available'}>{submitting ? 'Enviando solicitud' : 'Enviar solicitud'}</Button></CardFooter></Card></form>
 }
 
-function ResourceSummary({ resource }: { resource: ReservableResource }) {
-  return <Card className="bg-brand-ivory"><CardContent className="space-y-2 p-4"><p className="font-bold text-brand-ink">Está reservando: {resource.name}</p>{resource.description ? <p className="text-sm text-foreground-muted">{resource.description}</p> : null}<div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-foreground-muted">{resource.location ? <span className="inline-flex items-center gap-1"><MapPin className="size-4" aria-hidden="true" />{resource.location}</span> : null}{resource.capacity ? <span className="inline-flex items-center gap-1"><UsersRound className="size-4" aria-hidden="true" />Capacidad: {resource.capacity} personas</span> : null}<span>{resource.pricingType === 'FREE' ? 'Sin costo' : resource.price ? `Costo fijo: ${resource.price} ${resource.currency}` : 'Costo fijo sin monto informado'}</span></div></CardContent></Card>
+function ReservationSubmitted({ confirmation, onNewRequest }: { confirmation: Confirmation; onNewRequest: () => void }) {
+  return <Card className="border-success/40 bg-success-bg"><CardContent className="space-y-5 p-6 sm:p-8"><CheckCircle2 className="size-10 text-success" aria-hidden="true" /><div><h2 className="text-heading-2 font-bold text-foreground">Solicitud recibida</h2><p className="mt-2 text-body-large text-foreground">Su solicitud está pendiente de revisión por la Asociación.</p></div><dl className="grid gap-3 text-sm sm:grid-cols-2"><Summary label="Espacio" value={confirmation.resourceName} /><Summary label="Fecha y hora" value={`${formatLocalDate(confirmation.startAt)} a ${formatLocalDate(confirmation.endAt)}`} /><Summary label="Estado" value="Pendiente de revisión" /></dl><p className="text-sm text-muted-foreground">Enviar una solicitud no aprueba ni confirma la reserva.</p><div className="flex flex-col gap-3 sm:flex-row"><Button type="button" onClick={onNewRequest}>Solicitar otra reserva</Button><a className="inline-flex h-11 items-center justify-center rounded-control px-4 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href="/servicios">Volver a servicios</a></div></CardContent></Card>
 }
 
-function Summary({ label, value }: { label: string; value: string }) { return <div><dt className="font-semibold text-foreground-muted">{label}</dt><dd className="mt-1 text-foreground">{value}</dd></div> }
+function ResourceSummary({ resource }: { resource: ReservableResource }) { return <Card className="bg-brand-ivory"><CardContent className="space-y-2 p-4"><p className="font-bold text-brand-ink">Está reservando: {resource.name}</p>{resource.description ? <p className="text-sm text-muted-foreground">{resource.description}</p> : null}<div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">{resource.location ? <span className="inline-flex items-center gap-1"><MapPin className="size-4" aria-hidden="true" />{resource.location}</span> : null}{resource.capacity ? <span className="inline-flex items-center gap-1"><UsersRound className="size-4" aria-hidden="true" />Capacidad: {resource.capacity} personas</span> : null}<span>{resource.pricingType === 'FREE' ? 'Sin costo' : resource.price ? `Costo fijo: ${resource.price} ${resource.currency}` : 'Costo fijo sin monto informado'}</span></div></CardContent></Card> }
+function CostNotice({ resource }: { resource: ReservableResource }) { return <div className="rounded-control border border-info/30 bg-info-bg p-4 text-sm text-foreground"><p className="font-semibold">Costo y revisión</p><p className="mt-1">{resource.pricingType === 'FREE' ? 'Este espacio no tiene costo.' : resource.price ? `Costo fijo: ${resource.price} ${resource.currency}.` : 'Este espacio tiene costo fijo; el monto no fue informado.'} Una solicitud pendiente no significa que un pago esté realizado.</p></div> }
+function Summary({ label, value }: { label: string; value: string }) { return <div><dt className="font-semibold text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap text-foreground">{value}</dd></div> }
