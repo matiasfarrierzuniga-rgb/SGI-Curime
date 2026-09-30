@@ -43,7 +43,10 @@ type RoleSeeder = {
       create: { roleId: number; permissionId: number };
     }): unknown;
   };
-  $transaction(operations: unknown[]): Promise<unknown>;
+  $transaction(
+    operations: unknown[],
+    options?: { timeout?: number },
+  ): Promise<unknown>;
 };
 
 export async function ensureInitialRoles(prisma: RoleSeeder): Promise<void> {
@@ -96,5 +99,6 @@ export async function ensureInitialRoles(prisma: RoleSeeder): Promise<void> {
         }),
       ),
     ),
+    { timeout: 30_000 },
   );
 }
