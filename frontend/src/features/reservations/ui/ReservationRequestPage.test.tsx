@@ -28,6 +28,11 @@ describe('ReservationRequestPage', () => {
 
   it('loads spaces, identifies the selected space, and initially blocks submit', () => {
     render(<ReservationRequestPage />)
+    expect(screen.getByRole('list', { name: 'Progreso de la solicitud' })).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem').map(step => step.textContent)).toEqual(['1.Elegir espacio', '2.Fecha y horario', '3.Confirmar'])
+    expect(screen.getByRole('heading', { name: 'Espacio' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Fecha y horario' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Datos de la solicitud' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Enviar solicitud' })).toBeDisabled()
     fireEvent.change(screen.getByLabelText('Espacio'), { target: { value: '1' } })
     expect(screen.getByText('Está reservando: Salón comunal')).toBeInTheDocument()
