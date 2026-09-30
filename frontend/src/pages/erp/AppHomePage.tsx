@@ -1,29 +1,15 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Boxes, CalendarCheck, CalendarDays, CalendarPlus, ClipboardList, FileCheck2, FileClock, FileText, HandCoins, Package, TriangleAlert, UserRound, Users, Wallet } from 'lucide-react'
+import { ArrowRight, Boxes, CalendarDays, CalendarPlus, ClipboardList, FileCheck2, FileClock, Package, TriangleAlert, UserRound, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { AdminDashboard } from '@/features/admin-dashboard'
-import { hasCapability } from '@/shared/security/access'
 import { getRoleName } from '@/shared/security/roles'
 import { inventoryReportsService } from '@/services/inventoryReportsService'
 import type { InventoryReportSummary } from '@/types/inventory'
-import { Badge } from '@/shared/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { PageContainer } from '@/shared/ui/PageContainer'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Skeleton } from '@/shared/ui/skeleton'
-
-const internalQuickActions = [
-  { label: 'Solicitar una reserva', description: 'Solicite el uso de un espacio comunitario.', path: '/servicios/reservas', icon: CalendarPlus },
-  { label: 'Gestionar usuarios', description: 'Consultar y administrar cuentas.', path: '/admin/users', capability: 'usr.users.read', icon: Users },
-  { label: 'Revisar solicitudes', description: 'Atender solicitudes de afiliación.', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
-  { label: 'Gestionar reservas', description: 'Consultar y atender reservas comunitarias.', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarCheck },
-  { label: 'Cargos financieros', description: 'Consultar cargos y registrar pagos.', path: '/app/financial', capability: 'fin.charges.read', icon: Wallet },
-  { label: 'Movimientos financieros', description: 'Registrar y consultar ingresos y egresos.', path: '/app/financial/movements', capability: 'fin.movements.read', icon: HandCoins },
-  { label: 'Informe DINADECO', description: 'Consultar el resumen económico anual.', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: FileText },
-  { label: 'Abrir inventario', description: 'Ver existencias, préstamos y movimientos.', path: '/inventory', capability: 'inv.inventory.read', icon: Boxes },
-  { label: 'Consultar bitácora', description: 'Revisar la actividad registrada.', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: FileClock },
-] as const
 
 const communityActions = [
   { label: 'Solicitar una reserva', description: 'Pida el uso de un espacio comunitario.', path: '/servicios/reservas', icon: CalendarPlus },
@@ -43,7 +29,6 @@ export function AppHomePage() {
   const isCommunityUser = roleName === 'Vecino/Afiliado'
   const isAdministrator = roleName === 'Administrador'
   const canViewInventory = roleName === 'Gestor de Inventario'
-  const actions = internalQuickActions.filter((action) => !('capability' in action) || hasCapability(roleName, action.capability))
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
   const [loading, setLoading] = useState(canViewInventory)
   const [summaryUnavailable, setSummaryUnavailable] = useState(false)
@@ -61,15 +46,16 @@ export function AppHomePage() {
   const firstName = user?.fullName?.trim().split(/\s+/)[0]
 
   return (
-    <PageContainer className="space-y-8">
+    <PageContainer className="max-w-[1440px] space-y-10">
       <PageHeader
-        context="Inicio"
-        title={firstName ? `Hola, ${firstName}` : 'Mi cuenta'}
-        description={isCommunityUser ? 'Desde aquí puede solicitar servicios y consultar la información de su cuenta.' : 'Resumen de las áreas disponibles para su trabajo en SGI-Curime.'}
-        actions={roleName ? <Badge variant="secondary" className="w-fit">{roleName}</Badge> : undefined}
+        title="Dashboard"
+        titleClassName="font-sans"
+        description={isCommunityUser
+          ? `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Desde aquí puede solicitar servicios y consultar la información de su cuenta.`
+          : `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Consulte el resumen general de las áreas disponibles para su trabajo en SGI-Curime.`}
       />
 
-      {isAdministrator && <AdminDashboard />}
+      {isAdministrator && <AdminDashboard permissionCodes={user?.permissionCodes} />}
 
       {canViewInventory && (
         <section aria-labelledby="summary-title">
@@ -113,17 +99,6 @@ export function AppHomePage() {
         </>
       )}
 
-      {!isCommunityUser && <section aria-labelledby="quick-title">
-        <h2 id="quick-title" className="text-xl font-bold text-brand-ink">Accesos rápidos</h2>
-        <p className="mt-1 text-sm text-foreground-muted">Servicios y tareas disponibles para su cuenta.</p>
-        {actions.length > 0 ? (
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {actions.map((action) => <ActionCard key={action.path} action={action} />)}
-          </div>
-        ) : (
-          <Card className="mt-4"><CardContent><p className="font-semibold">No hay tareas pendientes disponibles.</p><p className="mt-1 text-sm text-foreground-muted">Utilice Mi perfil para consultar la información de su cuenta.</p></CardContent></Card>
-        )}
-      </section>}
     </PageContainer>
   )
 }

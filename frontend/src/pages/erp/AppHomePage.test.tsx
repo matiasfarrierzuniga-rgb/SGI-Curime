@@ -14,26 +14,24 @@ const summary = { totalItems: 12, activeItems: 10, inactiveItems: 2, totalCatego
 describe('AppHomePage', () => {
   beforeEach(() => { vi.clearAllMocks(); vi.mocked(inventoryReportsService.summary).mockResolvedValue(summary) })
 
-  it('renders real inventory metrics and administrative quick actions for administrators', async () => {
+  it('renders V1 administrative dashboard without broad legacy quick actions', async () => {
     auth.user = { fullName: 'Ana Pérez', role: 'Administrador' }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
-    expect(screen.getByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
     expect(await screen.findByText('Afiliados activos')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Indicadores administrativos' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Gestionar usuarios/ })).toHaveAttribute('href', '/admin/users')
-    expect(screen.getByRole('link', { name: /Revisar solicitudes/ })).toHaveAttribute('href', '/app/admin/requests')
-    expect(screen.getByRole('link', { name: /Consultar bitácora/ })).toHaveAttribute('href', '/admin/audit-logs')
-    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/servicios/reservas')
+    expect(screen.queryByRole('heading', { name: 'Accesos rápidos' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Gestionar usuarios|Revisar solicitudes|Consultar bitácora|Movimientos financieros/ })).not.toBeInTheDocument()
     expect(screen.queryByText(/Módulo en desarrollo/i)).not.toBeInTheDocument()
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
   })
 
-  it('does not expose administrative actions to inventory managers', async () => {
+  it('keeps inventory summary without broad legacy action grid', async () => {
     auth.user = { fullName: 'Luis Mora', role: 'Gestor de Inventario' }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
     expect(await screen.findByText('Artículos activos')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Abrir inventario/ })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /Gestionar usuarios|Revisar solicitudes|Consultar bitácora/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Accesos rápidos' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Abrir inventario|Gestionar usuarios|Revisar solicitudes|Consultar bitácora/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Indicadores administrativos' })).not.toBeInTheDocument()
   })
 
@@ -52,11 +50,14 @@ describe('AppHomePage', () => {
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
   })
 
-  it('preserves financial actions for treasurers without community-only links', () => {
+  it('omits legacy financial actions and cumulative financial metrics for treasurers', () => {
     auth.user = { fullName: 'Carlos Ruiz', role: 'Tesorero' }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
-    expect(screen.getByRole('link', { name: /Cargos financieros/ })).toHaveAttribute('href', '/app/financial')
-    expect(screen.getByRole('link', { name: /Movimientos financieros/ })).toHaveAttribute('href', '/app/financial/movements')
+    expect(screen.queryByRole('heading', { name: 'Accesos rápidos' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Cargos financieros|Movimientos financieros|Informe DINADECO/ })).not.toBeInTheDocument()
+    expect(screen.queryByText('Ingresos')).not.toBeInTheDocument()
+    expect(screen.queryByText('Egresos')).not.toBeInTheDocument()
+    expect(screen.queryByText('Balance')).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Afiliación' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Indicadores administrativos' })).not.toBeInTheDocument()
   })

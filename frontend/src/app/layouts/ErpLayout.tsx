@@ -76,7 +76,7 @@ export function ErpLayout() {
       </aside>
 
       <main id="erp-content" className={`min-w-0 px-4 py-7 transition-[margin] motion-reduce:transition-none sm:px-6 md:px-8 xl:ml-64 xl:px-10 xl:py-9 ${tabletCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
-        <div className="mx-auto w-full max-w-[1280px]"><Outlet /></div>
+        <div className="mx-auto w-full max-w-[1440px]"><Outlet /></div>
       </main>
     </div>
   )
