@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pagination } from "@/shared/ui/Pagination";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -6,7 +7,7 @@ import { ErrorState } from "@/shared/ui/ErrorState";
 import { LoadingState } from "@/shared/ui/LoadingState";
 import { PageContainer } from "@/shared/ui/PageContainer";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import type { UserStatus } from "../model/users.types";
+import type { User, UserStatus, UserUpdate } from "../model/users.types";
 import { getErrorMessage } from "@/shared/lib/errors";
 import {
   useUserDetail,
@@ -16,6 +17,12 @@ import {
 import { UserFilters } from "./UserFilters";
 import { UsersTable } from "./UsersTable";
 import { UserDetailsModal } from "./UserDetailsModal";
+import { UserManagementDialogs } from "./UserManagementDialogs";
+import { usersService } from "../api/users.api";
+import { usersKeys } from "../hooks/useUsersQueries";
+import { useToast } from "@/shared/ui/Toast";
+
+type ManagementAction = "edit" | "role" | "activate" | "deactivate" | "unlock";
 
 const limit = 10;
 
@@ -25,9 +32,12 @@ export function UsersPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<UserStatus | "">("");
   const [roleId, setRoleId] = useState("");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [management, setManagement] = useState<{ user: User; action: ManagementAction } | null>(null);
+  const queryClient = useQueryClient();
+  const { notify } = useToast();
 
-  const filters = { page, limit, name: query, status, roleId: roleId ? Number(roleId) : 0 };
+  const filters = { page, limit, name: query, status: status || undefined, roleId: roleId ? Number(roleId) : 0 };
   const listQuery = useUsersList(filters);
   const rolesQuery = useRolesOptions();
   const detailQuery = useUserDetail(selectedId);
@@ -42,6 +52,33 @@ export function UsersPage() {
         ? getErrorMessage(rolesQuery.error, "No fue posible cargar los roles.")
         : "";
   const selected = detailQuery.data ?? null;
+  const mutation = useMutation({
+    mutationFn: async ({ action, user, payload }: { action: ManagementAction; user: User; payload?: UserUpdate | number }) => {
+      const access = user.access;
+      const permitted = action === "edit"
+        ? user.actions.update
+        : action === "role"
+          ? user.actions.changeRole
+          : action === "unlock"
+            ? user.actions.unlock && access?.isTemporarilyLocked
+            : action === "activate"
+              ? user.actions.manageLifecycle && access?.status === "INACTIVE"
+              : user.actions.manageLifecycle && access?.status === "ACTIVE";
+      if (!access || !permitted) throw new Error("La acción de cuenta solicitada no está disponible para esta persona.");
+
+      const accessId = access.id;
+      if (action === "edit") return usersService.update(accessId, payload as UserUpdate);
+      if (action === "role") return usersService.changeRole(accessId, payload as number);
+      if (action === "activate") return usersService.activate(accessId);
+      if (action === "deactivate") return usersService.deactivate(accessId);
+      return usersService.unlock(accessId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: usersKeys.all });
+      setManagement(null);
+      notify("Cambios de cuenta SGI guardados.", "success");
+    },
+  });
 
   const clearFilters = () => {
     setPage(1);
@@ -97,7 +134,7 @@ export function UsersPage() {
         />
       ) : (
         <>
-          <UsersTable users={users} onOpen={setSelectedId} />
+           <UsersTable users={users} onOpen={setSelectedId} onManage={(user, action) => setManagement({ user, action })} />
           <Pagination
             page={page}
             total={total}
@@ -117,6 +154,17 @@ export function UsersPage() {
           }}
         />
       )}
+      <UserManagementDialogs
+        action={management?.action ?? null}
+        user={management?.user ?? null}
+        roles={rolesQuery.data ?? []}
+        busy={mutation.isPending}
+        error={mutation.error ? getErrorMessage(mutation.error, "No fue posible actualizar la cuenta SGI.") : null}
+        onClose={() => { if (!mutation.isPending) setManagement(null); }}
+        onUpdate={(payload) => management && mutation.mutate({ action: "edit", user: management.user, payload })}
+        onChangeRole={(roleId) => management && mutation.mutate({ action: "role", user: management.user, payload: roleId })}
+        onLifecycle={(action) => management && mutation.mutate({ action, user: management.user })}
+      />
     </PageContainer>
   );
 }

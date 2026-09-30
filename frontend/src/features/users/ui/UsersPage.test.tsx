@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '@/shared/ui/Toast'
@@ -9,6 +9,11 @@ vi.mock('../api/users.api', () => ({
   usersService: {
     list: vi.fn(),
     get: vi.fn(),
+    update: vi.fn(),
+    changeRole: vi.fn(),
+    activate: vi.fn(),
+    deactivate: vi.fn(),
+    unlock: vi.fn(),
   },
 }))
 
@@ -22,10 +27,10 @@ vi.mock('@/features/roles', () => ({
 }))
 
 const personWithAccountAndAffiliation = {
-  id: 101,
-  personId: 101,
+  id: '101',
+  personId: '101',
   fullName: 'Ana Pérez',
-  person: { id: 101, contactEmail: 'ana.contacto@test.com' },
+  person: { id: '101', contactEmail: 'ana.contacto@test.com' },
   identification: '1',
   identificationType: 'NATIONAL',
   phoneCountryCode: '+506',
@@ -34,27 +39,27 @@ const personWithAccountAndAffiliation = {
   address: 'CR',
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-  access: { id: 7, email: 'ana.cuenta@test.com', status: 'ACTIVE', lockedAt: null, roleId: 1, role: { id: 1, name: 'Administradora', description: null, isActive: true }, isBlocked: false, isTemporarilyLocked: false, isAdministrativelyBlocked: false },
-  affiliate: { id: 44, status: 'ACTIVE', legacyRoleId: 999 },
-  affiliateId: 44,
-  actions: { read: true },
+  access: { id: 7, email: 'ana.cuenta@test.com', status: 'ACTIVE', subscriptionExpirationDate: null, lockedAt: null, roleId: 1, role: { id: 1, name: 'Administradora', description: null, isActive: true }, personId: '101', isBlocked: false, isTemporarilyLocked: false, isAdministrativelyBlocked: false },
+  affiliate: { id: '44', status: 'ACTIVE', legacyRoleId: 999 },
+  affiliateId: '44',
+  actions: { read: true, update: false, changeRole: false, manageLifecycle: false, unlock: false },
 } as const
 
-const personWithAccount = { ...personWithAccountAndAffiliation, id: 102, personId: 102, fullName: 'Bruno Cuenta', person: { id: 102, contactEmail: null }, access: { ...personWithAccountAndAffiliation.access, id: 8, email: 'bruno.cuenta@test.com', role: { ...personWithAccountAndAffiliation.access.role, name: 'Usuario SGI' } }, affiliate: null, affiliateId: null } as const
-const personWithAffiliation = { ...personWithAccountAndAffiliation, id: 103, personId: 103, fullName: 'Carla Afiliada', person: { id: 103, contactEmail: 'carla.contacto@test.com' }, access: null, affiliate: { id: 45, status: 'INACTIVE', legacyRoleId: 1 }, affiliateId: 45 } as const
-const personOnly = { ...personWithAccountAndAffiliation, id: 104, personId: 104, fullName: 'Diego Persona', person: { id: 104, contactEmail: null }, access: null, affiliate: null, affiliateId: null } as const
+const personWithAccount = { ...personWithAccountAndAffiliation, id: '102', personId: '102', fullName: 'Bruno Cuenta', person: { id: '102', contactEmail: null }, access: { ...personWithAccountAndAffiliation.access, id: 8, email: 'bruno.cuenta@test.com', personId: '102', role: { ...personWithAccountAndAffiliation.access.role, name: 'Usuario SGI' } }, affiliate: null, affiliateId: null } as const
+const personWithAffiliation = { ...personWithAccountAndAffiliation, id: '103', personId: '103', fullName: 'Carla Afiliada', person: { id: '103', contactEmail: 'carla.contacto@test.com' }, access: null, affiliate: { id: '45', status: 'INACTIVE', legacyRoleId: 1 }, affiliateId: '45' } as const
+const personOnly = { ...personWithAccountAndAffiliation, id: '104', personId: '104', fullName: 'Diego Persona', person: { id: '104', contactEmail: null }, access: null, affiliate: null, affiliateId: null } as const
 
 const page = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
-  return render(
+  return { queryClient, ...render(
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <UsersPage />
       </ToastProvider>
     </QueryClientProvider>,
-  )
+  ) }
 }
 
 const open = async () => {
@@ -67,6 +72,11 @@ describe('UsersPage', () => {
     vi.clearAllMocks()
     vi.mocked(usersService.list).mockResolvedValue({ data: [personWithAccountAndAffiliation], total: 1, page: 1, limit: 10 })
     vi.mocked(usersService.get).mockResolvedValue(personWithAccountAndAffiliation as never)
+    vi.mocked(usersService.update).mockResolvedValue({} as never)
+    vi.mocked(usersService.changeRole).mockResolvedValue({} as never)
+    vi.mocked(usersService.activate).mockResolvedValue({} as never)
+    vi.mocked(usersService.deactivate).mockResolvedValue({} as never)
+    vi.mocked(usersService.unlock).mockResolvedValue({} as never)
   })
 
   it('shows loading and empty state', async () => {
@@ -119,15 +129,86 @@ describe('UsersPage', () => {
 
     await open()
     expect(screen.getByText('Identificación')).toBeInTheDocument()
-    expect(usersService.get).toHaveBeenCalledWith(101)
+    expect(usersService.get).toHaveBeenCalledWith('101')
     expect(screen.getAllByText('ana.contacto@test.com')).toHaveLength(2)
     expect(screen.getAllByText('ana.cuenta@test.com')).toHaveLength(2)
   })
 
-  it('hides every write action because read contract exposes no write capability', async () => {
+  it('renders uniform View, Edit, and More controls for arbitrary Person rows while guarding account operations', async () => {
+    const fixtures = [personWithAccountAndAffiliation, personWithAccount, personWithAffiliation, personOnly]
+    vi.mocked(usersService.list).mockResolvedValue({ data: fixtures as never, total: fixtures.length, page: 1, limit: 10 })
     page()
-    await open()
-    expect(screen.getByText(/Solo consulta. No hay acciones de escritura disponibles/i)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Editar|Cambiar rol|Activar|Inactivar|Desbloquear/ })).not.toBeInTheDocument()
+
+    await screen.findByText(personWithAccountAndAffiliation.fullName)
+    const rows = screen.getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(fixtures.length)
+    rows.forEach((row) => {
+      expect(within(row).getByRole('button', { name: 'Ver detalle' })).toBeInTheDocument()
+      expect(within(row).getByRole('button', { name: 'Editar' })).toBeInTheDocument()
+      expect(within(row).getByRole('button', { name: /Más acciones para/ })).toBeInTheDocument()
+    })
+
+    const rowsWithoutAccess = rows.filter((_, index) => fixtures[index].access === null)
+    expect(rowsWithoutAccess).toHaveLength(2)
+    rowsWithoutAccess.forEach((row) => {
+      const edit = within(row).getByRole('button', { name: 'Editar' })
+      expect(edit).toBeDisabled()
+      fireEvent.click(edit)
+      fireEvent.click(within(row).getByRole('button', { name: /Más acciones para/ }))
+      expect(screen.getByText('No hay acciones de cuenta disponibles para esta persona.')).toBeInTheDocument()
+      expect(screen.queryAllByRole('menuitem')).toHaveLength(0)
+    })
+
+    expect(usersService.update).not.toHaveBeenCalled()
+    expect(usersService.changeRole).not.toHaveBeenCalled()
+    expect(usersService.activate).not.toHaveBeenCalled()
+    expect(usersService.deactivate).not.toHaveBeenCalled()
+    expect(usersService.unlock).not.toHaveBeenCalled()
+  })
+
+  it('opens role management from structured account actions without exposing unlock for an unlocked account', async () => {
+    const managed = { ...personWithAccountAndAffiliation, actions: { read: true, update: false, changeRole: true, manageLifecycle: true, unlock: true } }
+    vi.mocked(usersService.list).mockResolvedValue({ data: [managed] as never, total: 1, page: 1, limit: 10 })
+    page()
+    await screen.findByText('Ana Pérez')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Más acciones para Ana Pérez' }))
+    expect(screen.getByRole('menu', { name: 'Acciones de cuenta para Ana Pérez' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Desbloquear cuenta' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Cambiar rol' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Cambiar rol de cuenta' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Nuevo rol de cuenta')).toHaveValue('1')
+  })
+
+  it('uses numeric access ID for eligible profile edits and invalidates Person-root users cache', async () => {
+    const editable = { ...personWithAccountAndAffiliation, actions: { ...personWithAccountAndAffiliation.actions, update: true } }
+    vi.mocked(usersService.list).mockResolvedValue({ data: [editable] as never, total: 1, page: 1, limit: 10 })
+    const { queryClient } = page()
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+    await screen.findByText('Ana Pérez')
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
+    fireEvent.change(screen.getByLabelText('Correo de cuenta SGI'), { target: { value: 'ana.nueva@test.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(usersService.update).toHaveBeenCalledWith(7, expect.objectContaining({ email: 'ana.nueva@test.com' })))
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }))
+    expect(await screen.findByText(/Cambios de cuenta SGI guardados/)).toBeInTheDocument()
+  })
+
+  it('uses action flags exactly and preserves dialog state when backend update fails', async () => {
+    const managed = { ...personWithAccountAndAffiliation, actions: { read: true, update: false, changeRole: true, manageLifecycle: true, unlock: true } }
+    vi.mocked(usersService.list).mockResolvedValue({ data: [managed] as never, total: 1, page: 1, limit: 10 })
+    vi.mocked(usersService.deactivate).mockRejectedValue({ isAxiosError: true, response: { status: 400, data: { message: 'Cuenta protegida' } } })
+    page()
+    await screen.findByText('Ana Pérez')
+    expect(screen.getByRole('button', { name: 'Editar' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Más acciones para Ana Pérez' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Desactivar cuenta' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Desactivar cuenta' }))
+
+    await waitFor(() => expect(usersService.deactivate).toHaveBeenCalledWith(7))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Cuenta protegida')
+    expect(screen.getByRole('dialog', { name: 'Desactivar cuenta SGI' })).toBeInTheDocument()
   })
 })

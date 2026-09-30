@@ -1,18 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { rolesService } from "@/features/roles";
 import { usersService } from "../api/users.api";
+import type { UserStatus } from '../model/users.types';
 
 export interface UserListFilters {
   page: number;
   limit: number;
   name?: string;
-  status?: string;
+  status?: UserStatus;
   roleId?: number;
 }
 export const usersKeys = {
   all: ["users"] as const,
   list: (filters: UserListFilters) => [...usersKeys.all, "list", filters] as const,
-  detail: (personId: number) => [...usersKeys.all, "detail", personId] as const,
+  detail: (personId: string) => [...usersKeys.all, "detail", personId] as const,
 };
 
 export function useUsersList(filters: UserListFilters) {
@@ -23,7 +24,7 @@ export function useUsersList(filters: UserListFilters) {
         page: filters.page,
         limit: filters.limit,
         name: filters.name || undefined,
-        status: (filters.status || undefined) as never,
+        status: filters.status || undefined,
         roleId: filters.roleId || undefined,
       }),
   });
@@ -37,9 +38,9 @@ export function useRolesOptions() {
   });
 }
 
-export function useUserDetail(personId: number | null) {
+export function useUserDetail(personId: string | null) {
   return useQuery({
-    queryKey: usersKeys.detail(personId ?? 0),
+    queryKey: usersKeys.detail(personId ?? ''),
     queryFn: () => usersService.get(personId!),
     enabled: personId !== null,
   });
