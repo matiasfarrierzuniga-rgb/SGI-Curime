@@ -22,6 +22,13 @@ describe('DatePicker', () => {
     expect(onChange).toHaveBeenCalledWith('2026-09-10')
   })
 
+  it('renders a native year dropdown', () => {
+    render(<DatePicker value="2026-09-09" onChange={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('textbox'))
+    expect(screen.getByRole('combobox', { name: 'Año del calendario' })).toHaveValue('2026')
+  })
+
   it('does not accept invalid display dates', () => {
     const onChange = vi.fn()
     render(<DatePicker value="" onChange={onChange} />)
@@ -31,23 +38,77 @@ describe('DatePicker', () => {
     expect(screen.getByRole('textbox')).toHaveAttribute('aria-invalid', 'true')
   })
 
-  it('disables days outside min and max', () => {
+  it('derives year options from min and max', () => {
     render(<DatePicker value="2026-09-15" min="2026-09-10" max="2026-09-20" onChange={vi.fn()} />)
 
     fireEvent.click(screen.getByRole('textbox'))
-    expect(screen.getByRole('button', { name: 'Seleccionar 09/09/2026' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Seleccionar 21/09/2026' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Seleccionar 15/09/2026' })).not.toBeDisabled()
+    const yearDropdown = screen.getByRole('combobox', { name: 'Año del calendario' })
+    expect(yearDropdown).toHaveTextContent('2026')
+    expect(yearDropdown).not.toHaveTextContent('2025')
+    expect(yearDropdown).not.toHaveTextContent('2027')
   })
 
-  it('navigates between months', () => {
+  it('uses a max-relative year range when only a historical maximum is provided', () => {
+    render(<DatePicker value="" max="1900-12-31" onChange={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('textbox'))
+    const yearDropdown = screen.getByRole('combobox', { name: 'Año del calendario' })
+    expect(yearDropdown).toHaveValue('1900')
+    expect(yearDropdown).toHaveTextContent('1800')
+    expect(yearDropdown).toHaveTextContent('1900')
+    expect(yearDropdown).not.toHaveTextContent('1901')
+  })
+
+  it('keeps previous and next month arrows across December and January', () => {
     render(<DatePicker value="2026-09-09" onChange={vi.fn()} />)
 
     fireEvent.click(screen.getByRole('textbox'))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Mes del calendario' }), { target: { value: '12' } })
     fireEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
-    expect(screen.getByRole('grid', { name: 'Octubre 2026' })).toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: 'Enero 2027' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Mes anterior' }))
-    expect(screen.getByRole('grid', { name: 'Septiembre 2026' })).toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: 'Diciembre 2026' })).toBeInTheDocument()
+  })
+
+  it('selects a historical month and year directly before choosing a day', () => {
+    const onChange = vi.fn()
+    render(<DatePicker value="" onChange={onChange} />)
+
+    fireEvent.click(screen.getByRole('textbox'))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Mes del calendario' }), { target: { value: '6' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Año del calendario' }), { target: { value: '1981' } })
+    expect(screen.getByRole('grid', { name: 'Junio 1981' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Seleccionar 15/06/1981' }))
+
+    expect(onChange).toHaveBeenCalledWith('1981-06-15')
+  })
+
+  it('rejects manual dates outside the configured range', () => {
+    const onChange = vi.fn()
+    render(<DatePicker value="" min="2026-09-10" max="2026-09-20" onChange={onChange} />)
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '21/09/2026' } })
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByRole('textbox')).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('accepts valid manual DD/MM/AAAA entry', () => {
+    const onChange = vi.fn()
+    render(<DatePicker value="" onChange={onChange} />)
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '15/06/1981' } })
+    expect(onChange).toHaveBeenCalledWith('1981-06-15')
+  })
+
+  it('blocks future birth dates through a maximum date', () => {
+    const onChange = vi.fn()
+    render(<DatePicker value="" max="2026-10-01" onChange={onChange} />)
+
+    fireEvent.click(screen.getByRole('textbox'))
+    expect(screen.getByRole('combobox', { name: 'Año del calendario' })).not.toHaveTextContent('2027')
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '02/10/2026' } })
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByRole('textbox')).toHaveAttribute('aria-invalid', 'true')
   })
 
   it('closes on Escape and restores focus to the input', () => {

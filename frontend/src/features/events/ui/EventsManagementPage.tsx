@@ -6,6 +6,8 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
 import { useAdminEvents, useEventMutations } from '../hooks/useEventsQueries'
 import type { AdminEvent } from '../model/events.types'
 import { EventForm } from './EventForm'
@@ -21,8 +23,8 @@ export function EventsManagementPage() {
   const [editing, setEditing] = useState<AdminEvent | undefined>()
   const [creating, setCreating] = useState(false)
   const [actionError, setActionError] = useState('')
-  const mayPublish = hasCapability(user?.role, 'pub.events.publish')
-  const mayManage = hasCapability(user?.role, 'pub.events.manage')
+  const mayPublish = hasCapability(user?.permissionCodes, 'pub.events.publish')
+  const mayManage = hasCapability(user?.permissionCodes, 'pub.events.manage')
   const workflowBusy = submitForReview.isPending || returnToDraft.isPending || publish.isPending || archive.isPending
 
   const runPublicationAction = async (event: AdminEvent, action: 'review' | 'draft' | 'publish' | 'archive') => {
@@ -37,24 +39,24 @@ export function EventsManagementPage() {
   }
 
   return <section className="space-y-6">
-    <PageHeader context="Gestión administrativa" title="Eventos" description="Cree, actualice y controle la publicación de la agenda comunitaria." actions={<button className="min-h-11 rounded-md bg-brand-deep px-4 font-semibold text-brand-ivory hover:bg-brand-primary" type="button" onClick={() => setCreating(true)}>Crear evento</button>} />
+    <PageHeader context="Gestión administrativa" title="Eventos" description="Cree, actualice y controle la publicación de la agenda comunitaria." actions={mayManage ? <Button type="button" onClick={() => setCreating(true)}>Crear evento</Button> : undefined} />
     {actionError ? <ErrorState title="No fue posible actualizar el evento" message={actionError} /> : null}
     {eventsQuery.isPending ? <LoadingState label="Cargando eventos..." /> : null}
-    {eventsQuery.isError ? <ErrorState message={getErrorMessage(eventsQuery.error, 'No fue posible cargar los eventos.')} action={<button className="min-h-11 rounded-md border border-border px-4 font-semibold" type="button" onClick={() => void eventsQuery.refetch()}>Reintentar</button>} /> : null}
-    {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length === 0 ? <EmptyState title="No hay eventos registrados" description="Cree el primer evento cuando cuente con información confirmada por la Asociación." action={<button className="min-h-11 rounded-md bg-brand-deep px-4 font-semibold text-brand-ivory" type="button" onClick={() => setCreating(true)}>Crear evento</button>} /> : null}
+    {eventsQuery.isError ? <ErrorState message={getErrorMessage(eventsQuery.error, 'No fue posible cargar los eventos.')} action={<Button variant="outline" type="button" onClick={() => void eventsQuery.refetch()}>Reintentar</Button>} /> : null}
+    {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length === 0 ? <EmptyState title="No hay eventos registrados" description="Cree el primer evento cuando cuente con información confirmada por la Asociación." action={mayManage ? <Button type="button" onClick={() => setCreating(true)}>Crear evento</Button> : undefined} /> : null}
     {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length > 0 ? <div className="grid gap-4">
       {eventsQuery.data.map((event) => <article key={event.id} className="grid gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
         <div className="min-w-0">
-          <div className="flex flex-wrap gap-2 text-xs font-semibold"><span className="rounded-full bg-brand-soft/20 px-3 py-1 text-brand-deep">{label(event.publicationStatus)}</span><span className="rounded-full bg-surface-muted px-3 py-1 text-foreground-muted">{label(event.status)}</span></div>
+          <div className="flex flex-wrap gap-2"><Badge variant="accent">{label(event.publicationStatus)}</Badge><Badge variant="secondary">{label(event.status)}</Badge></div>
           <h2 className="mt-3 font-heading text-heading-3 font-semibold text-brand-ink">{event.title}</h2>
           <p className="mt-1 text-body-small text-foreground-muted">{new Intl.DateTimeFormat('es-CR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt))}</p>
         </div>
         <div className="flex flex-wrap gap-2 md:justify-end">
-          <button className="min-h-11 rounded-md border border-border px-4 font-semibold" type="button" onClick={() => setEditing(event)}>Editar</button>
-          {mayManage && event.publicationStatus === 'DRAFT' ? <button className="min-h-11 rounded-md border border-border px-4 font-semibold" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'review')}>Enviar a revisión</button> : null}
-          {mayManage && event.publicationStatus === 'REVIEW' ? <button className="min-h-11 rounded-md border border-border px-4 font-semibold" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'draft')}>Devolver a borrador</button> : null}
-          {mayPublish && event.publicationStatus === 'REVIEW' ? <button className="min-h-11 rounded-md bg-brand-deep px-4 font-semibold text-brand-ivory hover:bg-brand-primary" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'publish')}>Publicar</button> : null}
-          {mayPublish && event.publicationStatus === 'PUBLISHED' ? <button className="min-h-11 rounded-md border border-danger px-4 font-semibold text-danger" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'archive')}>Archivar</button> : null}
+          {mayManage ? <Button variant="outline" type="button" onClick={() => setEditing(event)}>Editar</Button> : null}
+          {mayManage && event.publicationStatus === 'DRAFT' ? <Button variant="outline" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'review')}>Enviar a revisión</Button> : null}
+          {mayManage && event.publicationStatus === 'REVIEW' ? <Button variant="outline" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'draft')}>Devolver a borrador</Button> : null}
+          {mayPublish && event.publicationStatus === 'REVIEW' ? <Button disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'publish')}>Publicar</Button> : null}
+          {mayPublish && event.publicationStatus === 'PUBLISHED' ? <Button variant="outline" disabled={workflowBusy} type="button" onClick={() => void runPublicationAction(event, 'archive')}>Archivar</Button> : null}
         </div>
       </article>)}
     </div> : null}

@@ -24,6 +24,8 @@ const monthNames = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
 const weekDays = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do']
+const DEFAULT_PAST_YEAR_RANGE = 100
+const DEFAULT_FUTURE_YEAR_RANGE = 10
 
 function isValidDate(year: number, month: number, day: number) {
   if (year < 1 || month < 1 || month > 12 || day < 1) return false
@@ -78,6 +80,30 @@ function moveMonth(view: Pick<CalendarDate, 'year' | 'month'>, offset: number) {
   return { year: date.getFullYear(), month: date.getMonth() + 1 }
 }
 
+function getAvailableYears(min?: string, max?: string, selected?: CalendarDate | null) {
+  const currentYear = today().year
+  const minYear = parseIsoDate(min ?? '')?.year
+  const maxYear = parseIsoDate(max ?? '')?.year
+  const selectedYear = selected?.year ?? currentYear
+  const firstYear = minYear ?? (maxYear ? Math.min(maxYear, selectedYear) : Math.min(currentYear, selectedYear)) - DEFAULT_PAST_YEAR_RANGE
+  const lastYear = maxYear ?? Math.max(currentYear + DEFAULT_FUTURE_YEAR_RANGE, selectedYear)
+
+  return Array.from({ length: Math.max(0, lastYear - firstYear + 1) }, (_, index) => firstYear + index)
+}
+
+function getInitialView(value: string, min?: string, max?: string) {
+  const selected = parseIsoDate(value)
+  if (selected) return { year: selected.year, month: selected.month }
+
+  const current = today()
+  const currentValue = toIsoDate(current)
+  const minDate = parseIsoDate(min ?? '')
+  const maxDate = parseIsoDate(max ?? '')
+  if (minDate && currentValue < toIsoDate(minDate)) return { year: minDate.year, month: minDate.month }
+  if (maxDate && currentValue > toIsoDate(maxDate)) return { year: maxDate.year, month: maxDate.month }
+  return { year: current.year, month: current.month }
+}
+
 export function DatePicker({
   id,
   value,
@@ -95,10 +121,7 @@ export function DatePicker({
   const [isOpen, setIsOpen] = useState(false)
   const [inputValue, setInputValue] = useState(() => formatValue(value))
   const [inputInvalid, setInputInvalid] = useState(false)
-  const [view, setView] = useState(() => {
-    const selected = parseIsoDate(value) ?? today()
-    return { year: selected.year, month: selected.month }
-  })
+  const [view, setView] = useState(() => getInitialView(value, min, max))
 
   useEffect(() => {
     setInputValue(formatValue(value))
@@ -128,8 +151,7 @@ export function DatePicker({
 
   const openCalendar = () => {
     if (disabled || isOpen) return
-    const selected = parseIsoDate(value) ?? today()
-    setView({ year: selected.year, month: selected.month })
+    setView(getInitialView(value, min, max))
     setIsOpen(true)
   }
 
@@ -168,6 +190,7 @@ export function DatePicker({
 
   const selectedDate = parseIsoDate(value)
   const currentDate = today()
+  const availableYears = getAvailableYears(min, max, selectedDate)
   const firstDayOffset = (new Date(view.year, view.month - 1, 1).getDay() + 6) % 7
   const daysInMonth = new Date(view.year, view.month, 0).getDate()
   const days = Array.from({ length: firstDayOffset + daysInMonth }, (_, index) => {
@@ -217,11 +240,26 @@ export function DatePicker({
           aria-label="Calendario"
           className="absolute top-full right-0 z-30 mt-2 w-[min(20rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] rounded-surface border border-border-default bg-surface p-3 shadow-lg"
         >
-          <div className="mb-3 grid grid-cols-[2.5rem_1fr_2.5rem] items-center">
+          <div className="mb-3 grid grid-cols-[2.5rem_minmax(0,1fr)_5.5rem_2.5rem] items-center gap-1">
             <button type="button" aria-label="Mes anterior" className="grid size-10 place-items-center rounded-control text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => setView(current => moveMonth(current, -1))}>
               <ChevronLeft aria-hidden="true" className="size-4" />
             </button>
-            <p className="text-center text-sm font-semibold text-foreground">{monthNames[view.month - 1]} {view.year}</p>
+            <select
+              aria-label="Mes del calendario"
+              className="h-10 min-w-0 rounded-control border border-border-default bg-surface px-2 text-sm font-semibold text-foreground outline-none hover:border-primary/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              value={view.month}
+              onChange={event => setView(current => ({ ...current, month: Number(event.target.value) }))}
+            >
+              {monthNames.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}
+            </select>
+            <select
+              aria-label="Año del calendario"
+              className="h-10 min-w-0 rounded-control border border-border-default bg-surface px-2 text-sm font-semibold text-foreground outline-none hover:border-primary/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              value={view.year}
+              onChange={event => setView(current => ({ ...current, year: Number(event.target.value) }))}
+            >
+              {availableYears.map(year => <option key={year} value={year}>{year}</option>)}
+            </select>
             <button type="button" aria-label="Mes siguiente" className="grid size-10 place-items-center rounded-control text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => setView(current => moveMonth(current, 1))}>
               <ChevronRight aria-hidden="true" className="size-4" />
             </button>
