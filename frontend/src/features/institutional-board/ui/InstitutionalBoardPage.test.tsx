@@ -16,14 +16,14 @@ vi.mock('../hooks/institutionalBoard.queries', () => ({
 
 describe('InstitutionalBoardPage', () => {
   beforeEach(() => { vi.clearAllMocks(); permissionCodes = ['adm.institutional-board.manage'] })
-  it('shows periods, history, position labels and no delete or unsupported claims', () => {
+  it('shows periods, appointments, position labels and only supported actions', () => {
     render(<InstitutionalBoardPage />)
     expect(screen.getByRole('heading', { name: 'Junta Directiva' })).toBeInTheDocument()
     expect(screen.getAllByText('Presidencia')).not.toHaveLength(0)
     expect(screen.getByText('Persona Ficticia')).toBeInTheDocument()
-    expect(screen.getByText(/Según período/)).toBeInTheDocument()
+    expect(screen.getAllByText(/No especificada/)).not.toHaveLength(0)
     expect(screen.queryByRole('button', { name: /eliminar/i })).not.toBeInTheDocument()
-    expect(screen.queryByText(/DINADECO|sello/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/DINADECO|sello|sustitución|actas/i)).not.toBeInTheDocument()
   })
   it('uses the person selector on create and sends personId', async () => {
     render(<InstitutionalBoardPage />)
@@ -37,7 +37,6 @@ describe('InstitutionalBoardPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
     expect(screen.queryByLabelText(/Buscar persona/)).not.toBeInTheDocument()
     expect(screen.getByLabelText('Persona del nombramiento')).toHaveTextContent('Persona Ficticia')
-    expect(screen.getByText(/Para registrar una sustitución, cierre la vigencia/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Otra Persona/ })).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Cargo'), { target: { value: 'TREASURER' } })
     fireEvent.change(screen.getByLabelText('Plaza (opcional)'), { target: { value: '2' } })
