@@ -33,7 +33,7 @@ import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
 import { DinadecoAnnualReportPage, FinancialMovementsPage, FinancialPage } from '@/features/financial'
 import { DonationsPage } from '@/features/donations'
-import { AssembliesAdminPage, MineAssembliesPage } from '@/features/assemblies'
+import { AssembliesAdminPage, AssemblyManagementPage, MineAssembliesPage } from '@/features/assemblies'
 import { InstitutionalProfilePage } from '@/features/institutional-profile'
 import { InstitutionalBoardPage } from '@/features/institutional-board'
 export function AppRoutes() {
@@ -100,6 +100,7 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="adm.assemblies.read" />}>
             <Route path="/app/admin/assemblies" element={<AssembliesAdminPage />} />
+            <Route path="/app/admin/assemblies/:id" element={<AssemblyManagementPage />} />
           </Route>
           <Route path="/app/assemblies/mine" element={<MineAssembliesPage />} />
           <Route element={<RoleRoute capability="adm.justifications.read" />}>

@@ -6,5 +6,5 @@ export function InternalErpRoute() {
 
   if (isLoading) return <p className="container">Restaurando sesión…</p>
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  return user?.permissionCodes.length ? <Outlet /> : <Navigate to="/servicios" replace />
+  return user?.permissionCodes?.length ? <Outlet /> : <Navigate to="/servicios" replace />
 }

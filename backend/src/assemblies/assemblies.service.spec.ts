@@ -190,19 +190,103 @@ describe('Assembly convocations', () => {
     },
   );
 
-  it('accepts an active affiliate without a legacy role', async () => {
+  it('convokes active affiliates without legacy roles, exposes them in detail, and continues quorum', async () => {
     const { prisma, tx } = prismaMock();
-    prisma.affiliate.findMany.mockResolvedValue([{ id: 7, legacyRoleId: null }]);
+    const convocations = [
+      {
+        id: 11,
+        assemblyId: 1,
+        affiliateId: 1,
+        legacyRoleId: null,
+        legacyRoleNameSnapshot: '',
+        convenedAt: new Date(),
+        affiliate: { id: 1, fullName: 'Andrea', status: 'ACTIVE' },
+      },
+      {
+        id: 12,
+        assemblyId: 1,
+        affiliateId: 2,
+        legacyRoleId: null,
+        legacyRoleNameSnapshot: '',
+        convenedAt: new Date(),
+        affiliate: { id: 2, fullName: 'José', status: 'ACTIVE' },
+      },
+    ];
+    prisma.affiliate.findMany.mockResolvedValue([
+      { id: 1, legacyRoleId: null },
+      { id: 2, legacyRoleId: null },
+    ]);
+    tx.assemblyConvocation.findMany.mockResolvedValue(convocations);
+    prisma.assemblyConvocation.findMany.mockResolvedValue(convocations);
+    prisma.assemblyConvocation.count.mockResolvedValue(2);
+    prisma.assemblyAttendance.count.mockResolvedValue(0);
 
-    await serviceFor(prisma).replaceConvocations(1, [7], 9);
+    await expect(
+      serviceFor(prisma).replaceConvocations(1, [1, 2], 9),
+    ).resolves.toMatchObject([
+      { affiliateId: 1, roleId: null, roleNameSnapshot: '' },
+      { affiliateId: 2, roleId: null, roleNameSnapshot: '' },
+    ]);
 
+    expect(prisma.role.findMany).not.toHaveBeenCalled();
     expect(tx.assemblyConvocation.createMany).toHaveBeenCalledWith({
       data: [
-        expect.objectContaining({
-          affiliateId: 7,
+        {
+          assemblyId: 1,
+          affiliateId: 1,
           legacyRoleId: null,
           legacyRoleNameSnapshot: '',
-        }),
+        },
+        {
+          assemblyId: 1,
+          affiliateId: 2,
+          legacyRoleId: null,
+          legacyRoleNameSnapshot: '',
+        },
+      ],
+    });
+    await expect(serviceFor(prisma).detail(1)).resolves.toMatchObject({
+      convocations: [
+        { affiliateId: 1, roleId: null },
+        { affiliateId: 2, roleId: null },
+      ],
+      quorum: {
+        available: true,
+        convokedCount: 2,
+        requiredCount: 1,
+        quorumReached: false,
+      },
+    });
+  });
+
+  it('looks up only present legacy role ids for mixed convocation metadata', async () => {
+    const { prisma, tx } = prismaMock();
+    prisma.affiliate.findMany.mockResolvedValue([
+      { id: 1, legacyRoleId: 3 },
+      { id: 2, legacyRoleId: null },
+    ]);
+    prisma.role.findMany.mockResolvedValue([{ id: 3, name: 'Fiscal' }]);
+
+    await serviceFor(prisma).replaceConvocations(1, [1, 2], 9);
+
+    expect(prisma.role.findMany).toHaveBeenCalledWith({
+      where: { id: { in: [3] } },
+      select: { id: true, name: true },
+    });
+    expect(tx.assemblyConvocation.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          assemblyId: 1,
+          affiliateId: 1,
+          legacyRoleId: 3,
+          legacyRoleNameSnapshot: 'Fiscal',
+        },
+        {
+          assemblyId: 1,
+          affiliateId: 2,
+          legacyRoleId: null,
+          legacyRoleNameSnapshot: '',
+        },
       ],
     });
   });

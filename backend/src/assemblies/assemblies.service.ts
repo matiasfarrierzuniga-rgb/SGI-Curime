@@ -327,12 +327,17 @@ export class AssembliesService {
       },
       select: { id: true, legacyRoleId: true },
     });
-    const roles = await this.prisma.role.findMany({
-      where: {
-        id: { in: eligible.map((item) => item.legacyRoleId!) },
-      },
-      select: { id: true, name: true },
-    });
+    // legacyRoleId is optional historical metadata; active affiliates remain eligible
+    // without it and receive an empty role-name snapshot.
+    const legacyRoleIds = eligible.flatMap((item) =>
+      item.legacyRoleId === null ? [] : [item.legacyRoleId],
+    );
+    const roles = legacyRoleIds.length
+      ? await this.prisma.role.findMany({
+          where: { id: { in: legacyRoleIds } },
+          select: { id: true, name: true },
+        })
+      : [];
     const roleById = new Map(roles.map((role) => [role.id, role]));
     if (
       eligible.length !== affiliateIds.length
