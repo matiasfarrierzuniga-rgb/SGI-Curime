@@ -91,6 +91,7 @@ describe('InventoryItemsPage', () => {
     fireEvent.change(screen.getByLabelText('Código'), { target: { value: 'HER-002' } })
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Tornillo' } })
     fireEvent.change(within(dialog).getByLabelText('Categoría'), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText('Existencia inicial'), { target: { value: '0' } })
     fireEvent.change(screen.getByLabelText('Cantidad mínima'), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     await waitFor(() =>
@@ -99,13 +100,14 @@ describe('InventoryItemsPage', () => {
         name: 'Tornillo',
         description: undefined,
         categoryId: 1,
+        quantity: 0,
         minimumQuantity: 3,
         unit: 'unidad',
         location: undefined,
         condition: 'GOOD',
       }),
     )
-    expect(await screen.findByRole('dialog', { name: /Registrar entrada: Martillo/ })).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: /Artículo: Martillo/ })).toBeInTheDocument()
   })
 
   it('updates an existing item through the edit form', async () => {
@@ -139,6 +141,7 @@ describe('InventoryItemsPage', () => {
     fireEvent.change(screen.getByLabelText('Código'), { target: { value: 'HER-002' } })
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Tornillo' } })
     fireEvent.change(within(dialog).getByLabelText('Categoría'), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText('Existencia inicial'), { target: { value: '0' } })
     fireEvent.change(screen.getByLabelText('Cantidad mínima'), { target: { value: '-2' } })
     fireEvent.submit(within(dialog).getByRole('button', { name: 'Guardar' }).closest('form')!)
 

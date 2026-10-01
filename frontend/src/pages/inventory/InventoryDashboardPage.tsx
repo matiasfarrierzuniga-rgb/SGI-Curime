@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom'
 import { inventoryReportsService } from '../../services/inventoryReportsService'
 import type { InventoryReportSummary } from '../../types/inventory'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
+import { ErrorState } from '@/shared/ui/ErrorState'
+import { LoadingState } from '@/shared/ui/LoadingState'
+import { MetricCard } from '@/shared/ui/MetricCard'
+import { InventoryPageLayout } from './InventoryPageLayout'
 
 const statLabel: Record<string, string> = {
   totalItems: 'Artículos',
@@ -48,39 +53,30 @@ export function InventoryDashboardPage() {
         if (key === 'overdueLoans' && value > 0) tone = 'danger'
         if (key === 'activeItems' && value > 0) tone = 'success'
         return (
-          <div className={`stat-card ${tone}`} key={key}>
-            <div className="stat-value">{value}</div>
-            <div className="stat-label">{statLabel[key] ?? key}</div>
-          </div>
+          <MetricCard key={key} label={statLabel[key] ?? key} value={value} state={tone as 'neutral' | 'success' | 'warning' | 'danger'} stateLabel={tone === 'neutral' ? 'Actual' : tone === 'success' ? 'Al día' : 'Requiere atención'} />
         )
       })
     : []
 
   return (
-    <section>
-      <h1>Inventario</h1>
-      <p className="muted">Resumen general del módulo de inventario.</p>
-      {error && (
-        <p className="message error" role="alert">
-          {error}
-        </p>
-      )}
+    <InventoryPageLayout title="Inventario" description="Resumen operativo del módulo de inventario.">
+      {error && <ErrorState message={error} />}
       {loading ? (
-        <p aria-live="polite">Cargando resumen de inventario…</p>
+        <LoadingState label="Cargando resumen de inventario…" />
       ) : !summary ? null : (
-        <div className="stat-grid">{cards}</div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{cards}</div>
       )}
-      <div className="card">
-        <h2>Accesos rápidos</h2>
-        <div className="quick-links">
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-3"><CardTitle>Accesos rápidos</CardTitle></CardHeader>
+        <CardContent className="flex flex-wrap gap-2 pt-0">
           <Link className="button-link" to="/inventory/items">Artículos</Link>
           <Link className="button-link" to="/inventory/categories">Categorías</Link>
           <Link className="button-link" to="/inventory/movements">Movimientos</Link>
           <Link className="button-link" to="/inventory/loans">Préstamos</Link>
           <Link className="button-link" to="/inventory/alerts">Alertas</Link>
           <Link className="button-link" to="/inventory/reports">Reportes</Link>
-        </div>
-      </div>
-    </section>
+        </CardContent>
+      </Card>
+    </InventoryPageLayout>
   )
 }

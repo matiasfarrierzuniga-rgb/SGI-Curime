@@ -4,6 +4,13 @@ import { inventoryAlertsService } from '../../services/inventoryAlertsService'
 import type { InventoryAlerts, InventoryLoanAlert } from '../../types/inventory'
 import { conditionLabels } from '../../types/inventory'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { ErrorState } from '@/shared/ui/ErrorState'
+import { LoadingState } from '@/shared/ui/LoadingState'
+import { MetricCard } from '@/shared/ui/MetricCard'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { InventoryPageLayout } from './InventoryPageLayout'
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString('es-CR')
 
@@ -46,14 +53,13 @@ export function InventoryAlertsPage() {
     }
   }, [])
 
-  if (loading) return <section><h1>Alertas</h1><p aria-live="polite">Cargando alertas…</p></section>
+  if (loading) return <InventoryPageLayout title="Alertas" description="Señales operativas que requieren seguimiento."><LoadingState label="Cargando alertas…" /></InventoryPageLayout>
 
   if (!data) {
     return (
-      <section>
-        <h1>Alertas</h1>
-        {error && <p className="message error" role="alert">{error}</p>}
-      </section>
+      <InventoryPageLayout title="Alertas" description="Señales operativas que requieren seguimiento.">
+        <ErrorState message={error || 'No fue posible cargar las alertas.'} />
+      </InventoryPageLayout>
     )
   }
 
@@ -68,26 +74,23 @@ export function InventoryAlertsPage() {
   const isEmpty = groups.every((g) => data.summary[g.key] === 0)
 
   return (
-    <section>
-      <h1>Alertas de inventario</h1>
-      {error && <p className="message error" role="alert">{error}</p>}
-      <div className="stat-grid">
+    <InventoryPageLayout title="Alertas" description="Priorice faltantes, préstamos vencidos y artículos que requieren atención.">
+      <div className="space-y-6">
+      {error && <ErrorState message={error} />}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {groups.map((g) => (
-          <div className={`stat-card ${g.count > 0 ? (g.key === 'overdueLoans' || g.key === 'outOfStock' ? 'danger' : 'warning') : 'success'}`} key={g.key}>
-            <div className="stat-value">{g.count}</div>
-            <div className="stat-label">{g.title}</div>
-          </div>
+          <MetricCard key={g.key} label={g.title} value={g.count} state={g.count > 0 ? (g.key === 'overdueLoans' || g.key === 'outOfStock' ? 'danger' : 'warning') : 'success'} stateLabel={g.count > 0 ? 'Requiere atención' : 'Sin pendientes'} />
         ))}
       </div>
       {isEmpty ? (
-        <p className="card">No hay alertas pendientes de atención.</p>
+        <EmptyState title="No hay alertas pendientes de atención." description="No hay alertas de inventario que requieran atención." />
       ) : (
         groups.map((g) => {
           if (data.summary[g.key] === 0) return null
           return (
-            <section className="alert-group" key={g.key} aria-label={g.title}>
-              <h2>{g.title} <span className="badge warning">{data.summary[g.key]}</span></h2>
-              <div className="alert-list">
+            <Card key={g.key} aria-label={g.title} className="overflow-hidden">
+              <CardHeader className="pb-3"><CardTitle className="flex items-center justify-between gap-3">{g.title} <StatusBadge variant="warning">{data.summary[g.key]}</StatusBadge></CardTitle></CardHeader>
+              <CardContent className="alert-list pt-0">
                 {g.key === 'overdueLoans'
                   ? data.overdueLoans.map((loan) => <LoanAlertRow key={loan.id} alert={loan} />)
                   : data[g.key].map((item) => (
@@ -105,11 +108,12 @@ export function InventoryAlertsPage() {
                         </div>
                       </div>
                     ))}
-              </div>
-            </section>
+              </CardContent>
+            </Card>
           )
         })
       )}
-    </section>
+      </div>
+    </InventoryPageLayout>
   )
 }

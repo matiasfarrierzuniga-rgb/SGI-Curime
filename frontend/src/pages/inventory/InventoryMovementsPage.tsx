@@ -7,6 +7,10 @@ import { usersService } from '@/features/users'
 import type { InventoryItem, InventoryMovement, InventoryMovementType, InventoryMovementQuery } from '../../types/inventory'
 import { movementTypeLabels } from '../../types/inventory'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { ErrorState } from '@/shared/ui/ErrorState'
+import { LoadingState } from '@/shared/ui/LoadingState'
+import { InventoryPageLayout } from './InventoryPageLayout'
 
 const limit = 20
 
@@ -95,9 +99,8 @@ export function InventoryMovementsPage() {
   }
 
   return (
-    <section>
-      <h1>Movimientos</h1>
-      <p className="muted">Historial inmutable de entradas, salidas y ajustes de inventario.</p>
+    <InventoryPageLayout title="Movimientos" description="Historial inmutable de entradas, salidas y ajustes de inventario.">
+      <div className="space-y-5">
       <form className="filters card" onSubmit={submit}>
         <label>Artículo<select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
           <option value="">Todos</option>
@@ -119,11 +122,11 @@ export function InventoryMovementsPage() {
         <label>Hasta<input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} /></label>
         <div className="actions"><button className="primary">Aplicar filtros</button></div>
       </form>
-      {error && <p className="message error" role="alert">{error}</p>}
+      {error && <ErrorState message={error} />}
       {loading ? (
-        <p aria-live="polite">Cargando movimientos…</p>
+        <LoadingState label="Cargando movimientos…" />
       ) : movements.length === 0 ? (
-        <p className="card">No hay movimientos que coincidan con los filtros.</p>
+        <EmptyState title="Sin movimientos" description="No hay movimientos que coincidan con los filtros." />
       ) : (
         <>
           <div className="table-wrap" tabIndex={0} aria-label="Tabla de movimientos, desplazable horizontalmente">
@@ -149,6 +152,7 @@ export function InventoryMovementsPage() {
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
-    </section>
+      </div>
+    </InventoryPageLayout>
   )
 }

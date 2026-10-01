@@ -6,6 +6,10 @@ import { useToast } from '@/shared/ui/Toast'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import type { InventoryCategory } from '../../types/inventory'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { ErrorState } from '@/shared/ui/ErrorState'
+import { LoadingState } from '@/shared/ui/LoadingState'
+import { InventoryPageLayout } from './InventoryPageLayout'
 
 const limit = 10
 
@@ -103,8 +107,8 @@ export function InventoryCategoriesPage() {
   }
 
   return (
-    <section>
-      <h1>Categorías de inventario</h1>
+    <InventoryPageLayout title="Categorías" description="Organice artículos por categorías activas para una consulta y gestión consistente.">
+      <div className="space-y-5">
       <form className="filters card" onSubmit={(e) => { e.preventDefault(); setPage(1); void load() }}>
         <label>Búsqueda por nombre<input maxLength={100} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
         <label>Estado<select value={activeFilter} onChange={(e) => { setPage(1); setActiveFilter(e.target.value as 'true' | 'false' | '') }}>
@@ -114,11 +118,11 @@ export function InventoryCategoriesPage() {
         </select></label>
         <div className="actions"><button className="primary">Buscar</button><button type="button" onClick={openCreate}>Nueva categoría</button></div>
       </form>
-      {error && <p className="message error" role="alert">{error}</p>}
+      {error && <ErrorState message={error} />}
       {loading ? (
-        <p aria-live="polite">Cargando categorías…</p>
+        <LoadingState label="Cargando categorías…" />
       ) : categories.length === 0 ? (
-        <p className="card">No hay categorías que coincidan con los filtros.</p>
+        <EmptyState title="Sin categorías" description="No hay categorías que coincidan con los filtros." />
       ) : (
         <>
           <div className="table-wrap" tabIndex={0} aria-label="Tabla de categorías, desplazable horizontalmente">
@@ -170,6 +174,7 @@ export function InventoryCategoriesPage() {
           onClose={() => setConfirm(null)}
         />
       )}
-    </section>
+      </div>
+    </InventoryPageLayout>
   )
 }
