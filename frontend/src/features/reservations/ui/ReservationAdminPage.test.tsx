@@ -18,7 +18,7 @@ const mutations = { approve: { isPending: false, mutateAsync: vi.fn() }, reject:
 describe('ReservationAdminPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(useAuth).mockReturnValue({ user: { role: 'Administrador' } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['res.reservations.approve', 'res.reservations.reject', 'res.reservations.cancel'] } } as never)
     vi.mocked(useReservableResources).mockReturnValue({ data: [{ id: 7, name: 'Salón comunal' }] } as never)
     vi.mocked(useReservationsList).mockReturnValue({ isPending: false, isError: false, data: { data: [reservation], total: 21, page: 1, limit: 20 } } as never)
     vi.mocked(useReservationDetail).mockReturnValue({ isPending: false, isError: false, data: reservation } as never)
@@ -35,7 +35,7 @@ describe('ReservationAdminPage', () => {
     expect(screen.getByText('No fue posible cargar las reservas')).toBeInTheDocument()
     vi.mocked(useReservationsList).mockReturnValue({ isPending: false, isError: false, data: { data: [], total: 0, page: 1, limit: 20 } } as never)
     rerender(<ReservationAdminPage />)
-    expect(screen.getByText('No hay reservas para estos filtros')).toBeInTheDocument()
+    expect(screen.getByText('No hay reservas registradas')).toBeInTheDocument()
   })
 
   it('sends canonical server filters, resets page on filter change, and uses server pagination', () => {
@@ -54,14 +54,14 @@ describe('ReservationAdminPage', () => {
 
   it('opens authoritative detail query', () => {
     render(<ReservationAdminPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalle' })[0])
     expect(useReservationDetail).toHaveBeenLastCalledWith(1)
     expect(screen.getByRole('dialog', { name: /reserva #1/i })).toBeInTheDocument()
     expect(screen.getByText('Ana Pérez · ana@example.com')).toBeInTheDocument()
   })
 
   it('only renders valid actions for status and capabilities', () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { role: 'Gestor de Inventario' } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: [] } } as never)
     render(<ReservationAdminPage />)
     expect(screen.queryByRole('button', { name: 'Aprobar' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Rechazar' })).not.toBeInTheDocument()
@@ -72,8 +72,8 @@ describe('ReservationAdminPage', () => {
     let resolve: () => void = () => undefined
     mutations.approve.mutateAsync.mockImplementation(() => new Promise<void>(done => { resolve = done }))
     render(<ReservationAdminPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Aprobar' }))
-    fireEvent.click(screen.getAllByRole('button', { name: 'Aprobar' })[1])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Aprobar' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Aprobar' })[2])
     expect(mutations.approve.mutateAsync).toHaveBeenCalledTimes(1)
     resolve()
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Reserva aprobada correctamente.'))
@@ -82,7 +82,7 @@ describe('ReservationAdminPage', () => {
   it('validates and submits rejection reason without losing it after error', async () => {
     mutations.reject.mutateAsync.mockRejectedValue({ response: { status: 409, data: { message: 'Estado inválido' } } })
     render(<ReservationAdminPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Rechazar' })[0])
     fireEvent.click(screen.getByRole('button', { name: 'Rechazar reserva' }))
     expect(await screen.findByText(/al menos 3 caracteres/i)).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Motivo del rechazo'), { target: { value: '  Horario ocupado  ' } })

@@ -6,7 +6,6 @@ import type { ReservationStatus } from '../model/reservations.types'
 type ReservationActionsProps = {
   status: ReservationStatus
   permissionCodes?: readonly string[] | null
-  role?: string | null
   disabled?: boolean
   onApprove: () => void
   onReject: () => void
