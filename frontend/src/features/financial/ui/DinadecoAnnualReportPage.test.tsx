@@ -6,8 +6,8 @@ import { httpClient } from '@/shared/api/httpClient'
 import { DinadecoAnnualReportPage } from './DinadecoAnnualReportPage'
 
 vi.mock('@/shared/api/httpClient', () => ({ httpClient: { get: vi.fn() } }))
-let role = 'Administrador'
-vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role } }) }))
+let permissionCodes = ['adm.institutional-profile.read', 'adm.institutional-profile.update', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read']
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes } }) }))
 
 const currentYear = new Date().getFullYear()
 const response = {
@@ -64,7 +64,7 @@ function renderPage() {
 
 describe('DinadecoAnnualReportPage', () => {
   beforeEach(() => {
-    role = 'Administrador'
+    permissionCodes = ['adm.institutional-profile.read', 'adm.institutional-profile.update', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read']
   })
 
   it('renders the initial loading state for the current year', () => {
@@ -94,6 +94,8 @@ describe('DinadecoAnnualReportPage', () => {
     expect(screen.getByText('Total salidas + saldo final')).toBeInTheDocument()
     expect(screen.getAllByText('₡200 000,50')).toHaveLength(2)
     const entries = screen.getByRole('table', { name: 'Detalle de entradas para preparar el FIE' })
+    expect(screen.getByLabelText('Detalle de entradas para preparar el FIE')).toHaveAttribute('tabindex', '0')
+    expect(screen.getByLabelText('Detalle de salidas para preparar el FIE')).toHaveAttribute('tabindex', '0')
     expect(within(entries).getByText('Entrada ficticia')).toBeInTheDocument()
     expect(within(entries).getByText('₡25 000,50')).toBeInTheDocument()
     expect(within(entries).getByText('Manual')).toBeInTheDocument()
@@ -122,8 +124,26 @@ describe('DinadecoAnnualReportPage', () => {
     expect(within(card).getByRole('button', { name: 'Editar perfil institucional' })).toHaveAttribute('href', '/app/admin/institutional-profile')
   })
 
+  it('hides institutional edit action with read-only capability', async () => {
+    permissionCodes = ['adm.institutional-profile.read', 'fin.dinadeco.read']
+    vi.mocked(httpClient.get).mockResolvedValue({ data: response })
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Información institucional' })
+    expect(screen.queryByRole('button', { name: 'Editar perfil institucional' })).not.toBeInTheDocument()
+  })
+
+  it('hides institutional edit action with update-only capability', async () => {
+    permissionCodes = ['adm.institutional-profile.update', 'fin.dinadeco.read']
+    vi.mocked(httpClient.get).mockResolvedValue({ data: response })
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Información institucional' })
+    expect(screen.queryByRole('button', { name: 'Editar perfil institucional' })).not.toBeInTheDocument()
+  })
+
   it('shows pending values and the SPECIFIC label without exposing admin controls to the treasurer', async () => {
-    role = 'Tesorero'
+    permissionCodes = ['fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read']
     const fixture = structuredClone(response)
     fixture.data.institutionalProfile = {
       ...fixture.data.institutionalProfile,

@@ -8,13 +8,13 @@ import { useFinancialChargeDetail } from '../hooks/useFinancial'
 import type { FinancialCharge } from '../model/financial.types'
 import { financialChargeStatusLabel, financialChargeStatusVariant, formatFinancialCurrency, formatFinancialDate, paymentMethodLabel, paymentStatusLabel } from './financialPresentation'
 
-type FinancialDetailModalProps = { id: number; role: string | null | undefined; onClose: () => void; onRecord: (charge: FinancialCharge) => void }
+type FinancialDetailModalProps = { id: number; permissionCodes: readonly string[] | null | undefined; onClose: () => void; onRecord: (charge: FinancialCharge) => void }
 
-export function FinancialDetailModal({ id, role, onClose, onRecord }: FinancialDetailModalProps) {
+export function FinancialDetailModal({ id, permissionCodes, onClose, onRecord }: FinancialDetailModalProps) {
   const detail = useFinancialChargeDetail(id)
   const status = (detail.error as { response?: { status?: number } } | null)?.response?.status
   const balance = detail.data?.balance ?? (detail.data?.status === 'PENDING' ? detail.data.amount : '0.00')
-  const mayRecord = detail.data?.status === 'PENDING' && Number(balance) > 0 && hasCapability(role, 'fin.payments.record')
+  const mayRecord = detail.data?.status === 'PENDING' && Number(balance) > 0 && hasCapability(permissionCodes, 'fin.payments.record')
   return <Modal title={`Cargo financiero #${id}`} onClose={onClose} busy={false}>
     {detail.isPending ? <LoadingState label="Cargando detalle del cargo..." /> : null}
     {detail.isError ? <ErrorState title={status === 404 ? 'Cargo financiero no encontrado' : 'No fue posible cargar el cargo'} message={status === 404 ? 'El cargo solicitado no existe o fue eliminado.' : 'Ocurrió un error al consultar el detalle del cargo.'} action={<button type="button" onClick={() => void detail.refetch()}>Reintentar</button>} /> : null}
