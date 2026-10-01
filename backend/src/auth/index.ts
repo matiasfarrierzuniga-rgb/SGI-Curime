@@ -5,6 +5,7 @@ export { CapabilityGuard } from './presentation/guards/capability.guard';
 export {
   CAPABILITIES,
   ROLE_CAPABILITIES,
+  VENTURE_CAPABILITIES,
   hasCapability,
   hasPersistedCapability,
   isKnownCapability,

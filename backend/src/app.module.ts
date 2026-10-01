@@ -26,6 +26,7 @@ import { FinancialModule } from './financial/financial.module';
 import { DonationsModule } from './donations/donations.module';
 import { InstitutionalProfileModule } from './institutional-profile/institutional-profile.module';
 import { InstitutionalBoardModule } from './institutional-board/institutional-board.module';
+import { EntrepreneurshipModule } from './entrepreneurship/entrepreneurship.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { InstitutionalBoardModule } from './institutional-board/institutional-bo
     DonationsModule,
     InstitutionalProfileModule,
     InstitutionalBoardModule,
+    EntrepreneurshipModule,
   ],
   controllers: [AppController],
   providers: [AppService],

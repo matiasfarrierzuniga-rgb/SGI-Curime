@@ -6,6 +6,12 @@ export const DONATION_CAPABILITIES = {
   delete: 'don.donations.delete',
 } as const;
 
+export const VENTURE_CAPABILITIES = {
+  read: 'ent.ventures.read',
+  create: 'ent.ventures.create',
+  update: 'ent.ventures.update',
+} as const;
+
 export const CAPABILITIES = [
   'erp.dashboard.read',
   'usr.users.read',
@@ -44,6 +50,9 @@ export const CAPABILITIES = [
   DONATION_CAPABILITIES.update,
   DONATION_CAPABILITIES.cancel,
   DONATION_CAPABILITIES.delete,
+  VENTURE_CAPABILITIES.read,
+  VENTURE_CAPABILITIES.create,
+  VENTURE_CAPABILITIES.update,
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
