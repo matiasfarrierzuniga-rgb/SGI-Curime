@@ -169,6 +169,23 @@ describe('AppRoutes capability deep links', () => {
     expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
   })
 
+  it('renders profile inside the ERP shell while preserving the public profile route', async () => {
+    const user = { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role: 'Administrador', canAccessErp: true, permissionCodes: ['erp.dashboard.read'] }
+    sessionStorage.setItem('sgi-curime-session', JSON.stringify({ token: 'test-token', user }))
+    vi.spyOn(authService, 'me').mockResolvedValue(user)
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const erpView = render(<QueryClientProvider client={queryClient}><ToastProvider><AuthProvider><MemoryRouter initialEntries={['/app/profile']}><AppRoutes /></MemoryRouter></AuthProvider></ToastProvider></QueryClientProvider>)
+
+    expect(await screen.findByRole('heading', { name: 'Mi perfil' })).toBeInTheDocument()
+    expect(document.getElementById('erp-content')).toBeInTheDocument()
+    expect(document.getElementById('public-content')).not.toBeInTheDocument()
+
+    erpView.unmount()
+    renderRoute('/profile', 'Vecino/Afiliado', false)
+    expect(await screen.findByRole('heading', { name: 'Mi perfil' })).toBeInTheDocument()
+    expect(document.getElementById('public-content')).toBeInTheDocument()
+  })
+
   it('preserves the authenticated session when returning to the public portal', async () => {
     renderRoute('/app', 'Administrador')
 

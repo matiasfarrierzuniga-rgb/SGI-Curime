@@ -5,7 +5,6 @@ import {
   Building2,
   CalendarCheck,
   CalendarDays,
-  CalendarPlus,
   ChartNoAxesCombined,
   ClipboardList,
   FileCheck2,
@@ -49,21 +48,6 @@ const navigation: readonly ErpNavigationSection[] = [
   {
     label: 'Comunidad',
     items: [
-      {
-        label: 'Solicitar una reserva',
-        path: '/servicios/reservas',
-        icon: CalendarPlus,
-      },
-      {
-        label: 'Afiliación',
-        path: '/afiliacion',
-        icon: Handshake,
-      },
-      {
-        label: 'Eventos',
-        path: '/eventos',
-        icon: CalendarDays,
-      },
       {
         label: 'Mis asambleas',
         path: '/app/assemblies/mine',
@@ -128,11 +112,6 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'Operación',
     items: [
       {
-        label: 'Solicitar una reserva',
-        path: '/servicios/reservas',
-        icon: CalendarPlus,
-      },
-      {
         label: 'Reservas',
         path: '/app/reservations',
         capability: 'res.reservations.read',
@@ -161,20 +140,12 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Finanzas',
         path: '/app/financial',
-        capability: 'fin.charges.read',
         icon: Wallet,
-      },
-      {
-        label: 'Movimientos financieros',
-        path: '/app/financial/movements',
-        capability: 'fin.movements.read',
-        icon: HandCoins,
-      },
-      {
-        label: 'DINADECO',
-        path: '/app/financial/dinadeco',
-        capability: 'fin.dinadeco.read',
-        icon: FileText,
+        children: [
+          { label: 'Resumen', path: '/app/financial', capability: 'fin.charges.read', icon: Wallet },
+          { label: 'Movimientos financieros', path: '/app/financial/movements', capability: 'fin.movements.read', icon: HandCoins },
+          { label: 'DINADECO', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: FileText },
+        ],
       },
       {
         label: 'Donaciones',
@@ -200,7 +171,7 @@ const navigation: readonly ErpNavigationSection[] = [
     items: [
       {
         label: 'Mi perfil',
-        path: '/profile',
+        path: '/app/profile',
         icon: UserRound,
       },
       {
@@ -224,12 +195,14 @@ function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] |
 export function getErpNavigation(permissionCodes: readonly string[] | null | undefined): ErpNavigationSection[] {
   return navigation.flatMap((section) => {
     const items = section.items.flatMap((item) => {
-      if (!isVisible(item, permissionCodes)) return []
+      const children = item.children?.filter((child) => isVisible(child, permissionCodes))
+      if (!isVisible(item, permissionCodes) || (item.children !== undefined && children?.length === 0)) return []
 
       return [
         {
           ...item,
-          children: item.children?.filter((child) => isVisible(child, permissionCodes)),
+          path: children && children.length > 0 ? children[0].path : item.path,
+          children,
         },
       ]
     })

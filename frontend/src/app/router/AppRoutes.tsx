@@ -10,7 +10,7 @@ import { ErpLayout } from '@/app/layouts/ErpLayout'
 import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
-import { ProfilePage } from '@/pages/ProfilePage'
+import { ProfilePage } from '@/features/profile'
 import { RegisterPage } from '@/features/auth'
 import { TokenPasswordPage } from '@/features/auth'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
@@ -69,6 +69,7 @@ export function AppRoutes() {
       <Route element={<InternalErpRoute />}>
         <Route element={<ErpLayout />}>
           <Route path="/app" element={<AppHomePage />} />
+          <Route path="/app/profile" element={<ProfilePage />} />
            <Route element={<RoleRoute capability="res.reservations.read" />}>
              <Route path="/app/reservations" element={<ReservationAdminPage />} />
            </Route>
