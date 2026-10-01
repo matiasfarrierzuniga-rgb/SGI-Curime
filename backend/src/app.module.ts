@@ -27,6 +27,7 @@ import { DonationsModule } from './donations/donations.module';
 import { InstitutionalProfileModule } from './institutional-profile/institutional-profile.module';
 import { InstitutionalBoardModule } from './institutional-board/institutional-board.module';
 import { EntrepreneurshipModule } from './entrepreneurship/entrepreneurship.module';
+import { VolunteeringModule } from './volunteering/volunteering.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { EntrepreneurshipModule } from './entrepreneurship/entrepreneurship.modu
     InstitutionalProfileModule,
     InstitutionalBoardModule,
     EntrepreneurshipModule,
+    VolunteeringModule,
   ],
   controllers: [AppController],
   providers: [AppService],

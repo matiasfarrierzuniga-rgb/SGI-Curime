@@ -113,6 +113,12 @@ const navigation: readonly ErpNavigationSection[] = [
         capability: 'ent.ventures.read',
         icon: BriefcaseBusiness,
       },
+      {
+        label: 'Voluntariado',
+        path: '/app/admin/volunteering',
+        capability: 'vol.opportunities.read',
+        icon: HeartHandshake,
+      },
     ],
   },
   {

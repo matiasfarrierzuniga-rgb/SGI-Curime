@@ -12,6 +12,12 @@ export const VENTURE_CAPABILITIES = {
   update: 'ent.ventures.update',
 } as const;
 
+export const VOLUNTEER_OPPORTUNITY_CAPABILITIES = {
+  read: 'vol.opportunities.read',
+  create: 'vol.opportunities.create',
+  update: 'vol.opportunities.update',
+} as const;
+
 export const CAPABILITIES = [
   'erp.dashboard.read',
   'usr.users.read',
@@ -53,6 +59,9 @@ export const CAPABILITIES = [
   VENTURE_CAPABILITIES.read,
   VENTURE_CAPABILITIES.create,
   VENTURE_CAPABILITIES.update,
+  VOLUNTEER_OPPORTUNITY_CAPABILITIES.read,
+  VOLUNTEER_OPPORTUNITY_CAPABILITIES.create,
+  VOLUNTEER_OPPORTUNITY_CAPABILITIES.update,
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
