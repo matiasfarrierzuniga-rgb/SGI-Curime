@@ -3,41 +3,40 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AffiliationPage } from './AffiliationPage'
 import { affiliateRequestsService } from '../../services/affiliateRequestsService'
-import { useAuth } from '@/features/auth'
 
 vi.mock('../../services/affiliateRequestsService', () => ({ affiliateRequestsService: { create: vi.fn() } }))
-vi.mock('@/features/auth', async (original) => ({ ...(await original<object>()), useAuth: vi.fn() }))
 
-const user = { id: 7, fullName: 'Ana Pérez', identification: '123456789', identificationType: 'NATIONAL', email: 'ana@example.com', address: 'Curime Centro', phoneCountryCode: '+506', phoneNationalNumber: '88888888', role: 'Subscription_L1', status: 'ACTIVE' }
-
-function renderPage(authenticated = true) {
-  vi.mocked(useAuth).mockReturnValue({ user: authenticated ? user : null, isAuthenticated: authenticated, isLoading: false } as never)
+function renderPage() {
   return render(<MemoryRouter><AffiliationPage /></MemoryRouter>)
 }
 
 function fillForm() {
-  fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: '1990-01-01' } })
+  fireEvent.change(screen.getByLabelText('Número de identificación'), { target: { value: '123456789' } })
+  fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } })
+  fireEvent.change(screen.getByLabelText('Primer apellido'), { target: { value: 'Pérez' } })
+  fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: '01/01/1990' } })
+  fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Curime Centro' } })
   fireEvent.change(screen.getByLabelText('¿Por qué desea afiliarse?'), { target: { value: ' Participar en la comunidad ' } })
 }
 
-describe('AffiliationPage authenticated flow', () => {
+describe('AffiliationPage public flow', () => {
   beforeEach(() => { vi.clearAllMocks(); vi.mocked(affiliateRequestsService.create).mockResolvedValue({} as never) })
 
-  it('does not expose an operational form without a session and preserves login return', () => {
-    renderPage(false)
-    expect(screen.queryByRole('button', { name: 'Enviar solicitud' })).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
-    expect(screen.getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
+  it('shows an operational form without a session', () => {
+    renderPage()
+    expect(screen.getByRole('button', { name: 'Enviar solicitud' })).toBeVisible()
+    expect(screen.queryByText(/Necesita una cuenta/)).not.toBeInTheDocument()
   })
 
-  it('reuses account identity, prefills address, and sends no spoofable identity fields', async () => {
+  it('sends visitor identity and optional contact values in the supported payload', async () => {
     renderPage(); fillForm()
-    expect(screen.getByText('Ana Pérez')).toBeVisible(); expect(screen.getByText('123456789')).toBeVisible()
-    expect(screen.getByLabelText('Dirección')).toHaveValue('Curime Centro')
+    fireEvent.change(screen.getByRole('combobox', { name: 'Número de teléfono del país' }), { target: { value: 'CR' } })
+    fireEvent.change(screen.getByLabelText('Teléfono (opcional)'), { target: { value: '88888888' } })
+    fireEvent.change(screen.getByLabelText('Correo electrónico (opcional)'), { target: { value: ' ANA@EXAMPLE.COM ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
-    await waitFor(() => expect(affiliateRequestsService.create).toHaveBeenCalledWith(expect.objectContaining({ address: 'Curime Centro', affiliationReason: 'Participar en la comunidad' })))
+    await waitFor(() => expect(affiliateRequestsService.create).toHaveBeenCalledWith(expect.objectContaining({ identificationType: 'NATIONAL', identification: '123456789', firstName: 'Ana', firstSurname: 'Pérez', birthDate: expect.stringMatching(/^1990-01-01T\d{2}:\d{2}:\d{2}\.\d{3}Z$/), address: 'Curime Centro', affiliationReason: 'Participar en la comunidad', phoneCountryCode: '+506', phoneNationalNumber: '88888888', email: 'ana@example.com' })))
     const payload = vi.mocked(affiliateRequestsService.create).mock.calls[0][0]
-    expect(payload).not.toHaveProperty('userId'); expect(payload).not.toHaveProperty('personId'); expect(payload).not.toHaveProperty('identification'); expect(payload).not.toHaveProperty('email')
+    expect(payload).not.toHaveProperty('userId'); expect(payload).not.toHaveProperty('personId')
     expect(await screen.findByRole('heading', { name: 'Recibimos su solicitud' })).toBeVisible()
   })
 

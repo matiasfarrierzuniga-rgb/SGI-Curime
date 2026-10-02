@@ -5,11 +5,13 @@ export interface AuthenticatedUser {
   address?: string | null
   phoneCountryCode?: string | null
   phoneNationalNumber?: string | null
-  affiliateId?: number | null
+  personId?: string | null
+  affiliateId?: string | null
   affiliateStatus?: 'ACTIVE' | 'INACTIVE' | null
   affiliateRoleId?: number | null
   affiliateRequestStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null
   canAccessErp: boolean
+  permissionCodes: string[]
 }
 export interface LoginCredentials { email: string; password: string }
 export interface LoginResponse { accessToken: string; user: AuthenticatedUser }

@@ -8,6 +8,7 @@ import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import { RolesModule } from '../src/modules/roles/roles.module';
 import { ListRolesUseCase } from '../src/modules/roles/application/use-cases/list-roles.use-case';
 import { buildPrismaAuthUser } from './helpers/auth-fixtures';
+import { ROLE_CAPABILITIES } from '../src/auth/presentation/capabilities/capability-policy';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -19,17 +20,27 @@ describe('RolesController (e2e)', () => {
   let app: INestApplication<App>;
   let jwt: JwtService;
   let role = 'Administrador';
+  let permissionCodes: readonly string[] | undefined;
   const listRoles = { execute: jest.fn() };
   const prisma = {
     user: {
       findUnique: jest.fn(() =>
-        Promise.resolve(buildPrismaAuthUser({ roleName: role })),
+        Promise.resolve({
+          ...buildPrismaAuthUser({ roleName: role }),
+          role: {
+            ...buildPrismaAuthUser({ roleName: role }).role,
+            permissions: (permissionCodes ?? ROLE_CAPABILITIES[role] ?? []).map(
+              (code) => ({ permission: { code } }),
+            ),
+          },
+        }),
       ),
     },
   };
 
   beforeEach(async () => {
     role = 'Administrador';
+    permissionCodes = undefined;
     jest.clearAllMocks();
     listRoles.execute.mockResolvedValue([{ id: 1, name: 'Administrador' }]);
     const module = await Test.createTestingModule({ imports: [RolesModule] })
@@ -52,12 +63,22 @@ describe('RolesController (e2e)', () => {
   it('requires JWT', () =>
     request(app.getHttpServer()).get('/roles').expect(401));
 
-  it('forbids non-administrators', async () => {
+  it('forbids callers without persisted usr.roles.read', async () => {
     role = 'Tesorero';
     await request(app.getHttpServer())
       .get('/roles')
       .set('Authorization', await auth())
       .expect(403);
+  });
+
+  it('allows a non-administrator with persisted usr.roles.read', async () => {
+    role = 'Tesorero';
+    permissionCodes = ['usr.roles.read'];
+    await request(app.getHttpServer())
+      .get('/roles')
+      .set('Authorization', await auth())
+      .expect(200)
+      .expect([{ id: 1, name: 'Administrador' }]);
   });
 
   it('returns the active safe role catalog to administrators', async () => {

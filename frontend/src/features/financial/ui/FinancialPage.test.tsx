@@ -15,7 +15,7 @@ const record = { isPending: false, mutateAsync: vi.fn() }
 describe('FinancialPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(useAuth).mockReturnValue({ user: { role: 'Administrador' } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['fin.charges.read', 'fin.payments.record', 'fin.movements.read', 'fin.movements.create', 'fin.dinadeco.read'] } } as never)
     vi.mocked(useFinancialChargesList).mockReturnValue({ isPending: false, isError: false, data: { data: [pending, paid, cancelled], total: 23, page: 1, limit: 20 } } as never)
     vi.mocked(useFinancialChargeDetail).mockReturnValue({ isPending: false, isError: false, data: { ...pending, payments: [] } } as never)
     vi.mocked(useRecordPayment).mockReturnValue(record as never)
@@ -66,14 +66,14 @@ describe('FinancialPage', () => {
     expect(screen.getAllByRole('button', { name: 'Registrar pago' })).toHaveLength(1)
   })
 
-  it('allows the treasurer to record payments without checking role names', () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { role: 'Tesorero' } } as never)
+  it('allows payment recording through the assigned capability', () => {
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['fin.payments.record'] } } as never)
     render(<FinancialPage />)
     expect(screen.getAllByRole('button', { name: 'Registrar pago' })).toHaveLength(1)
   })
 
   it('hides the record payment action without the capability', () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { role: 'Gestor de Inventario' } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: [] } } as never)
     render(<FinancialPage />)
     expect(screen.queryByRole('button', { name: 'Registrar pago' })).not.toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Ver detalle' })).toHaveLength(3)

@@ -117,23 +117,35 @@ describe('Own absence justification', () => {
     );
   });
 
-  it.each(['ABSENT', 'PRESENT'])(
-    'approves justification without rewriting %s attendance',
-    async (attendanceStatus) => {
-      const { prisma, service } = setup({ attendanceStatus });
-      prisma.absenceJustification.findUnique.mockResolvedValue({
-        id: 3,
-        legacyAssemblyId: 1,
-        legacyAffiliateId: 7,
-        status: 'PENDING',
-      });
+  it('approves an absent justification without rewriting attendance', async () => {
+    const { prisma, service } = setup({ attendanceStatus: 'ABSENT' });
+    prisma.absenceJustification.findUnique.mockResolvedValue({
+      id: 3,
+      legacyAssemblyId: 1,
+      legacyAffiliateId: 7,
+      status: 'PENDING',
+    });
 
-      await service.approve(3, null, 42);
+    await service.approve(3, null, 42);
 
-      expect(prisma.absenceJustification.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'APPROVED' }) }),
-      );
-      expect(prisma.assemblyAttendance.upsert).not.toHaveBeenCalled();
-    },
-  );
+    expect(prisma.absenceJustification.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'APPROVED' }) }),
+    );
+    expect(prisma.assemblyAttendance.upsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects approval when attendance is present', async () => {
+    const { prisma, service } = setup({ attendanceStatus: 'PRESENT' });
+    prisma.absenceJustification.findUnique.mockResolvedValue({
+      id: 3,
+      legacyAssemblyId: 1,
+      legacyAffiliateId: 7,
+      status: 'PENDING',
+    });
+
+    await expect(service.approve(3, null, 42)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(prisma.absenceJustification.updateMany).not.toHaveBeenCalled();
+  });
 });

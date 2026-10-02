@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DonationsPage } from './DonationsPage'
+import { toLocalEndOfDayIso } from './donationDateTime'
 import { formatDonationAmount } from './donationPresentation'
 
 const mocks = vi.hoisted(() => ({
@@ -51,7 +52,7 @@ function listState(overrides = {}) {
 describe('DonationsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.useAuth.mockReturnValue({ user: { role: 'Administrador' } })
+    mocks.useAuth.mockReturnValue({ user: { role: 'Administrador', permissionCodes: ['don.donations.read', 'don.donations.create', 'don.donations.update', 'don.donations.cancel', 'don.donations.delete'] } })
     mocks.useDonationsList.mockReturnValue(listState())
   })
 
@@ -84,8 +85,17 @@ describe('DonationsPage', () => {
     expect(mocks.useDonationsList).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }))
   })
 
+  it('uses local end-of-day semantics for the dateTo filter', () => {
+    render(<DonationsPage />)
+    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-09-09' } })
+    expect(mocks.useDonationsList).toHaveBeenLastCalledWith(expect.objectContaining({
+      dateTo: toLocalEndOfDayIso('2026-09-09'),
+      page: 1,
+    }))
+  })
+
   it('gates donation actions by capability and hides delete from Treasurer', () => {
-    mocks.useAuth.mockReturnValue({ user: { role: 'Tesorero' } })
+    mocks.useAuth.mockReturnValue({ user: { role: 'Tesorero', permissionCodes: ['don.donations.read', 'don.donations.create', 'don.donations.update', 'don.donations.cancel'] } })
     render(<DonationsPage />)
     expect(screen.getByRole('button', { name: 'Registrar donación' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Editar' }).length).toBeGreaterThan(0)
@@ -96,5 +106,14 @@ describe('DonationsPage', () => {
   it('shows delete to Administrator only for confirmed donations without reversal', () => {
     render(<DonationsPage />)
     expect(screen.getAllByRole('button', { name: 'Eliminar' }).length).toBeGreaterThan(0)
+  })
+
+  it('allows donation access from current permission codes regardless of role label', () => {
+    mocks.useAuth.mockReturnValue({ user: { role: 'Administrador Local', permissionCodes: ['don.donations.read'] } })
+    render(<DonationsPage />)
+    expect(screen.getByRole('heading', { name: 'Donaciones' })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Buscar' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Ver detalle' }).length).toBeGreaterThan(0)
+    expect(screen.queryByText('No tiene permiso para consultar donaciones.')).not.toBeInTheDocument()
   })
 })

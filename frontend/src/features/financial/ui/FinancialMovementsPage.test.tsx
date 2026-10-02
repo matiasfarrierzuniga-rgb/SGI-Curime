@@ -12,7 +12,7 @@ const movement = { id: 3, type: 'INCOME', source: 'MANUAL', amount: '1500.00', c
 describe('FinancialMovementsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(useAuth).mockReturnValue({ user: { role: 'Tesorero' } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['fin.movements.read', 'fin.movements.create'] } } as never)
     vi.mocked(useFinancialMovementsList).mockReturnValue({ isPending: false, isError: false, data: { data: [movement], total: 1, page: 1, limit: 20 } } as never)
     vi.mocked(useFinancialMovementSummary).mockReturnValue({ isPending: false, isError: false, data: { currency: 'CRC', totalIncome: '1500.00', totalExpenses: '0.00', balance: '1500.00' } } as never)
     vi.mocked(useFinancialMovementDetail).mockReturnValue({ isPending: false, isError: false, data: { ...movement, recordedBy: { id: 7, fullName: 'Ana Pérez' } } } as never)
@@ -41,7 +41,7 @@ describe('FinancialMovementsPage', () => {
   })
 
   it('hides manual registration without create capability', () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { role: 'Gestor de Inventario' } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: [] } } as never)
     render(<FinancialMovementsPage />)
     expect(screen.queryByRole('button', { name: 'Registrar movimiento' })).not.toBeInTheDocument()
   })

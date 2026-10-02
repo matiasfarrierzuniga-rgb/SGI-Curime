@@ -11,6 +11,7 @@ import {
   RuntimePersonResolverService,
 } from '../../../identity/runtime-person-resolver.service';
 import {
+  AdminPersonReadModel,
   User,
   UserRole,
   UserStatus as DomainUserStatus,
@@ -42,6 +43,14 @@ const userSelect = {
   subscriptionExpirationDate: true,
   lockedAt: true,
   roleId: true,
+  personId: true,
+  person: {
+    select: {
+      id: true,
+      email: true,
+      affiliate: { select: { id: true, status: true, legacyRoleId: true } },
+    },
+  },
   role: {
     select: {
       id: true,
@@ -55,6 +64,28 @@ const userSelect = {
 } satisfies Prisma.UserSelect;
 
 type SafeUser = Prisma.UserGetPayload<{ select: typeof userSelect }>;
+
+const adminPersonSelect = {
+  id: true,
+  firstName: true,
+  firstSurname: true,
+  secondSurname: true,
+  legacyFullName: true,
+  identification: true,
+  identificationType: true,
+  email: true,
+  phoneCountryCode: true,
+  phoneNationalNumber: true,
+  address: true,
+  createdAt: true,
+  updatedAt: true,
+  affiliate: { select: { id: true, status: true, legacyRoleId: true } },
+  user: { select: userSelect },
+} satisfies Prisma.PersonSelect;
+
+type SafeAdminPerson = Prisma.PersonGetPayload<{
+  select: typeof adminPersonSelect;
+}>;
 
 function toUser(user: SafeUser): User {
   return {
@@ -72,9 +103,56 @@ function toUser(user: SafeUser): User {
     lockedAt: user.lockedAt,
     roleId: user.roleId,
     role: user.role,
+    personId: user.personId === null ? null : String(user.personId),
+    affiliateId:
+      user.person?.affiliate?.id === undefined
+        ? null
+        : String(user.person.affiliate.id),
+    person: user.person
+      ? { id: String(user.person.id), contactEmail: user.person.email }
+      : null,
+    affiliate: user.person?.affiliate
+      ? {
+          id: String(user.person.affiliate.id),
+          status: user.person.affiliate.status,
+          legacyRoleId: user.person.affiliate.legacyRoleId,
+        }
+      : null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
+}
+
+function toAdminPerson(person: SafeAdminPerson): AdminPersonReadModel {
+  return {
+    id: String(person.id),
+    fullName: person.legacyFullName ?? formatPersonName(person),
+    identification: person.identification,
+    identificationType: person.identificationType,
+    contactEmail: person.email,
+    phoneCountryCode: person.phoneCountryCode,
+    phoneNationalNumber: person.phoneNationalNumber,
+    address: person.address,
+    createdAt: person.createdAt,
+    updatedAt: person.updatedAt,
+    access: person.user ? toUser(person.user) : null,
+    affiliate: person.affiliate
+      ? {
+          id: String(person.affiliate.id),
+          status: person.affiliate.status,
+          legacyRoleId: person.affiliate.legacyRoleId,
+        }
+      : null,
+  };
+}
+
+function formatPersonName(
+  person: Pick<SafeAdminPerson, 'firstName' | 'firstSurname' | 'secondSurname'>,
+): string | null {
+  const value = [person.firstName, person.firstSurname, person.secondSurname]
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join(' ');
+  return value || null;
 }
 
 @Injectable()
@@ -132,18 +210,18 @@ export class PrismaUsersRepository implements UsersRepository {
   async findPage(query: UserQuery): Promise<UserPage> {
     const where = this.toWhere(query);
     const skip = (query.page - 1) * query.limit;
-    const [users, total] = await Promise.all([
-      this.db.user.findMany({
+    const [persons, total] = await Promise.all([
+      this.db.person.findMany({
         where,
-        select: userSelect,
+        select: adminPersonSelect,
         orderBy: { createdAt: 'desc' },
         skip,
         take: query.limit,
       }),
-      this.db.user.count({ where }),
+      this.db.person.count({ where }),
     ]);
     return {
-      data: users.map(toUser),
+      data: persons.map(toAdminPerson),
       total,
       page: query.page,
       limit: query.limit,
@@ -156,6 +234,14 @@ export class PrismaUsersRepository implements UsersRepository {
       select: userSelect,
     });
     return user ? toUser(user) : null;
+  }
+
+  async findAdminPersonById(id: number): Promise<AdminPersonReadModel | null> {
+    const person = await this.db.person.findUnique({
+      where: { id },
+      select: adminPersonSelect,
+    });
+    return person ? toAdminPerson(person) : null;
   }
 
   async findAffiliationContext(id: number): Promise<UserAffiliationContext> {
@@ -331,8 +417,31 @@ export class PrismaUsersRepository implements UsersRepository {
     return this.db.user.count({ where: { role: { name: ADMIN_ROLE } } });
   }
 
-  private toWhere(query: UserQuery): Prisma.UserWhereInput {
+  private toWhere(query: UserQuery): Prisma.PersonWhereInput {
     const cutoff = lockoutCutoff(this.lockoutMinutes);
+    const textConditions: Prisma.PersonWhereInput[] = [];
+    if (query.name) {
+      textConditions.push({
+        OR: [
+          { legacyFullName: { contains: query.name, mode: 'insensitive' } },
+          { firstName: { contains: query.name, mode: 'insensitive' } },
+          { firstSurname: { contains: query.name, mode: 'insensitive' } },
+          { secondSurname: { contains: query.name, mode: 'insensitive' } },
+        ],
+      });
+    }
+    if (query.email) {
+      textConditions.push({
+        OR: [
+          { email: { contains: query.email, mode: 'insensitive' } },
+          {
+            user: {
+              is: { email: { contains: query.email, mode: 'insensitive' } },
+            },
+          },
+        ],
+      });
+    }
     const blockedCondition: Prisma.UserWhereInput | undefined =
       query.blocked === true
         ? {
@@ -349,18 +458,20 @@ export class PrismaUsersRepository implements UsersRepository {
             }
           : undefined;
     return {
-      fullName: query.name
-        ? { contains: query.name, mode: 'insensitive' }
-        : undefined,
-      email: query.email
-        ? { contains: query.email, mode: 'insensitive' }
-        : undefined,
+      AND: textConditions.length > 0 ? textConditions : undefined,
       identification: query.identification
         ? { contains: query.identification, mode: 'insensitive' }
         : undefined,
-      status: query.status,
-      roleId: query.roleId,
-      AND: blockedCondition ? [blockedCondition] : undefined,
+      user:
+        query.status || query.roleId || blockedCondition
+          ? {
+              is: {
+                status: query.status,
+                roleId: query.roleId,
+                AND: blockedCondition ? [blockedCondition] : undefined,
+              },
+            }
+          : undefined,
     };
   }
 }

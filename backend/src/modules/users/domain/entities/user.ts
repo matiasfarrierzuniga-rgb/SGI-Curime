@@ -11,6 +11,32 @@ export interface UserRole {
   isActive: boolean;
 }
 
+export interface UserPersonContext {
+  id: string;
+  contactEmail: string | null;
+}
+
+export interface UserAffiliateContext {
+  id: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  legacyRoleId: number | null;
+}
+
+export interface AdminPersonReadModel {
+  id: string;
+  fullName: string | null;
+  identification: string | null;
+  identificationType: 'NATIONAL' | 'DIMEX' | null;
+  contactEmail: string | null;
+  phoneCountryCode: string | null;
+  phoneNationalNumber: string | null;
+  address: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  access: User | null;
+  affiliate: UserAffiliateContext | null;
+}
+
 export interface User {
   id: number;
   fullName: string;
@@ -26,6 +52,10 @@ export interface User {
   lockedAt: Date | null;
   roleId: number;
   role: UserRole;
+  personId: string | null;
+  affiliateId: string | null;
+  person: UserPersonContext | null;
+  affiliate: UserAffiliateContext | null;
   createdAt: Date;
   updatedAt: Date;
 }

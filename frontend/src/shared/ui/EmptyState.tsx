@@ -12,8 +12,8 @@ type EmptyStateProps = {
 function EmptyState({ title, description, action, className }: EmptyStateProps) {
   return (
     <section className={cn("rounded-surface border border-border-default bg-surface-card p-6 text-center", className)}>
-      <h2 className="font-heading text-heading-3 text-text-primary">{title}</h2>
-      {description && <p className="mt-2 text-text-secondary">{description}</p>}
+      <h2 className="font-heading text-heading-3 text-text-primary text-balance">{title}</h2>
+      {description && <p className="mt-2 text-text-secondary text-pretty">{description}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </section>
   )

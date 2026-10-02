@@ -7,7 +7,7 @@ import { hasCapability } from '@/shared/security/access'
 
 const state = vi.hoisted(() => ({
   value: {
-    user: null as { role: string } | null,
+    user: null as { role: string; canAccessErp: boolean; permissionCodes: string[] } | null,
     token: 't',
     isAuthenticated: false,
     isLoading: false,
@@ -28,7 +28,7 @@ vi.mock('@/features/auth', async importOriginal => {
     RoleRoute: ({ role, capability }: { role?: string | string[]; capability?: string }) => {
       const currentRole = state.value.user?.role
       const allowed = capability
-        ? hasCapability(currentRole, capability)
+        ? state.value.user?.canAccessErp === true && hasCapability(state.value.user?.permissionCodes, capability)
         : Array.isArray(role) ? role.includes(currentRole ?? '') : currentRole === role
       return allowed ? <Outlet /> : <Navigate to="/403" replace />
     },
@@ -51,7 +51,13 @@ vi.mock('../../services/inventoryReportsService', () => ({
 }))
 
 const renderAt = (path: string, role: string | null) => {
-  state.value.user = role ? { role } : null
+  state.value.user = role
+    ? {
+      role,
+      canAccessErp: true,
+      permissionCodes: role === 'Administrador' || role === 'Gestor de Inventario' ? ['inv.inventory.read'] : [],
+    }
+    : null
   state.value.isAuthenticated = Boolean(role)
   return render(
     <MemoryRouter initialEntries={[path]}>

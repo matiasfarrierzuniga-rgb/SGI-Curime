@@ -12,7 +12,10 @@ import type {
 } from '../../application/ports/auth-repository.port';
 
 type AccountRow = Prisma.UserGetPayload<{
-  include: { role: true; person: { include: { affiliate: true } } };
+  include: {
+    role: { include: { permissions: { include: { permission: true } } } };
+    person: { include: { affiliate: true } };
+  };
 }>;
 
 type ActivationTokenRow = Prisma.AccountActivationTokenGetPayload<{
@@ -36,6 +39,9 @@ function toAuthAccount(user: AccountRow): AuthAccount {
     roleName: user.role.name,
     roleId: user.roleId,
     roleIsActive: user.role.isActive,
+    permissionCodes: user.role.permissions
+      .map((rolePermission) => rolePermission.permission?.code)
+      .filter((code): code is string => typeof code === 'string'),
     hasPerson: user.person !== null,
     affiliateStatus: user.person?.affiliate?.status ?? null,
     affiliateRoleId: user.person?.affiliate?.legacyRoleId ?? null,
@@ -50,7 +56,10 @@ export class PrismaAuthRepository implements AuthRepository {
   async findCredentialsByEmail(email: string): Promise<AuthAccount | null> {
     const user = await this.db.user.findUnique({
       where: { email },
-      include: { role: true, person: { include: { affiliate: true } } },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+        person: { include: { affiliate: true } },
+      },
     });
     return user ? toAuthAccount(user) : null;
   }
@@ -58,7 +67,10 @@ export class PrismaAuthRepository implements AuthRepository {
   async findCredentialsById(id: number): Promise<AuthAccount | null> {
     const user = await this.db.user.findUnique({
       where: { id },
-      include: { role: true, person: { include: { affiliate: true } } },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+        person: { include: { affiliate: true } },
+      },
     });
     return user ? toAuthAccount(user) : null;
   }

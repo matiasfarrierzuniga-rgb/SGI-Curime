@@ -5,11 +5,14 @@ import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { ResetPasswordUseCase } from '../../application/use-cases/reset-password.use-case';
 import { AuthController } from './auth.controller';
 
+process.env.REFRESH_TOKEN_TTL = '3600';
+
 describe('AuthController error boundary', () => {
   const request = {
     ip: '127.0.0.1',
     get: () => 'test-agent',
   } as never;
+  const response = { cookie: jest.fn() } as never;
 
   function createController() {
     const loginUseCase = {
@@ -79,10 +82,70 @@ describe('AuthController error boundary', () => {
         controller.login(
           { email: 'user@example.com', password: 'bad' },
           request,
+          response,
         ),
       401,
       'Invalid credentials',
     );
+  });
+
+  it('exposes persisted permission codes in login response', async () => {
+    const { controller, loginUseCase } = createController();
+    loginUseCase.execute.mockResolvedValue({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      user: {
+        id: 1,
+        fullName: 'Admin',
+        email: 'admin@example.com',
+        status: 'ACTIVE',
+        role: 'Administrador',
+        permissionCodes: ['usr.users.read'],
+        canAccessErp: true,
+      },
+    });
+
+    const result = await controller.login(
+      { email: 'admin@example.com', password: 'secret' },
+      request,
+      response,
+    );
+
+    expect(result.user).toEqual({
+      id: 1,
+      fullName: 'Admin',
+      email: 'admin@example.com',
+      status: 'ACTIVE',
+      role: 'Administrador',
+      permissionCodes: ['usr.users.read'],
+      canAccessErp: true,
+    });
+  });
+
+  it('exposes persisted permission codes in auth/me response', () => {
+    const { controller } = createController();
+
+    expect(
+      controller.me({
+        user: {
+          id: 1,
+          fullName: 'Admin',
+          email: 'admin@example.com',
+          status: 'ACTIVE',
+          role: 'Administrador',
+          permissionCodes: ['usr.users.read'],
+          canAccessErp: true,
+        },
+      } as never),
+    ).toEqual({
+      id: 1,
+      fullName: 'Admin',
+      email: 'admin@example.com',
+      status: 'ACTIVE',
+      role: 'Administrador',
+      permissionCodes: ['usr.users.read'],
+      canAccessErp: true,
+    });
   });
 
   it('maps invalid activation input to the existing 400 response', async () => {

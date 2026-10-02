@@ -13,6 +13,9 @@ import type {
 } from '../../types/inventory'
 import { conditionLabels, itemStatusLabels, movementTypeLabels } from '../../types/inventory'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { ErrorState } from '@/shared/ui/ErrorState'
+import { LoadingState } from '@/shared/ui/LoadingState'
+import { InventoryPageLayout } from './InventoryPageLayout'
 
 const stockLimit = 20
 
@@ -82,8 +85,8 @@ export function InventoryReportsPage() {
   const periodLabel = dateFrom || dateTo ? `Periodo: ${dateFrom ? new Date(dateFrom).toLocaleDateString('es-CR') : 'inicio'} — ${dateTo ? new Date(dateTo).toLocaleDateString('es-CR') : 'hoy'}` : 'Sin filtro de fecha'
 
   return (
-    <section>
-      <h1>Reportes de inventario</h1>
+    <InventoryPageLayout title="Reportes" description="Consulte existencias, movimientos y préstamos con filtros disponibles.">
+      <div className="space-y-6">
       <form className="filters card" onSubmit={applyFilters}>
         <label>Desde<input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} /></label>
         <label>Hasta<input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} /></label>
@@ -104,13 +107,13 @@ export function InventoryReportsPage() {
         </select></label>
         <div className="actions"><button className="primary">Aplicar filtros</button></div>
       </form>
-      {error && <p className="message error" role="alert">{error}</p>}
+      {error && <ErrorState message={error} />}
       {loading ? (
-        <p aria-live="polite">Cargando reportes…</p>
+        <LoadingState label="Cargando reportes…" />
       ) : (
         <>
-          <section className="card" aria-label="Resumen general">
-            <h2>Resumen general</h2>
+          <section className="card space-y-3" aria-label="Resumen general">
+            <h2 className="text-heading-3 font-semibold text-text-primary">Resumen general</h2>
             <div className="stat-grid">
               <div className="stat-card neutral"><div className="stat-value">{summary?.totalItems ?? 0}</div><div className="stat-label">Artículos</div></div>
               <div className="stat-card success"><div className="stat-value">{summary?.activeItems ?? 0}</div><div className="stat-label">Activos</div></div>
@@ -123,8 +126,8 @@ export function InventoryReportsPage() {
             </div>
           </section>
 
-          <section className="card" aria-label="Movimientos por tipo">
-            <h2>Movimientos</h2>
+          <section className="card space-y-3" aria-label="Movimientos por tipo">
+            <h2 className="text-heading-3 font-semibold text-text-primary">Movimientos</h2>
             <p className="muted">{periodLabel}</p>
             <div className="report-grid">
               {(['entries', 'exits', 'adjustments'] as const).map((key) => {
@@ -139,8 +142,8 @@ export function InventoryReportsPage() {
             </div>
           </section>
 
-          <section className="card" aria-label="Préstamos por estado">
-            <h2>Préstamos</h2>
+          <section className="card space-y-3" aria-label="Préstamos por estado">
+            <h2 className="text-heading-3 font-semibold text-text-primary">Préstamos</h2>
             <p className="muted">{periodLabel}</p>
             <div className="report-grid">
               <div className="stat-card success"><div className="stat-value">{loans?.summary.active ?? 0}</div><div className="stat-label">Activos</div></div>
@@ -151,8 +154,8 @@ export function InventoryReportsPage() {
             </div>
           </section>
 
-          <section className="card" aria-label="Reporte de stock">
-            <h2>Reporte de stock</h2>
+          <section className="card space-y-3" aria-label="Reporte de stock">
+            <h2 className="text-heading-3 font-semibold text-text-primary">Reporte de stock</h2>
             {stock.length === 0 ? (
               <p>No hay artículos para el reporte de stock.</p>
             ) : (
@@ -185,6 +188,7 @@ export function InventoryReportsPage() {
           </section>
         </>
       )}
-    </section>
+      </div>
+    </InventoryPageLayout>
   )
 }

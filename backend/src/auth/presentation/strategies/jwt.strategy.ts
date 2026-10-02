@@ -42,11 +42,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-    const account = await this.repository.findCredentialsById(payload.sub);
+    let account: Awaited<ReturnType<AuthRepository['findCredentialsById']>>;
+
+    try {
+      account = await this.repository.findCredentialsById(payload.sub);
+    } catch {
+      throw new UnauthorizedException('Unauthorized');
+    }
 
     if (
       !account ||
       account.status !== 'ACTIVE' ||
+      !Array.isArray(account.permissionCodes) ||
       isTemporaryLockActive(account.lockedAt, this.lockoutMinutes)
     ) {
       throw new UnauthorizedException('Unauthorized');
@@ -75,14 +82,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: account.email,
       status: account.status,
       role: account.roleName,
+      permissionCodes: account.permissionCodes ?? [],
       canAccessErp: canAccessErp({
         userStatus: account.status,
-        userRoleId: account.roleId,
         userRoleName: account.roleName,
         userRoleIsActive: account.roleIsActive,
         hasPerson: account.hasPerson,
         affiliateStatus: account.affiliateStatus,
-        affiliateRoleId: account.affiliateRoleId,
       }),
       ...(account.subscriptionExpirationDate
         ? { subscriptionExpirationDate: account.subscriptionExpirationDate }

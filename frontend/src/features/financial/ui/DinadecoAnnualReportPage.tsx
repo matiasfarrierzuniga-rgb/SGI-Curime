@@ -11,6 +11,7 @@ import { LoadingState } from '@/shared/ui/LoadingState'
 import { MetricCard } from '@/shared/ui/MetricCard'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { useDinadecoAnnualReport } from '../hooks/useFinancial'
+import { FinancialSectionNav } from './FinancialSectionNav'
 import type { DinadecoFieLine, DinadecoInstitutionalProfile, FinancialMovementSource } from '../model/financial.types'
 import { financialMovementSourceLabel, formatFinancialCurrency, formatFinancialDate } from './financialPresentation'
 
@@ -21,7 +22,7 @@ export function DinadecoAnnualReportPage() {
   const { user } = useAuth()
   const [year, setYear] = useState(currentYear)
   const report = useDinadecoAnnualReport(year)
-  const mayEditInstitutionalProfile = hasCapability(user?.role, 'adm.institutional-profile.read')
+  const mayEditInstitutionalProfile = hasCapability(user?.permissionCodes, 'adm.institutional-profile.read') && hasCapability(user?.permissionCodes, 'adm.institutional-profile.update')
 
   return (
     <div className="space-y-7">
@@ -38,6 +39,11 @@ export function DinadecoAnnualReportPage() {
           </label>
         }
       />
+      <FinancialSectionNav />
+      <aside aria-label="Alcance del informe DINADECO" className="flex gap-3 rounded-surface border border-status-info-border bg-status-info-surface p-4 text-sm text-status-info-foreground">
+        <FileText aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+        <p><strong>Vista de preparación y consulta.</strong> Este resumen no genera el formulario oficial ni realiza envío o presentación ante DINADECO.</p>
+      </aside>
 
       {report.isPending && <LoadingState label={`Cargando informe económico ${year}...`} className="min-h-64" />}
       {report.isError && (
@@ -173,7 +179,7 @@ function FieMovements({ title, lines, count, capacity, overflow, direction }: { 
       <CardContent className="space-y-3">
         {overflow && <p role="alert" className="text-sm font-semibold text-status-warning">El formulario oficial no tiene espacio suficiente para representar individualmente todos los movimientos de {direction}. Se conserva el detalle completo; la estrategia de consolidación requiere validación con la ADI.</p>}
         {lines.length === 0 ? <p className="text-sm text-foreground-muted">No se registraron movimientos de {direction} en el período.</p> : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} aria-label={`Detalle de ${title.toLowerCase()} para preparar el FIE`}>
             <table className="w-full text-sm">
               <caption className="sr-only">Detalle de {title.toLowerCase()} para preparar el FIE</caption>
               <thead><tr>{['Fecha', 'Descripción', 'Fuente', 'Monto'].map((label) => <th key={label} scope="col" className="p-3 text-left">{label}</th>)}</tr></thead>

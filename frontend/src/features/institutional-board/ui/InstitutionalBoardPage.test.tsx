@@ -5,22 +5,25 @@ import { InstitutionalBoardPage } from './InstitutionalBoardPage'
 const createTerm = vi.fn().mockResolvedValue({})
 const createAppointment = vi.fn().mockResolvedValue({})
 const updateAppointment = vi.fn().mockResolvedValue({})
+const updateTerm = vi.fn().mockResolvedValue({})
+let permissionCodes = ['adm.institutional-board.manage']
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes } }) }))
 vi.mock('../hooks/institutionalBoard.queries', () => ({
   useBoardTerms: () => ({ data: [{ id: 1, startsOn: '2026-01-01', endsOn: '2027-12-31', appointments: [{ id: 2, boardTermId: 1, personId: 8, position: 'PRESIDENT', seatNumber: null, startsOn: null, endsOn: null, person: { id: 8, firstName: 'Persona', firstSurname: 'Ficticia', secondSurname: null, legacyFullName: null } }] }], isPending: false, isError: false }),
   usePersonCandidates: () => ({ data: [{ id: 9, displayName: 'Otra Persona', identificationType: 'NATIONAL', identificationHint: '••••0001' }] }),
-  useBoardMutations: () => ({ createTerm: { mutateAsync: createTerm, isPending: false }, createAppointment: { mutateAsync: createAppointment, isPending: false }, updateAppointment: { mutateAsync: updateAppointment, isPending: false } }),
+  useBoardMutations: () => ({ createTerm: { mutateAsync: createTerm, isPending: false }, updateTerm: { mutateAsync: updateTerm, isPending: false }, createAppointment: { mutateAsync: createAppointment, isPending: false }, updateAppointment: { mutateAsync: updateAppointment, isPending: false } }),
 }))
 
 describe('InstitutionalBoardPage', () => {
-  beforeEach(() => vi.clearAllMocks())
-  it('shows periods, history, position labels and no delete or unsupported claims', () => {
+  beforeEach(() => { vi.clearAllMocks(); permissionCodes = ['adm.institutional-board.manage'] })
+  it('shows periods, appointments, position labels and only supported actions', () => {
     render(<InstitutionalBoardPage />)
     expect(screen.getByRole('heading', { name: 'Junta Directiva' })).toBeInTheDocument()
     expect(screen.getAllByText('Presidencia')).not.toHaveLength(0)
     expect(screen.getByText('Persona Ficticia')).toBeInTheDocument()
-    expect(screen.getByText(/Según período/)).toBeInTheDocument()
+    expect(screen.getAllByText(/No especificada/)).not.toHaveLength(0)
     expect(screen.queryByRole('button', { name: /eliminar/i })).not.toBeInTheDocument()
-    expect(screen.queryByText(/DINADECO|sello/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/DINADECO|sello|sustitución|actas/i)).not.toBeInTheDocument()
   })
   it('uses the person selector on create and sends personId', async () => {
     render(<InstitutionalBoardPage />)
@@ -34,7 +37,6 @@ describe('InstitutionalBoardPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
     expect(screen.queryByLabelText(/Buscar persona/)).not.toBeInTheDocument()
     expect(screen.getByLabelText('Persona del nombramiento')).toHaveTextContent('Persona Ficticia')
-    expect(screen.getByText(/Para registrar una sustitución, cierre la vigencia/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Otra Persona/ })).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Cargo'), { target: { value: 'TREASURER' } })
     fireEvent.change(screen.getByLabelText('Plaza (opcional)'), { target: { value: '2' } })
@@ -45,5 +47,18 @@ describe('InstitutionalBoardPage', () => {
     expect(updateAppointment.mock.calls[0][0].input).not.toHaveProperty('personId')
     expect(screen.getByText('Persona Ficticia')).toBeInTheDocument()
     expect(screen.getByLabelText(/Buscar persona/)).toBeInTheDocument()
+  })
+  it('keeps board data readable and hides every mutation control without management permission', () => {
+    permissionCodes = []
+    render(<InstitutionalBoardPage />)
+    expect(screen.getByText('Tiene acceso de consulta. Las modificaciones requieren permiso de administración.')).toBeInTheDocument()
+    expect(screen.getByText('Persona Ficticia')).toBeInTheDocument()
+    expect(screen.getByText('Presidencia')).toBeInTheDocument()
+    expect(screen.queryByText('Nuevo período')).not.toBeInTheDocument()
+    expect(screen.queryByText('Actualizar período seleccionado')).not.toBeInTheDocument()
+    expect(screen.queryByText('Agregar nombramiento')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Buscar persona/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Guardar fechas|Crear período|Guardar cambios|Cancelar/ })).not.toBeInTheDocument()
   })
 })

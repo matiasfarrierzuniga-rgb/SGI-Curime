@@ -14,6 +14,10 @@ import type {
 } from '../../types/inventory'
 import { conditionLabels, itemStatusLabels, movementTypeLabels } from '../../types/inventory'
 import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { ErrorState } from '@/shared/ui/ErrorState'
+import { LoadingState } from '@/shared/ui/LoadingState'
+import { InventoryPageLayout } from './InventoryPageLayout'
 
 const limit = 10
 
@@ -22,6 +26,7 @@ const emptyItemForm = {
   name: '',
   description: '',
   categoryId: '',
+  quantity: '0',
   minimumQuantity: '0',
   unit: 'unidad',
   location: '',
@@ -128,6 +133,7 @@ export function InventoryItemsPage() {
       name: item.name,
       description: item.description ?? '',
       categoryId: String(item.categoryId),
+      quantity: '0',
       minimumQuantity: String(item.minimumQuantity),
       unit: item.unit,
       location: item.location ?? '',
@@ -177,11 +183,13 @@ export function InventoryItemsPage() {
   const submitItem = async (e: FormEvent) => {
     e.preventDefault()
     const categoryId = Number(itemForm.categoryId)
+    const quantity = Number(itemForm.quantity)
     const minimumQuantity = Number(itemForm.minimumQuantity)
     const validationErrors: Record<string, string> = {}
     if (!itemForm.code.trim()) validationErrors.code = 'El código es obligatorio.'
     if (!itemForm.name.trim()) validationErrors.name = 'El nombre es obligatorio.'
     if (!itemForm.categoryId || !Number.isInteger(categoryId) || categoryId < 1) validationErrors.categoryId = 'Seleccione una categoría válida.'
+    if (mode === 'create' && (itemForm.quantity === '' || !Number.isInteger(quantity) || quantity < 0)) validationErrors.quantity = 'La existencia inicial debe ser un entero mayor o igual a cero.'
     if (itemForm.minimumQuantity === '' || !Number.isInteger(minimumQuantity) || minimumQuantity < 0) validationErrors.minimumQuantity = 'La cantidad mínima debe ser un entero mayor o igual a cero.'
     if (!itemForm.unit.trim()) validationErrors.unit = 'La unidad es obligatoria.'
     setItemFormErrors(validationErrors)
@@ -201,11 +209,10 @@ export function InventoryItemsPage() {
         condition: itemForm.condition,
       }
       if (mode === 'create') {
-        const created = await inventoryItemsService.create(payload)
+        const created = await inventoryItemsService.create({ ...payload, quantity })
         notify('Artículo creado correctamente.', 'success')
         setSelected(created)
-        setMovementForm(emptyMovementForm)
-        setMode('entry')
+        setMode('detail')
       } else if (mode === 'edit' && selected) {
         await inventoryItemsService.update(selected.id, {
           ...payload,
@@ -324,8 +331,8 @@ export function InventoryItemsPage() {
   const hasFilters = Boolean(search || categoryFilter || statusFilter || lowStockFilter)
 
   return (
-    <section aria-busy={loading}>
-      <h1>Inventario</h1>
+    <InventoryPageLayout title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo.">
+      <div aria-busy={loading} className="space-y-5">
       <form className="filters card" onSubmit={applyFilters}>
         <label>Búsqueda (nombre o código)<input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
         <label>Categoría<select value={categoryFilter} onChange={(e) => { setPage(1); setCategoryFilter(e.target.value) }}>
@@ -340,13 +347,11 @@ export function InventoryItemsPage() {
         <label className="checkbox-inline"><input type="checkbox" checked={lowStockFilter} onChange={(e) => { setPage(1); setLowStockFilter(e.target.checked) }} />Solo stock bajo</label>
         <div className="actions"><button className="primary">Buscar</button><button type="button" onClick={openCreate}>Nuevo artículo</button></div>
       </form>
-      {error && <p className="message error" role="alert">{error}</p>}
+      {error && <ErrorState message={error} />}
       {loading ? (
-        <p aria-live="polite">Cargando artículos…</p>
+        <LoadingState label="Cargando artículos…" />
       ) : items.length === 0 ? (
-        <p className="card">
-          {hasFilters ? 'No hay artículos que coincidan con los filtros.' : 'No hay bienes registrados en el inventario.'}
-        </p>
+        <EmptyState title={hasFilters ? 'Sin resultados' : 'Sin artículos registrados'} description={hasFilters ? 'No hay artículos que coincidan con los filtros.' : 'No hay bienes registrados en el inventario.'} />
       ) : (
         <>
           <div className="table-wrap" tabIndex={0} aria-label="Tabla de artículos, desplazable horizontalmente">
@@ -420,6 +425,7 @@ export function InventoryItemsPage() {
               <option value="">Seleccione una categoría</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>{itemFormErrors.categoryId && <span id="item-category-error" className="message error">{itemFormErrors.categoryId}</span>}</label>
+            {mode === 'create' && <label>Existencia inicial<input type="number" min={0} step={1} required aria-invalid={Boolean(itemFormErrors.quantity)} aria-describedby={itemFormErrors.quantity ? 'item-quantity-error' : undefined} value={itemForm.quantity} onChange={(e) => setItemForm({ ...itemForm, quantity: e.target.value })} />{itemFormErrors.quantity && <span id="item-quantity-error" className="message error">{itemFormErrors.quantity}</span>}</label>}
             <label>Cantidad mínima<input type="number" min={0} step={1} required aria-invalid={Boolean(itemFormErrors.minimumQuantity)} aria-describedby={itemFormErrors.minimumQuantity ? 'item-minimum-error' : undefined} value={itemForm.minimumQuantity} onChange={(e) => setItemForm({ ...itemForm, minimumQuantity: e.target.value })} />{itemFormErrors.minimumQuantity && <span id="item-minimum-error" className="message error">{itemFormErrors.minimumQuantity}</span>}</label>
             <label>Unidad<input maxLength={50} required aria-invalid={Boolean(itemFormErrors.unit)} aria-describedby={itemFormErrors.unit ? 'item-unit-error' : undefined} value={itemForm.unit} onChange={(e) => setItemForm({ ...itemForm, unit: e.target.value })} />{itemFormErrors.unit && <span id="item-unit-error" className="message error">{itemFormErrors.unit}</span>}</label>
             <label>Ubicación<input maxLength={200} value={itemForm.location} onChange={(e) => setItemForm({ ...itemForm, location: e.target.value })} /></label>
@@ -428,7 +434,7 @@ export function InventoryItemsPage() {
               <option value="DAMAGED">Dañado</option>
               <option value="UNDER_REPAIR">En reparación</option>
             </select></label>
-            <p className="muted">La existencia inicial se registra como una entrada para conservar su trazabilidad.</p>
+            {mode === 'create' && <p className="muted">Si es mayor que cero, se registra como entrada inicial para conservar su trazabilidad.</p>}
             <div className="actions"><button className="primary" disabled={busy || categories.length === 0}>{busy ? 'Guardando…' : 'Guardar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
           </form>
         </Modal>
@@ -507,6 +513,7 @@ export function InventoryItemsPage() {
           onClose={() => setConfirm(null)}
         />
       )}
-    </section>
+      </div>
+    </InventoryPageLayout>
   )
 }

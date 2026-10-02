@@ -10,7 +10,7 @@ import { ErpLayout } from '@/app/layouts/ErpLayout'
 import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
-import { ProfilePage } from '@/pages/ProfilePage'
+import { ProfilePage } from '@/features/profile'
 import { RegisterPage } from '@/features/auth'
 import { TokenPasswordPage } from '@/features/auth'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
@@ -33,9 +33,11 @@ import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
 import { DinadecoAnnualReportPage, FinancialMovementsPage, FinancialPage } from '@/features/financial'
 import { DonationsPage } from '@/features/donations'
-import { AssembliesAdminPage, MineAssembliesPage } from '@/features/assemblies'
+import { AssembliesAdminPage, AssemblyManagementPage, MineAssembliesPage } from '@/features/assemblies'
 import { InstitutionalProfilePage } from '@/features/institutional-profile'
 import { InstitutionalBoardPage } from '@/features/institutional-board'
+import { VenturesPage } from '@/features/entrepreneurship'
+import { OpportunitiesPage } from '@/features/volunteering'
 export function AppRoutes() {
   return (
     <Routes>
@@ -69,6 +71,7 @@ export function AppRoutes() {
       <Route element={<InternalErpRoute />}>
         <Route element={<ErpLayout />}>
           <Route path="/app" element={<AppHomePage />} />
+          <Route path="/app/profile" element={<ProfilePage />} />
            <Route element={<RoleRoute capability="res.reservations.read" />}>
              <Route path="/app/reservations" element={<ReservationAdminPage />} />
            </Route>
@@ -99,6 +102,7 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="adm.assemblies.read" />}>
             <Route path="/app/admin/assemblies" element={<AssembliesAdminPage />} />
+            <Route path="/app/admin/assemblies/:id" element={<AssemblyManagementPage />} />
           </Route>
           <Route path="/app/assemblies/mine" element={<MineAssembliesPage />} />
           <Route element={<RoleRoute capability="adm.justifications.read" />}>
@@ -110,10 +114,14 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="adm.institutional-board.read" />}>
             <Route path="/app/admin/institutional-board" element={<InstitutionalBoardPage />} />
           </Route>
-          <Route element={<RoleRoute role="Vecino/Afiliado" />}>
-            <Route path="/app/affiliate/absence-justifications/new" element={<AffiliateAbsenceJustificationPage />} />
-            <Route path="/app/affiliate/justifications" element={<AffiliateJustificationsPage />} />
-          </Route>
+           <Route element={<RoleRoute capability="ent.ventures.read" />}>
+             <Route path="/app/admin/ventures" element={<VenturesPage />} />
+           </Route>
+           <Route element={<RoleRoute capability="vol.opportunities.read" />}>
+             <Route path="/app/admin/volunteering" element={<OpportunitiesPage />} />
+           </Route>
+          <Route path="/app/affiliate/absence-justifications/new" element={<AffiliateAbsenceJustificationPage />} />
+          <Route path="/app/affiliate/justifications" element={<AffiliateJustificationsPage />} />
           <Route element={<RoleRoute capability="aud.logs.read" />}>
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
           </Route>

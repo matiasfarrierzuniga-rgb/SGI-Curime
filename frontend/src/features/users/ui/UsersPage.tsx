@@ -1,56 +1,46 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pagination } from "@/shared/ui/Pagination";
-import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ErrorState } from "@/shared/ui/ErrorState";
 import { LoadingState } from "@/shared/ui/LoadingState";
 import { PageContainer } from "@/shared/ui/PageContainer";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import type { UserStatus } from "../model/users.types";
+import type { User, UserStatus, UserUpdate } from "../model/users.types";
 import { getErrorMessage } from "@/shared/lib/errors";
-import { useToast } from "@/shared/ui/Toast";
-import { normalizeEmail, normalizeText, personContactErrors } from "@/shared/lib/formValidation";
 import {
   useUserDetail,
   useUsersList,
-  useUserMutations,
   useRolesOptions,
 } from "../hooks/useUsersQueries";
 import { UserFilters } from "./UserFilters";
 import { UsersTable } from "./UsersTable";
-import { UserDetailsModal, type UsersDialogMode } from "./UserDetailsModal";
-import { EditUserModal, type UserEditForm } from "./EditUserModal";
-import { ChangeRoleModal } from "./ChangeRoleModal";
+import { UserDetailsModal } from "./UserDetailsModal";
+import { UserManagementDialogs } from "./UserManagementDialogs";
+import { usersService } from "../api/users.api";
+import { usersKeys } from "../hooks/useUsersQueries";
+import { useToast } from "@/shared/ui/Toast";
+
+type ManagementAction = "edit" | "role" | "activate" | "deactivate" | "unlock";
 
 const limit = 10;
 
-const emptyForm: UserEditForm = {
-  fullName: "",
-  email: "",
-  phoneCountryCode: "+506",
-  phoneNationalNumber: "",
-  address: "",
-  roleId: "",
-};
-
 export function UsersPage() {
-  const { notify } = useToast();
   const [page, setPage] = useState(1);
   const [name, setName] = useState("");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<UserStatus | "">("");
   const [roleId, setRoleId] = useState("");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [mode, setMode] = useState<UsersDialogMode>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [form, setForm] = useState<UserEditForm>(emptyForm);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [management, setManagement] = useState<{ user: User; action: ManagementAction } | null>(null);
+  const queryClient = useQueryClient();
+  const { notify } = useToast();
 
-  const filters = { page, limit, name: query, status, roleId: roleId ? Number(roleId) : 0 };
+  const filters = { page, limit, name: query, status: status || undefined, roleId: roleId ? Number(roleId) : 0 };
   const listQuery = useUsersList(filters);
   const rolesQuery = useRolesOptions();
   const detailQuery = useUserDetail(selectedId);
-  const mutations = useUserMutations();
 
   const users = listQuery.data?.data ?? [];
   const total = listQuery.data?.total ?? 0;
@@ -62,63 +52,33 @@ export function UsersPage() {
         ? getErrorMessage(rolesQuery.error, "No fue posible cargar los roles.")
         : "";
   const selected = detailQuery.data ?? null;
-  const busy =
-    mutations.update.isPending ||
-    mutations.changeRole.isPending ||
-    mutations.activate.isPending ||
-    mutations.deactivate.isPending ||
-    mutations.unlock.isPending ||
-    detailQuery.isFetching;
+  const mutation = useMutation({
+    mutationFn: async ({ action, user, payload }: { action: ManagementAction; user: User; payload?: UserUpdate | number }) => {
+      const access = user.access;
+      const permitted = action === "edit"
+        ? user.actions.update
+        : action === "role"
+          ? user.actions.changeRole
+          : action === "unlock"
+            ? user.actions.unlock && access?.isTemporarilyLocked
+            : action === "activate"
+              ? user.actions.manageLifecycle && access?.status === "INACTIVE"
+              : user.actions.manageLifecycle && access?.status === "ACTIVE";
+      if (!access || !permitted) throw new Error("La acción de cuenta solicitada no está disponible para esta persona.");
 
-  useEffect(() => {
-    if (selected) {
-      setForm({
-        fullName: selected.fullName,
-        email: selected.email,
-        phoneCountryCode: selected.phoneCountryCode ?? "+506",
-        phoneNationalNumber: selected.phoneNationalNumber ?? "",
-        address: selected.address ?? "",
-        roleId: String(selected.roleId),
-      });
-    }
-  }, [selected]);
-
-  const run = async () => {
-    if (!selected || !mode || busy) return;
-    if (mode === "edit") {
-      const nextErrors = personContactErrors(form);
-      setFieldErrors(nextErrors);
-      if (Object.values(nextErrors).some(Boolean)) return;
-    }
-    try {
-      if (mode === "edit")
-        await mutations.update.mutateAsync({
-          id: selected.id,
-          payload: {
-            fullName: normalizeText(form.fullName),
-            email: normalizeEmail(form.email),
-            phoneCountryCode: form.phoneNationalNumber
-              ? normalizeText(form.phoneCountryCode)
-              : undefined,
-            phoneNationalNumber: form.phoneNationalNumber.trim() || undefined,
-            address: normalizeText(form.address) || undefined,
-          },
-        });
-      if (mode === "role")
-        await mutations.changeRole.mutateAsync({
-          id: selected.id,
-          roleId: Number(form.roleId),
-        });
-      if (mode === "activate") await mutations.activate.mutateAsync(selected.id);
-      if (mode === "deactivate")
-        await mutations.deactivate.mutateAsync(selected.id);
-      if (mode === "unlock") await mutations.unlock.mutateAsync(selected.id);
-      notify("Usuario actualizado correctamente.", "success");
-      setMode(null);
-    } catch (e) {
-      notify(getErrorMessage(e), "error");
-    }
-  };
+      const accessId = access.id;
+      if (action === "edit") return usersService.update(accessId, payload as UserUpdate);
+      if (action === "role") return usersService.changeRole(accessId, payload as number);
+      if (action === "activate") return usersService.activate(accessId);
+      if (action === "deactivate") return usersService.deactivate(accessId);
+      return usersService.unlock(accessId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: usersKeys.all });
+      setManagement(null);
+      notify("Cambios de cuenta SGI guardados.", "success");
+    },
+  });
 
   const clearFilters = () => {
     setPage(1);
@@ -135,7 +95,7 @@ export function UsersPage() {
       <PageHeader
         context="Administración"
         title="Usuarios"
-        description="Consulte cuentas, revise su estado y gestione datos de contacto o roles."
+        description="Consulte personas, sus cuentas SGI y la afiliación disponible."
       />
       <UserFilters
         name={name}
@@ -159,7 +119,7 @@ export function UsersPage() {
       />
       <div className="flex flex-col gap-1 border-b border-border-subtle pb-3 sm:flex-row sm:items-baseline sm:justify-between">
         <p className="text-body-small font-semibold text-text-primary">
-          {loading ? "Cargando resultados…" : `${total} ${total === 1 ? "usuario encontrado" : "usuarios encontrados"}`}
+          {loading ? "Cargando resultados…" : `${total} ${total === 1 ? "persona encontrada" : "personas encontradas"}`}
         </p>
         <p className="text-body-small text-text-secondary">Desplácese horizontalmente para ver todas las columnas.</p>
       </div>
@@ -168,13 +128,13 @@ export function UsersPage() {
         <LoadingState label="Cargando usuarios…" />
       ) : !error && users.length === 0 ? (
         <EmptyState
-          title={hasActiveFilters ? "No hay coincidencias" : "No hay usuarios registrados"}
-          description={hasActiveFilters ? "Ajuste la búsqueda o limpie los filtros para consultar nuevamente." : "Las cuentas registradas aparecerán en este listado."}
+          title={hasActiveFilters ? "No hay coincidencias" : "No hay personas registradas"}
+          description={hasActiveFilters ? "Ajuste la búsqueda o limpie los filtros para consultar nuevamente." : "Las personas registradas aparecerán en este listado."}
           action={hasActiveFilters ? <Button type="button" variant="outline" onClick={clearFilters}>Limpiar filtros</Button> : undefined}
         />
       ) : (
         <>
-          <UsersTable users={users} onOpen={setSelectedId} />
+           <UsersTable users={users} onOpen={setSelectedId} onManage={(user, action) => setManagement({ user, action })} />
           <Pagination
             page={page}
             total={total}
@@ -183,51 +143,28 @@ export function UsersPage() {
           />
         </>
       )}
-      {selected && !mode && (
+      {selectedId !== null && (
         <UserDetailsModal
           selected={selected}
-          busy={busy}
+          loading={detailQuery.isPending}
+          error={detailQuery.error ? getErrorMessage(detailQuery.error, "No fue posible cargar el detalle de la persona.") : null}
+          onRetry={() => { void detailQuery.refetch(); }}
           onClose={() => {
             setSelectedId(null);
-            setFieldErrors({});
-          }}
-          onMode={(nextMode) => {
-            setFieldErrors({});
-            setMode(nextMode);
           }}
         />
       )}
-      {mode === "edit" && (
-        <EditUserModal
-          form={form}
-          onFormChange={setForm}
-          fieldErrors={fieldErrors}
-          busy={busy}
-          onClose={() => setMode(null)}
-          onSubmit={() => void run()}
-        />
-      )}
-      {mode === "role" && (
-        <ChangeRoleModal
-          form={form}
-          onFormChange={setForm}
-          roles={rolesQuery.data ?? []}
-          busy={busy}
-          onClose={() => setMode(null)}
-          onConfirm={() => void run()}
-        />
-      )}
-      {mode && !["edit", "role"].includes(mode) && (
-        <ConfirmDialog
-          title="Confirmar acción"
-          message={`¿Deseas ${mode === "activate" ? "activar" : mode === "deactivate" ? "inactivar" : "desbloquear"} esta cuenta?`}
-          confirmLabel={mode === "deactivate" ? "Inactivar cuenta" : "Confirmar"}
-          danger={mode === "deactivate"}
-          busy={busy}
-          onClose={() => setMode(null)}
-          onConfirm={() => void run()}
-        />
-      )}
+      <UserManagementDialogs
+        action={management?.action ?? null}
+        user={management?.user ?? null}
+        roles={rolesQuery.data ?? []}
+        busy={mutation.isPending}
+        error={mutation.error ? getErrorMessage(mutation.error, "No fue posible actualizar la cuenta SGI.") : null}
+        onClose={() => { if (!mutation.isPending) setManagement(null); }}
+        onUpdate={(payload) => management && mutation.mutate({ action: "edit", user: management.user, payload })}
+        onChangeRole={(roleId) => management && mutation.mutate({ action: "role", user: management.user, payload: roleId })}
+        onLifecycle={(action) => management && mutation.mutate({ action, user: management.user })}
+      />
     </PageContainer>
   );
 }

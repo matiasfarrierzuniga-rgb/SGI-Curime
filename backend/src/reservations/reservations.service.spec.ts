@@ -29,7 +29,19 @@ function createDto(overrides = {}) {
 const adminSelect = {
   id: true,
   resourceId: true,
-  resource: { select: { id: true, name: true, location: true } },
+  resource: {
+    select: {
+      id: true,
+      name: true,
+      location: true,
+      pricingType: true,
+      price: true,
+      currency: true,
+    },
+  },
+  financialCharge: {
+    select: { id: true, amount: true, currency: true, status: true, dueAt: true },
+  },
   requesterUserId: true,
   requester: { select: { id: true, fullName: true, email: true } },
   eventId: true,
@@ -53,7 +65,15 @@ function makeReservation(overrides: Record<string, unknown> = {}) {
   return {
     id: 1,
     resourceId: 1,
-    resource: { id: 1, name: 'Salón', location: 'Curime' },
+    resource: {
+      id: 1,
+      name: 'Salón',
+      location: 'Curime',
+      pricingType: ResourcePricingType.FIXED,
+      price: new Prisma.Decimal('25000'),
+      currency: 'CRC',
+    },
+    financialCharge: null,
     requesterUserId: 7,
     requester: { id: 7, fullName: 'Juan', email: 'juan@test.com' },
     eventId: null,
@@ -451,7 +471,11 @@ describe('ReservationsService', () => {
         id: 1,
         name: 'Salón',
         location: 'Curime',
+        pricingType: ResourcePricingType.FIXED,
+        price: new Prisma.Decimal('25000'),
+        currency: 'CRC',
       });
+      expect(result.financialCharge).toBeNull();
       expect(result.requester).toEqual({
         id: 7,
         fullName: 'Juan',
@@ -618,14 +642,24 @@ describe('ReservationsService', () => {
       );
     }
 
-    it('rejects FREE resources without approving or creating a FinancialCharge', async () => {
+    it('approves FREE resources without creating a FinancialCharge', async () => {
       mockFreeResource();
       mockPendingReservation();
 
-      await expect(service.approve(1, 7)).rejects.toBeInstanceOf(
-        ConflictException,
+      await expect(service.approve(1, 7)).resolves.toEqual(
+        expect.objectContaining({
+          status: ReservationStatus.APPROVED,
+          approvedById: 7,
+        }),
       );
-      expect(prisma.reservation.update).not.toHaveBeenCalled();
+      expect(prisma.reservation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: ReservationStatus.APPROVED,
+            approvedById: 7,
+          }),
+        }),
+      );
       expect(prisma.financialCharge.create).not.toHaveBeenCalled();
     });
 

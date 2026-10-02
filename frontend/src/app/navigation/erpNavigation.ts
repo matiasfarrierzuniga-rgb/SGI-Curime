@@ -5,7 +5,7 @@ import {
   Building2,
   CalendarCheck,
   CalendarDays,
-  CalendarPlus,
+  BriefcaseBusiness,
   ChartNoAxesCombined,
   ClipboardList,
   FileCheck2,
@@ -31,8 +31,6 @@ export type ErpNavigationItem = {
   capability?: AccessCapability
   icon?: LucideIcon
   children?: readonly ErpNavigationItem[]
-  role?: string
-  excludedRole?: string
 }
 
 export type ErpNavigationSection = { label: string; items: readonly ErpNavigationItem[] }
@@ -52,27 +50,8 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'Comunidad',
     items: [
       {
-        label: 'Solicitar una reserva',
-        path: '/servicios/reservas',
-        role: 'Vecino/Afiliado',
-        icon: CalendarPlus,
-      },
-      {
-        label: 'Afiliación',
-        path: '/afiliacion',
-        role: 'Vecino/Afiliado',
-        icon: Handshake,
-      },
-      {
-        label: 'Eventos',
-        path: '/eventos',
-        role: 'Vecino/Afiliado',
-        icon: CalendarDays,
-      },
-      {
         label: 'Mis asambleas',
         path: '/app/assemblies/mine',
-        excludedRole: 'Administrador',
         icon: CalendarCheck,
       },
     ],
@@ -128,17 +107,23 @@ const navigation: readonly ErpNavigationSection[] = [
         capability: 'pub.events.manage',
         icon: CalendarDays,
       },
+      {
+        label: 'Emprendimientos',
+        path: '/app/admin/ventures',
+        capability: 'ent.ventures.read',
+        icon: BriefcaseBusiness,
+      },
+      {
+        label: 'Voluntariado',
+        path: '/app/admin/volunteering',
+        capability: 'vol.opportunities.read',
+        icon: HeartHandshake,
+      },
     ],
   },
   {
     label: 'Operación',
     items: [
-      {
-        label: 'Solicitar una reserva',
-        path: '/servicios/reservas',
-        excludedRole: 'Vecino/Afiliado',
-        icon: CalendarPlus,
-      },
       {
         label: 'Reservas',
         path: '/app/reservations',
@@ -168,20 +153,12 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Finanzas',
         path: '/app/financial',
-        capability: 'fin.charges.read',
         icon: Wallet,
-      },
-      {
-        label: 'Movimientos financieros',
-        path: '/app/financial/movements',
-        capability: 'fin.movements.read',
-        icon: HandCoins,
-      },
-      {
-        label: 'DINADECO',
-        path: '/app/financial/dinadeco',
-        capability: 'fin.dinadeco.read',
-        icon: FileText,
+        children: [
+          { label: 'Resumen', path: '/app/financial', capability: 'fin.charges.read', icon: Wallet },
+          { label: 'Movimientos financieros', path: '/app/financial/movements', capability: 'fin.movements.read', icon: HandCoins },
+          { label: 'DINADECO', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: FileText },
+        ],
       },
       {
         label: 'Donaciones',
@@ -207,42 +184,38 @@ const navigation: readonly ErpNavigationSection[] = [
     items: [
       {
         label: 'Mi perfil',
-        path: '/profile',
+        path: '/app/profile',
         icon: UserRound,
       },
       {
         label: 'Enviar justificación',
         path: '/app/affiliate/absence-justifications/new',
-        role: 'Vecino/Afiliado',
         icon: FileCheck2,
       },
       {
         label: 'Mis justificaciones',
         path: '/app/affiliate/justifications',
-        role: 'Vecino/Afiliado',
         icon: FileCheck2,
       },
     ],
   },
 ]
 
-function isVisible(item: ErpNavigationItem, role: string | null | undefined): boolean {
-  return (
-    (item.role === undefined || item.role === role) &&
-    item.excludedRole !== role &&
-    (item.capability === undefined || hasCapability(role, item.capability))
-  )
+function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] | null | undefined): boolean {
+  return item.capability === undefined || hasCapability(permissionCodes, item.capability)
 }
 
-export function getErpNavigation(role: string | null | undefined): ErpNavigationSection[] {
+export function getErpNavigation(permissionCodes: readonly string[] | null | undefined): ErpNavigationSection[] {
   return navigation.flatMap((section) => {
     const items = section.items.flatMap((item) => {
-      if (!isVisible(item, role)) return []
+      const children = item.children?.filter((child) => isVisible(child, permissionCodes))
+      if (!isVisible(item, permissionCodes) || (item.children !== undefined && children?.length === 0)) return []
 
       return [
         {
           ...item,
-          children: item.children?.filter((child) => isVisible(child, role)),
+          path: children && children.length > 0 ? children[0].path : item.path,
+          children,
         },
       ]
     })

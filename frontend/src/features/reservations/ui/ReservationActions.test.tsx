@@ -3,8 +3,10 @@ import type { ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { ReservationActions } from './ReservationActions'
 
-function renderActions(status: ComponentProps<typeof ReservationActions>['status'], role = 'Administrador') {
-  render(<ReservationActions status={status} role={role} onApprove={vi.fn()} onReject={vi.fn()} onCancel={vi.fn()} />)
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes: ['res.reservations.approve', 'res.reservations.reject', 'res.reservations.cancel'] } }) }))
+
+function renderActions(status: ComponentProps<typeof ReservationActions>['status']) {
+  render(<ReservationActions status={status} onApprove={vi.fn()} onReject={vi.fn()} onCancel={vi.fn()} />)
 }
 
 describe('ReservationActions', () => {

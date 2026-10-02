@@ -12,8 +12,8 @@ type ErrorStateProps = {
 function ErrorState({ title = "No fue posible cargar el contenido", message, action, className }: ErrorStateProps) {
   return (
     <section className={cn("rounded-surface border border-status-danger/30 bg-status-danger-surface p-5 text-status-danger", className)} role="alert">
-      <h2 className="font-heading text-heading-3">{title}</h2>
-      <p className="mt-2">{message}</p>
+      <h2 className="font-heading text-heading-3 text-balance">{title}</h2>
+      <p className="mt-2 text-pretty">{message}</p>
       {action && <div className="mt-4">{action}</div>}
     </section>
   )

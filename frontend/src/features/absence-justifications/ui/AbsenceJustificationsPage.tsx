@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
@@ -38,6 +40,9 @@ const getAttachment = (item: {
 } : null)
 
 export function AbsenceJustificationsPage() {
+  const { user } = useAuth()
+  const mayApprove = hasCapability(user?.permissionCodes, 'adm.justifications.approve')
+  const mayReject = hasCapability(user?.permissionCodes, 'adm.justifications.reject')
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState<JustificationStatus | ''>('PENDING')
   const [decisionId, setDecisionId] = useState<number | null>(null)
@@ -65,7 +70,7 @@ export function AbsenceJustificationsPage() {
   }
 
   const handleConfirm = async () => {
-    if (decisionId === null) return
+    if (decisionId === null || (decision === 'APPROVED' ? !mayApprove : !mayReject)) return
     const trimmed = observation.trim()
     if (decision === 'REJECTED' && !trimmed) {
       setError('Debe escribir una observación antes de rechazar la justificación.')
@@ -213,7 +218,7 @@ export function AbsenceJustificationsPage() {
                             <button
                               type="button"
                               className="min-h-10 rounded-control bg-brand-deep px-4 font-semibold text-brand-ivory"
-                              disabled={approve.isPending || reject.isPending}
+                               disabled={!mayApprove || approve.isPending || reject.isPending}
                               onClick={() => void handleApprove(item.id)}
                             >
                               Aprobar
@@ -221,7 +226,7 @@ export function AbsenceJustificationsPage() {
                             <button
                               type="button"
                               className="min-h-10 rounded-control border border-danger px-4 font-semibold text-danger"
-                              disabled={approve.isPending || reject.isPending}
+                               disabled={!mayReject || approve.isPending || reject.isPending}
                               onClick={() => {
                                 setDecisionId(item.id)
                                 setDecision('REJECTED')

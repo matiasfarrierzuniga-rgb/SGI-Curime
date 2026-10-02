@@ -15,9 +15,9 @@ export function DonationDetailModal({ id, onClose, onEdit, onCancel, onDelete }:
   const detail = useDonationDetail(id)
   const donation = detail.data
   const confirmed = donation?.status === 'CONFIRMED'
-  const mayEdit = confirmed && hasCapability(user?.role, 'don.donations.update')
-  const mayCancel = confirmed && hasCapability(user?.role, 'don.donations.cancel')
-  const mayDelete = confirmed && !donation?.reversalMovementId && hasCapability(user?.role, 'don.donations.delete')
+  const mayEdit = confirmed && hasCapability(user?.permissionCodes, 'don.donations.update')
+  const mayCancel = confirmed && hasCapability(user?.permissionCodes, 'don.donations.cancel')
+  const mayDelete = confirmed && !donation?.reversalMovementId && hasCapability(user?.permissionCodes, 'don.donations.delete')
   return <Modal title="Detalle de donación" onClose={onClose}>
     {detail.isPending ? <LoadingState label="Cargando donación..." /> : null}
     {detail.isError ? <ErrorState title="No fue posible cargar la donación" message={getErrorMessage(detail.error, 'Intente nuevamente.')} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>Reintentar</Button>} /> : null}

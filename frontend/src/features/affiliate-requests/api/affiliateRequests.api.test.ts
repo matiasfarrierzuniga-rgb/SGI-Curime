@@ -26,12 +26,12 @@ describe('affiliateRequestsApi', () => {
     expect(httpClient.get).toHaveBeenCalledWith('/affiliate-requests/7')
   })
 
-  it('approves through the existing PATCH endpoint only', async () => {
+  it('approves through the existing PATCH endpoint without a body', async () => {
     vi.mocked(httpClient.patch).mockResolvedValue({ data: { affiliate: { id: 8 }, affiliateRequest: { id: 7 } } })
 
-    await affiliateRequestsApi.approve(7, { roleId: 4 })
+    await affiliateRequestsApi.approve(7)
 
-    expect(httpClient.patch).toHaveBeenCalledWith('/affiliate-requests/7/approve', { roleId: 4 })
+    expect(httpClient.patch).toHaveBeenCalledWith('/affiliate-requests/7/approve')
     expect('create' in affiliateRequestsApi).toBe(false)
   })
 

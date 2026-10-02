@@ -14,6 +14,8 @@ const domainUser = {
   lockedAt: null,
   roleId: 2,
   role: { id: 2, name: 'Tesorero', description: null, isActive: true },
+  personId: '8',
+  affiliateId: '8',
   createdAt: new Date(),
   updatedAt: new Date(),
 };

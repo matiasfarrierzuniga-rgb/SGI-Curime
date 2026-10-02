@@ -1,11 +1,13 @@
-export type ReservableResource = { id: number; name: string; description: string | null; location: string | null; capacity: number | null; status: 'ACTIVE' | 'INACTIVE' }
+export type ResourcePricingType = 'FREE' | 'FIXED'
+export type ReservableResource = { id: number; name: string; description: string | null; location: string | null; capacity: number | null; status: 'ACTIVE' | 'INACTIVE'; pricingType: ResourcePricingType; price: string | null; currency: string }
 export type CreateReservationRequest = { resourceId: number; startAt: string; endAt: string; purpose: string; estimatedAttendees?: number; notes?: string }
 export type ReservationAvailabilityResponse = { available: boolean }
 
 export type ReservationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'CONFIRMED' | 'COMPLETED'
 export type ReservationFilters = { status?: ReservationStatus; resourceId?: number; from?: string; to?: string; page?: number; limit?: number }
 export type ReservationPerson = { id: number; fullName: string; email: string }
-export type ReservationResourceSummary = { id: number; name: string; location: string | null }
+export type ReservationResourceSummary = { id: number; name: string; location: string | null; pricingType: ResourcePricingType; price: string | null; currency: string }
+export type FinancialCharge = { id: number; amount: string; currency: string; status: 'PENDING' | 'PAID' | 'CANCELLED'; dueAt: string | null }
 export type ReservationEvent = { id: number; title: string; startAt: string; endAt: string | null }
 export type AdminReservation = {
   id: number
@@ -28,5 +30,6 @@ export type AdminReservation = {
   cancelledAt: string | null
   createdAt: string
   updatedAt: string
+  financialCharge: FinancialCharge | null
 }
 export type PaginatedReservations = { data: AdminReservation[]; total: number; page: number; limit: number }

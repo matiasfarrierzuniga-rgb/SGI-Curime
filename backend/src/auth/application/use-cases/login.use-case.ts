@@ -59,7 +59,12 @@ export class LoginUseCase {
   ): Promise<LoginResult> {
     const account = await this.repository.findCredentialsByEmail(email);
 
-    if (!account || account.status !== 'ACTIVE' || !account.passwordHash) {
+    if (
+      !account ||
+      account.status !== 'ACTIVE' ||
+      !account.passwordHash ||
+      !Array.isArray(account.permissionCodes)
+    ) {
       await this.audit?.record({
         action: AuditAction.LOGIN_FAILED,
         module: 'AUTH',
@@ -170,14 +175,13 @@ function toAuthenticatedUser(account: AuthAccount): AuthenticatedUser {
     email: account.email,
     status: account.status,
     role: account.roleName,
+    permissionCodes: account.permissionCodes ?? [],
     canAccessErp: canAccessErp({
       userStatus: account.status,
-      userRoleId: account.roleId,
       userRoleName: account.roleName,
       userRoleIsActive: account.roleIsActive,
       hasPerson: account.hasPerson,
       affiliateStatus: account.affiliateStatus,
-      affiliateRoleId: account.affiliateRoleId,
     }),
     ...(account.subscriptionExpirationDate
       ? { subscriptionExpirationDate: account.subscriptionExpirationDate }

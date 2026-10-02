@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -9,6 +8,7 @@ import { Prisma, RequestStatus } from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { RuntimePersonResolverService } from '../identity/runtime-person-resolver.service';
 import { CreateAffiliateRequestDto } from './dto/create-affiliate-request.dto';
 import { QueryAffiliateRequestsDto } from './dto/query-affiliate-requests.dto';
 
@@ -36,108 +36,40 @@ const select = {
   updatedAt: true,
 } satisfies Prisma.AffiliateRequestSelect;
 
-export const FUNCTIONAL_AFFILIATE_ROLES = new Set([
-  'Administrador',
-  'Tesorero',
-  'Gestor de Inventario',
-  'Vecino/Afiliado',
-  'Miembro de Junta Directiva',
-]);
-
 @Injectable()
 export class AffiliateRequestsService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly audit?: AuditService,
+    private readonly personResolver?: RuntimePersonResolverService,
   ) {}
   async create(
     dto: CreateAffiliateRequestDto,
-    actorId: number,
     context: AuditContext = {},
   ) {
     const created = await this.withSerializableTransaction(async (tx) => {
-      const account = await tx.user.findUnique({
-        where: { id: actorId },
-        select: {
-          id: true,
-          fullName: true,
-          identification: true,
-          identificationType: true,
-          email: true,
-          phoneCountryCode: true,
-          phoneNationalNumber: true,
-          address: true,
-          personId: true,
-          person: {
-            select: {
-              id: true,
-              firstName: true,
-              firstSurname: true,
-              secondSurname: true,
-              identification: true,
-              identificationType: true,
-              phoneCountryCode: true,
-              phoneNationalNumber: true,
-              address: true,
-            },
-          },
-        },
-      });
-      if (!account?.personId || !account.person) {
-        throw new ConflictException(
-          'The authenticated account has no linked person identity.',
-        );
-      }
-
-      const personId = account.personId;
-      const person = account.person;
-      if (
-        !person.firstName ||
-        !person.firstSurname ||
-        !person.identification ||
-        !person.identificationType
-      ) {
-        throw new ConflictException(
-          'The linked person identity is incomplete.',
-        );
-      }
-      const fullName = personFullName(person);
+      const resolution = await this.requireResolvedPerson(tx, dto);
+      const personId = resolution.person.id;
       await this.assertNoAffiliateByPerson(tx, personId);
       await this.assertNoPendingRequest(tx, personId);
-      const authoritativePerson = await tx.person.update({
-        where: { id: personId },
-        data: {
-          birthDate: dto.birthDate,
-          address: dto.address,
-        },
-        select: {
-          id: true,
-          birthDate: true,
-          address: true,
-        },
-      });
-      await tx.user.update({
-        where: { id: account.id },
-        data: {
-          fullName,
-          identification: person.identification,
-          identificationType: person.identificationType,
-          phoneCountryCode: person.phoneCountryCode,
-          phoneNationalNumber: person.phoneNationalNumber,
-          address: authoritativePerson.address,
-        },
-      });
+      if (resolution.status === 'PERSON_CREATED') {
+        await tx.person.update({
+          where: { id: personId },
+          data: { birthDate: dto.birthDate, email: dto.email },
+        });
+      }
       return tx.affiliateRequest.create({
         data: {
-          fullName,
-          identification: person.identification,
-          identificationType: person.identificationType,
-          birthDate: authoritativePerson.birthDate!,
+          fullName: personFullName(dto),
+          identification: dto.identification,
+          identificationType: dto.identificationType,
+          birthDate: dto.birthDate,
           gender: dto.gender,
-          phoneCountryCode: person.phoneCountryCode,
-          phoneNationalNumber: person.phoneNationalNumber,
-          email: account.email,
-          address: authoritativePerson.address || '',
+          phoneCountryCode: dto.phoneCountryCode,
+          phoneNationalNumber: dto.phoneNationalNumber,
+          phone: formatPhone(dto.phoneCountryCode, dto.phoneNationalNumber),
+          email: dto.email,
+          address: dto.address,
           occupation: dto.occupation,
           workplace: dto.workplace,
           affiliationReason: dto.affiliationReason,
@@ -148,7 +80,6 @@ export class AffiliateRequestsService {
       });
     });
     await this.audit?.log({
-      userId: actorId,
       action: AuditAction.AFFILIATE_REQUEST_CREATED,
       module: 'AFFILIATE_REQUESTS',
       entityType: 'AffiliateRequest',
@@ -192,7 +123,6 @@ export class AffiliateRequestsService {
   }
   async approve(
     id: number,
-    roleId: number,
     actorId: number,
     context: AuditContext = {},
   ) {
@@ -219,9 +149,7 @@ export class AffiliateRequestsService {
               'Unable to process affiliation request',
             );
 
-          const [role, person] = await Promise.all([
-            tx.role.findUnique({ where: { id: roleId } }),
-            tx.person.findUnique({
+          const person = await tx.person.findUnique({
               where: { id: request.personId },
               select: {
                 id: true,
@@ -234,27 +162,10 @@ export class AffiliateRequestsService {
                 phoneCountryCode: true,
                 phoneNationalNumber: true,
                 address: true,
-                user: {
-                  select: {
-                    id: true,
-                    personId: true,
-                  },
-                },
               },
-            }),
-          ]);
-          if (!role) throw new NotFoundException('Role not found');
-          if (!role.isActive) throw new BadRequestException('Role is inactive');
-          if (!FUNCTIONAL_AFFILIATE_ROLES.has(role.name))
-            throw new BadRequestException(
-              'Role is not valid for an affiliation',
-            );
-          const user = person?.user;
-          if (!user || user.personId !== request.personId)
-            throw new ConflictException(
-              'The affiliation request is not linked to a user account.',
-            );
+          });
           if (
+            !person ||
             !person.firstName ||
             !person.firstSurname ||
             !person.identification ||
@@ -273,27 +184,24 @@ export class AffiliateRequestsService {
             tx,
             request.personId,
             person.identification,
+            request.email,
           );
           const affiliate = await tx.affiliate.create({
             data: {
               personId: request.personId,
-              fullName: personFullName(person),
-              identification: person.identification,
-              identificationType: person.identificationType,
-              birthDate: person.birthDate,
+              fullName: request.fullName,
+              identification: request.identification,
+              identificationType: request.identificationType,
+              birthDate: request.birthDate,
               gender: request.gender,
-              phoneCountryCode: person.phoneCountryCode,
-              phoneNationalNumber: person.phoneNationalNumber,
-              email: null,
-              address: person.address || request.address,
+              phone: request.phone,
+              phoneCountryCode: request.phoneCountryCode,
+              phoneNationalNumber: request.phoneNationalNumber,
+              email: request.email,
+              address: request.address,
               occupation: request.occupation,
               workplace: request.workplace,
-              legacyRoleId: roleId,
             },
-          });
-          await tx.user.update({
-            where: { id: user.id },
-            data: { roleId },
           });
           const claimed = await tx.affiliateRequest.updateMany({
             where: { id, status: 'PENDING' },
@@ -315,7 +223,6 @@ export class AffiliateRequestsService {
               module: 'AFFILIATES',
               entityType: 'Affiliate',
               entityId: affiliate.id,
-              details: { roleId },
               ...context,
             },
             tx,
@@ -327,7 +234,7 @@ export class AffiliateRequestsService {
               module: 'AFFILIATE_REQUESTS',
               entityType: 'AffiliateRequest',
               entityId: id,
-              details: { affiliateId: affiliate.id, roleId },
+              details: { affiliateId: affiliate.id },
               ...context,
             },
             tx,
@@ -441,18 +348,32 @@ export class AffiliateRequestsService {
     tx: Prisma.TransactionClient,
     personId: number,
     identification: string,
+    email: string | null,
   ) {
     const duplicate = await tx.affiliate.findFirst({
       where: {
-        OR: [
-          { personId },
-          { identification },
-        ],
+        OR: [{ personId }, { identification }, ...(email ? [{ email }] : [])],
       },
       select: { id: true },
     });
     if (duplicate)
       throw new ConflictException('Affiliate is already registered');
+  }
+  private async requireResolvedPerson(
+    tx: Prisma.TransactionClient,
+    dto: CreateAffiliateRequestDto,
+  ) {
+    if (!this.personResolver) {
+      throw new Error('Runtime person resolver is unavailable.');
+    }
+    const resolution = await this.personResolver.resolveWithinTransaction(dto, tx);
+    if (
+      resolution.status !== 'PERSON_CREATED' &&
+      resolution.status !== 'PERSON_REUSED'
+    ) {
+      throw new ConflictException('Unable to process affiliation request');
+    }
+    return resolution;
   }
 }
 
@@ -473,9 +394,16 @@ function isAffiliateUniqueConflict(error: unknown): boolean {
 function personFullName(person: {
   firstName: string | null;
   firstSurname: string | null;
-  secondSurname: string | null;
+  secondSurname?: string | null;
 }): string {
   return [person.firstName, person.firstSurname, person.secondSurname]
     .filter((part): part is string => Boolean(part))
     .join(' ');
+}
+
+function formatPhone(
+  countryCode?: string,
+  nationalNumber?: string,
+): string | null {
+  return countryCode && nationalNumber ? `${countryCode}${nationalNumber}` : null;
 }

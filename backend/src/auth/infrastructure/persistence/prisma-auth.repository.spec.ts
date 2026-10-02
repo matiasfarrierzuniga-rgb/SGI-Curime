@@ -11,8 +11,15 @@ const userRow = {
   failedLoginAttempts: 0,
   lastLoginAt: null,
   roleId: 2,
-  role: { name: 'Administrador', isActive: true },
-  person: { affiliate: { status: 'ACTIVE', roleId: 2 } },
+  role: {
+    name: 'Administrador',
+    isActive: true,
+    permissions: [
+      { permission: { code: 'usr.users.read' } },
+      { permission: { code: 'inv.inventory.read' } },
+    ],
+  },
+  person: { affiliate: { status: 'ACTIVE', legacyRoleId: 2 } },
   subscriptionExpirationDate: null,
 };
 
@@ -86,6 +93,7 @@ describe('PrismaAuthRepository', () => {
       roleName: 'Administrador',
       roleId: 2,
       roleIsActive: true,
+      permissionCodes: ['usr.users.read', 'inv.inventory.read'],
       hasPerson: true,
       affiliateStatus: 'ACTIVE',
       affiliateRoleId: 2,
@@ -93,7 +101,10 @@ describe('PrismaAuthRepository', () => {
     });
     expect(db.user.findUnique).toHaveBeenCalledWith({
       where: { email: 'admin@example.com' },
-      include: { role: true, person: { include: { affiliate: true } } },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+        person: { include: { affiliate: true } },
+      },
     });
   });
 
@@ -111,6 +122,30 @@ describe('PrismaAuthRepository', () => {
     await expect(repository.findCredentialsById(1)).resolves.toMatchObject({
       id: 1,
       roleName: 'Administrador',
+    });
+  });
+
+  it.each([
+    ['Administrador', 30],
+    ['Gestor de Inventario', 3],
+    ['Tesorero', 9],
+  ])('loads persisted permission codes for %s', async (roleName, count) => {
+    const permissionCodes = Array.from(
+      { length: count },
+      (_, index) => `permission.${index}`,
+    );
+    db.user.findUnique.mockResolvedValueOnce({
+      ...userRow,
+      role: {
+        name: roleName,
+        isActive: true,
+        permissions: permissionCodes.map((code) => ({ permission: { code } })),
+      },
+    });
+
+    await expect(repository.findCredentialsById(1)).resolves.toMatchObject({
+      roleName,
+      permissionCodes,
     });
   });
 

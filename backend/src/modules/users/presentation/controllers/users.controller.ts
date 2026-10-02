@@ -10,8 +10,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard, Roles, RolesGuard } from '../../../../auth';
+import {
+  CapabilityGuard,
+  JwtAuthGuard,
+  RequireCapabilities,
+  Roles,
+  RolesGuard,
+} from '../../../../auth';
 import type { AuthenticatedUser } from '../../../../auth';
+import { hasPersistedCapability } from '../../../../auth/presentation/capabilities/capability-policy';
 import { UserStatus } from '../../domain/entities/user';
 import type { UserQuery } from '../../domain/repositories/users-repository';
 import { ActivateUserUseCase } from '../../application/use-cases/activate-user.use-case';
@@ -27,12 +34,14 @@ import { QueryUsersDto } from '../dto/query-users.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UpdateIsActiveDto } from '../dto/update-is-active.dto';
 import { UpdateSubscriptionExpirationDto } from '../dto/update-subscription-expiration.dto';
-import { toUserResponse } from '../mappers/user-response.mapper';
+import {
+  toAdminUserResponse,
+  toUserResponse,
+} from '../mappers/user-response.mapper';
 import { toHttpError } from '../mappers/users-error.mapper';
 
 @Controller('users')
-@Roles('Administrador')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
 export class UsersController {
   constructor(
     private readonly listUsers: ListUsersUseCase,
@@ -46,11 +55,15 @@ export class UsersController {
   ) {}
 
   @Get()
-  findAll(@Query() query: QueryUsersDto) {
+  @RequireCapabilities('usr.users.read')
+  findAll(
+    @Query() query: QueryUsersDto,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
     return this.run(async () => {
       const page = await this.listUsers.execute(this.toQuery(query));
       return {
-        data: page.data.map(toUserResponse),
+        data: page.data.map((user) => this.toAdminResponse(user, req.user)),
         total: page.total,
         page: page.page,
         limit: page.limit,
@@ -65,41 +78,51 @@ export class UsersController {
       const { user, affiliation } = await this.getUser.executeWithAffiliation(
         req.user.id,
       );
-      return { ...toUserResponse(user), ...affiliation };
+      return {
+        ...toUserResponse(user),
+        ...affiliation,
+        permissionCodes: [...(req.user.permissionCodes ?? [])],
+      };
     });
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  @Get(':personId')
+  @RequireCapabilities('usr.users.read')
+  findOne(
+    @Param('personId', ParseIntPipe) personId: number,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
     return this.run(async () => {
-      const user = await this.getUser.execute(id);
-      return toUserResponse(user);
+      const person = await this.getUser.executeAdminPerson(personId);
+      return this.toAdminResponse(person, req.user);
     });
   }
 
   @Patch(':id/is-active')
+  @RequireCapabilities('usr.users.lifecycle.manage')
   updateIsActive(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) accessId: number,
     @Body() dto: UpdateIsActiveDto,
     @Req() req: Request & { user: AuthenticatedUser },
   ) {
     return this.run(async () => {
       const user = dto.isActive
-        ? await this.activateUser.execute(id, req.user.id, this.context(req))
-        : await this.deactivateUser.execute(id, req.user.id, this.context(req));
+        ? await this.activateUser.execute(accessId, req.user.id, this.context(req))
+        : await this.deactivateUser.execute(accessId, req.user.id, this.context(req));
       return toUserResponse(user);
     });
   }
 
   @Patch(':id/subscription-expiration')
+  @RequireCapabilities('usr.users.update')
   updateSubscriptionExpirationDate(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) accessId: number,
     @Body() dto: UpdateSubscriptionExpirationDto,
     @Req() req: Request & { user: AuthenticatedUser },
   ) {
     return this.run(async () => {
       const user = await this.updateSubscriptionExpiration.execute(
-        id,
+        accessId,
         new Date(dto.subscriptionExpirationDate),
         req.user.id,
         this.context(req),
@@ -109,14 +132,15 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @RequireCapabilities('usr.users.update')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) accessId: number,
     @Body() dto: UpdateUserDto,
     @Req() req: Request & { user: AuthenticatedUser },
   ) {
     return this.run(async () => {
       const user = await this.updateUser.execute(
-        id,
+        accessId,
         dto,
         req.user.id,
         this.context(req),
@@ -126,14 +150,15 @@ export class UsersController {
   }
 
   @Patch(':id/role')
+  @RequireCapabilities('usr.users.role.change')
   changeRole(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) accessId: number,
     @Body() dto: ChangeRoleDto,
     @Req() req: Request & { user: AuthenticatedUser },
   ) {
     return this.run(async () => {
       const user = await this.changeUserRole.execute(
-        id,
+        accessId,
         dto.roleId,
         req.user.id,
         this.context(req),
@@ -143,13 +168,14 @@ export class UsersController {
   }
 
   @Patch(':id/activate')
+  @RequireCapabilities('usr.users.lifecycle.manage')
   activate(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) accessId: number,
     @Req() req: Request & { user: AuthenticatedUser },
   ) {
     return this.run(async () => {
       const user = await this.activateUser.execute(
-        id,
+        accessId,
         req.user.id,
         this.context(req),
       );
@@ -158,13 +184,14 @@ export class UsersController {
   }
 
   @Patch(':id/deactivate')
+  @RequireCapabilities('usr.users.lifecycle.manage')
   deactivate(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) accessId: number,
     @Req() req: Request & { user: AuthenticatedUser },
   ) {
     return this.run(async () => {
       const user = await this.deactivateUser.execute(
-        id,
+        accessId,
         req.user.id,
         this.context(req),
       );
@@ -173,13 +200,14 @@ export class UsersController {
   }
 
   @Patch(':id/unlock')
+  @RequireCapabilities('usr.users.unlock')
   unlock(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) accessId: number,
     @Req() req: Request & { user: AuthenticatedUser },
   ) {
     return this.run(async () => {
       const user = await this.unlockUser.execute(
-        id,
+        accessId,
         req.user.id,
         this.context(req),
       );
@@ -197,6 +225,36 @@ export class UsersController {
       blocked: query.blocked,
       page: query.page,
       limit: query.limit,
+    };
+  }
+
+  private toAdminResponse(
+    person: Parameters<typeof toAdminUserResponse>[0],
+    actor: AuthenticatedUser,
+  ) {
+    return {
+      ...toAdminUserResponse(person),
+      actions: {
+        read: hasPersistedCapability(actor.permissionCodes, 'usr.users.read'),
+        update:
+          person.access !== null &&
+          hasPersistedCapability(actor.permissionCodes, 'usr.users.update'),
+        changeRole:
+          person.access !== null &&
+          hasPersistedCapability(
+            actor.permissionCodes,
+            'usr.users.role.change',
+          ),
+        manageLifecycle:
+          person.access !== null &&
+          hasPersistedCapability(
+            actor.permissionCodes,
+            'usr.users.lifecycle.manage',
+          ),
+        unlock:
+          person.access !== null &&
+          hasPersistedCapability(actor.permissionCodes, 'usr.users.unlock'),
+      },
     };
   }
 

@@ -10,6 +10,10 @@ import { inventoryLoansService } from '../../services/inventoryLoansService'
 import type { AffiliateOption, InventoryItem, InventoryLoan, InventoryLoanStatus, InventoryLoanQuery } from '../../types/inventory'
 import { loanStatusLabels } from '../../types/inventory'
 import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { ErrorState } from '@/shared/ui/ErrorState'
+import { LoadingState } from '@/shared/ui/LoadingState'
+import { InventoryPageLayout } from './InventoryPageLayout'
 
 const limit = 10
 
@@ -220,8 +224,8 @@ export function InventoryLoansPage() {
   const formatDate = (value: string) => new Date(value).toLocaleDateString('es-CR')
 
   return (
-    <section>
-      <h1>Préstamos</h1>
+    <InventoryPageLayout title="Préstamos" description="Gestione entregas, devoluciones y vencimientos de artículos prestados.">
+      <div className="space-y-5">
       <form className="filters card" onSubmit={submit}>
         <label>Artículo<select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
           <option value="">Todos</option>
@@ -238,11 +242,11 @@ export function InventoryLoansPage() {
         <label>Hasta<input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} /></label>
         <div className="actions"><button className="primary">Aplicar filtros</button><button type="button" onClick={openCreate}>Nuevo préstamo</button></div>
       </form>
-      {error && <p className="message error" role="alert">{error}</p>}
+      {error && <ErrorState message={error} />}
       {loading ? (
-        <p aria-live="polite">Cargando préstamos…</p>
+        <LoadingState label="Cargando préstamos…" />
       ) : loans.length === 0 ? (
-        <p className="card">No hay préstamos que coincidan con los filtros.</p>
+        <EmptyState title="Sin préstamos" description="No hay préstamos que coincidan con los filtros." />
       ) : (
         <>
           <div className="table-wrap" tabIndex={0} aria-label="Tabla de préstamos, desplazable horizontalmente">
@@ -357,6 +361,7 @@ export function InventoryLoansPage() {
           onClose={() => setConfirmCancel(null)}
         />
       )}
-    </section>
+      </div>
+    </InventoryPageLayout>
   )
 }

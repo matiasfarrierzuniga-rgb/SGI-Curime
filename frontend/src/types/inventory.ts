@@ -230,6 +230,7 @@ export interface CreateInventoryItemInput {
   name: string
   description?: string
   categoryId: number
+  quantity: number
   minimumQuantity?: number
   unit?: string
   location?: string

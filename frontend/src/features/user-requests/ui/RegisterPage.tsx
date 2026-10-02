@@ -1,8 +1,13 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { getErrorMessage } from '@/shared/lib/errors'
-import { digitsOnly, identificationError, identificationMaxLength, normalizeEmail, normalizeText, personContactErrors, phoneNationalMaxLength, type IdentificationType } from '@/shared/lib/formValidation'
+import { digitsOnly, identificationError, identificationMaxLength, normalizeEmail, normalizeText, personContactErrors, type IdentificationType } from '@/shared/lib/formValidation'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
+import { Button } from '@/shared/ui/button'
+import { PhoneField } from '@/shared/ui/forms/PhoneField'
+import { Input } from '@/shared/ui/input'
+import { Select } from '@/shared/ui/select'
+import { Textarea } from '@/shared/ui/textarea'
 import { userRequestsService } from '../api/userRequests.api'
 import type { CreateUserRequest } from '../model/userRequests.types'
 
@@ -56,36 +61,30 @@ export function RegisterPage() {
       <StatusMessage error={error} success={success} />
       <form className="mt-7 grid gap-5" onSubmit={submit} noValidate>
         <label className="grid gap-2 text-sm font-bold" htmlFor="full-name">Nombre completo
-          <input id="full-name" className={inputClass} required minLength={2} maxLength={150} autoComplete="name" aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'full-name-error' : undefined} {...field('fullName')} onBlur={validate} />
+          <Input id="full-name" className={inputClass} required minLength={2} maxLength={150} autoComplete="name" aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'full-name-error' : undefined} {...field('fullName')} onBlur={validate} />
           {errors.fullName && <span id="full-name-error" className="field-error" role="alert">{errors.fullName}</span>}
         </label>
         <label className="grid gap-2 text-sm font-bold" htmlFor="identification-type">Tipo de identificación
-          <select id="identification-type" className={inputClass} value={idType} onChange={(event) => setForm({ ...form, identificationType: event.target.value as IdentificationType, identification: '' })}><option value="NATIONAL">Nacional</option><option value="DIMEX">DIMEX</option></select>
+          <Select id="identification-type" className={inputClass} value={idType} onChange={(event) => setForm({ ...form, identificationType: event.target.value as IdentificationType, identification: '' })}><option value="NATIONAL">Nacional</option><option value="DIMEX">DIMEX</option></Select>
         </label>
         <label className="grid gap-2 text-sm font-bold" htmlFor="identification">Número de identificación
-          <input id="identification" className={inputClass} type="text" inputMode="numeric" required maxLength={identificationMaxLength(idType)} aria-invalid={Boolean(errors.identification)} aria-describedby={errors.identification ? 'identification-error' : undefined} value={form.identification} onChange={(event) => setForm({ ...form, identification: digitsOnly(event.target.value, identificationMaxLength(idType)) })} onBlur={validate} />
+          <Input id="identification" className={inputClass} type="text" inputMode="numeric" required maxLength={identificationMaxLength(idType)} aria-invalid={Boolean(errors.identification)} aria-describedby={errors.identification ? 'identification-error' : undefined} value={form.identification} onChange={(event) => setForm({ ...form, identification: digitsOnly(event.target.value, identificationMaxLength(idType)) })} onBlur={validate} />
           {errors.identification && <span id="identification-error" className="field-error" role="alert">{errors.identification}</span>}
         </label>
         <label className="grid gap-2 text-sm font-bold" htmlFor="register-email">Correo electrónico
-          <input id="register-email" className={inputClass} type="email" inputMode="email" autoComplete="email" required maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'register-email-error' : undefined} {...field('email')} onBlur={validate} />
+          <Input id="register-email" className={inputClass} type="email" inputMode="email" autoComplete="email" required maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'register-email-error' : undefined} {...field('email')} onBlur={validate} />
           {errors.email && <span id="register-email-error" className="field-error" role="alert">{errors.email}</span>}
         </label>
-        <div className="grid gap-4 sm:grid-cols-[8rem_1fr]">
-          <label className="grid content-start gap-2 text-sm font-bold" htmlFor="country-code">Código país
-            <input id="country-code" className={inputClass} type="text" autoComplete="tel-country-code" maxLength={5} {...field('phoneCountryCode')} />
-          </label>
-          <label className="grid gap-2 text-sm font-bold" htmlFor="phone-number">Número (opcional)
-            <input id="phone-number" className={inputClass} type="text" inputMode="numeric" autoComplete="tel-national" maxLength={phoneNationalMaxLength(form.phoneCountryCode ?? '')} aria-invalid={Boolean(errors.phoneNationalNumber)} aria-describedby={errors.phoneNationalNumber ? 'phone-error' : undefined} value={form.phoneNationalNumber ?? ''} onChange={(event) => setForm({ ...form, phoneNationalNumber: digitsOnly(event.target.value, phoneNationalMaxLength(form.phoneCountryCode ?? '')) })} onBlur={validate} />
-            {errors.phoneNationalNumber && <span id="phone-error" className="field-error" role="alert">{errors.phoneNationalNumber}</span>}
-          </label>
+        <div onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) validate() }}>
+          <PhoneField id="phone-number" label="Número" value={{ countryCode: form.phoneCountryCode, nationalNumber: form.phoneNationalNumber }} error={errors.phoneNationalNumber} onChange={({ countryCode, nationalNumber }) => setForm({ ...form, phoneCountryCode: countryCode, phoneNationalNumber: nationalNumber })} />
         </div>
         <label className="grid gap-2 text-sm font-bold" htmlFor="address">Dirección (opcional)
-          <textarea id="address" className="min-h-24 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" maxLength={300} autoComplete="street-address" {...field('address')} />
+          <Textarea id="address" className="min-h-24 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" maxLength={300} autoComplete="street-address" {...field('address')} />
         </label>
         <label className="grid gap-2 text-sm font-bold" htmlFor="reason">Motivo de la solicitud
-          <textarea id="reason" className="min-h-28 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" required minLength={3} maxLength={1000} {...field('reason')} />
+          <Textarea id="reason" className="min-h-28 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal" required minLength={3} maxLength={1000} {...field('reason')} />
         </label>
-        <button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold" disabled={loading}>{loading ? 'Enviando…' : 'Enviar solicitud'}</button>
+        <Button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold" disabled={loading}>{loading ? 'Enviando…' : 'Enviar solicitud'}</Button>
       </form>
       <div className="mt-7 border-t border-border pt-5 text-center text-sm text-foreground-muted">
         ¿Ya tiene una cuenta? <Link className="inline-flex min-h-11 items-center font-bold text-brand-primary underline-offset-4 hover:underline" to="/login">Iniciar sesión</Link>

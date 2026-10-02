@@ -11,7 +11,8 @@ export interface AffiliateRequest {
   status: AffiliateRequestStatus; rejectionReason: string | null; createdAt: string; updatedAt: string;
 }
 export interface CreateAffiliateRequest {
-  birthDate: string; gender?: string; address: string;
+  identificationType: IdentificationType; identification: string; firstName: string; firstSurname: string; secondSurname?: string;
+  birthDate: string; gender?: string; phoneCountryCode?: string; phoneNationalNumber?: string; email?: string; address: string;
   occupation?: string; workplace?: string; affiliationReason: string;
 }
 export interface AffiliateRequestQuery { status?: AffiliateRequestStatus; search?: string; page: number; limit: number }

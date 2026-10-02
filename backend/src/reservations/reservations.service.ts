@@ -27,6 +27,9 @@ const resourceSelect = {
   location: true,
   capacity: true,
   status: true,
+  pricingType: true,
+  price: true,
+  currency: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.ReservableResourceSelect;
@@ -49,7 +52,19 @@ const reservationSelect = {
 const adminReservationSelect = {
   id: true,
   resourceId: true,
-  resource: { select: { id: true, name: true, location: true } },
+  resource: {
+    select: {
+      id: true,
+      name: true,
+      location: true,
+      pricingType: true,
+      price: true,
+      currency: true,
+    },
+  },
+  financialCharge: {
+    select: { id: true, amount: true, currency: true, status: true, dueAt: true },
+  },
   requesterUserId: true,
   requester: { select: { id: true, fullName: true, email: true } },
   eventId: true,
@@ -219,9 +234,16 @@ export class ReservationsService {
 
       const price = resource.price;
       if (
-        resource.pricingType !== ResourcePricingType.FIXED ||
-        price === null ||
-        price.toNumber() <= 0
+        resource.pricingType === ResourcePricingType.FREE &&
+        price !== null
+      ) {
+        throw new ConflictException('Reservable resource has invalid pricing');
+      }
+      if (
+        resource.pricingType !== ResourcePricingType.FREE &&
+        (resource.pricingType !== ResourcePricingType.FIXED ||
+          price === null ||
+          price.toNumber() <= 0)
       ) {
         throw new ConflictException('Reservable resource has invalid pricing');
       }
@@ -236,20 +258,25 @@ export class ReservationsService {
         select: adminReservationSelect,
       });
 
-      try {
-        await tx.financialCharge.create({
-          data: {
-            reservationId: reservation.id,
-            amount: price,
-          },
-        });
-      } catch (error) {
-        if (isChargeUniqueConstraintViolation(error)) {
-          throw new ConflictException(
-            'Reservation already has a financial charge',
-          );
+      if (
+        resource.pricingType === ResourcePricingType.FIXED &&
+        price !== null
+      ) {
+        try {
+          await tx.financialCharge.create({
+            data: {
+              reservationId: reservation.id,
+              amount: price,
+            },
+          });
+        } catch (error) {
+          if (isChargeUniqueConstraintViolation(error)) {
+            throw new ConflictException(
+              'Reservation already has a financial charge',
+            );
+          }
+          throw error;
         }
-        throw error;
       }
 
       return approved;

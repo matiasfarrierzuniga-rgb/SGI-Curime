@@ -10,14 +10,14 @@ describe('ReservationDetailsModal', () => {
 
   it('shows loading while authoritative detail request is pending', () => {
     vi.mocked(useReservationDetail).mockReturnValue({ isPending: true, isError: false } as never)
-    render(<ReservationDetailsModal id={11} role="Administrador" busy={false} onClose={vi.fn()} onApprove={vi.fn()} onReject={vi.fn()} onCancel={vi.fn()} />)
+    render(<ReservationDetailsModal id={11} permissionCodes={[]} busy={false} onClose={vi.fn()} onApprove={vi.fn()} onReject={vi.fn()} onCancel={vi.fn()} />)
     expect(useReservationDetail).toHaveBeenCalledWith(11)
     expect(screen.getByText('Cargando detalle de reserva...')).toBeInTheDocument()
   })
 
   it('shows a not-found state for 404 detail response', () => {
     vi.mocked(useReservationDetail).mockReturnValue({ isPending: false, isError: true, error: { response: { status: 404 } }, refetch: vi.fn() } as never)
-    render(<ReservationDetailsModal id={11} role="Administrador" busy={false} onClose={vi.fn()} onApprove={vi.fn()} onReject={vi.fn()} onCancel={vi.fn()} />)
+    render(<ReservationDetailsModal id={11} permissionCodes={[]} busy={false} onClose={vi.fn()} onApprove={vi.fn()} onReject={vi.fn()} onCancel={vi.fn()} />)
     expect(screen.getByText('Reserva no encontrada')).toBeInTheDocument()
   })
 })

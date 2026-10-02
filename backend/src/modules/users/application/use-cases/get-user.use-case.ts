@@ -20,6 +20,12 @@ export class GetUserUseCase {
     return user;
   }
 
+  async executeAdminPerson(id: number) {
+    const person = await this.repository.findAdminPersonById(id);
+    if (!person) throw new UserNotFoundError();
+    return person;
+  }
+
   async executeWithAffiliation(id: number) {
     const user = await this.execute(id);
     const affiliation = await this.repository.findAffiliationContext(id);
@@ -32,12 +38,10 @@ export class GetUserUseCase {
         affiliateRequestStatus: affiliation.affiliateRequestStatus,
         canAccessErp: canAccessErp({
           userStatus: user.status,
-          userRoleId: user.roleId,
           userRoleName: user.role.name,
           userRoleIsActive: user.role.isActive,
           hasPerson: affiliation.hasPerson,
           affiliateStatus: affiliation.affiliateStatus,
-          affiliateRoleId: affiliation.affiliateRoleId,
         }),
       },
     };

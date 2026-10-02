@@ -349,7 +349,10 @@ export class AbsenceJustificationsService {
     return this.hydrate(item);
   }
 
-  async getEvidence(id: number, actor: { id: number; role: string }) {
+  async getEvidence(
+    id: number,
+    actor: { id: number; canReadJustifications?: boolean },
+  ) {
     const item = await this.prisma.absenceJustification.findUnique({
       where: { id },
       select: {
@@ -370,7 +373,6 @@ export class AbsenceJustificationsService {
       throw new NotFoundException('Absence justification not found');
     }
 
-    const isAdmin = actor.role === 'Administrador';
     const [assembly, affiliate] = await Promise.all([
       this.prisma.assembly.findUnique({
         where: { id: item.legacyAssemblyId },
@@ -387,7 +389,7 @@ export class AbsenceJustificationsService {
     ]);
     const isOwner = affiliate?.person?.user?.id === actor.id;
 
-    if (!isAdmin && !isOwner) {
+    if (!actor.canReadJustifications && !isOwner) {
       throw new ForbiddenException(
         'You are not authorized to access this justification evidence.',
       );
@@ -403,7 +405,10 @@ export class AbsenceJustificationsService {
     };
   }
 
-  async getEvidenceFile(id: number, actor: { id: number; role: string }) {
+  async getEvidenceFile(
+    id: number,
+    actor: { id: number; canReadJustifications?: boolean },
+  ) {
     const item = await this.getEvidence(id, actor);
     if (!item.attachmentUrl) {
       throw new NotFoundException('Evidence file not found');
@@ -448,6 +453,23 @@ export class AbsenceJustificationsService {
     const note = observation?.trim() ?? '';
 
     await this.prisma.$transaction(async (tx) => {
+      if (status === JustificationStatus.APPROVED) {
+        const attendance = await tx.assemblyAttendance.findUnique({
+          where: {
+            legacyAssemblyId_legacyAffiliateId: {
+              legacyAssemblyId: item.legacyAssemblyId,
+              legacyAffiliateId: item.legacyAffiliateId,
+            },
+          },
+          select: { status: true },
+        });
+        if (attendance?.status !== 'ABSENT') {
+          throw new ConflictException(
+            'The attendance record must remain absent before approving the justification.',
+          );
+        }
+      }
+
       const claimed = await tx.absenceJustification.updateMany({
         where: { id, status: 'PENDING' },
         data: {
@@ -461,26 +483,6 @@ export class AbsenceJustificationsService {
       });
       if (claimed.count !== 1)
         throw new ConflictException('Justification has already been resolved');
-
-      if (status === JustificationStatus.APPROVED) {
-        const attendance = await tx.assemblyAttendance.findUnique({
-          where: {
-            legacyAssemblyId_legacyAffiliateId: {
-              legacyAssemblyId: item.legacyAssemblyId,
-              legacyAffiliateId: item.legacyAffiliateId,
-            },
-          },
-          select: { status: true },
-        });
-        if (
-          attendance?.status !== 'ABSENT' &&
-          attendance?.status !== 'PRESENT'
-        ) {
-          throw new ConflictException(
-            'The attendance record must remain present or absent before approving the justification.',
-          );
-        }
-      }
     });
 
     await this.audit?.log({
