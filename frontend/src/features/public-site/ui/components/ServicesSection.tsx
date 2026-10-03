@@ -4,13 +4,13 @@ import { CurimeBrandAccent } from '@/shared/ui/brand/CurimeBrandAccent'
 import { CurimeGrecaDivider } from '@/shared/ui/brand/CurimeGrecaDivider'
 
 const portalLinks = [
-  { icon: UsersRound, title: 'Afiliación', text: 'Inicie una gestión de afiliación comunitaria.', to: '/afiliacion' },
+  { icon: UsersRound, title: 'Afiliación', text: 'Solicite su afiliación a la Asociación de Desarrollo Integral de Curime.', to: '/afiliacion' },
   { icon: CalendarPlus, title: 'Reservas', text: 'Solicite el uso de un espacio comunitario.', to: '/servicios/reservas' },
 ] as const
 
 export function ServicesSection() {
   return (
-    <section aria-labelledby="services-title" className="public-section relative isolate overflow-hidden bg-brand-ivory">
+    <section aria-labelledby="services-title" className="public-section relative isolate overflow-hidden bg-brand-ivory lg:flex lg:min-h-[min(43rem,calc(100svh-var(--size-header-desktop)))] lg:min-h-[min(43rem,calc(100dvh-var(--size-header-desktop)))] lg:items-center">
       <CurimeGrecaDivider className="absolute inset-x-0 top-0" />
       <CurimeBrandAccent className="absolute -bottom-16 -right-14 h-80 w-64 opacity-[0.08] sm:-right-8 sm:h-96 sm:w-72 lg:-bottom-24 lg:right-[5%] lg:h-[30rem] lg:w-96" />
       <div className="public-container relative z-10">
@@ -24,24 +24,24 @@ export function ServicesSection() {
           >
             Encuentre lo que necesita
           </h2>
-          <p className="mt-4 max-w-[52ch] text-body leading-relaxed text-brand-ink/75">
-            Gestiones disponibles para acompañar su vínculo con la Asociación.
+          <p className="mt-4 max-w-[52ch] text-pretty text-body leading-relaxed text-brand-ink/75">
+            Realice en línea las gestiones que la Asociación tiene disponibles para la comunidad.
           </p>
         </header>
         <div className="mt-8 grid max-w-5xl gap-4 md:mt-10 md:grid-cols-2 md:gap-5">
           {portalLinks.map(({ icon: Icon, title, text, to }) => (
             <article
               key={title}
-              className="group flex min-h-64 flex-col items-start rounded-surface border border-brand-sage/80 bg-card-white p-6 text-left transition-colors hover:border-brand-primary hover:bg-brand-ivory md:min-h-72 md:p-7"
+              className="group flex min-h-60 flex-col items-start rounded-surface border border-brand-sage/80 bg-card-white p-6 text-left shadow-sm transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-brand-primary hover:bg-brand-ivory hover:shadow-md focus-within:border-brand-primary focus-within:shadow-md motion-reduce:transform-none md:min-h-64 md:p-7"
             >
-              <span className="grid size-12 place-items-center rounded-control border border-brand-accent/45 bg-brand-accent/15 text-brand-deep">
+              <span className="grid size-12 place-items-center rounded-control border border-brand-accent/45 bg-brand-accent/15 text-brand-deep transition-colors duration-200 group-hover:bg-brand-accent/25 group-focus-within:bg-brand-accent/25">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
               <h3 className="mt-5 font-heading text-heading-2 font-normal text-brand-ink">{title}</h3>
               <p className="mt-3 max-w-[34ch] flex-1 text-body-small leading-relaxed text-brand-ink/75">{text}</p>
               <Link
                 to={to}
-                className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-control border border-brand-deep bg-brand-deep px-4 text-body-small font-bold text-brand-ivory transition-colors hover:bg-brand-primary hover:border-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring"
+                className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-control border border-brand-deep bg-brand-deep px-4 text-body-small font-bold text-brand-ivory transition-[background-color,border-color,box-shadow] duration-200 hover:border-brand-primary hover:bg-brand-primary hover:shadow-sm focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring"
               >
                 Consultar{' '}<span className="sr-only">sobre {title}</span>
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />

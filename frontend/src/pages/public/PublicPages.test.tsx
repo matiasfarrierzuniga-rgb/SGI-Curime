@@ -137,30 +137,34 @@ describe('portal público', () => {
 
   it('muestra transparencia con enlace a información autorizada', () => {
     renderPublic()
-    expect(screen.getByRole('heading', { name: /información pública, con claridad/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /información pública para la comunidad/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /ir a transparencia/i })).toHaveAttribute('href', '/transparencia')
   })
 
-  it('conserva la jerarquía de la Golden Home', () => {
+  it('conserva jerarquía de Home Pública V1', () => {
     const { container } = renderPublic()
     const headings = Array.from(container.querySelectorAll('main h1, main h2')).map((heading) => heading.textContent)
 
     expect(container.querySelectorAll('main h1')).toHaveLength(1)
     expect(headings).toEqual([
       'Curime, más cerca de su comunidad',
-      'Encuentre lo que necesita',
-      'Información pública, con claridad y responsabilidad',
+      'Lo más reciente',
       'Un pueblo unido, un futuro compartido',
-      '¿Ya tiene acceso al Sistema de Gestión Integral?',
+      'Encuentre lo que necesita',
+      'Un espacio para encontrarnos',
+      'Próximas actividades',
+      'Información pública para la comunidad',
     ])
   })
 
-  it('muestra rutas comunitarias reales y futuras opciones no interactivas', () => {
+  it('muestra accesos comunitarios y noticias con rutas existentes', () => {
     renderPublic()
     expect(screen.getByRole('heading', { name: /encuentre lo que necesita/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /consultar sobre afiliación/i })).toHaveAttribute('href', '/afiliacion')
-    expect(screen.getByRole('link', { name: /consultar sobre eventos/i })).toHaveAttribute('href', '/eventos')
-    expect(screen.getAllByText('Próximamente')).toHaveLength(2)
+    expect(screen.getByRole('link', { name: /agenda y eventos/i })).toHaveAttribute('href', '/eventos')
+    expect(screen.getByRole('link', { name: /emprendimientos/i })).toHaveAttribute('href', '/comunidad')
+    expect(screen.getByRole('link', { name: /ver todo/i })).toHaveAttribute('href', '/noticias')
+    expect(screen.getByRole('heading', { name: /lo más reciente/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /consultar sobre reservas/i })).toHaveAttribute('href', '/servicios/reservas')
   })
 
