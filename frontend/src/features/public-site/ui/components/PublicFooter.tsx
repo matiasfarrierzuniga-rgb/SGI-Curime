@@ -19,7 +19,7 @@ export function PublicFooter() {
         />
       </svg>
       <footer className="bg-brand-ink font-sans text-text-inverse">
-        <div className="public-container grid gap-x-8 gap-y-8 py-8 md:grid-cols-2 md:gap-x-12 md:gap-y-9 lg:grid-cols-[1.2fr_1fr_1.35fr_0.85fr] lg:gap-x-8 lg:py-7 xl:gap-x-12">
+        <div className="public-container grid gap-x-8 gap-y-8 py-9 md:grid-cols-2 md:gap-x-12 md:gap-y-9 md:py-10 lg:grid-cols-[1.2fr_1fr_1.35fr_0.85fr] lg:gap-x-8 xl:gap-x-12">
           <div>
             <div className="flex items-center gap-3">
               <span className="grid size-12 shrink-0 place-items-center rounded-surface bg-brand-ivory p-1">
@@ -33,7 +33,7 @@ export function PublicFooter() {
               </span>
               <strong className="font-heading text-xl font-bold text-text-inverse">ADI Curime</strong>
             </div>
-            <p className="mt-3 max-w-xs text-body-small text-text-inverse/75">
+            <p className="mt-3 max-w-xs text-pretty text-body-small text-text-inverse/75">
               {site.slogan}
             </p>
             <p className="mt-2 text-body-small text-text-inverse/75">{site.location}</p>
