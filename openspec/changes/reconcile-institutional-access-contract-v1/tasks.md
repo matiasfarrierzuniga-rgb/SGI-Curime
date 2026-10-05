@@ -1,10 +1,10 @@
 ## 1. Freeze Contract And Coverage Baseline
 
-- [ ] 1.1 Inventory every public, authenticated, role-protected, and capability-protected account/auth endpoint and record its current URL, guard, actor outcome, audit event, and test evidence.
-- [ ] 1.2 Build the canonical capability inventory for Dashboard, Users, Roles, Affiliates, Affiliate Requests, User Requests, Governance, Assemblies, Absence Justifications, Reservations, Events, Finance, Donations, Inventory, Reports, Institutional Profile, Entrepreneurship, and Volunteering.
-- [ ] 1.3 Build the actor/module certification matrix using anonymous, general account, administrator-policy, treasurer-policy, inventory-manager-policy, and missing-capability actors without inferring governance mappings.
-- [ ] 1.4 Add focused regression tests proving current UserRequest approval, inactive User creation, active Role validation, activation-token hashing/delivery, single-use activation, login, Session creation, and persisted permission resolution before changing entry points.
-- [ ] 1.5 Add a scope guard or final diff checklist proving implementation does not modify Prisma schema/migrations, add persistent authorization models, add OTP/OAuth/OIDC, add dynamic RBAC administration, or map BoardPosition to software Role.
+- [x] 1.1 Inventory every public, authenticated, role-protected, and capability-protected account/auth endpoint and record its current URL, guard, actor outcome, audit event, and test evidence.
+- [x] 1.2 Build the canonical capability inventory for Dashboard, Users, Roles, Affiliates, Affiliate Requests, User Requests, Governance, Assemblies, Absence Justifications, Reservations, Events, Finance, Donations, Inventory, Reports, Institutional Profile, Entrepreneurship, and Volunteering.
+- [x] 1.3 Build the actor/module certification matrix using anonymous, general account, administrator-policy, treasurer-policy, inventory-manager-policy, and missing-capability actors without inferring governance mappings.
+- [x] 1.4 Add focused regression tests proving current UserRequest approval, inactive User creation, active Role validation, activation-token hashing/delivery, single-use activation, login, Session creation, and persisted permission resolution before changing entry points.
+- [x] 1.5 Add a scope guard or final diff checklist proving implementation does not modify Prisma schema/migrations, add persistent authorization models, add OTP/OAuth/OIDC, add dynamic RBAC administration, or map BoardPosition to software Role.
 
 ## 2. Close Public Account Lifecycle
 
