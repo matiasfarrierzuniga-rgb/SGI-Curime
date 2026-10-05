@@ -21,6 +21,10 @@ type AffiliateAbsenceJustificationPayload = {
   attachment?: File
 }
 
+type AbsenceJustificationEvidence = {
+  attachmentUrl: string | null
+}
+
 export const absenceJustificationsService = {
   async list(filters: AbsenceJustificationListFilters) {
     return (await httpClient.get<AbsenceJustificationListResponse>('/absence-justifications', { params: filters })).data
@@ -32,7 +36,7 @@ export const absenceJustificationsService = {
     return (await httpClient.get<AbsenceJustificationListResponse>('/me/absence-justifications', { params: filters })).data
   },
   async getEvidence(id: number) {
-    return (await httpClient.get<Pick<AbsenceJustification, 'attachmentUrl'>>(`/absence-justifications/${id}/evidence`)).data
+    return (await httpClient.get<AbsenceJustificationEvidence>(`/absence-justifications/${id}/evidence`)).data
   },
   async getEvidenceFile(id: number) {
     return (await httpClient.get<Blob>(`/absence-justifications/${id}/evidence/file`, { responseType: 'blob' })).data
