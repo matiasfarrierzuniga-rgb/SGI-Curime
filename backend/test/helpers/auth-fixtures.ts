@@ -1,3 +1,5 @@
+import { ROLE_CAPABILITIES } from '../../src/auth/presentation/capabilities/capability-policy';
+
 type UserStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
 
 const ROLE_IDS: Record<string, number> = {
@@ -47,6 +49,9 @@ export function buildPrismaAuthUser(options: PrismaAuthUserOptions = {}) {
     role: {
       name: roleName,
       isActive: options.roleIsActive ?? true,
+      permissions: (ROLE_CAPABILITIES[roleName] ?? []).map((code) => ({
+        permission: { code },
+      })),
     },
     person: hasPerson
       ? {

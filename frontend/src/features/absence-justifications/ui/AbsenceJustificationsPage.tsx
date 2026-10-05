@@ -1,12 +1,17 @@
 import { useState } from 'react'
+import { Eye, ShieldAlert } from 'lucide-react'
+import { toast } from 'sonner'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { useAuth } from '@/features/auth'
 import { hasCapability } from '@/shared/security/access'
+import { Button } from '@/shared/ui/button'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Pagination } from '@/shared/ui/Pagination'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { absenceJustificationsService } from '../api/absenceJustifications.api'
 import { useAbsenceJustificationsList, useAbsenceJustificationsMutations } from '../hooks/useAbsenceJustificationsQueries'
 import type { JustificationStatus } from '../model/absenceJustifications.types'
@@ -19,25 +24,18 @@ const statusLabels: Record<JustificationStatus, string> = {
   REJECTED: 'Rechazada',
 }
 
-const evidenceLabel = (mimeType?: string, size?: number) => {
+const evidenceLabel = (mimeType?: string | null, size?: number | null) => {
   if (!mimeType && !size) return 'Sin archivo'
   const format = mimeType?.split('/')[1]?.toUpperCase() ?? 'ARCHIVO'
   const formattedSize = size ? `${(size / 1024 / 1024).toFixed(2)} MB` : 'Sin tamaño'
   return `${format} • ${formattedSize}`
 }
 
-const getAttachment = (item: {
-  attachment?: { originalName: string; mimeType: string; size: number; url?: string | null } | null
-  attachmentOriginalName?: string | null
-  attachmentMimeType?: string | null
-  attachmentSize?: number | null
-  attachmentUrl?: string | null
-}) => item.attachment ?? (item.attachmentOriginalName ? {
-  originalName: item.attachmentOriginalName,
-  mimeType: item.attachmentMimeType ?? '',
-  size: item.attachmentSize ?? 0,
-  url: item.attachmentUrl,
-} : null)
+const statusVariant: Record<JustificationStatus, 'warning' | 'success' | 'danger'> = {
+  PENDING: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'danger',
+}
 
 export function AbsenceJustificationsPage() {
   const { user } = useAuth()
@@ -83,9 +81,10 @@ export function AbsenceJustificationsPage() {
       } else {
         await reject.mutateAsync({ id: decisionId, payload: { rejectionReason: trimmed } })
       }
+      toast.success(decision === 'APPROVED' ? 'Justificación aprobada correctamente.' : 'Justificación rechazada correctamente.')
       resetDecision()
     } catch (reason) {
-      setError(getErrorMessage(reason, 'No fue posible rechazar la justificación.'))
+      setError(getErrorMessage(reason, decision === 'APPROVED' ? 'No fue posible aprobar la justificación.' : 'No fue posible rechazar la justificación.'))
     }
   }
 
@@ -136,16 +135,14 @@ export function AbsenceJustificationsPage() {
         }
       />
 
+      {error && decisionId === null ? <div className="rounded-control border border-status-danger/30 bg-status-danger-surface px-4 py-3 text-body-small text-status-danger" role="alert">{error}</div> : null}
+
       {listQuery.isPending ? (
         <LoadingState label="Cargando justificaciones..." />
       ) : listQuery.isError ? (
         <ErrorState
           message={getErrorMessage(listQuery.error, 'No fue posible cargar las justificaciones.')}
-          action={
-            <button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={() => void listQuery.refetch()}>
-              Reintentar
-            </button>
-          }
+            action={<Button variant="outline" type="button" onClick={() => void listQuery.refetch()}>Reintentar</Button>}
         />
       ) : items.length === 0 ? (
         <EmptyState
@@ -154,18 +151,12 @@ export function AbsenceJustificationsPage() {
         />
       ) : (
         <>
-          {error ? (
-            <div className="rounded-md border border-status-danger/30 bg-status-danger-surface p-3 text-sm text-status-danger" role="alert">
-              {error}
-            </div>
-          ) : null}
-
           <div className="overflow-hidden rounded-xl border border-border-default bg-surface-card shadow-sm">
             <div className="overflow-x-auto">
-              <table aria-label="Listado de justificaciones pendientes" className="min-w-full text-left text-sm">
+              <table aria-label="Listado de justificaciones" className="min-w-[860px] text-left text-sm">
                 <thead className="bg-surface-muted text-text-secondary">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Afiliado</th>
+                    <th className="px-4 py-3 font-semibold">Persona afiliada</th>
                     <th className="px-4 py-3 font-semibold">Asamblea</th>
                     <th className="px-4 py-3 font-semibold">Motivo</th>
                     <th className="px-4 py-3 font-semibold">Evidencia</th>
@@ -175,58 +166,61 @@ export function AbsenceJustificationsPage() {
                 </thead>
                 <tbody>
                   {items.map((item) => (
-                    <tr key={item.id} className="border-t border-border-default align-top">
+                    <tr key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-muted/60">
                       <td className="px-4 py-4">
-                        <div className="font-semibold text-text-primary">{item.affiliate.fullName}</div>
-                        <div className="text-xs text-text-secondary">{item.affiliate.identification}</div>
+                        <div className="font-semibold text-text-primary">{item.affiliate?.fullName ?? 'Persona sin registro'}</div>
+                        <div className="text-xs text-text-secondary">{item.affiliate?.identification ?? 'Identificación sin registro'}</div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="font-medium text-text-primary">{item.assembly.title}</div>
+                        <div className="font-medium text-text-primary">{item.assembly?.title ?? 'Asamblea sin registro'}</div>
                         <div className="text-xs text-text-secondary">
-                          {new Date(item.assembly.date).toLocaleDateString('es-CR', { dateStyle: 'medium' })}
+                          {item.assembly?.date ? new Date(item.assembly.date).toLocaleDateString('es-CR', { dateStyle: 'medium' }) : 'Fecha sin registro'}
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="max-w-md whitespace-pre-line text-text-secondary">{item.reason}</div>
                       </td>
                       <td className="px-4 py-4">
-                        {getAttachment(item) ? (
+                        {item.attachmentOriginalName ? (
                           <div className="space-y-1">
-                            <div className="font-medium text-text-primary">{getAttachment(item)?.originalName}</div>
-                            <div className="text-xs text-text-secondary">{evidenceLabel(getAttachment(item)?.mimeType, getAttachment(item)?.size)}</div>
-                            <button
+                            <div className="font-medium text-text-primary">{item.attachmentOriginalName}</div>
+                            <div className="text-xs text-text-secondary">{evidenceLabel(item.attachmentMimeType, item.attachmentSize)}</div>
+                            <Button
                               type="button"
                               onClick={() => void openEvidence(item.id)}
                               disabled={evidenceId === item.id}
-                              className="text-left text-xs font-semibold text-brand-primary underline-offset-4 hover:underline disabled:opacity-60"
+                              variant="link"
+                              size="sm"
+                              className="h-auto px-0 text-xs"
                             >
+                              <Eye aria-hidden="true" />
                               {evidenceId === item.id ? 'Consultando evidencia...' : 'Ver evidencia protegida'}
-                            </button>
+                            </Button>
                           </div>
                         ) : (
                           <span className="text-xs text-text-secondary">Sin archivo</span>
                         )}
                       </td>
                       <td className="px-4 py-4">
-                        <span className="rounded-full bg-brand-soft/20 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                          {statusLabels[item.status]}
-                        </span>
+                        <StatusBadge variant={statusVariant[item.status]}>{statusLabels[item.status]}</StatusBadge>
                       </td>
                       <td className="px-4 py-4">
-                        {item.status === 'PENDING' ? (
+                        {item.status === 'PENDING' && (mayApprove || mayReject) ? (
                           <div className="flex flex-col items-end gap-2">
-                            <button
+                            {mayApprove ? <Button
                               type="button"
-                              className="min-h-10 rounded-control bg-brand-deep px-4 font-semibold text-brand-ivory"
-                               disabled={!mayApprove || approve.isPending || reject.isPending}
+                              size="sm"
+                              disabled={approve.isPending || reject.isPending}
                               onClick={() => void handleApprove(item.id)}
                             >
                               Aprobar
-                            </button>
-                            <button
+                            </Button> : null}
+                            {mayReject ? <Button
                               type="button"
-                              className="min-h-10 rounded-control border border-danger px-4 font-semibold text-danger"
-                               disabled={!mayReject || approve.isPending || reject.isPending}
+                              variant="outline"
+                              size="sm"
+                              className="border-status-danger text-status-danger hover:bg-status-danger-surface"
+                              disabled={approve.isPending || reject.isPending}
                               onClick={() => {
                                 setDecisionId(item.id)
                                 setDecision('REJECTED')
@@ -235,8 +229,10 @@ export function AbsenceJustificationsPage() {
                               }}
                             >
                               Rechazar
-                            </button>
+                            </Button> : null}
                           </div>
+                        ) : item.status === 'PENDING' ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-text-secondary"><ShieldAlert aria-hidden="true" className="size-3.5" />Sin permiso para revisar</span>
                         ) : (
                           <span className="text-xs text-text-secondary">Revisión cerrada</span>
                         )}
@@ -248,33 +244,42 @@ export function AbsenceJustificationsPage() {
             </div>
           </div>
 
-          {decisionId !== null && (
-            <div className="rounded-xl border border-border-default bg-surface-card p-5">
-              <h3 className="font-heading text-heading-4 text-text-primary">{decision === 'APPROVED' ? 'Aprobar justificación' : 'Rechazar justificación'}</h3>
-              <p className="mt-2 text-sm text-text-secondary">La observación es opcional al aprobar y obligatoria al rechazar.</p>
-              <label htmlFor="justification-observation" className="mt-4 block text-sm font-semibold text-text-primary">Observación</label>
+          <Dialog open={decisionId !== null} onOpenChange={(open) => !open && resetDecision()}>
+            <DialogContent size="md">
+              <div className="grid gap-5">
+              <DialogHeader className="pr-8">
+                <DialogTitle>{decision === 'APPROVED' ? 'Aprobar justificación' : 'Rechazar justificación'}</DialogTitle>
+                <DialogDescription>{decision === 'APPROVED' ? 'Puede registrar una observación opcional para esta decisión.' : 'Explique el motivo del rechazo. Esta observación es obligatoria.'}</DialogDescription>
+              </DialogHeader>
+              {error ? <p className="rounded-control border border-status-danger/30 bg-status-danger-surface px-3 py-2 text-body-small text-status-danger" role="alert">{error}</p> : null}
+              <div>
+              <label htmlFor="justification-observation" className="block text-sm font-semibold text-text-primary">Observación{decision === 'REJECTED' ? ' (obligatoria)' : ' (opcional)'}</label>
               <textarea
                 id="justification-observation"
                 value={observation}
                 onChange={(event) => setObservation(event.target.value)}
-                className="mt-2 min-h-28 w-full rounded-md border border-border-default bg-surface px-3 py-2 text-sm"
-                placeholder="Indique el motivo del rechazo y la observación relevante."
+                maxLength={1000}
+                className="mt-2 min-h-28 w-full rounded-md border border-border-default bg-surface px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                aria-describedby="justification-observation-help"
+                placeholder={decision === 'REJECTED' ? 'Indique el motivo del rechazo.' : 'Agregue una observación, si corresponde.'}
               />
-              <div className="mt-4 flex flex-wrap justify-end gap-3">
-                <button type="button" className="min-h-10 rounded-control border border-border-default px-4 font-semibold" onClick={resetDecision}>
-                  Cancelar
-                </button>
-                <button
+              <p id="justification-observation-help" className="mt-2 text-xs text-text-secondary">Máximo 1.000 caracteres.</p>
+              </div>
+              <DialogFooter>
+                <DialogClose render={<Button type="button" variant="outline" disabled={approve.isPending || reject.isPending} />}>Cancelar</DialogClose>
+                <Button
                   type="button"
-                  className="min-h-10 rounded-control bg-danger px-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                  variant={decision === 'APPROVED' ? 'primary' : 'danger'}
                   onClick={() => void handleConfirm()}
+                  loading={approve.isPending || reject.isPending}
                   disabled={(decision === 'REJECTED' && !observation.trim()) || approve.isPending || reject.isPending}
                 >
                   {approve.isPending || reject.isPending ? 'Procesando…' : `Confirmar ${decision === 'APPROVED' ? 'aprobación' : 'rechazo'}`}
-                </button>
+                </Button>
+              </DialogFooter>
               </div>
-            </div>
-          )}
+            </DialogContent>
+          </Dialog>
 
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>

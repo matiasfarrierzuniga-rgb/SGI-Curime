@@ -12,6 +12,7 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { createHash } from 'crypto';
 import cookieParser from 'cookie-parser';
 import { buildPrismaAuthUser } from './helpers/auth-fixtures';
+import { ROLE_CAPABILITIES } from '../src/auth/presentation/capabilities/capability-policy';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -30,6 +31,7 @@ type AuthenticatedUser = {
   email: string;
   status: TestUser['status'];
   role: string;
+  permissionCodes: readonly string[];
   passwordHash?: unknown;
 };
 
@@ -306,6 +308,7 @@ describe('AuthController (e2e)', () => {
       email: 'admin@curime.test',
       status: 'ACTIVE',
       role: 'Administrador',
+      permissionCodes: ROLE_CAPABILITIES.Administrador,
       canAccessErp: true,
     });
     expect(body.user.passwordHash).toBeUndefined();
@@ -683,6 +686,7 @@ describe('AuthController (e2e)', () => {
       email: 'admin@curime.test',
       status: 'ACTIVE',
       role: 'Administrador',
+      permissionCodes: ROLE_CAPABILITIES.Administrador,
       canAccessErp: true,
     });
   });

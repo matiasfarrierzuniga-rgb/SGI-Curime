@@ -6,6 +6,7 @@ import { App } from 'supertest/types';
 import { AUTH_REPOSITORY } from '../src/auth/application/ports/auth-repository.port';
 import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import type { AuthAccount } from '../src/auth/domain/entities/auth-account';
+import { ROLE_CAPABILITIES } from '../src/auth/presentation/capabilities/capability-policy';
 import { InstitutionalProfileModule } from '../src/institutional-profile/institutional-profile.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
@@ -65,5 +66,5 @@ describe('Institutional profile access (e2e)', () => {
 });
 
 function authAccount(roleName: string): AuthAccount {
-  return { id: 1, email: 'user@curime.test', fullName: `Usuario ${roleName}`, status: 'ACTIVE', passwordHash: null, lockedAt: null, failedLoginAttempts: 0, lastLoginAt: null, roleName, roleId: 1, roleIsActive: true, hasPerson: false, affiliateStatus: null, affiliateRoleId: null, subscriptionExpirationDate: null };
+  return { id: 1, email: 'user@curime.test', fullName: `Usuario ${roleName}`, status: 'ACTIVE', passwordHash: null, lockedAt: null, failedLoginAttempts: 0, lastLoginAt: null, roleName, roleId: 1, roleIsActive: true, permissionCodes: ROLE_CAPABILITIES[roleName] ?? [], hasPerson: false, affiliateStatus: null, affiliateRoleId: null, subscriptionExpirationDate: null };
 }

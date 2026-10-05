@@ -45,8 +45,16 @@ describe('InventoryReportsService', () => {
     prisma.inventoryCategory.count.mockResolvedValue(3);
     prisma.inventoryLoan.count.mockResolvedValue(2);
     prisma.inventoryMovement.groupBy.mockResolvedValue([
-      { type: InventoryMovementType.ENTRY, _count: 4, _sum: { quantity: 20 } },
-      { type: InventoryMovementType.EXIT, _count: 3, _sum: { quantity: 9 } },
+      {
+        type: InventoryMovementType.ENTRY,
+        _count: { _all: 4 },
+        _sum: { legacyQuantity: 20 },
+      },
+      {
+        type: InventoryMovementType.EXIT,
+        _count: { _all: 3 },
+        _sum: { legacyQuantity: 9 },
+      },
     ]);
   });
 
@@ -139,6 +147,8 @@ describe('InventoryReportsService', () => {
     expect(prisma.inventoryMovement.groupBy).toHaveBeenCalledWith(
       expect.objectContaining({
         by: ['type'],
+        _count: { _all: true },
+        _sum: { legacyQuantity: true },
         where: expect.objectContaining({
           type: InventoryMovementType.ENTRY,
           item: { categoryId: 1 },

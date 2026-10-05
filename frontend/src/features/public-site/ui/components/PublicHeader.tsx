@@ -35,14 +35,14 @@ export function PublicHeader() {
   const accessTo = !isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'
   const accessLabel = !isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'
   const desktopGrid = isAuthenticated
-    ? 'min-[1200px]:grid-cols-[10rem_minmax(0,1fr)_auto] min-[1200px]:gap-x-5'
-    : 'lg:grid-cols-[10rem_minmax(0,1fr)_auto] lg:gap-x-5'
+    ? 'min-[1200px]:grid-cols-[11rem_minmax(0,1fr)_auto] min-[1200px]:gap-x-6'
+    : 'lg:grid-cols-[10rem_minmax(0,1fr)_auto] lg:gap-x-5 min-[1200px]:grid-cols-[11rem_minmax(0,1fr)_auto] min-[1200px]:gap-x-6'
   const desktopNav = isAuthenticated
     ? 'min-[1200px]:col-auto min-[1200px]:mt-0 min-[1200px]:flex min-[1200px]:w-auto min-[1200px]:flex-row min-[1200px]:justify-self-start min-[1200px]:gap-0.5 min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none'
     : 'lg:col-auto lg:mt-0 lg:flex lg:w-auto lg:flex-row lg:justify-self-start lg:gap-0.5 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none'
   const desktopItem = isAuthenticated
-    ? 'min-[1200px]:min-h-10 min-[1200px]:px-2 min-[1200px]:py-2 min-[1200px]:text-xs 2xl:px-2.5 2xl:text-sm'
-    : 'lg:min-h-10 lg:px-2 lg:py-2 lg:text-xs 2xl:px-2.5 2xl:text-sm'
+    ? 'min-[1200px]:min-h-11 min-[1200px]:px-2.5 min-[1200px]:py-2 min-[1200px]:text-sm 2xl:px-3'
+    : 'lg:min-h-10 lg:px-2 lg:py-2 lg:text-xs min-[1200px]:min-h-11 min-[1200px]:px-2.5 min-[1200px]:text-sm 2xl:px-3'
   const handleLogout = () => {
     close()
     void logout()
@@ -50,11 +50,11 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-[var(--z-nav)] border-b border-border/90 bg-brand-ivory/95 font-sans text-brand-deep backdrop-blur-sm">
-      <div className={`public-container grid min-h-[4.25rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 ${desktopGrid}`}>
+      <div className={`public-container grid min-h-[4.25rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 min-[1200px]:min-h-[4.75rem] ${desktopGrid}`}>
         <Link
           to="/"
           aria-label="ADI Curime, inicio"
-          className="flex h-10 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-11 sm:w-40 min-[1200px]:h-12 min-[1200px]:w-40 2xl:w-44"
+          className="flex h-10 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-11 sm:w-40 min-[1200px]:h-14 min-[1200px]:w-44 2xl:w-48"
         >
           <img
             src="/brand/adi-curime-logo-horizontal-color-header-tight.png"
@@ -115,11 +115,11 @@ export function PublicHeader() {
         </nav>
 
         <div className={`hidden items-center justify-self-end gap-2.5 ${isAuthenticated ? 'min-[1200px]:flex' : 'lg:flex'}`}>
-          <Button nativeButton={false} render={<Link to={accessTo} />} size="sm" className="px-3.5">
+          <Button nativeButton={false} render={<Link to={accessTo} />} size="sm" className="px-3.5 min-[1200px]:px-4">
             <LogIn className="size-4" aria-hidden="true" />{accessLabel}
           </Button>
           {isAuthenticated && (
-            <Button onClick={handleLogout} size="sm" variant="outline" className="px-3.5">
+            <Button onClick={handleLogout} size="sm" variant="outline" className="px-3.5 min-[1200px]:px-4">
               <LogOut className="size-4" aria-hidden="true" />Cerrar sesión
             </Button>
           )}
