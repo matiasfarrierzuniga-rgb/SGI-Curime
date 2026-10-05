@@ -18,9 +18,9 @@ function assembly(
   return {
     id,
     title: `Asamblea ${id}`,
-    date,
+    legacyDate: date,
     status: AssemblyStatus.COMPLETED,
-    attendances,
+    convocations: attendances.map((attendance) => ({ attendance })),
     _count: { convocations: convokedCount },
   };
 }
@@ -322,7 +322,7 @@ describe('AdminReportsService attendanceSummary', () => {
       expect.objectContaining({
         where: {
           id: 7,
-          date: { gte: dateFrom, lte: dateTo },
+          legacyDate: { gte: dateFrom, lte: dateTo },
         },
       }),
     );
