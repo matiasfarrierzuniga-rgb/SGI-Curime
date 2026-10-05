@@ -20,30 +20,21 @@ export interface AbsenceJustificationReviewer {
   email: string
 }
 
-export interface AbsenceJustificationAttachment {
-  originalName: string
-  mimeType: string
-  size: number
-  url?: string | null
-}
-
 export interface AbsenceJustification {
   id: number
   reason: string
   status: JustificationStatus
   decisionNote: string | null
-  attachment?: AbsenceJustificationAttachment | null
-  attachmentOriginalName?: string | null
-  attachmentMimeType?: string | null
-  attachmentSize?: number | null
-  attachmentUrl?: string | null
+  attachmentOriginalName: string | null
+  attachmentMimeType: string | null
+  attachmentSize: number | null
   rejectionReason: string | null
   reviewedAt: string | null
   reviewedById: number | null
   assemblyId: number
   affiliateId: number
-  assembly: AbsenceJustificationAssembly
-  affiliate: AbsenceJustificationAffiliate
+  assembly: AbsenceJustificationAssembly | null
+  affiliate: AbsenceJustificationAffiliate | null
   reviewedBy: AbsenceJustificationReviewer | null
   createdAt: string
   updatedAt: string

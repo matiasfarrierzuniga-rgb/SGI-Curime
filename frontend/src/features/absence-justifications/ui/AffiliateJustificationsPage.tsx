@@ -87,8 +87,8 @@ export function AffiliateJustificationsPage() {
                 {items.map((item) => (
                   <tr key={item.id} className="border-t border-border-default align-top">
                     <td className="px-4 py-4">
-                      <div className="font-medium text-text-primary">{item.assembly.title}</div>
-                      <div className="text-xs text-text-secondary">{new Date(item.assembly.date).toLocaleDateString('es-CR', { dateStyle: 'medium' })}</div>
+                      <div className="font-medium text-text-primary">{item.assembly?.title ?? 'Asamblea sin registro'}</div>
+                      <div className="text-xs text-text-secondary">{item.assembly?.date ? new Date(item.assembly.date).toLocaleDateString('es-CR', { dateStyle: 'medium' }) : 'Fecha sin registro'}</div>
                     </td>
                     <td className="px-4 py-4 text-text-secondary">
                       {new Date(item.createdAt).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' })}
