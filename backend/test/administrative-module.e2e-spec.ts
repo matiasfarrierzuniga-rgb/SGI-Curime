@@ -35,6 +35,10 @@ describe('Administrative affiliate requests (e2e)', () => {
     },
   };
   const body = {
+    identificationType: 'NATIONAL',
+    identification: '123456789',
+    firstName: 'Ana',
+    firstSurname: 'Pérez',
     birthDate: '1990-01-01',
     address: 'Curime',
     affiliationReason: 'Participar',
@@ -51,7 +55,7 @@ describe('Administrative affiliate requests (e2e)', () => {
       limit: 20,
     });
     service.approve.mockResolvedValue({
-      affiliate: { id: 20, roleId: 4 },
+      affiliate: { id: 20, legacyRoleId: null },
       affiliateRequest: { id: 10, status: 'APPROVED' },
     });
     service.reject.mockResolvedValue({ id: 10, status: 'REJECTED' });
@@ -80,49 +84,63 @@ describe('Administrative affiliate requests (e2e)', () => {
   const authorization = async () =>
     `Bearer ${await jwt.signAsync({ sub: 1, email: 'admin@example.com', role })}`;
 
-  it('rejects an anonymous affiliation request', () =>
-    request(app.getHttpServer())
-      .post('/affiliate-requests')
-      .send(body)
-      .expect(401));
-
-  it('passes the authenticated user id and safe payload when creating', async () => {
+  it('accepts a valid public affiliation request', async () => {
     await request(app.getHttpServer())
       .post('/affiliate-requests')
-      .set('Authorization', await authorization())
+      .send(body)
+      .expect(201);
+
+    expect(service.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes the validated public payload and request context when creating', async () => {
+    await request(app.getHttpServer())
+      .post('/affiliate-requests')
+      .set('User-Agent', 'administrative-module-e2e')
       .send(body)
       .expect(201);
     expect(service.create).toHaveBeenCalledWith(
-      expect.objectContaining({ address: 'Curime' }),
-      1,
-      expect.any(Object),
+      { ...body, birthDate: new Date('1990-01-01') },
+      {
+        ipAddress: expect.any(String),
+        userAgent: 'administrative-module-e2e',
+      },
     );
   });
 
-  it.each(['personId', 'userId', 'identification', 'email'] as const)(
-    'rejects client identity field %s',
+  it.each(['personId', 'userId'] as const)(
+    'rejects forbidden client-managed field %s',
     async (field) => {
       await request(app.getHttpServer())
         .post('/affiliate-requests')
-        .set('Authorization', await authorization())
         .send({ ...body, [field]: 'spoofed' })
         .expect(400);
       expect(service.create).not.toHaveBeenCalled();
     },
   );
 
-  it('requires roleId and passes it to approval', async () => {
+  it.each(['identification', 'email'] as const)(
+    'rejects malformed DTO field %s',
+    async (field) => {
+      await request(app.getHttpServer())
+        .post('/affiliate-requests')
+        .send({ ...body, [field]: 'spoofed' })
+        .expect(400);
+      expect(service.create).not.toHaveBeenCalled();
+    },
+  );
+
+  it('approves without roleId and passes actor and request context', async () => {
     await request(app.getHttpServer())
       .patch('/affiliate-requests/10/approve')
       .set('Authorization', await authorization())
+      .set('User-Agent', 'administrative-module-e2e')
       .send({})
-      .expect(400);
-    await request(app.getHttpServer())
-      .patch('/affiliate-requests/10/approve')
-      .set('Authorization', await authorization())
-      .send({ roleId: 4 })
       .expect(200);
-    expect(service.approve).toHaveBeenCalledWith(10, 4, 1, expect.any(Object));
+    expect(service.approve).toHaveBeenCalledWith(10, 1, {
+      ipAddress: expect.any(String),
+      userAgent: 'administrative-module-e2e',
+    });
   });
 
   it('keeps administrative review protected', async () => {

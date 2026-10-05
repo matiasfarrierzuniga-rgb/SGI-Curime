@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
+import { ROLE_CAPABILITIES } from '../src/auth/presentation/capabilities/capability-policy';
 import { AUDIT_PORT as USERS_AUDIT_PORT } from '../src/modules/users/application/ports/audit.port';
 import { UsersModule } from '../src/modules/users/users.module';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -25,12 +26,18 @@ describe('RegistrationController Person-first (e2e)', () => {
     name: 'Subscription_L1',
     description: null,
     isActive: true,
+    permissions: (ROLE_CAPABILITIES.Subscription_L1 ?? []).map((code) => ({
+      permission: { code },
+    })),
   };
   const administratorRole = {
     id: 1,
     name: 'Administrador',
     description: null,
     isActive: true,
+    permissions: ROLE_CAPABILITIES.Administrador.map((code) => ({
+      permission: { code },
+    })),
   };
   const prisma = {
     $transaction: jest.fn(),
@@ -335,7 +342,7 @@ describe('RegistrationController Person-first (e2e)', () => {
       lockedAt: null,
       failedLoginAttempts: 0,
       lastLoginAt: null,
-      role: { name: 'Subscription_L1' },
+      role,
       subscriptionExpirationDate: new Date(Date.now() + 60_000),
     };
     const subscriptionToken = await jwt.signAsync({
@@ -351,7 +358,7 @@ describe('RegistrationController Person-first (e2e)', () => {
 
     authenticatedUser = {
       ...authenticatedUser,
-      role: { name: 'Administrador' },
+      role: administratorRole,
       subscriptionExpirationDate: null,
     };
     const adminToken = await jwt.signAsync({
