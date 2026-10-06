@@ -183,3 +183,205 @@ Primary schema evidence: `backend/prisma/schema.prisma:48-76` (Person), `109-153
 | Production/schema start | approved Stage A and relevant later checkpoint evidence | prohibited before review approval |
 
 Stage B onwards remains separate: it owns data preflight, counts, backup/rollback rehearsal, compatibility design, and the deferred Phase B stash reconciliation checkpoint. No data-state certification is made by Stage A.
+
+## Appendix B — Stage B1 Backend / Consumer Design Evidence
+
+### B1 scope and evidence boundary
+
+This appendix records Stage B1 evidence for tasks 2.1–2.5. It is based on frozen Stage A contract, current backend/frontend sources, and Atlas handoff evidence. No database, Prisma schema, migration, stash, production code, or Stage C+ artifact was accessed or changed by Forge.
+
+### 2.1 Atlas read-only preflight evidence
+
+Atlas verified current development Compose PostgreSQL database `sgi_curime` using role `sgi_user`. Every inspection query used `BEGIN TRANSACTION READ ONLY` followed by `ROLLBACK`; no database state changed. The current Compose development database has a persistent volume and is not disposable test evidence.
+
+Atlas-supplied classification algorithm uses normalized identification plus identification type, preserves null/invalid identity evidence as incomplete, and separates: safely linked User/Affiliate; null-`personId` candidate; duplicate candidate; conflict; and insufficient evidence. It does not infer links, parse names, merge identities, or treat legacy-vs-Person equality as reconciliation proof. This matches frozen Stage A classification gates and the application’s existing normalized identity classifications.
+
+| Preflight measure | Verified result |
+| --- | --- |
+| `INCOMPLETE` | 1 row; `identificationType` is null |
+| safely-linked User | 0 |
+| safely-linked Affiliate | 0 |
+| null-`personId` candidate | 0 |
+| duplicate candidate | 0 |
+| conflict | 0 |
+| insufficient evidence | 0 |
+| `IdentityReconciliationManifest` V1 User/Affiliate entries | 0 |
+| linked legacy-vs-Person divergence | 0; not reconciliation proof |
+
+| Raw population measure | Verified result |
+| --- | --- |
+| User total / linked / unlinked | 1 / 0 / 1 |
+| Affiliate total / linked / unlinked | 0 / 0 / 0 |
+
+Stage C remains blocked from treating zero divergence, zero manifest entries, or these raw counts as safe-linking certification.
+
+### 2.2 Conflict quarantine, human review, and deterministic manifest reruns
+
+#### Classify and quarantine
+
+1. Stage B preflight materializes one immutable source snapshot per `User` or `Affiliate` source record before resolution. Snapshot fields are current `IdentitySource` evidence: source model/id, `personId`, identification/type, full name, birth date, email, phone country/national values, and address. Its hash is `sourceFingerprint` from `identity-reconciliation.ts:182-199`; use normalization/manifest/decision versions exported by `identity-link-migration.ts:288-292`.
+2. Identity key is only `<identificationType>:<normalizedIdentification>`. Preflight assigns existing classifications: `IDENTITY_MATCH`, `IDENTITY_NOT_FOUND`, `IDENTITY_CONFLICT`, `IDENTITY_INCOMPLETE`, `IDENTITY_DUPLICATE`, or `MANUAL_REVIEW_REQUIRED`. A null key, invalid identification/type, multiple Person candidates, conflicting source values, stale fingerprint, incompatible existing link, missing selected Person, or conflicting manifest selection is not safe.
+3. Every non-safe source enters quarantine. Quarantine is logical queue/state, not a new domain state for User, Affiliate, Person, or requests. It retains source snapshot, source fingerprint, normalization/manifest/decision versions, cluster key if available, all conflict codes, candidate Person ids/count, current link, and review disposition. It neither links records nor overwrites Person, User, Affiliate, request, or snapshot values.
+4. `IDENTITY_MATCH` and `IDENTITY_NOT_FOUND` may become link candidates only when `personCreationAllowed`, exactly one selected existing/created Person, no review requirement, current fingerprint, and no assignment-cardinality conflict are all true. `IDENTITY_NOT_FOUND` creation remains a future Stage C transactional action, not Stage B behavior.
+5. Never infer structured Person names from `fullName`; it remains source evidence. User email remains access data and is never copied to Person email. Conflicting gender evidence remains quarantined pending separately approved Person.gender work.
+
+#### Human-review decision contract
+
+Reviewer receives source snapshot, immutable fingerprint, identity key, manifest/normalization/decision versions, conflict codes, candidates, existing link, and any prior review. Allowed reviewed outcomes are: select exactly one compatible existing Person; approve creation only where complete structured evidence and later Stage C transaction rules permit it; retain unresolved; or reject a proposed link. “Merge”, “overwrite canonical Person”, and “pick first candidate” are not outcomes.
+
+Reviewer submission must include reviewer identity, timestamp, rationale, selected Person id or explicit no-selection, expected source fingerprint, and expected decision/confirmation fingerprint. The server recomputes fingerprints and rejects stale evidence. `manual-legacy-user-reconciliation.ts:134-282` establishes existing useful precedent: single-match requirement, structured-name compatibility, linked-user ownership check, explicit confirmation, and no write when blocked. General Stage B review must extend this safety shape to both User and Affiliate; it must not reuse that user-only procedure as an authorization shortcut.
+
+#### IdentityReconciliationManifest evidence and rerun algorithm
+
+`IdentityReconciliationManifest` remains reconciliation evidence: retain raw source snapshot and `selectedPersonId`; associate each decision with source model/id, source fingerprint, identity cluster key, classification, `personCreationAllowed`, review requirement, conflict codes, normalization version, manifest version, decision version, reviewer disposition/evidence, and decision timestamp. Any extra persistence fields needed for that association are additive Stage C work under Atlas ownership; Stage B does not prescribe a schema mutation.
+
+Deterministic rerun procedure:
+
+1. Read sources in stable `(sourceModel, sourceId)` order; normalize using recorded version; group/sort clusters using current `reconcileIdentitySources` ordering.
+2. Recompute source fingerprint from untouched source evidence. Find manifest decision by `(sourceModel, sourceId)`; do not select by display name or email.
+3. If zero or multiple decisions exist, selected Person is absent, fingerprint differs, versions differ, review is required, classification is unsafe, link conflicts, or one Person receives multiple same-model assignments, mark/rekeep quarantine. Do not mutate link.
+4. If source already links selected Person and fingerprint/version evidence remains current, result is idempotent `ALREADY_CORRECT`; write no duplicate link/Person/decision.
+5. Only a safe, current, single decision with null source link produces one planned assignment. Stage C executes its Person resolution/creation and link mutation atomically; unique/race failure rolls back unit and returns quarantine/conflict or documented idempotent result.
+6. Re-run after source or decision change creates/retains new evidence keyed by new fingerprint/version; old evidence remains auditable. A review never survives changed source facts merely because source id matches.
+
+`buildIdentityLinkPlan` already encodes key non-write gates: stale manifests, missing selected Person, incompatible existing links, multiple manifest selections, multiple assignments, unclassified cases, and manual-review counts (`identity-link-migration.ts:67-143`). Stage C implementation must preserve these gates; it may not convert `assignments` into direct writes without bounded transaction and rollback evidence.
+
+### 2.3 Additive UserRequest / AffiliateRequest submitted-snapshot transition
+
+#### Additive storage and direct-copy map
+
+Stage C, with Atlas-owned schema work, adds explicit submitted names while retaining legacy generic columns and values. Migration copies each source value byte-for-byte/value-for-value after existing column representation conversion only; it does not derive current Person values, normalize historical text, or parse `fullName`.
+
+| Request | Legacy field | Additive authoritative field | Rule |
+| --- | --- | --- | --- |
+| UserRequest | `fullName` | `submittedFullName` | direct copy; opaque, never structured-name input |
+| UserRequest | `identificationType`, `identification` | `submittedIdentificationType`, `submittedIdentification` | direct copy |
+| UserRequest | `email` | `submittedEmail` | direct copy; approval still creates User access email from submitted access evidence, never Person email |
+| UserRequest | `phoneCountryCode`, `phoneNationalNumber`, `phone`, `address` | `submittedPhoneCountryCode`, `submittedPhoneNationalNumber`, `submittedPhone`, `submittedAddress` | direct copy; snapshot remains historical |
+| UserRequest | `reason` | `submittedReason` | direct copy; request workflow metadata remains separate |
+| AffiliateRequest | `fullName` | `submittedFullName` | direct copy; opaque, never structured-name input |
+| AffiliateRequest | `identificationType`, `identification` | `submittedIdentificationType`, `submittedIdentification` | direct copy |
+| AffiliateRequest | `birthDate`, `gender` | `submittedBirthDate`, `submittedGender` | direct copy; gender is snapshot evidence, not Person.gender authorization |
+| AffiliateRequest | `phoneCountryCode`, `phoneNationalNumber`, `phone`, `email`, `address` | `submittedPhoneCountryCode`, `submittedPhoneNationalNumber`, `submittedPhone`, `submittedEmail`, `submittedAddress` | direct copy |
+| AffiliateRequest | `occupation`, `workplace`, `affiliationReason` | `submittedOccupation`, `submittedWorkplace`, `submittedAffiliationReason` | direct copy; approved Affiliate owns resulting membership facts where frozen contract says so |
+
+No submitted alias maps to `Person.email`; UserRequest `submittedEmail` is access-email submission evidence and retains current approval semantics until approved Stage D write cutover. `firstName`/surname inputs are structured resolution evidence where current endpoint accepts them; they are not a backfill target for generic `fullName`.
+
+#### API alias/version plan
+
+1. **Additive API version (Stage D):** request create accepts explicit `submitted*` fields; legacy generic input aliases are accepted only when matching submitted value exactly. Supplying both unequal values returns validation conflict. Response/list/detail return canonical `submitted*` fields and legacy aliases with equal values. Approval/rejection route/status/authorization remain unchanged.
+2. **Frontend migration (Stage D):** `frontend/src/features/user-requests/{api,model,ui}` and `frontend/src/features/affiliate-requests/{api,model,ui}` submit/read `submitted*`; request detail/table continues rendering submitted evidence, never current Person projection. Existing public routes remain `/user-requests` and `/affiliate-requests`; no V1.1 route is authorized.
+3. **Alias retirement (Stage E):** remove generic API aliases only after direct-copy verification, API/frontend consumer migration, zero productive generic reader/writer certification, snapshot-immutability tests, and separately approved destructive work. Database alias removal is independently gated from API alias removal.
+
+The human owner approved the calendar deprecation date for the request `submitted*` compatibility aliases as **2026-11-30**. That date marks formal deprecation of the legacy generic aliases; it does **not** authorize automatic removal. Physical schema/API alias removal remains gated by Stage E certification and requires all of: zero productive legacy readers, zero productive legacy writers, migrated frontend/API consumers, completed reconciliation, no unresolved dependency requiring an alias, passing backend/frontend tests, passing builds, passing required E2E/certification, and separately approved destructive removal. If Stage E certification is not complete by 2026-11-30, the aliases stay available but deprecated until every removal gate is satisfied. No alias is implemented or removed by this decision.
+
+Current consumer evidence: UserRequest generic request select/create/review/approval is `backend/src/user-requests/user-requests.service.ts:19-36,48-97,169-324`; DTO is `dto/create-user-request.dto.ts`; frontend API/type/form are `frontend/src/features/user-requests/{api/userRequests.api.ts,model/userRequests.types.ts,ui/RegisterPage.tsx}`. AffiliateRequest equivalents are `backend/src/affiliate-requests/affiliate-requests.service.ts:15-80,91-258`, `dto/create-affiliate-request.dto.ts`, and `frontend/src/features/affiliate-requests/{api,model,ui}`. These are snapshot readers/writers, not Person-current-data consumers.
+
+### 2.4 Person-backed User/Affiliate projections and legacy-reader disposition
+
+#### Compatibility contract
+
+Database compatibility retains duplicate User/Affiliate columns and nullable Person links until Stage E evidence. API compatibility is separately scoped and temporary: endpoints may source live personal projection fields from linked Person while still returning declared legacy field names/shape during consumer migration. A null link must return documented incomplete outcome or compatibility value; it must never silently invent a Person projection. `User.email` stays only in `access.email` / account response and remains writable as access data. Person contact email, if retained, is distinct `person.contactEmail`; it must not populate `access.email` or a legacy User email alias.
+
+User person-rooted list/detail already proves mapper direction: `PrismaUsersRepository.toAdminPerson` reads Person identity/contact fields and `toAdminUserResponse` exposes Person root plus separate `access.email` (`backend/src/modules/users/infrastructure/prisma-users.repository.ts:68-156`; `presentation/mappers/user-response.mapper.ts:27-63`). Keep this response shape for `GET /users` and `GET /users/:personId`. Account-root mutation responses remain temporary compatibility objects until Stage D routes personal updates through Person write contract.
+
+Affiliate projections must add equivalent explicit mapper/select boundary before cutover: `Affiliate.personId` selects linked Person and maps Person-derived `fullName`, identification/type, birth date, phone country/national values, address, and retained contact email only under its independent-contact policy. Affiliate-only `id`, affiliation type/date/status, occupation, workplace, and legacy role stay Affiliate-owned. `gender` remains Affiliate compatibility data because Person.gender is not approved/present. `GET /affiliates`, `GET /affiliates/:id`, and successful `PATCH /affiliates/:id` may expose this temporary projection only after Stage D implementation; no Stage B endpoint changes it.
+
+#### Productive reader/writer classification
+
+| Surface / source | Observed productive legacy behavior | Disposition |
+| --- | --- | --- |
+| `POST /register`, `POST /admin/register`; registration use cases/repository | creates User legacy identity/contact duplicates alongside Person resolution | **Must before B2:** preserve behavior; no projection work. **C–E cleanup:** route live personal writes through Person only at Stage D; retain access email on User. |
+| `GET /users`, `GET /users/:personId`; `PrismaUsersRepository.toAdminPerson`, `toAdminUserResponse`; users API/types/UI | Person-rooted list/detail already reads projection; account response still contains User duplicate fields | **Temporary projection:** preserve Person-rooted contract, separate `person.contactEmail` and `access.email`; migrate account-root mutation response/frontend expectation at Stage D. **C–E cleanup:** eliminate User duplicate read after zero-reader certification. |
+| `PATCH /users/:accessId`; `UpdateUserDto`, `UpdateUserUseCase`, `updateProfile`; Users frontend `UserManagementDialogs` | writes `fullName`, phone, address directly to User; writes access email directly to User | **Must before B2:** keep live semantics, explicitly classify email as access-only. **Temporary projection:** no rewrite in B. **C–E cleanup:** Stage D split Person personal mutation from User email mutation; retire duplicate writer only after certification. |
+| `POST/GET/PATCH /user-requests`; UserRequest service/DTO/frontend | generic fields are submitted snapshot create/read; approval creates User duplicate projection and uses request email for User access email | **Must before B2:** preserve immutable snapshot behavior and approval safety. **Temporary projection:** submitted aliases only, never Person-current projection. **C–E cleanup:** additive submitted fields/aliases, then migrate approval live writes at Stage D; retire generic aliases at E. |
+| `POST/GET/PATCH /affiliate-requests`; service/DTO/frontend | generic fields are submitted snapshot create/read; create resolves Person; approval copies request values into Affiliate duplicates | **Must before B2:** preserve submitted snapshot and null-link conflict behavior. **Temporary projection:** submitted aliases only. **C–E cleanup:** direct-copy submitted migration; Stage D creates Affiliate with Person-backed live projection/write path; gender waits separately. |
+| `GET /affiliates`, `GET /affiliates/:id`; Affiliate service/select; affiliates API/types/table/detail | reads Affiliate duplicate live personal fields, searches/sorts on them | **Must before B2:** no query/storage rewrite. **Temporary projection:** Stage D mapper/select makes response Person-backed while compatibility storage stays. **C–E cleanup:** migrate query/search to Person-derived data and certify no legacy reader before removal. |
+| `PATCH /affiliates/:id`; UpdateAffiliateDto/service; EditAffiliateModal | writes Affiliate duplicate identity/contact/birth date/gender plus affiliation fields | **Must before B2:** retain current authorization/validation and identify gender as non-migratable. **Temporary projection:** none in B. **C–E cleanup:** Stage D sends canonical Person fields through Person writer; keep affiliation fields on Affiliate and gender compatibility until separate approval/certification. |
+| Affiliate activation/deactivation | reads `Affiliate.personId`/Person→User relation; writes affiliation status, User role/session lifecycle | **Temporary projection:** no personal-field projection needed. **C–E cleanup:** retain ownership; not a duplicate-personal-field removal candidate. |
+| Reservation/downstream User display readers cited by frozen Stage A | reads User display/access-email compatibility values | **Must before B2:** consumer contract catalog stays unchanged. **Temporary projection:** use declared User Person projection for display and separate access email. **C–E cleanup:** migrate/verify each downstream reader before User duplicate retirement. |
+
+No actual external consumer is evidenced by Stage A or inspected source; therefore no V1.1 window, version route, or date is authorized. A future external consumer must be named, contract-tested, and given an approved compatibility date before V1.1 exists.
+
+### 2.5 Executed disposable rehearsal evidence
+
+Human database operator executed the rehearsal. The development database was never mutated.
+
+#### Isolation proof
+
+| Item | Development | Disposable |
+| --- | --- | --- |
+| Container | `sgi-curime-frontend-v1-refinement-postgres-1` | `sgi-stage-b-disposable` |
+| Host port | 5432 | 5433 |
+| Database | `sgi_curime` | `sgi_org_profile_reconciliation_test` |
+
+Distinct container, database, and host port. The disposable container was created, used, and removed; no `sgi-stage-b` volume remained. `backend/node_modules` was absent, so `npm ci --no-audit --no-fund` was run in `backend` as a network dependency install. `DATABASE_URL`/`DIRECT_URL` pointed only at the disposable database. `npx prisma migrate deploy` reported the database already in sync with the Prisma schema.
+
+#### Rehearsal results
+
+| Rehearsal | Executed evidence |
+| --- | --- |
+| Backup / recovery | Disposable-only scratch table with 2 rows; `pg_dump --format=custom`; restore into a second disposable database `..._restore`; row count and values matched; restore database and dump file deleted. Assumption proven on disposable data. |
+| Transaction failure | Bounded transaction deliberately violated a primary key; PostgreSQL returned the constraint error and ROLLBACK; only the pre-existing baseline row remained, so no partial state persisted. |
+| Idempotent rerun | `node scripts/test-migration-smoke.mjs` executed twice against the disposable database; both runs passed with no pending migrations and no duplicate state. |
+| Conflict preservation | Disposable-only scratch Person/Org/link tables seeded two candidate persons sharing one email with different document numbers; no link row was created (`links_total = 0`), so ambiguous evidence produced no automatic merge or overwrite. |
+| Rollback path | `node scripts/test-migration-rollback.mjs` executed and passed; database consistent after rollback simulation. |
+| Cleanup | All scratch tables dropped; disposable container removed. |
+
+Post-rehearsal read-only verification of the development database returned `user_total 1`, `user_linked 0`, `affiliate_total 0`, `IdentityReconciliationManifest` 0 — unchanged from preflight.
+
+Stage B1 rehearsal therefore covers backup/recovery, transaction failure, partial-state prevention, idempotent rerun, conflict preservation, and rollback execution against disposable data, with the development database never mutated.
+
+#### Precise limit of this rehearsal
+
+The rehearsal exercised existing migration harnesses (`test-migration-smoke.mjs`, `test-migration-rollback.mjs`) and disposable scratch objects. It did **not** exercise the Person-first reconciliation resolver, because `db:link-person-identities` is Stage C work and was deliberately not run. Person-first reconciliation idempotency and manifest conflict behavior therefore remain unproven until Stage C task 3.4 and remain a Stage C evidence obligation, not a Stage B1 defect.
+
+#### Reproducibility reference
+
+The sequence below reproduces the executed rehearsal above. It was executed once against a throwaway container; every mutation below targets the disposable database only.
+
+Strict no-use development database guard: never run against development database `sgi_curime`; verify both container/database names are exactly `sgi-stage-b-disposable` / `sgi_org_profile_reconciliation_test`, and reject execution if `DATABASE_URL` or `DIRECT_URL` contains `sgi_curime`.
+
+```powershell
+docker run --name sgi-stage-b-disposable `
+  -e POSTGRES_USER=sgi_test `
+  -e POSTGRES_PASSWORD=replace-with-temporary-secret `
+  -e POSTGRES_DB=sgi_org_profile_reconciliation_test `
+  -p 5433:5432 -d postgres:17
+
+docker exec sgi-stage-b-disposable pg_isready `
+  -U sgi_test -d sgi_org_profile_reconciliation_test
+
+$env:DATABASE_URL='postgresql://sgi_test:replace-with-temporary-secret@localhost:5433/sgi_org_profile_reconciliation_test'
+$env:DIRECT_URL=$env:DATABASE_URL
+
+cd backend
+npm ci --no-audit --no-fund
+
+# disposable-only backup/recovery roundtrip
+psql $env:DATABASE_URL -c "CREATE TABLE _rehearsal_backup_test (id SERIAL PRIMARY KEY, key TEXT UNIQUE, value TEXT); INSERT INTO _rehearsal_backup_test (key,value) VALUES ('k1','v1'),('k2','v2');"
+pg_dump $env:DATABASE_URL --format=custom --file=sgi_rehearsal.dump
+psql $env:DATABASE_URL -c "CREATE DATABASE sgi_org_profile_reconciliation_test_restore;"
+$restoreUrl = $env:DATABASE_URL + '_restore'
+pg_restore --dbname=$restoreUrl --no-owner --no-privileges sgi_rehearsal.dump
+
+# disposable-only bounded transaction failure: PK violation must roll back with no partial state
+psql $env:DATABASE_URL -c "CREATE TABLE _tx_rehearsal (id SERIAL PRIMARY KEY, code TEXT, status TEXT); INSERT INTO _tx_rehearsal VALUES (1,'OK1','ok');"
+psql $env:DATABASE_URL -c "BEGIN; INSERT INTO _tx_rehearsal VALUES (2,'FAIL1','pending'); INSERT INTO _tx_rehearsal VALUES (1,'DUP','bad'); COMMIT;"
+psql $env:DATABASE_URL -c "SELECT * FROM _tx_rehearsal ORDER BY id;"
+
+# migration idempotency and rollback harnesses, run twice
+npx prisma migrate deploy
+node scripts/test-migration-smoke.mjs
+node scripts/test-migration-smoke.mjs
+node scripts/test-migration-rollback.mjs
+
+# disposable-only cleanup
+psql $env:DATABASE_URL -c "DROP TABLE IF EXISTS _tx_rehearsal; DROP TABLE IF EXISTS _rehearsal_backup_test;"
+psql $env:DATABASE_URL -c "DROP DATABASE IF EXISTS sgi_org_profile_reconciliation_test_restore;"
+Remove-Item -LiteralPath sgi_rehearsal.dump
+
+docker rm -f sgi-stage-b-disposable
+```
+
+Task 2.5 is satisfied by the executed rehearsal recorded above. Task 2.3 is satisfied by the additive submitted-snapshot design plus the human-approved alias deprecation date of 2026-11-30 recorded in section 2.3; alias removal stays gated by Stage E certification and separate destructive approval. Task 2.6 is untouched.

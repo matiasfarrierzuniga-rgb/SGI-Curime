@@ -8,11 +8,11 @@
 
 ## 2. Stage B — Preflight, Snapshots, And Compatibility
 
-- [ ] 2.1 Produce normalized-identification preflight inventory grouped by identification type: safely linked, null personId, duplicate candidate, conflict, incomplete, and insufficient evidence.
-- [ ] 2.2 Define duplicate/conflict quarantine and human-review workflow using source snapshots and IdentityReconciliationManifest evidence; prohibit silent merges/overwrites.
-- [ ] 2.3 Design additive request snapshot migration from generic fields to explicit `submitted*` fields, with direct-copy backfill, aliases, API versions, deprecation dates, and no arbitrary fullName parsing.
-- [ ] 2.4 Define compatibility Person-backed projections for User/Affiliate reads while preserving separate User access email and historical snapshots; separately document DB versus API compatibility, temporary Person API projections, and any actual external consumer required for V1.1.
-- [ ] 2.5 Rehearse backup, transaction-failure, idempotent rerun, and rollback procedures against disposable data; record evidence.
+- [x] 2.1 Produce normalized-identification preflight inventory grouped by identification type: safely linked, null personId, duplicate candidate, conflict, incomplete, and insufficient evidence.
+- [x] 2.2 Define duplicate/conflict quarantine and human-review workflow using source snapshots and IdentityReconciliationManifest evidence; prohibit silent merges/overwrites.
+- [x] 2.3 Design additive request snapshot migration from generic fields to explicit `submitted*` fields, with direct-copy backfill, aliases, API versions, deprecation dates, and no arbitrary fullName parsing.
+- [x] 2.4 Define compatibility Person-backed projections for User/Affiliate reads while preserving separate User access email and historical snapshots; separately document DB versus API compatibility, temporary Person API projections, and any actual external consumer required for V1.1.
+- [x] 2.5 Rehearse backup, transaction-failure, idempotent rerun, and rollback procedures against disposable data; record evidence.
 - [ ] 2.6 At Stage B checkpoint, reapply/reconcile preserved `reconcile-institutional-access-contract-v1` Phase B WIP/stash against approved Person-first rules; do not treat preserved WIP as canonical before this task.
 
 ## 3. Stage C — Reconciliation And Additive Schema Work
