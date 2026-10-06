@@ -6,9 +6,23 @@ import { userRequestsService } from "@/features/user-requests";
 import { rolesService } from "@/features/roles";
 import type { RequestStatus, UserRequest } from "@/features/user-requests";
 import type { RoleOption } from "@/features/users";
+import axios from "axios";
 import { getErrorMessage } from "@/shared/lib/errors";
 import { useToast } from "@/shared/ui/Toast";
 const limit = 10;
+
+function reviewRequiredMessage(error: unknown) {
+  const message = axios.isAxiosError(error)
+    ? error.response?.data && typeof error.response.data === "object" && "message" in error.response.data
+      ? String(error.response.data.message)
+      : ""
+    : "";
+  if (axios.isAxiosError(error) && error.response?.status === 409 && /identity|review/i.test(message)) {
+    return "La solicitud sigue pendiente: la identidad requiere revisión institucional antes de aprobarla.";
+  }
+  return getErrorMessage(error);
+}
+
 export function UserRequestsPage() {
   const { notify } = useToast();
   const [items, setItems] = useState<UserRequest[]>([]);
@@ -76,7 +90,7 @@ export function UserRequestsPage() {
       setReason("");
       await load();
     } catch (e) {
-      notify(getErrorMessage(e), "error");
+      notify(action === "approve" ? reviewRequiredMessage(e) : getErrorMessage(e), "error");
     } finally {
       setBusy(false);
     }

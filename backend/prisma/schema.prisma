@@ -227,6 +227,17 @@ model UserRequest {
   phoneCountryCode    String?
   phoneNationalNumber String?
   personId            Int?
+  // Additive immutable submission evidence. Generic fields remain legacy
+  // aliases until Stage E certification authorizes their removal.
+  submittedFullName            String?
+  submittedIdentification      String?
+  submittedIdentificationType  IdentificationType?
+  submittedEmail               String?
+  submittedPhone               String?
+  submittedPhoneCountryCode    String?
+  submittedPhoneNationalNumber String?
+  submittedAddress             String?
+  submittedReason              String?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   reviewedBy          User?               @relation("UserRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -289,6 +300,21 @@ model AffiliateRequest {
   phoneCountryCode    String?
   phoneNationalNumber String?
   personId            Int?
+  // Additive immutable submission evidence. Generic fields remain legacy
+  // aliases until Stage E certification authorizes their removal.
+  submittedFullName            String?
+  submittedIdentification      String?
+  submittedIdentificationType  IdentificationType?
+  submittedBirthDate           DateTime?
+  submittedGender              String?
+  submittedPhone               String?
+  submittedPhoneCountryCode    String?
+  submittedPhoneNationalNumber String?
+  submittedEmail               String?
+  submittedAddress             String?
+  submittedOccupation          String?
+  submittedWorkplace           String?
+  submittedAffiliationReason   String?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   reviewedBy          User?               @relation("AffiliateRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -1067,6 +1093,7 @@ model IdentityReconciliationManifest {
 
   @@unique([normalizationVersion, decisionVersion, sourceModel, sourceId])
   @@index([identityClusterKey])
+  @@index([sourceModel, sourceId])
   @@index([classification, reviewRequired])
   @@index([selectedPersonId])
 }

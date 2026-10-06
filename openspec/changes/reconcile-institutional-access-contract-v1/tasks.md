@@ -8,21 +8,21 @@
 
 ## 2. Close Public Account Lifecycle
 
-- [ ] 2.1 Reconcile frontend registration form data with the existing UserRequest creation contract, including identity/contact snapshots, reason, validation, duplicate handling, and pending-review response state without requiring a Person link at submission.
-- [ ] 2.2 Change public `/register` submission to create a UserRequest and confirm pending administrative review without creating a User, session, or authenticated frontend state.
-- [ ] 2.3 Remove normal public reachability of direct active-User registration while preserving the separately controlled administrator bootstrap contract and its authentication rules.
-- [ ] 2.4 Align public registration API/client types and error handling with UserRequest outcomes without changing unrelated routes or feature boundaries.
+- [x] 2.1 Reconcile frontend registration form data with the existing UserRequest creation contract, including identity/contact snapshots, reason, validation, duplicate handling, and pending-review response state without requiring a Person link at submission.
+- [x] 2.2 Change public `/register` submission to create a UserRequest and confirm pending administrative review without creating a User, session, or authenticated frontend state.
+- [x] 2.3 Remove normal public reachability of direct active-User registration while preserving the separately controlled administrator bootstrap contract and its authentication rules.
+- [x] 2.4 Align public registration API/client types and error handling with UserRequest outcomes without changing unrelated routes or feature boundaries.
 - [ ] 2.5 Verify administrative UserRequest review uses an explicit persisted review capability, safely resolves or reconciles a canonical Person before approval, validates selected active role ID server-side, preserves concurrency protection, and creates exactly one inactive Person-linked User plus activation token on approval.
-- [ ] 2.6 Preserve rejection behavior, reviewer evidence, duplicate prevention, resolved-request conflict handling, and zero User/token creation on rejection.
-- [ ] 2.7 Add frontend and backend tests for valid submission with safe Person link, valid submission without a Person link, duplicate User, duplicate pending request, review-time identity-resolution conflict, approval, rejection, and repeated review attempts.
+- [x] 2.6 Preserve rejection behavior, reviewer evidence, duplicate prevention, resolved-request conflict handling, and zero User/token creation on rejection.
+- [x] 2.7 Add frontend and backend tests for valid submission with safe Person link, valid submission without a Person link, duplicate User, duplicate pending request, review-time identity-resolution conflict, approval, rejection, and repeated review attempts.
 
 ## 3. Preserve And Complete Activation UX
 
-- [ ] 3.1 Keep existing AccountActivationToken generation, SHA-256 persistence, configured expiration, email link delivery, and atomic claim/activation implementation unchanged except for integration fixes proven necessary.
-- [ ] 3.2 Update activation frontend feedback to distinguish invalid/expired token, used token, ineligible or already-active account, password validation failure, and successful activation without client-side token truth assumptions.
-- [ ] 3.3 Ensure successful activation clears password fields, offers login continuation, creates no session automatically, and never persists or logs raw token/password data.
-- [ ] 3.4 Add focused activation route/page tests for missing query token, invalid token, expired token, reused token, already-active account, mismatched password, policy failure, successful activation, and safe retry behavior.
-- [ ] 3.5 Verify pre-existing valid activation tokens and Sessions remain compatible after deployment with no conversion or database migration.
+- [x] 3.1 Keep existing AccountActivationToken generation, SHA-256 persistence, configured expiration, email link delivery, and atomic claim/activation implementation unchanged except for integration fixes proven necessary.
+- [x] 3.2 Update activation frontend feedback to distinguish invalid/expired token, used token, ineligible or already-active account, password validation failure, and successful activation without client-side token truth assumptions.
+- [x] 3.3 Ensure successful activation clears password fields, offers login continuation, creates no session automatically, and never persists or logs raw token/password data.
+- [x] 3.4 Add focused activation route/page tests for missing query token, invalid token, expired token, reused token, already-active account, mismatched password, policy failure, successful activation, and safe retry behavior.
+- [x] 3.5 Verify pre-existing valid activation tokens and Sessions remain compatible after deployment with no conversion or database migration.
 
 ## 4. Standardize Backend Capability Enforcement
 

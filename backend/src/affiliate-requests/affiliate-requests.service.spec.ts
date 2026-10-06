@@ -117,6 +117,9 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
           personId: 5,
           fullName: 'Ana Pérez',
           identification: dto.identification,
+          submittedFullName: 'Ana Pérez',
+          submittedIdentification: dto.identification,
+          submittedAffiliationReason: dto.affiliationReason,
           status: 'PENDING',
         }),
       }),
@@ -130,6 +133,15 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
     expect(personResolver.resolveWithinTransaction).toHaveBeenCalledTimes(1);
     expect(tx.person.findUnique).not.toHaveBeenCalled();
     expect(tx.affiliateRequest.create.mock.calls[0][0].data.personId).toBe(5);
+  });
+
+  it('projects legacy request snapshots as submitted aliases on reads', async () => {
+    await expect(service.findOne(request.id)).resolves.toMatchObject({
+      fullName: request.fullName,
+      submittedFullName: request.fullName,
+      submittedIdentification: request.identification,
+      submittedAffiliationReason: request.affiliationReason,
+    });
   });
 
   it('protects public create from existing Affiliate and pending duplicates', async () => {

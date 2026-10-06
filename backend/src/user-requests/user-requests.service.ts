@@ -1,11 +1,14 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   Optional,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, RequestStatus } from '../../generated/prisma/client';
+import {
+  IdentificationType,
+  Prisma,
+  RequestStatus,
+} from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivationTokenDeliveryService } from './activation-token-delivery.service';
 import { ActivationTokenService } from './activation-token.service';
@@ -15,6 +18,13 @@ import { QueryUserRequestDto } from './dto/query-user-request.dto';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { RuntimePersonResolverService } from '../identity/runtime-person-resolver.service';
+import {
+  IDENTITY_NORMALIZATION_VERSION,
+  RECONCILIATION_DECISION_VERSION,
+  RECONCILIATION_MANIFEST_VERSION,
+  normalizeIdentification,
+  sourceFingerprint,
+} from '../identity-reconciliation/identity-reconciliation';
 
 const requestSelect = {
   id: true,
@@ -27,6 +37,15 @@ const requestSelect = {
   phone: true,
   address: true,
   reason: true,
+  submittedFullName: true,
+  submittedIdentification: true,
+  submittedIdentificationType: true,
+  submittedEmail: true,
+  submittedPhone: true,
+  submittedPhoneCountryCode: true,
+  submittedPhoneNationalNumber: true,
+  submittedAddress: true,
+  submittedReason: true,
   status: true,
   rejectionReason: true,
   reviewedAt: true,
@@ -34,6 +53,33 @@ const requestSelect = {
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.UserRequestSelect;
+
+type ApprovalPersonResolution =
+  | {
+      status: 'PERSON_REUSED';
+      person: {
+        id: number;
+        firstName: string | null;
+        firstSurname: string | null;
+        secondSurname: string | null;
+        identification: string | null;
+        identificationType: string | null;
+      };
+    }
+  | { status: 'MANUAL_REVIEW_REQUIRED'; reason: string };
+
+type UserRequestManifestSource = {
+  sourceModel: 'UserRequest';
+  sourceId: number;
+  identification: string;
+  identificationType: string | null;
+  fullName: string;
+  email: string;
+  phoneCountryCode: string | null;
+  phoneNationalNumber: string | null;
+  address: string | null;
+  birthDate: null;
+};
 
 @Injectable()
 export class UserRequestsService {
@@ -55,9 +101,8 @@ export class UserRequestsService {
     );
     const created = await this.prisma.$transaction(async (tx) => {
       let personId: number | undefined;
-      let canonicalFullName = requestData.fullName;
       if (hasStructuredName) {
-        const resolution = await this.personResolver.resolveWithinTransaction(
+        const resolution = await this.personResolver.findSafeExisting(
           {
             identificationType: dto.identificationType,
             identification: dto.identification,
@@ -70,26 +115,23 @@ export class UserRequestsService {
           },
           tx,
         );
-        if (
-          resolution.status !== 'PERSON_CREATED' &&
-          resolution.status !== 'PERSON_REUSED'
-        ) {
-          throw new BadRequestException(
-            `Unable to resolve person identity: ${resolution.status}`,
-          );
+        if (resolution?.status === 'PERSON_REUSED') {
+          personId = resolution.person.id;
         }
-        if (resolution.profileEnrichmentRequired) {
-          throw new ConflictException('Person identity requires manual review');
-        }
-        personId = resolution.person.id;
-        canonicalFullName = [firstName, firstSurname, secondSurname]
-          .filter((part): part is string => Boolean(part))
-          .join(' ');
       }
       return tx.userRequest.create({
         data: {
           ...requestData,
-          fullName: canonicalFullName,
+          fullName: requestData.fullName,
+          submittedFullName: requestData.fullName,
+          submittedIdentification: requestData.identification,
+          submittedIdentificationType: requestData.identificationType,
+          submittedEmail: requestData.email,
+          submittedPhone: undefined,
+          submittedPhoneCountryCode: requestData.phoneCountryCode,
+          submittedPhoneNationalNumber: requestData.phoneNationalNumber,
+          submittedAddress: requestData.address,
+          submittedReason: requestData.reason,
           personId,
           status: 'PENDING',
         },
@@ -103,7 +145,7 @@ export class UserRequestsService {
       entityId: created.id,
       ...context,
     });
-    return created;
+    return toUserRequestSnapshotResponse(created);
   }
 
   async findAll(query: QueryUserRequestDto) {
@@ -123,7 +165,12 @@ export class UserRequestsService {
       }),
       this.prisma.userRequest.count({ where }),
     ]);
-    return { data, total, page: query.page, limit: query.limit };
+    return {
+      data: data.map(toUserRequestSnapshotResponse),
+      total,
+      page: query.page,
+      limit: query.limit,
+    };
   }
 
   async findOne(id: number) {
@@ -132,7 +179,7 @@ export class UserRequestsService {
       select: requestSelect,
     });
     if (!userRequest) throw new NotFoundException('User request not found');
-    return userRequest;
+    return toUserRequestSnapshotResponse(userRequest);
   }
 
   async reject(
@@ -163,7 +210,7 @@ export class UserRequestsService {
       entityId: id,
       ...context,
     });
-    return rejected;
+    return toUserRequestSnapshotResponse(rejected);
   }
 
   async approve(
@@ -186,6 +233,12 @@ export class UserRequestsService {
     const generated = this.tokenService.generate();
     const reviewedAt = new Date();
     const result = await this.prisma.$transaction(async (tx) => {
+      const resolution = await this.resolvePersonForApproval(tx, userRequest);
+      if (resolution.status !== 'PERSON_REUSED') {
+        return { reviewOutcome: resolution };
+      }
+      const person = resolution.person;
+
       const claimed = await tx.userRequest.updateMany({
         where: { id, status: 'PENDING' },
         data: {
@@ -193,23 +246,14 @@ export class UserRequestsService {
           rejectionReason: null,
           reviewedAt,
           reviewedById,
+          ...(userRequest.personId === null ? { personId: person.id } : {}),
         },
       });
       if (claimed.count !== 1) {
         throw new ConflictException('User request has already been resolved');
       }
-      if (userRequest.personId === null) {
-        throw new ConflictException(
-          'User request has no safely resolved person identity',
-        );
-      }
-      const person = await tx.person.findUnique({
-        where: { id: userRequest.personId },
-      });
-      if (!person) {
-        throw new ConflictException('User request person identity is missing');
-      }
       if (
+        (userRequest.personId !== null && person.id !== userRequest.personId) ||
         !person.firstName ||
         !person.firstSurname ||
         !person.identification ||
@@ -217,29 +261,8 @@ export class UserRequestsService {
       ) {
         throw new ConflictException('User request person identity is invalid');
       }
-      const resolution = await this.personResolver.resolveWithinTransaction(
-        {
-          identificationType: userRequest.identificationType,
-          identification: userRequest.identification,
-          firstName: person.firstName,
-          firstSurname: person.firstSurname,
-          secondSurname: person.secondSurname,
-          phoneCountryCode: person.phoneCountryCode,
-          phoneNationalNumber: person.phoneNationalNumber,
-          address: person.address,
-        },
-        tx,
-      );
-      if (
-        (resolution.status !== 'PERSON_CREATED' &&
-          resolution.status !== 'PERSON_REUSED') ||
-        resolution.person.id !== userRequest.personId ||
-        resolution.profileEnrichmentRequired
-      ) {
-        throw new ConflictException('User request person identity is invalid');
-      }
       const existingUser = await tx.user.findUnique({
-        where: { personId: resolution.person.id },
+        where: { personId: person.id },
         select: { id: true },
       });
       if (existingUser) {
@@ -254,14 +277,15 @@ export class UserRequestsService {
         .join(' ');
       const user = await tx.user.create({
         data: {
-          personId: resolution.person.id,
+          personId: person.id,
           fullName,
           identification: person.identification,
-          identificationType: person.identificationType,
+          identificationType: person.identificationType as IdentificationType,
           email: userRequest.email,
-          phoneCountryCode: person.phoneCountryCode,
-          phoneNationalNumber: person.phoneNationalNumber,
-          address: person.address,
+          phone: userRequest.phone,
+          phoneCountryCode: userRequest.phoneCountryCode,
+          phoneNationalNumber: userRequest.phoneNationalNumber,
+          address: userRequest.address,
           passwordHash: null,
           status: 'INACTIVE',
           roleId: role.id,
@@ -296,6 +320,13 @@ export class UserRequestsService {
       return { user, userRequest: approvedRequest };
     });
 
+    if ('reviewOutcome' in result) {
+      throw new ConflictException(
+        result.reviewOutcome?.reason ??
+          'User request requires institutional identity review',
+      );
+    }
+
     await this.tokenDelivery.deliver({
       userId: result.user.id,
       email: result.user.email,
@@ -321,7 +352,10 @@ export class UserRequestsService {
       details: { createdUserId: result.user.id },
       ...context,
     });
-    return result;
+    return {
+      ...result,
+      userRequest: toUserRequestSnapshotResponse(result.userRequest),
+    };
   }
 
   private async requirePending(id: number) {
@@ -333,6 +367,135 @@ export class UserRequestsService {
       throw new ConflictException('User request has already been resolved');
     }
     return userRequest;
+  }
+
+  private async resolvePersonForApproval(
+    tx: Prisma.TransactionClient,
+    userRequest: Awaited<ReturnType<UserRequestsService['requirePending']>>,
+  ): Promise<ApprovalPersonResolution> {
+    if (userRequest.personId !== null) {
+      const person = await tx.person.findUnique({
+        where: { id: userRequest.personId },
+      });
+      if (!person) {
+        const outcome = {
+          status: 'MANUAL_REVIEW_REQUIRED' as const,
+          reason: 'User request person identity is missing',
+        };
+        await this.persistReviewEvidence(tx, userRequest, outcome);
+        return outcome;
+      }
+      const submittedIdentity = normalizeIdentification(
+        userRequest.identificationType,
+        userRequest.identification,
+      );
+      if (
+        !submittedIdentity ||
+        person.identificationType !== submittedIdentity.identificationType ||
+        person.normalizedIdentification !==
+          submittedIdentity.normalizedIdentification ||
+        !person.firstName ||
+        !person.firstSurname ||
+        !person.identification
+      ) {
+        const outcome = {
+          status: 'MANUAL_REVIEW_REQUIRED' as const,
+          reason: 'User request linked Person requires institutional review',
+        };
+        await this.persistReviewEvidence(tx, userRequest, outcome);
+        return outcome;
+      }
+      const outcome = { status: 'PERSON_REUSED' as const, person };
+      await this.persistReviewEvidence(tx, userRequest, outcome);
+      return outcome;
+    }
+
+    const outcome =
+      await this.personResolver.resolveExistingForReviewWithinTransaction(
+        userRequest.identificationType,
+        userRequest.identification,
+        tx,
+      );
+    await this.persistReviewEvidence(tx, userRequest, outcome);
+    if (outcome.status === 'PERSON_REUSED') return outcome;
+    return { status: 'MANUAL_REVIEW_REQUIRED', reason: outcome.reason };
+  }
+
+  private async persistReviewEvidence(
+    tx: Prisma.TransactionClient,
+    userRequest: Awaited<ReturnType<UserRequestsService['requirePending']>>,
+    outcome: {
+      status: string;
+      person?: { id: number };
+      matchingPersonCount?: number;
+      reason?: string;
+    },
+  ) {
+    const source: UserRequestManifestSource = {
+      sourceModel: 'UserRequest' as const,
+      sourceId: userRequest.id,
+      identification: userRequest.identification,
+      identificationType: userRequest.identificationType,
+      fullName: userRequest.fullName,
+      birthDate: null,
+      email: userRequest.email,
+      phoneCountryCode: userRequest.phoneCountryCode,
+      phoneNationalNumber: userRequest.phoneNationalNumber,
+      address: userRequest.address,
+    };
+    const identity = normalizeIdentification(
+      source.identificationType,
+      source.identification,
+    );
+    const safe = outcome.status === 'PERSON_REUSED';
+    await tx.identityReconciliationManifest.upsert({
+      where: {
+        normalizationVersion_decisionVersion_sourceModel_sourceId: {
+          normalizationVersion: IDENTITY_NORMALIZATION_VERSION,
+          decisionVersion: RECONCILIATION_DECISION_VERSION,
+          sourceModel: source.sourceModel,
+          sourceId: source.sourceId,
+        },
+      },
+      create: this.reviewManifestData(source, identity, outcome, safe),
+      update: this.reviewManifestData(source, identity, outcome, safe),
+    });
+  }
+
+  private reviewManifestData(
+    source: UserRequestManifestSource,
+    identity: ReturnType<typeof normalizeIdentification>,
+    outcome: { status: string; person?: { id: number }; matchingPersonCount?: number; reason?: string },
+    safe: boolean,
+  ) {
+    const conflictCodes = safe
+      ? []
+      : [outcome.status, outcome.reason, outcome.matchingPersonCount]
+          .filter((value): value is string | number => value !== undefined)
+          .map(String);
+    return {
+      manifestVersion: RECONCILIATION_MANIFEST_VERSION,
+      normalizationVersion: IDENTITY_NORMALIZATION_VERSION,
+      decisionVersion: RECONCILIATION_DECISION_VERSION,
+      sourceModel: source.sourceModel,
+      sourceId: source.sourceId,
+      sourceFingerprint: sourceFingerprint(source),
+      rawIdentification: identity?.rawIdentification ?? source.identification,
+      identificationType: identity?.identificationType ?? null,
+      normalizedIdentification: identity?.normalizedIdentification ?? null,
+      identityClusterKey: identity
+        ? `${identity.identificationType}:${identity.normalizedIdentification}`
+        : null,
+      classification: safe ? 'IDENTITY_MATCH' : outcome.status,
+      selectedPersonId: safe ? outcome.person?.id ?? null : null,
+      personCreationAllowed: false,
+      conflictCodes,
+      nameReconciliationRequired: !safe,
+      reviewRequired: !safe,
+      sourceSnapshot: source,
+      reviewedAt: null,
+      reviewedBy: null,
+    };
   }
 
   private async assertNoUserDuplicates(email: string, identification: string) {
@@ -377,4 +540,49 @@ export class UserRequestsService {
       );
     }
   }
+}
+
+/**
+ * New writes populate submitted* fields. Reads tolerate pre-expand rows by
+ * projecting the retained generic snapshot columns as equal compatibility
+ * aliases; neither branch reads current Person data.
+ */
+function toUserRequestSnapshotResponse<
+  T extends {
+    fullName: string;
+    identification: string;
+    identificationType: unknown;
+    email: string;
+    phone: string | null;
+    phoneCountryCode: string | null;
+    phoneNationalNumber: string | null;
+    address: string | null;
+    reason: string;
+    submittedFullName: string | null;
+    submittedIdentification: string | null;
+    submittedIdentificationType: unknown;
+    submittedEmail: string | null;
+    submittedPhone: string | null;
+    submittedPhoneCountryCode: string | null;
+    submittedPhoneNationalNumber: string | null;
+    submittedAddress: string | null;
+    submittedReason: string | null;
+  },
+>(request: T) {
+  return {
+    ...request,
+    submittedFullName: request.submittedFullName ?? request.fullName,
+    submittedIdentification:
+      request.submittedIdentification ?? request.identification,
+    submittedIdentificationType:
+      request.submittedIdentificationType ?? request.identificationType,
+    submittedEmail: request.submittedEmail ?? request.email,
+    submittedPhone: request.submittedPhone ?? request.phone,
+    submittedPhoneCountryCode:
+      request.submittedPhoneCountryCode ?? request.phoneCountryCode,
+    submittedPhoneNationalNumber:
+      request.submittedPhoneNationalNumber ?? request.phoneNationalNumber,
+    submittedAddress: request.submittedAddress ?? request.address,
+    submittedReason: request.submittedReason ?? request.reason,
+  };
 }

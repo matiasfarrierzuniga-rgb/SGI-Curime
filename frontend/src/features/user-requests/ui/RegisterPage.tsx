@@ -1,7 +1,8 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import axios from 'axios'
 import { Link } from 'react-router-dom'
 import { getErrorMessage } from '@/shared/lib/errors'
-import { digitsOnly, identificationError, identificationMaxLength, normalizeEmail, normalizeText, personContactErrors, type IdentificationType } from '@/shared/lib/formValidation'
+import { digitsOnly, emailError, identificationError, identificationMaxLength, normalizeEmail, normalizeText, phoneError, structuredNameError, type IdentificationType } from '@/shared/lib/formValidation'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { Button } from '@/shared/ui/button'
 import { PhoneField } from '@/shared/ui/forms/PhoneField'
@@ -11,8 +12,23 @@ import { Textarea } from '@/shared/ui/textarea'
 import { userRequestsService } from '../api/userRequests.api'
 import type { CreateUserRequest } from '../model/userRequests.types'
 
-const initial: CreateUserRequest = { fullName: '', identificationType: 'NATIONAL', identification: '', email: '', phoneCountryCode: '+506', phoneNationalNumber: '', address: '', reason: '' }
+type RegisterForm = Omit<CreateUserRequest, 'fullName'> & {
+  firstName: string
+  firstSurname: string
+  secondSurname: string
+}
+
+const initial: RegisterForm = { firstName: '', firstSurname: '', secondSurname: '', identificationType: 'NATIONAL', identification: '', email: '', phoneCountryCode: '+506', phoneNationalNumber: '', address: '', reason: '' }
 const inputClass = 'min-h-12 rounded-lg border border-border bg-surface px-3.5 py-2.5 font-normal'
+
+function requestErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error) && error.response?.status === 409) {
+    const message = (error.response.data as { message?: string | string[] } | undefined)?.message
+    if (Array.isArray(message)) return message.join('. ')
+    if (typeof message === 'string') return message
+  }
+  return getErrorMessage(error)
+}
 
 export function RegisterPage() {
   const [form, setForm] = useState(initial)
@@ -21,10 +37,18 @@ export function RegisterPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const submitting = useRef(false)
-  const field = (name: keyof CreateUserRequest) => ({ value: form[name] ?? '', onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [name]: event.target.value }) })
+  const field = (name: keyof RegisterForm) => ({ value: form[name] ?? '', onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [name]: event.target.value }) })
 
   function validate() {
-    const next = { ...personContactErrors(form), identification: identificationError(form.identificationType, form.identification) }
+    const next = {
+      firstName: structuredNameError(form.firstName),
+      firstSurname: structuredNameError(form.firstSurname),
+      secondSurname: structuredNameError(form.secondSurname, false),
+      identification: identificationError(form.identificationType, form.identification),
+      email: emailError(form.email),
+      phoneNationalNumber: phoneError(form.phoneCountryCode ?? '', form.phoneNationalNumber ?? ''),
+      reason: form.reason.trim().length >= 3 ? '' : 'Indique el motivo de su solicitud.',
+    }
     setErrors(next)
     return !Object.values(next).some(Boolean)
   }
@@ -36,12 +60,27 @@ export function RegisterPage() {
     setLoading(true)
     setError('')
     try {
-      const payload = { ...form, fullName: normalizeText(form.fullName), email: normalizeEmail(form.email), address: form.address ? normalizeText(form.address) || undefined : undefined, phoneCountryCode: form.phoneNationalNumber ? form.phoneCountryCode : undefined, phoneNationalNumber: form.phoneNationalNumber || undefined, reason: normalizeText(form.reason) }
+      const firstName = normalizeText(form.firstName)
+      const firstSurname = normalizeText(form.firstSurname)
+      const secondSurname = normalizeText(form.secondSurname)
+      const payload: CreateUserRequest = {
+        firstName,
+        firstSurname,
+        secondSurname: secondSurname || undefined,
+        fullName: [firstName, firstSurname, secondSurname].filter(Boolean).join(' '),
+        identificationType: form.identificationType,
+        identification: form.identification,
+        email: normalizeEmail(form.email),
+        address: form.address ? normalizeText(form.address) || undefined : undefined,
+        phoneCountryCode: form.phoneNationalNumber ? form.phoneCountryCode : undefined,
+        phoneNationalNumber: form.phoneNationalNumber || undefined,
+        reason: normalizeText(form.reason),
+      }
       await userRequestsService.create(payload)
-      setSuccess('Solicitud enviada correctamente. Será revisada por una persona administradora.')
+      setSuccess('Solicitud enviada correctamente. Queda pendiente de revisión administrativa. Le avisaremos si se aprueba para continuar con la activación.')
       setForm(initial)
     } catch (requestError) {
-      setError(getErrorMessage(requestError))
+      setError(requestErrorMessage(requestError))
     } finally {
       submitting.current = false
       setLoading(false)
@@ -60,9 +99,19 @@ export function RegisterPage() {
       </ol>
       <StatusMessage error={error} success={success} />
       <form className="mt-7 grid gap-5" onSubmit={submit} noValidate>
-        <label className="grid gap-2 text-sm font-bold" htmlFor="full-name">Nombre completo
-          <Input id="full-name" className={inputClass} required minLength={2} maxLength={150} autoComplete="name" aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'full-name-error' : undefined} {...field('fullName')} onBlur={validate} />
-          {errors.fullName && <span id="full-name-error" className="field-error" role="alert">{errors.fullName}</span>}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-2 text-sm font-bold" htmlFor="first-name">Nombre
+            <Input id="first-name" className={inputClass} required minLength={2} maxLength={150} autoComplete="given-name" aria-invalid={Boolean(errors.firstName)} aria-describedby={errors.firstName ? 'first-name-error' : undefined} {...field('firstName')} onBlur={validate} />
+            {errors.firstName && <span id="first-name-error" className="field-error" role="alert">{errors.firstName}</span>}
+          </label>
+          <label className="grid gap-2 text-sm font-bold" htmlFor="first-surname">Primer apellido
+            <Input id="first-surname" className={inputClass} required minLength={2} maxLength={150} autoComplete="family-name" aria-invalid={Boolean(errors.firstSurname)} aria-describedby={errors.firstSurname ? 'first-surname-error' : undefined} {...field('firstSurname')} onBlur={validate} />
+            {errors.firstSurname && <span id="first-surname-error" className="field-error" role="alert">{errors.firstSurname}</span>}
+          </label>
+        </div>
+        <label className="grid gap-2 text-sm font-bold" htmlFor="second-surname">Segundo apellido <span className="font-normal text-foreground-muted">(opcional)</span>
+          <Input id="second-surname" className={inputClass} minLength={2} maxLength={150} autoComplete="family-name" aria-invalid={Boolean(errors.secondSurname)} aria-describedby={errors.secondSurname ? 'second-surname-error' : undefined} {...field('secondSurname')} onBlur={validate} />
+          {errors.secondSurname && <span id="second-surname-error" className="field-error" role="alert">{errors.secondSurname}</span>}
         </label>
         <label className="grid gap-2 text-sm font-bold" htmlFor="identification-type">Tipo de identificación
           <Select id="identification-type" className={inputClass} value={idType} onChange={(event) => setForm({ ...form, identificationType: event.target.value as IdentificationType, identification: '' })}><option value="NATIONAL">Nacional</option><option value="DIMEX">DIMEX</option></Select>

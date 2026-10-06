@@ -30,6 +30,7 @@ describe('UserRequestsService', () => {
     },
     user: { create: jest.fn(), findUnique: jest.fn() },
     person: { findUnique: jest.fn() },
+    identityReconciliationManifest: { upsert: jest.fn() },
     accountActivationToken: { create: jest.fn() },
   };
   const prisma = {
@@ -69,7 +70,11 @@ describe('UserRequestsService', () => {
     phoneNationalNumber: null,
     address: null,
   };
-  const personResolver = { resolveWithinTransaction: jest.fn() };
+  const personResolver = {
+    findSafeExisting: jest.fn(),
+    resolveWithinTransaction: jest.fn(),
+    resolveExistingForReviewWithinTransaction: jest.fn(),
+  };
   const service = new UserRequestsService(
     prisma as never,
     tokenService,
@@ -106,6 +111,11 @@ describe('UserRequestsService', () => {
       person,
       profileEnrichmentRequired: false,
     });
+    personResolver.findSafeExisting.mockResolvedValue(null);
+    personResolver.resolveExistingForReviewWithinTransaction.mockResolvedValue({
+      status: 'PERSON_REUSED',
+      person,
+    });
     tx.accountActivationToken.create.mockResolvedValue({ id: 4 });
     delivery.deliver.mockResolvedValue(undefined);
   });
@@ -120,13 +130,24 @@ describe('UserRequestsService', () => {
     });
     expect(tx.userRequest.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ status: 'PENDING' }),
+        data: expect.objectContaining({
+          status: 'PENDING',
+          submittedFullName: pending.fullName,
+          submittedIdentification: pending.identification,
+          submittedEmail: pending.email,
+          submittedReason: pending.reason,
+        }),
       }),
     );
     expect(tx.user.create).not.toHaveBeenCalled();
   });
 
-  it('resolves and links Person atomically when structured identity is supplied', async () => {
+  it('links only an existing safe Person when structured identity is supplied', async () => {
+    personResolver.findSafeExisting.mockResolvedValue({
+      status: 'PERSON_REUSED',
+      person,
+      profileEnrichmentRequired: false,
+    });
     await service.create({
       firstName: person.firstName,
       firstSurname: person.firstSurname,
@@ -137,7 +158,7 @@ describe('UserRequestsService', () => {
       reason: pending.reason,
     });
 
-    expect(personResolver.resolveWithinTransaction).toHaveBeenCalledWith(
+    expect(personResolver.findSafeExisting).toHaveBeenCalledWith(
       expect.objectContaining({
         firstName: person.firstName,
         firstSurname: person.firstSurname,
@@ -152,6 +173,25 @@ describe('UserRequestsService', () => {
         }),
       }),
     );
+  });
+
+  it('accepts structured identity without a safe Person link', async () => {
+    await service.create({
+      firstName: person.firstName,
+      firstSurname: person.firstSurname,
+      fullName: pending.fullName,
+      identificationType: pending.identificationType,
+      identification: pending.identification,
+      email: pending.email,
+      reason: pending.reason,
+    });
+
+    expect(tx.userRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ personId: undefined }),
+      }),
+    );
+    expect(tx.user.create).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -206,6 +246,8 @@ describe('UserRequestsService', () => {
         reviewedById: 1,
       }),
     });
+    expect(tx.user.create).not.toHaveBeenCalled();
+    expect(tx.accountActivationToken.create).not.toHaveBeenCalled();
   });
 
   it('rejects an already resolved request', async () => {
@@ -261,10 +303,79 @@ describe('UserRequestsService', () => {
     expect(result.userRequest.status).toBe('APPROVED');
   });
 
-  it('does not approve a request without a safely resolved Person', async () => {
+  it('validates an already linked Person without invoking creation-capable resolution', async () => {
+    await service.approve(10, { roleId: 2 }, 1);
+
+    expect(tx.person.findUnique).toHaveBeenCalledWith({
+      where: { id: pending.personId },
+    });
+    expect(personResolver.resolveWithinTransaction).not.toHaveBeenCalled();
+    expect(personResolver.resolveExistingForReviewWithinTransaction).not.toHaveBeenCalled();
+    expect(tx.identityReconciliationManifest.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          selectedPersonId: person.id,
+          reviewRequired: false,
+          personCreationAllowed: false,
+        }),
+      }),
+    );
+  });
+
+  it('keeps a mismatched linked request pending without invoking Person resolution', async () => {
+    tx.person.findUnique.mockResolvedValue({
+      ...person,
+      normalizedIdentification: '423456789',
+    });
+
+    await expect(service.approve(10, { roleId: 2 }, 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(personResolver.resolveWithinTransaction).not.toHaveBeenCalled();
+    expect(tx.user.create).not.toHaveBeenCalled();
+    expect(tx.accountActivationToken.create).not.toHaveBeenCalled();
+    expect(tx.userRequest.updateMany).not.toHaveBeenCalled();
+    expect(tx.identityReconciliationManifest.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ reviewRequired: true }),
+      }),
+    );
+  });
+
+  it('reuses an unlinked request Person only by typed identity key during approval', async () => {
     prisma.userRequest.findUnique.mockResolvedValue({
       ...pending,
       personId: null,
+    });
+
+    await service.approve(10, { roleId: 2 }, 1);
+
+    expect(personResolver.resolveExistingForReviewWithinTransaction).toHaveBeenCalledWith(
+      pending.identificationType,
+      pending.identification,
+      tx,
+    );
+    expect(personResolver.resolveWithinTransaction).not.toHaveBeenCalled();
+    expect(tx.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          personId: person.id,
+          status: 'INACTIVE',
+          phoneCountryCode: null,
+        }),
+      }),
+    );
+    expect(tx.accountActivationToken.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not create a User or token when unlinked review-time reconciliation conflicts', async () => {
+    prisma.userRequest.findUnique.mockResolvedValue({
+      ...pending,
+      personId: null,
+    });
+    personResolver.resolveExistingForReviewWithinTransaction.mockResolvedValue({
+      status: 'MANUAL_REVIEW_REQUIRED',
+      reason: 'Canonical Person requires structured identity review',
     });
 
     await expect(service.approve(10, { roleId: 2 }, 1)).rejects.toBeInstanceOf(
@@ -273,6 +384,40 @@ describe('UserRequestsService', () => {
     expect(tx.user.create).not.toHaveBeenCalled();
     expect(tx.accountActivationToken.create).not.toHaveBeenCalled();
     expect(delivery.deliver).not.toHaveBeenCalled();
+    expect(tx.userRequest.updateMany).not.toHaveBeenCalled();
+    expect(tx.identityReconciliationManifest.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          sourceModel: 'UserRequest',
+          sourceId: pending.id,
+          reviewRequired: true,
+          personCreationAllowed: false,
+        }),
+      }),
+    );
+  });
+
+  it('projects legacy request snapshots as submitted aliases on reads', async () => {
+    await expect(service.findOne(pending.id)).resolves.toMatchObject({
+      fullName: pending.fullName,
+      submittedFullName: pending.fullName,
+      submittedIdentification: pending.identification,
+      submittedEmail: pending.email,
+      submittedReason: pending.reason,
+    });
+  });
+
+  it('does not replay approval for a resolved request', async () => {
+    prisma.userRequest.findUnique.mockResolvedValue({
+      ...pending,
+      status: 'APPROVED',
+    });
+
+    await expect(service.approve(10, { roleId: 2 }, 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(tx.user.create).not.toHaveBeenCalled();
+    expect(tx.accountActivationToken.create).not.toHaveBeenCalled();
   });
 
   it('does not create another token when post-commit delivery fails', async () => {

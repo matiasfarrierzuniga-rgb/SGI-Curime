@@ -13,13 +13,16 @@
 - [x] 2.3 Design additive request snapshot migration from generic fields to explicit `submitted*` fields, with direct-copy backfill, aliases, API versions, deprecation dates, and no arbitrary fullName parsing.
 - [x] 2.4 Define compatibility Person-backed projections for User/Affiliate reads while preserving separate User access email and historical snapshots; separately document DB versus API compatibility, temporary Person API projections, and any actual external consumer required for V1.1.
 - [x] 2.5 Rehearse backup, transaction-failure, idempotent rerun, and rollback procedures against disposable data; record evidence.
-- [ ] 2.6 At Stage B checkpoint, reapply/reconcile preserved `reconcile-institutional-access-contract-v1` Phase B WIP/stash against approved Person-first rules; do not treat preserved WIP as canonical before this task.
+- [x] 2.6 At Stage B checkpoint, reapply/reconcile preserved `reconcile-institutional-access-contract-v1` Phase B WIP/stash against approved Person-first rules; do not treat preserved WIP as canonical before this task.
 
 ## 3. Stage C — Reconciliation And Additive Schema Work
 
 - [ ] 3.1 Implement transactional resolver/link reconciliation using normalized identification and preflight classifications; persist review evidence for exceptions.
 - [ ] 3.2 Reconcile null Person links and evidence-backed profile completeness without copying email, auto-syncing either email direction, registration copying, mutating submitted snapshots, or overwriting gender conflicts; keep UserRequest/AffiliateRequest personId nullable until approval/final domain creation resolves Person.
 - [ ] 3.3 Add only approved additive schema relations, indices, explicit submitted snapshot fields, future Person.gender only after later approval, and GovernanceMembership Person relation/semantic rename support; retain legacy data and aliases.
+  - [x] 3.3a Add nullable explicit `submitted*` storage for UserRequest and AffiliateRequest, direct-copy existing generic snapshot values, and retain every generic legacy column/alias.
+  - [x] 3.3b Add `IdentityReconciliationManifest(sourceModel, sourceId)` evidence lookup index; retain existing nullable request Person relations and reconciliation manifest evidence.
+  - [ ] 3.3c GovernanceMembership Person relation/semantic rename support remains pending; Person.gender remains explicitly unapproved and absent.
 - [ ] 3.4 Add focused migration/resolver tests for duplicate identities, conflicts, null links, malformed IDs, transaction races, retry idempotency, and rollback/forward-repair paths.
 - [ ] 3.5 Certify 100% safe User/Affiliate linking, zero nulls/conflicts, normalized uniqueness, preflight, rollback evidence, reconciliation population, and exception queue before proposing final Person-link non-null constraints; do not guess links.
 
@@ -28,6 +31,8 @@
 - [ ] 4.1 Migrate User and Affiliate live personal reads, including retained gender, to declared Person projections while retaining User email as the only access-account email and retaining Affiliate gender compatibility until certified.
 - [ ] 4.2 Route migrated User/Affiliate personal mutations through canonical Person writes; preserve affiliation and account lifecycle fields in their existing owners; permit Person.email writes only through explicit personal-contact/profile flow.
 - [ ] 4.3 Release versioned request snapshot APIs exposing explicit submitted names plus certified compatibility aliases; migrate backend DTOs and frontend clients/forms.
+  - [x] 4.3a Dual-write UserRequest and AffiliateRequest submitted snapshots on new backend submissions; return explicit submitted fields while preserving generic aliases and fallback projections for pre-expand rows.
+  - [ ] 4.3b Accept explicit submitted-field request payload aliases, migrate frontend consumers, and certify all declared compatibility behavior.
 - [ ] 4.4 Update User/Affiliate/request frontend types, forms, lists, details, validation, loading/error states, and tests without reading current identity from snapshots.
 - [ ] 4.5 Test staged API compatibility, account-email separation/no email synchronization, Person projection behavior, request/history immutability, authorization, and declared consumer migration before deprecating aliases; open V1.1 only for documented external consumer.
 

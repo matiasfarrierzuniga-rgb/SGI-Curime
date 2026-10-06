@@ -4,7 +4,11 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import { Prisma, RequestStatus } from '../../generated/prisma/client';
+import {
+  IdentificationType,
+  Prisma,
+  RequestStatus,
+} from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -27,6 +31,19 @@ const select = {
   occupation: true,
   workplace: true,
   affiliationReason: true,
+  submittedFullName: true,
+  submittedIdentification: true,
+  submittedIdentificationType: true,
+  submittedBirthDate: true,
+  submittedGender: true,
+  submittedPhone: true,
+  submittedPhoneCountryCode: true,
+  submittedPhoneNationalNumber: true,
+  submittedEmail: true,
+  submittedAddress: true,
+  submittedOccupation: true,
+  submittedWorkplace: true,
+  submittedAffiliationReason: true,
   status: true,
   rejectionReason: true,
   reviewedAt: true,
@@ -55,7 +72,7 @@ export class AffiliateRequestsService {
       if (resolution.status === 'PERSON_CREATED') {
         await tx.person.update({
           where: { id: personId },
-          data: { birthDate: dto.birthDate, email: dto.email },
+          data: { birthDate: dto.birthDate },
         });
       }
       return tx.affiliateRequest.create({
@@ -73,6 +90,19 @@ export class AffiliateRequestsService {
           occupation: dto.occupation,
           workplace: dto.workplace,
           affiliationReason: dto.affiliationReason,
+          submittedFullName: personFullName(dto),
+          submittedIdentification: dto.identification,
+          submittedIdentificationType: dto.identificationType,
+          submittedBirthDate: dto.birthDate,
+          submittedGender: dto.gender,
+          submittedPhone: formatPhone(dto.phoneCountryCode, dto.phoneNationalNumber),
+          submittedPhoneCountryCode: dto.phoneCountryCode,
+          submittedPhoneNationalNumber: dto.phoneNationalNumber,
+          submittedEmail: dto.email,
+          submittedAddress: dto.address,
+          submittedOccupation: dto.occupation,
+          submittedWorkplace: dto.workplace,
+          submittedAffiliationReason: dto.affiliationReason,
           personId,
           status: 'PENDING',
         },
@@ -86,7 +116,7 @@ export class AffiliateRequestsService {
       entityId: created.id,
       ...context,
     });
-    return created;
+    return toAffiliateRequestSnapshotResponse(created);
   }
   async findAll(query: QueryAffiliateRequestsDto) {
     const where: Prisma.AffiliateRequestWhereInput = {
@@ -111,7 +141,12 @@ export class AffiliateRequestsService {
       }),
       this.prisma.affiliateRequest.count({ where }),
     ]);
-    return { data, total, page: query.page, limit: query.limit };
+    return {
+      data: data.map(toAffiliateRequestSnapshotResponse),
+      total,
+      page: query.page,
+      limit: query.limit,
+    };
   }
   async findOne(id: number) {
     const item = await this.prisma.affiliateRequest.findUnique({
@@ -119,7 +154,7 @@ export class AffiliateRequestsService {
       select,
     });
     if (!item) throw new NotFoundException('Affiliate request not found');
-    return item;
+    return toAffiliateRequestSnapshotResponse(item);
   }
   async approve(
     id: number,
@@ -164,6 +199,7 @@ export class AffiliateRequestsService {
                 address: true,
               },
           });
+          const snapshot = affiliateRequestSnapshot(request);
           if (
             !person ||
             !person.firstName ||
@@ -171,10 +207,10 @@ export class AffiliateRequestsService {
             !person.identification ||
             !person.identificationType ||
             !person.birthDate ||
-            personFullName(person) !== request.fullName ||
-            person.identification !== request.identification ||
-            person.identificationType !== request.identificationType ||
-            person.birthDate.getTime() !== request.birthDate.getTime()
+            personFullName(person) !== snapshot.fullName ||
+            person.identification !== snapshot.identification ||
+            person.identificationType !== snapshot.identificationType ||
+            person.birthDate.getTime() !== snapshot.birthDate.getTime()
           ) {
             throw new ConflictException(
               'Affiliation identity is inconsistent.',
@@ -184,23 +220,23 @@ export class AffiliateRequestsService {
             tx,
             request.personId,
             person.identification,
-            request.email,
+            snapshot.email,
           );
           const affiliate = await tx.affiliate.create({
             data: {
               personId: request.personId,
-              fullName: request.fullName,
-              identification: request.identification,
-              identificationType: request.identificationType,
-              birthDate: request.birthDate,
-              gender: request.gender,
-              phone: request.phone,
-              phoneCountryCode: request.phoneCountryCode,
-              phoneNationalNumber: request.phoneNationalNumber,
-              email: request.email,
-              address: request.address,
-              occupation: request.occupation,
-              workplace: request.workplace,
+              fullName: snapshot.fullName,
+              identification: snapshot.identification,
+              identificationType: snapshot.identificationType,
+              birthDate: snapshot.birthDate,
+              gender: snapshot.gender,
+              phone: snapshot.phone,
+              phoneCountryCode: snapshot.phoneCountryCode,
+              phoneNationalNumber: snapshot.phoneNationalNumber,
+              email: snapshot.email,
+              address: snapshot.address,
+              occupation: snapshot.occupation,
+              workplace: snapshot.workplace,
             },
           });
           const claimed = await tx.affiliateRequest.updateMany({
@@ -255,7 +291,12 @@ export class AffiliateRequestsService {
       }
       throw error;
     }
-    return result;
+    return {
+      ...result,
+      affiliateRequest: toAffiliateRequestSnapshotResponse(
+        result.affiliateRequest,
+      ),
+    };
   }
   async reject(
     id: number,
@@ -286,7 +327,7 @@ export class AffiliateRequestsService {
       entityId: id,
       ...context,
     });
-    return rejected;
+    return toAffiliateRequestSnapshotResponse(rejected);
   }
   private async requirePending(id: number) {
     const item = await this.prisma.affiliateRequest.findUnique({
@@ -406,4 +447,85 @@ function formatPhone(
   nationalNumber?: string,
 ): string | null {
   return countryCode && nationalNumber ? `${countryCode}${nationalNumber}` : null;
+}
+
+function affiliateRequestSnapshot<T extends AffiliateRequestSnapshotSource>(
+  request: T,
+) {
+  return {
+    fullName: request.submittedFullName ?? request.fullName,
+    identification: request.submittedIdentification ?? request.identification,
+    identificationType:
+      request.submittedIdentificationType ?? request.identificationType,
+    birthDate: request.submittedBirthDate ?? request.birthDate,
+    gender: request.submittedGender ?? request.gender,
+    phone: request.submittedPhone ?? request.phone,
+    phoneCountryCode:
+      request.submittedPhoneCountryCode ?? request.phoneCountryCode,
+    phoneNationalNumber:
+      request.submittedPhoneNationalNumber ?? request.phoneNationalNumber,
+    email: request.submittedEmail ?? request.email,
+    address: request.submittedAddress ?? request.address,
+    occupation: request.submittedOccupation ?? request.occupation,
+    workplace: request.submittedWorkplace ?? request.workplace,
+    affiliationReason:
+      request.submittedAffiliationReason ?? request.affiliationReason,
+  };
+}
+
+type AffiliateRequestSnapshotSource = {
+  fullName: string;
+  identification: string;
+  identificationType: IdentificationType | null;
+  birthDate: Date;
+  gender: string | null;
+  phone: string | null;
+  phoneCountryCode: string | null;
+  phoneNationalNumber: string | null;
+  email: string | null;
+  address: string;
+  occupation: string | null;
+  workplace: string | null;
+  affiliationReason: string;
+  submittedFullName?: string | null;
+  submittedIdentification?: string | null;
+  submittedIdentificationType?: IdentificationType | null;
+  submittedBirthDate?: Date | null;
+  submittedGender?: string | null;
+  submittedPhone?: string | null;
+  submittedPhoneCountryCode?: string | null;
+  submittedPhoneNationalNumber?: string | null;
+  submittedEmail?: string | null;
+  submittedAddress?: string | null;
+  submittedOccupation?: string | null;
+  submittedWorkplace?: string | null;
+  submittedAffiliationReason?: string | null;
+};
+
+function toAffiliateRequestSnapshotResponse<
+  T extends AffiliateRequestSnapshotSource,
+>(request: T) {
+  const snapshot = affiliateRequestSnapshot(request);
+  return {
+    ...request,
+    ...snapshot,
+    submittedFullName: request.submittedFullName ?? snapshot.fullName,
+    submittedIdentification:
+      request.submittedIdentification ?? snapshot.identification,
+    submittedIdentificationType:
+      request.submittedIdentificationType ?? snapshot.identificationType,
+    submittedBirthDate: request.submittedBirthDate ?? snapshot.birthDate,
+    submittedGender: request.submittedGender ?? snapshot.gender,
+    submittedPhone: request.submittedPhone ?? snapshot.phone,
+    submittedPhoneCountryCode:
+      request.submittedPhoneCountryCode ?? snapshot.phoneCountryCode,
+    submittedPhoneNationalNumber:
+      request.submittedPhoneNationalNumber ?? snapshot.phoneNationalNumber,
+    submittedEmail: request.submittedEmail ?? snapshot.email,
+    submittedAddress: request.submittedAddress ?? snapshot.address,
+    submittedOccupation: request.submittedOccupation ?? snapshot.occupation,
+    submittedWorkplace: request.submittedWorkplace ?? snapshot.workplace,
+    submittedAffiliationReason:
+      request.submittedAffiliationReason ?? snapshot.affiliationReason,
+  };
 }

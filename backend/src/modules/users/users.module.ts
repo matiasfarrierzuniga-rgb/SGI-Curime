@@ -15,6 +15,7 @@ import { UpdateSubscriptionExpirationUseCase } from './application/use-cases/upd
 import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
 import { RegisterAdministratorUseCase } from './application/use-cases/register-administrator.use-case';
 import { OptionalJwtAuthGuard } from '../../auth/presentation/guards/optional-jwt-auth.guard';
+import { UserRequestsModule } from '../../user-requests/user-requests.module';
 import { USERS_REPOSITORY } from './domain/repositories/users-repository';
 import { AuditServiceAdapter } from './infrastructure/audit/audit-service.adapter';
 import { PrismaUsersRepository } from './infrastructure/prisma-users.repository';
@@ -27,6 +28,7 @@ import { RegistrationController } from './presentation/controllers/registration.
     AuditModule,
     PublicRequestRateLimitModule,
     IdentityModule,
+    UserRequestsModule,
   ],
   controllers: [UsersController, RegistrationController],
   providers: [
