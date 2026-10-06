@@ -1,10 +1,10 @@
 ## 1. Stage A — Contract, Matrix, And Decision Gates
 
-- [ ] 1.1 Freeze complete ownership matrix for Person, User, Affiliate, UserRequest, AffiliateRequest, VolunteerApplication, Donation, and every Person-linked model; record each field’s category, owner, current reader, current writer, API exposure, action, and risk.
-- [ ] 1.2 Inventory and version User/Affiliate/request API contracts, frontend types/forms, backend DTOs, tests, and downstream consumers for each legacy duplicate and snapshot alias.
-- [ ] 1.3 Record and approve canonical Person read/write contract, compatibility projection policy, snapshot retention policy, and User-email separation: User.email only for login/access; retained Person.email only independent personal/contact data; no bidirectional auto-sync or registration copy; explicit personal-contact/profile writes only.
-- [ ] 1.4 Record frozen gender policy: future Person.gender target if retained; Affiliate.gender legacy/transitional duplicate. Inventory all gender readers/writers and define conflict reconciliation evidence; later Person schema addition requires separate approval.
-- [ ] 1.5 Define approval gate, evidence format, and rollback owner for every stage; confirm no production/schema change starts before Stage A approval.
+- [x] 1.1 Freeze complete ownership matrix for Person, User, Affiliate, UserRequest, AffiliateRequest, VolunteerApplication, Donation, and every Person-linked model; record each field’s category, owner, current reader, current writer, API exposure, action, and risk.
+- [x] 1.2 Inventory and version User/Affiliate/request API contracts, frontend types/forms, backend DTOs, tests, and downstream consumers for each legacy duplicate and snapshot alias.
+- [x] 1.3 Record and approve canonical Person read/write contract, compatibility projection policy, snapshot retention policy, and User-email separation: User.email only for login/access; retained Person.email only independent personal/contact data; no bidirectional auto-sync or registration copy; explicit personal-contact/profile writes only.
+- [x] 1.4 Record frozen gender policy: future Person.gender target if retained; Affiliate.gender legacy/transitional duplicate. Inventory all gender readers/writers and define conflict reconciliation evidence; later Person schema addition requires separate approval.
+- [x] 1.5 Define approval gate, evidence format, and rollback owner for every stage; confirm no production/schema change starts before Stage A approval.
 
 ## 2. Stage B — Preflight, Snapshots, And Compatibility
 
