@@ -78,6 +78,12 @@ const navigation: readonly ErpNavigationSection[] = [
         icon: ClipboardList,
       },
       {
+        label: 'Solicitudes de registro',
+        path: '/admin/user-requests',
+        capability: 'usr.user-requests.read',
+        icon: ClipboardList,
+      },
+      {
         label: 'Justificaciones de ausencia',
         path: '/app/admin/absence-justifications',
         capability: 'adm.justifications.read',
