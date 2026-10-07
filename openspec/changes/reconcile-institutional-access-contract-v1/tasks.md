@@ -12,7 +12,7 @@
 - [x] 2.2 Change public `/register` submission to create a UserRequest and confirm pending administrative review without creating a User, session, or authenticated frontend state.
 - [x] 2.3 Remove normal public reachability of direct active-User registration while preserving the separately controlled administrator bootstrap contract and its authentication rules.
 - [x] 2.4 Align public registration API/client types and error handling with UserRequest outcomes without changing unrelated routes or feature boundaries.
-- [ ] 2.5 Verify administrative UserRequest review uses an explicit persisted review capability, safely resolves or reconciles a canonical Person before approval, validates selected active role ID server-side, preserves concurrency protection, and creates exactly one inactive Person-linked User plus activation token on approval.
+- [x] 2.5 Verify administrative UserRequest review uses an explicit persisted review capability, safely resolves or reconciles a canonical Person before approval, validates selected active role ID server-side, preserves concurrency protection, and creates exactly one inactive Person-linked User plus activation token on approval.
 - [x] 2.6 Preserve rejection behavior, reviewer evidence, duplicate prevention, resolved-request conflict handling, and zero User/token creation on rejection.
 - [x] 2.7 Add frontend and backend tests for valid submission with safe Person link, valid submission without a Person link, duplicate User, duplicate pending request, review-time identity-resolution conflict, approval, rejection, and repeated review attempts.
 
