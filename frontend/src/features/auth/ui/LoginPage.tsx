@@ -1,7 +1,6 @@
 import { Eye, EyeOff } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { homePathForRole } from '@/shared/security/roles'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -27,8 +26,10 @@ export function LoginPage() {
     try {
       const user = await login({ email: email.trim().toLowerCase(), password })
       const requested = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
-      const authorizedRequest = requested && (!requested.startsWith('/app') || user.canAccessErp) ? requested : undefined
-      navigate(authorizedRequest || homePathForRole(user.role, user.canAccessErp), { replace: true })
+      const hasInternalAccess = user.canAccessErp === true && user.permissionCodes.length > 0
+      const isInternalRequest = requested?.startsWith('/app') || requested?.startsWith('/admin') || requested?.startsWith('/inventory')
+      const authorizedRequest = requested && (!isInternalRequest || hasInternalAccess) ? requested : undefined
+      navigate(authorizedRequest || (hasInternalAccess ? '/app' : '/servicios'), { replace: true })
     } catch {
       setError('No fue posible iniciar sesión. Verifique sus credenciales.')
     } finally {

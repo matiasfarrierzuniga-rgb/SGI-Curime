@@ -77,7 +77,7 @@ export function RegisterPage() {
         reason: normalizeText(form.reason),
       }
       await userRequestsService.create(payload)
-      setSuccess('Solicitud enviada correctamente. Queda pendiente de revisión administrativa. Le avisaremos si se aprueba para continuar con la activación.')
+      setSuccess('Solicitud enviada correctamente. Queda pendiente de revisión administrativa. Si se aprueba, se creará una cuenta inactiva y recibirá por correo el enlace para activarla.')
       setForm(initial)
     } catch (requestError) {
       setError(requestErrorMessage(requestError))
@@ -95,7 +95,7 @@ export function RegisterPage() {
       <ol className="mt-4 grid gap-2 rounded-lg bg-brand-ivory p-4 text-sm leading-relaxed text-foreground-muted">
         <li><strong className="text-brand-deep">1.</strong> Complete la solicitud.</li>
         <li><strong className="text-brand-deep">2.</strong> Una persona administradora la revisará.</li>
-        <li><strong className="text-brand-deep">3.</strong> Si se aprueba, recibirá el proceso de activación.</li>
+        <li><strong className="text-brand-deep">3.</strong> Si se aprueba, se creará una cuenta inactiva y recibirá por correo un enlace para activarla.</li>
       </ol>
       <StatusMessage error={error} success={success} />
       <form className="mt-7 grid gap-5" onSubmit={submit} noValidate>
