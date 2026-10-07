@@ -104,7 +104,7 @@ describe('AdminDashboard', () => {
     expect(screen.getByLabelText('Cargando indicadores administrativos')).toBeInTheDocument()
   })
 
-  it('keeps V1 dashboard content while omitting legacy financial and duplicate activity content', async () => {
+  it('keeps real V1 dashboard content while omitting financial and unavailable activity placeholders', async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response })
     renderDashboard()
 
@@ -123,8 +123,6 @@ describe('AdminDashboard', () => {
       expect(within(summaryMetrics[index]).getByText(value)).toBeInTheDocument()
     })
     expect(screen.getByRole('heading', { name: 'Atención requerida' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Actividad' })).toBeInTheDocument()
-    expect(screen.getByText('Serie temporal no disponible')).toBeInTheDocument()
     const panorama = screen.getByRole('region', { name: 'Panorama institucional' })
     const panoramaCards = within(panorama).getAllByRole('article')
     expect(panoramaCards).toHaveLength(12)
@@ -138,11 +136,9 @@ describe('AdminDashboard', () => {
     const lowStockRisk = screen.getByText('Artículos con stock bajo')
     expect(outOfStockRisk.compareDocumentPosition(overdueLoanRisk) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(overdueLoanRisk.compareDocumentPosition(lowStockRisk) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Actividad reciente' })).toBeInTheDocument()
-    expect(screen.getByText('Actividad reciente no disponible')).toBeInTheDocument()
-    expect(screen.getByText(/no incluye eventos operativos ni su cronología/i)).toBeInTheDocument()
-    expect(screen.getAllByRole('heading', { name: 'Actividad' })).toHaveLength(1)
-    expect(screen.getAllByRole('heading', { name: 'Actividad reciente' })).toHaveLength(1)
+    expect(screen.queryByRole('heading', { name: 'Actividad' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Actividad reciente' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/no disponible|fuente.*pendiente/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Cola operativa' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Resumen financiero acumulado' })).not.toBeInTheDocument()
     expect(screen.queryByText('Ingresos')).not.toBeInTheDocument()
