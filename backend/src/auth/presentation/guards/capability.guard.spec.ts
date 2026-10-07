@@ -87,6 +87,15 @@ describe('CapabilityGuard', () => {
     expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
   });
 
+  it('enforces separate persisted UserRequest read and review grants', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.user-requests.read']);
+    expect(guard.canActivate(contextFor('Unknown', true, ['usr.user-requests.read']))).toBe(true);
+    expect(guard.canActivate(contextFor('Unknown', true, ['adm.requests.read']))).toBe(false);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.user-requests.review']);
+    expect(guard.canActivate(contextFor('Unknown', true, ['usr.user-requests.read']))).toBe(false);
+    expect(guard.canActivate(contextFor('Unknown', true, ['usr.user-requests.review']))).toBe(true);
+  });
+
   it('allows administrators to manage and publish events', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')
