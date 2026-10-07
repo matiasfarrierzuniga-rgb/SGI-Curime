@@ -98,6 +98,8 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="adm.requests.read" />}>
             <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />
+          </Route>
+          <Route element={<RoleRoute capability="usr.user-requests.read" />}>
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
           </Route>
           <Route element={<RoleRoute capability="adm.assemblies.read" />}>
