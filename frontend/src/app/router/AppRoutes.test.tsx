@@ -292,6 +292,18 @@ describe('AppRoutes capability deep links', () => {
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
 
+  it('denies anonymous access to UserRequest review before rendering data', () => {
+    renderRoute('/admin/user-requests', null)
+    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(userRequestsService.list).not.toHaveBeenCalled()
+  })
+
+  it('denies UserRequest review to actors without its own read capability', async () => {
+    renderRoute('/admin/user-requests', 'Gestor de Inventario')
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(userRequestsService.list).not.toHaveBeenCalled()
+  })
+
   it('keeps legacy user requests separate from affiliate requests', async () => {
     renderRoute('/admin/user-requests', 'Administrador')
 
