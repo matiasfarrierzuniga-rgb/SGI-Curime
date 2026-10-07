@@ -102,8 +102,8 @@ export function AppHomePage() {
 
       {availableOperationalActions.length > 0 && (
         <section aria-labelledby="operational-actions-title">
-          <SectionHeading id="operational-actions-title" title="Accesos rápidos" description="Módulos operativos disponibles para su cuenta." />
-          <nav aria-label="Accesos rápidos operativos" className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <SectionHeading id="operational-actions-title" title="Módulos disponibles" description="Áreas operativas habilitadas para su cuenta." />
+          <nav aria-label="Módulos disponibles" className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {availableOperationalActions.map((action) => <ActionCard key={action.path} action={action} compact />)}
           </nav>
         </section>

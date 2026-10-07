@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Boxes, CalendarCheck, ClipboardList, FileClock, FileText, HandCoins, PackageX, RefreshCw, Users } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Boxes, CalendarCheck, CalendarDays, ClipboardList, FileClock, FileText, HandCoins, PackageX, RefreshCw, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button, buttonVariants } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
@@ -113,40 +113,80 @@ function InstitutionalPanorama({ data }: { data: AdminDashboardData }) {
         <h3 id="admin-snapshot-title" className="font-sans text-body font-semibold text-text-primary">Panorama institucional</h3>
         <p className="mt-1 text-body-small text-foreground-muted">Totales y actividad registrada en los módulos institucionales.</p>
       </div>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
-        <CompactMetric label="Afiliados" value={data.affiliates.total} icon={Users} />
-        <CompactMetric label="Afiliados inactivos" value={data.affiliates.inactive} />
-        <CompactMetric label="Reservas totales" value={data.reservations.total} icon={CalendarCheck} />
-        <CompactMetric label="Reservas aprobadas" value={data.reservations.approved} />
-        <CompactMetric label="Reservas confirmadas" value={data.reservations.confirmed} />
-        <CompactMetric label="Artículos de inventario" value={data.inventory.totalItems} icon={Boxes} />
-        <CompactMetric label="Préstamos activos" value={data.inventory.activeLoans} />
-        <CompactMetric label="Asambleas programadas" value={data.assemblies.scheduled} />
-        <CompactMetric label="Asambleas en progreso" value={data.assemblies.in_progress} />
-        <CompactMetric label="Asambleas completadas" value={data.assemblies.completed} />
-        <CompactMetric label="Donaciones registradas" value={data.donations.total} icon={HandCoins} />
-        <CompactMetric label="Donaciones confirmadas" value={data.donations.confirmed} />
+      <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <PanoramaGroup
+          title="Afiliación"
+          icon={Users}
+          metrics={[
+            { label: 'Afiliados registrados', value: data.affiliates.total },
+            { label: 'Afiliados inactivos', value: data.affiliates.inactive },
+          ]}
+        />
+        <PanoramaGroup
+          title="Reservas"
+          icon={CalendarCheck}
+          metrics={[
+            { label: 'Total', value: data.reservations.total },
+            { label: 'Aprobadas', value: data.reservations.approved },
+            { label: 'Confirmadas', value: data.reservations.confirmed },
+          ]}
+        />
+        <PanoramaGroup
+          title="Inventario y préstamos"
+          icon={Boxes}
+          metrics={[
+            { label: 'Artículos', value: data.inventory.totalItems },
+            { label: 'Préstamos activos', value: data.inventory.activeLoans },
+          ]}
+        />
+        <PanoramaGroup
+          title="Asambleas"
+          icon={CalendarDays}
+          metrics={[
+            { label: 'Programadas', value: data.assemblies.scheduled },
+            { label: 'En progreso', value: data.assemblies.in_progress },
+            { label: 'Completadas', value: data.assemblies.completed },
+          ]}
+        />
+        <PanoramaGroup
+          title="Donaciones"
+          icon={HandCoins}
+          metrics={[
+            { label: 'Registradas', value: data.donations.total },
+            { label: 'Confirmadas', value: data.donations.confirmed },
+          ]}
+        />
       </div>
     </section>
   )
 }
 
-function CompactMetric({ label, value, icon: Icon }: { label: string; value: number; icon?: typeof Users }) {
+function PanoramaGroup({ title, icon: Icon, metrics }: { title: string; icon: typeof Users; metrics: readonly { label: string; value: number }[] }) {
   return (
-    <MetricCard
-      label={label}
-      value={<span className="text-heading-3">{value.toLocaleString('es-CR')}</span>}
-      icon={Icon ? <Icon className="size-4" /> : undefined}
-      className="border-l border-border-subtle bg-surface-muted p-3 shadow-none"
-    />
+    <Card size="sm" className="border-border-subtle bg-surface-muted shadow-none">
+      <CardContent>
+        <div className="flex items-center gap-2 border-b border-border-subtle pb-2.5">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-brand-soft/20 text-brand-deep"><Icon className="size-4" aria-hidden="true" /></span>
+          <h4 className="font-semibold text-text-primary">{title}</h4>
+        </div>
+        <dl className="mt-1 divide-y divide-border-subtle">
+          {metrics.map((metric) => (
+            <div key={metric.label} className="flex min-h-9 items-center justify-between gap-4 py-1.5">
+              <dt className="text-body-small text-text-secondary">{metric.label}</dt>
+              <dd className="shrink-0 font-semibold tabular-nums text-text-primary">{metric.value.toLocaleString('es-CR')}</dd>
+            </div>
+          ))}
+        </dl>
+      </CardContent>
+    </Card>
   )
 }
 
 function QuickActions({ actions }: { actions: readonly QuickAction[] }) {
   return (
     <section aria-labelledby="admin-quick-actions-title">
-      <GroupHeading id="admin-quick-actions-title" title="Accesos rápidos" description="Tareas administrativas disponibles para su cuenta." />
-      <nav aria-label="Accesos rápidos administrativos" className="mt-4 grid gap-2">
+      <GroupHeading id="admin-quick-actions-title" title="Acciones prioritarias" description="Tareas administrativas que puede atender ahora." />
+      <nav aria-label="Acciones prioritarias administrativas" className="mt-4 grid gap-2">
         {actions.map((action) => <QuickActionCard key={action.path} action={action} />)}
       </nav>
     </section>
