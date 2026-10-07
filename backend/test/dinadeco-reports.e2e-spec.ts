@@ -11,6 +11,7 @@ import {
 import { AUTH_REPOSITORY } from '../src/auth/application/ports/auth-repository.port';
 import { AUDIT_PORT } from '../src/auth/application/ports/audit.port';
 import type { AuthAccount } from '../src/auth/domain/entities/auth-account';
+import { ROLE_CAPABILITIES } from '../src/auth/presentation/capabilities/capability-policy';
 import { FinancialModule } from '../src/financial/financial.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
@@ -290,6 +291,7 @@ function authAccount(roleName: string, hasAffiliate = false): AuthAccount {
     roleName,
     roleId,
     roleIsActive: true,
+    permissionCodes: ROLE_CAPABILITIES[roleName] ?? [],
     hasPerson: hasAffiliate,
     affiliateStatus: hasAffiliate ? 'ACTIVE' : null,
     affiliateRoleId: hasAffiliate ? roleId : null,

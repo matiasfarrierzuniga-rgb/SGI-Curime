@@ -172,6 +172,12 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'Información',
     items: [
       {
+        label: 'Reportes y estadísticas',
+        path: '/app/admin/reports',
+        capability: 'adm.affiliates.read',
+        icon: ChartNoAxesCombined,
+      },
+      {
         label: 'Bitácora',
         path: '/admin/audit-logs',
         capability: 'aud.logs.read',

@@ -43,7 +43,17 @@ describe('AssembliesAdminPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     auth.permissionCodes = ['adm.assemblies.read', 'adm.assemblies.manage']
-    hooks.useAssemblies.mockReturnValue({ isPending: false, data: [item] })
+    hooks.useAssemblies.mockReturnValue({
+      isPending: false,
+      data: {
+        data: [item],
+        total: 1,
+        page: 1,
+        limit: 100,
+        byStatus: [{ status: 'SCHEDULED', count: 1 }],
+        byType: [{ type: 'ORDINARY', count: 1 }],
+      },
+    })
     hooks.useAssembly.mockReturnValue({ isPending: false, data: undefined })
     hooks.useEligibleAffiliates.mockReturnValue({ data: eligibleAffiliates })
     hooks.create.mutateAsync.mockResolvedValue(item)
@@ -53,7 +63,7 @@ describe('AssembliesAdminPage', () => {
     hooks.attendance.mutateAsync.mockResolvedValue({})
   })
 
-  it.each([[{ isPending: true }, /Cargando asambleas/i], [{ isError: true, error: new Error('falló') }, /No fue posible cargar las asambleas/i], [{ data: [] }, /No hay asambleas registradas/i]])('renders list states', (state, label) => {
+  it.each([[{ isPending: true }, /Cargando asambleas/i], [{ isError: true, error: new Error('falló') }, /No fue posible cargar las asambleas/i], [{ data: { data: [], total: 0, page: 1, limit: 100, byStatus: [], byType: [] } }, /No hay asambleas registradas/i]])('renders list states', (state, label) => {
     hooks.useAssemblies.mockReturnValue({ isPending: false, ...state })
     renderList()
     expect(screen.getByText(label)).toBeInTheDocument()

@@ -1,6 +1,26 @@
 export type AssemblyQuorumType = 'FIXED' | 'PERCENTAGE'
 export type AssemblyStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+export type AssemblyType = 'ORDINARY' | 'EXTRAORDINARY'
 export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'JUSTIFIED'
+
+export interface AssembliesFilters {
+  search?: string
+  status?: AssemblyStatus
+  type?: AssemblyType
+  dateFrom?: string
+  dateTo?: string
+  page: number
+  limit: number
+}
+
+export interface AssembliesPage {
+  data: Assembly[]
+  total: number
+  page: number
+  limit: number
+  byStatus: { status: AssemblyStatus; count: number }[]
+  byType: { type: string | null; count: number }[]
+}
 
 export interface QuorumResult {
   available: boolean

@@ -24,6 +24,7 @@ El archivo real `.env` no debe versionarse cuando contiene secretos o credencial
 | `POSTGRES_PORT` | Puerto publicado en host | No |
 
 En Docker, `compose.yaml` construye `DATABASE_URL` y `DIRECT_URL` usando el hostname interno `postgres`.
+Para ejecutar comandos desde el host, configura ambas variables en `backend/.env`; la plantilla usa la conexión PostgreSQL local de desarrollo.
 
 ## Puertos
 
@@ -53,7 +54,7 @@ En desarrollo local normalmente apuntan a `localhost`, pero en otros entornos de
 | `ADMIN_EMAIL` | Correo inicial | Potencialmente |
 | `ADMIN_PASSWORD` | Contraseña inicial | Sí |
 
-Los valores de `.env.example` son únicamente de desarrollo y deben cambiarse en cualquier entorno real.
+No hay credenciales predeterminadas del administrador en `.env.example`. Define los cuatro valores antes de iniciar el seed; usa una contraseña fuerte y distinta por entorno. El seed no modifica una cuenta existente y falla si el correo y la identificación no apuntan a la misma cuenta con rol Administrador.
 
 ## JWT y sesión
 

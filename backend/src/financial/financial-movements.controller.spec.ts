@@ -1,5 +1,9 @@
 import { GUARDS_METADATA } from '@nestjs/common/constants';
-import { FinancialMovementType } from '../../generated/prisma/client';
+import {
+  FinancialMethod,
+  FinancialMovementStatus,
+  FinancialMovementType,
+} from '../../generated/prisma/client';
 import { CapabilityGuard, JwtAuthGuard } from '../auth';
 import { CAPABILITIES_KEY } from '../auth/presentation/decorators/require-capabilities.decorator';
 import { FinancialMovementsController } from './financial-movements.controller';
@@ -58,5 +62,34 @@ describe('FinancialMovementsController', () => {
       ipAddress: '127.0.0.1',
       userAgent: 'test-agent',
     });
+  });
+
+  it('passes combined query filters to the movements listing', async () => {
+    const query = {
+      type: FinancialMovementType.EXPENSE,
+      dateFrom: '2026-01-01',
+      dateTo: '2026-01-31',
+      status: FinancialMovementStatus.POSTED,
+      method: FinancialMethod.CHECK,
+      search: 'materiales',
+      page: 2,
+      limit: 25,
+    };
+
+    await controller.findAll(query);
+
+    expect(service.findMovements).toHaveBeenCalledWith(query);
+  });
+
+  it('passes supported filters to the operational summary', async () => {
+    const query = {
+      type: FinancialMovementType.INCOME,
+      method: FinancialMethod.SINPE_MOVIL,
+      search: 'donación',
+    };
+
+    await controller.summary(query);
+
+    expect(service.summarizeMovements).toHaveBeenCalledWith(query);
   });
 });

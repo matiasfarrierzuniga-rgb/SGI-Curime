@@ -11,17 +11,35 @@ export type Venture = {
   websiteUrl: string | null
   socialUrl: string | null
   locationText: string | null
-  status: VentureStatus | string
-  publicationStatus: VenturePublicationStatus | string
+  status: VentureStatus
+  publicationStatus: VenturePublicationStatus
   incorporatedAt: string
   createdAt: string
   updatedAt: string
+  associations: VentureAssociation[]
+}
+
+export type VentureAssociation = {
+  id: number
+  startedAt: string
+  endedAt: string | null
+  person: {
+    id: number
+    firstName: string
+    firstSurname: string
+    secondSurname: string | null
+    identification: string
+    identificationType: string
+  }
 }
 
 export type VenturesFilters = {
   search?: string
   status?: VentureStatus
   publicationStatus?: VenturePublicationStatus
+  location?: string
+  dateFrom?: string
+  dateTo?: string
   page: number
   limit: number
 }
@@ -31,6 +49,8 @@ export type VenturesPage = {
   total: number
   page: number
   limit: number
+  byStatus: { status: VentureStatus; count: number }[]
+  byLocation: { location: string | null; count: number }[]
 }
 
 export type VentureInput = {

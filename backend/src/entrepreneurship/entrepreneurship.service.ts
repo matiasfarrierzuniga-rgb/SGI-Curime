@@ -59,26 +59,76 @@ export class EntrepreneurshipService {
     const where: Prisma.VentureWhereInput = {
       status: query.status,
       publicationStatus: query.publicationStatus,
+      incorporatedAt:
+        query.dateFrom || query.dateTo
+          ? { gte: query.dateFrom, lte: query.dateTo }
+          : undefined,
+      locationText: query.location
+        ? { contains: query.location, mode: 'insensitive' }
+        : undefined,
       OR: query.search
         ? [
             { name: { contains: query.search, mode: 'insensitive' } },
             { description: { contains: query.search, mode: 'insensitive' } },
             { offerDescription: { contains: query.search, mode: 'insensitive' } },
             { businessEmail: { contains: query.search, mode: 'insensitive' } },
+            {
+              associations: {
+                some: {
+                  person: {
+                    OR: [
+                      { firstName: { contains: query.search, mode: 'insensitive' } },
+                      { firstSurname: { contains: query.search, mode: 'insensitive' } },
+                      { secondSurname: { contains: query.search, mode: 'insensitive' } },
+                      { identification: { contains: query.search, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              },
+            },
           ]
         : undefined,
     };
-    const [data, total] = await this.prisma.$transaction([
-      this.prisma.venture.findMany({
-        where,
-        select: ventureSelect,
-        orderBy: { name: 'asc' },
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
-      }),
-      this.prisma.venture.count({ where }),
-    ]);
-    return { data, total, page: query.page, limit: query.limit };
+    const [[data, total], [statusGroups, locationGroups]] = await Promise.all([
+      this.prisma.$transaction([
+        this.prisma.venture.findMany({
+          where,
+          select: ventureSelect,
+          orderBy: { name: 'asc' },
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+        }),
+        this.prisma.venture.count({ where }),
+      ]),
+      Promise.all([
+        this.prisma.venture.groupBy({
+          by: ['status'],
+          where,
+          orderBy: { status: 'asc' },
+          _count: { _all: true },
+        }),
+        this.prisma.venture.groupBy({
+          by: ['locationText'],
+          where,
+          orderBy: { locationText: 'asc' },
+          _count: { _all: true },
+        }),
+      ]),
+    ])
+    return {
+      data,
+      total,
+      page: query.page,
+      limit: query.limit,
+      byStatus: statusGroups.map(({ status, _count }) => ({
+        status,
+        count: _count._all,
+      })),
+      byLocation: locationGroups.map(({ locationText, _count }) => ({
+        location: locationText,
+        count: _count._all,
+      })),
+    };
   }
 
   async findOne(id: number) {

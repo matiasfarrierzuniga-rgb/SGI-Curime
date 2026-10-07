@@ -1,8 +1,27 @@
 import type { PaginatedResponse } from './api'
+import type {
+  InventoryItemCondition,
+  InventoryItemStatus,
+} from '@/features/inventory'
 
-export type InventoryItemStatus = 'ACTIVE' | 'INACTIVE'
-export type InventoryItemCondition = 'GOOD' | 'DAMAGED' | 'UNDER_REPAIR'
-export type InventoryMovementType = 'ENTRY' | 'EXIT' | 'ADJUSTMENT'
+export {
+  conditionLabels,
+  itemStatusLabels,
+} from '@/features/inventory'
+export type {
+  InventoryItem,
+  InventoryItemCategory,
+  InventoryItemCondition,
+  InventoryItemListResponse,
+  InventoryItemQuery,
+  InventoryItemStatus,
+} from '@/features/inventory'
+
+export type InventoryMovementType =
+  | 'OPENING_BALANCE'
+  | 'ENTRY'
+  | 'EXIT'
+  | 'ADJUSTMENT'
 export type InventoryLoanStatus = 'ACTIVE' | 'RETURNED' | 'CANCELLED'
 
 export interface InventoryCategory {
@@ -10,29 +29,6 @@ export interface InventoryCategory {
   name: string
   description: string | null
   isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-export interface InventoryItemCategory {
-  id: number
-  name: string
-  isActive: boolean
-}
-
-export interface InventoryItem {
-  id: number
-  code: string
-  name: string
-  description: string | null
-  currentQuantity: number
-  minimumQuantity: number
-  unit: string
-  location: string | null
-  status: InventoryItemStatus
-  condition: InventoryItemCondition
-  categoryId: number
-  category: InventoryItemCategory
   createdAt: string
   updatedAt: string
 }
@@ -143,6 +139,7 @@ export interface InventoryStockRow {
 export interface InventoryMovementReport {
   period: { dateFrom: string | null; dateTo: string | null }
   summary: {
+    openingBalances: { count: number; quantity: number }
     entries: { count: number; quantity: number }
     exits: { count: number; quantity: number }
     adjustments: { count: number; quantity: number }
@@ -163,16 +160,6 @@ export interface AffiliateOption {
 export interface InventoryCategoryQuery {
   search?: string
   active?: boolean
-  page?: number
-  limit?: number
-}
-
-export interface InventoryItemQuery {
-  search?: string
-  code?: string
-  categoryId?: number
-  status?: InventoryItemStatus
-  lowStock?: boolean
   page?: number
   limit?: number
 }
@@ -277,20 +264,10 @@ export interface ReturnLoanInput {
 }
 
 export const movementTypeLabels: Record<InventoryMovementType, string> = {
+  OPENING_BALANCE: 'Saldo inicial',
   ENTRY: 'Entrada',
   EXIT: 'Salida',
   ADJUSTMENT: 'Ajuste',
-}
-
-export const itemStatusLabels: Record<InventoryItemStatus, string> = {
-  ACTIVE: 'Activo',
-  INACTIVE: 'Inactivo',
-}
-
-export const conditionLabels: Record<InventoryItemCondition, string> = {
-  GOOD: 'Bueno',
-  DAMAGED: 'Dañado',
-  UNDER_REPAIR: 'En reparación',
 }
 
 export const loanStatusLabels: Record<InventoryLoanStatus, string> = {
@@ -300,7 +277,6 @@ export const loanStatusLabels: Record<InventoryLoanStatus, string> = {
 }
 
 export type InventoryCategoryListResponse = PaginatedResponse<InventoryCategory>
-export type InventoryItemListResponse = PaginatedResponse<InventoryItem>
 export type InventoryMovementListResponse = PaginatedResponse<InventoryMovement>
 export type InventoryLoanListResponse = PaginatedResponse<InventoryLoan>
 export type InventoryStockListResponse = PaginatedResponse<InventoryStockRow>

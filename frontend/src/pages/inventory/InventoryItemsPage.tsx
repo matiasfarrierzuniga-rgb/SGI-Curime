@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { InventoryItemsList, useInventoryItems } from '@/features/inventory'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -17,6 +18,7 @@ import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
+import { Button } from '@/shared/ui/button'
 import { InventoryPageLayout } from './InventoryPageLayout'
 
 const limit = 10
@@ -40,9 +42,7 @@ type ModalMode = null | 'detail' | 'create' | 'edit' | 'entry' | 'exit' | 'adjus
 
 export function InventoryItemsPage() {
   const { notify } = useToast()
-  const [items, setItems] = useState<InventoryItem[]>([])
   const [categories, setCategories] = useState<InventoryCategory[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -59,30 +59,23 @@ export function InventoryItemsPage() {
   const [confirm, setConfirm] = useState<{ item: InventoryItem; action: 'activate' | 'deactivate' } | null>(null)
   const [busy, setBusy] = useState(false)
   const [movementBusy, setMovementBusy] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [itemFormErrors, setItemFormErrors] = useState<Record<string, string>>({})
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const r = await inventoryItemsService.list({
-        page,
-        limit,
-        search: search || undefined,
-        categoryId: categoryFilter ? Number(categoryFilter) : undefined,
-        status: statusFilter || undefined,
-        lowStock: lowStockFilter || undefined,
-      })
-      setItems(r.data)
-      setTotal(r.total)
-    } catch (e) {
-      setError(getErrorMessage(e, 'No fue posible cargar los artículos.'))
-    } finally {
-      setLoading(false)
-    }
-  }, [page, search, categoryFilter, statusFilter, lowStockFilter])
+  const inventoryQuery = useInventoryItems({
+    page,
+    limit,
+    search: search || undefined,
+    categoryId: categoryFilter ? Number(categoryFilter) : undefined,
+    status: statusFilter || undefined,
+    lowStock: lowStockFilter || undefined,
+  })
+  const items = inventoryQuery.data?.data ?? []
+  const total = inventoryQuery.data?.total ?? 0
+  const loading = inventoryQuery.isPending
+  const error = inventoryQuery.isError
+    ? getErrorMessage(inventoryQuery.error, 'No fue posible cargar los artículos.')
+    : ''
+  const load = () => inventoryQuery.refetch()
 
   const loadCategories = useCallback(async () => {
     try {
@@ -94,17 +87,13 @@ export function InventoryItemsPage() {
   }, [notify])
 
   useEffect(() => {
-    void load()
-  }, [load])
-
-  useEffect(() => {
     void loadCategories()
   }, [loadCategories])
 
   const applyFilters = (e: FormEvent) => {
     e.preventDefault()
     setPage(1)
-    void load()
+    if (page === 1) void load()
   }
 
   const openDetail = async (id: number) => {
@@ -174,7 +163,6 @@ export function InventoryItemsPage() {
     try {
       const fresh = await inventoryItemsService.get(selected.id)
       setSelected(fresh)
-      setItems((prev) => prev.map((i) => (i.id === fresh.id ? fresh : i)))
     } catch {
       /* the next list reload will surface errors */
     }
@@ -325,14 +313,12 @@ export function InventoryItemsPage() {
   }
 
   const statusTone = (s: InventoryItemStatus) => (s === 'ACTIVE' ? 'success' : 'neutral')
-  const quantityTone = (item: InventoryItem) =>
-    item.status === 'INACTIVE' || item.currentQuantity === 0 ? 'warning' : item.currentQuantity <= item.minimumQuantity ? 'warning' : 'success'
 
   const hasFilters = Boolean(search || categoryFilter || statusFilter || lowStockFilter)
 
   return (
     <InventoryPageLayout title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo.">
-      <div aria-busy={loading} className="space-y-5">
+      <div aria-busy={inventoryQuery.isFetching} className="space-y-5">
       <form className="filters card" onSubmit={applyFilters}>
         <label>Búsqueda (nombre o código)<input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
         <label>Categoría<select value={categoryFilter} onChange={(e) => { setPage(1); setCategoryFilter(e.target.value) }}>
@@ -347,43 +333,21 @@ export function InventoryItemsPage() {
         <label className="checkbox-inline"><input type="checkbox" checked={lowStockFilter} onChange={(e) => { setPage(1); setLowStockFilter(e.target.checked) }} />Solo stock bajo</label>
         <div className="actions"><button className="primary">Buscar</button><button type="button" onClick={openCreate}>Nuevo artículo</button></div>
       </form>
-      {error && <ErrorState message={error} />}
+      {error && <ErrorState message={error} action={<Button type="button" variant="outline" onClick={() => void inventoryQuery.refetch()}>Reintentar</Button>} />}
       {loading ? (
         <LoadingState label="Cargando artículos…" />
       ) : items.length === 0 ? (
         <EmptyState title={hasFilters ? 'Sin resultados' : 'Sin artículos registrados'} description={hasFilters ? 'No hay artículos que coincidan con los filtros.' : 'No hay bienes registrados en el inventario.'} />
       ) : (
         <>
-          <div className="table-wrap" tabIndex={0} aria-label="Tabla de artículos, desplazable horizontalmente">
-            <table>
-              <caption className="sr-only">Listado de bienes registrados en el inventario</caption>
-              <thead>
-                <tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Existencia</th><th>Mínimo</th><th>Unidad</th><th>Ubicación</th><th>Estado</th><th>Condición</th><th><span className="sr-only">Acciones</span></th></tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.code}</td>
-                    <td>{item.name}</td>
-                    <td>{item.category.name}</td>
-                    <td><span className={`badge ${quantityTone(item)}`}>{item.currentQuantity}</span></td>
-                    <td>{item.minimumQuantity}</td>
-                    <td>{item.unit}</td>
-                    <td>{item.location || '—'}</td>
-                    <td><span className={`badge ${statusTone(item.status)}`}>{itemStatusLabels[item.status]}</span></td>
-                    <td>{conditionLabels[item.condition]}</td>
-                    <td>
-                      <div className="actions">
-                        <button onClick={() => void openDetail(item.id)}>Ver detalle</button>
-                        <button onClick={() => { setSelected(item); openMovement('entry') }}>Entrada</button>
-                        <button onClick={() => { setSelected(item); openMovement('exit') }}>Salida</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <InventoryItemsList
+            items={items}
+            onOpen={(itemId) => void openDetail(itemId)}
+            onMovement={(item, kind) => {
+              setSelected(item)
+              openMovement(kind)
+            }}
+          />
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}

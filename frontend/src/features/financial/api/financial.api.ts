@@ -8,6 +8,7 @@ import type {
   FinancialMovementDetail,
   FinancialMovementListFilters,
   FinancialMovementListResponse,
+  FinancialMovementSummaryFilters,
   FinancialMovementSummary,
   PaginatedFinancialCharges,
   RecordPaymentInput,
@@ -19,7 +20,7 @@ export const financialApi = {
   async recordPayment(id: number, payload: RecordPaymentInput) { return (await httpClient.post(`/financial/charges/${id}/payments`, payload)).data },
   async listMovements(filters: FinancialMovementListFilters) { return (await httpClient.get<FinancialMovementListResponse>('/financial/movements', { params: filters })).data },
   async getMovement(id: number) { return (await httpClient.get<FinancialMovementDetail>(`/financial/movements/${id}`)).data },
-  async getMovementSummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) { return (await httpClient.get<FinancialMovementSummary>('/financial/movements/summary', { params: filters })).data },
+  async getMovementSummary(filters: FinancialMovementSummaryFilters) { return (await httpClient.get<FinancialMovementSummary>('/financial/movements/summary', { params: filters })).data },
   async createMovement(payload: CreateFinancialMovementInput) { return (await httpClient.post<FinancialMovement>('/financial/movements', payload)).data },
   async getDinadecoAnnualReport(year: number) { return (await httpClient.get<DinadecoAnnualReport>('/financial/reports/dinadeco/annual', { params: { year } })).data },
 }

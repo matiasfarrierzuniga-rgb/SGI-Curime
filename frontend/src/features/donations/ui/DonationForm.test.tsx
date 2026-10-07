@@ -79,6 +79,6 @@ describe('DonationForm', () => {
 
     mocks.useCreateDonation.mockReturnValue({ isPending: true, mutateAsync: vi.fn() })
     rerender(<DonationForm onClose={vi.fn()} />)
-    expect(screen.getByRole('button', { name: 'Registrar donación' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Registrar donación/ })).toBeDisabled()
   })
 })

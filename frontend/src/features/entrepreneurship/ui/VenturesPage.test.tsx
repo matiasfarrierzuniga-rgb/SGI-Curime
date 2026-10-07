@@ -49,7 +49,7 @@ describe('VenturesPage', () => {
 
   it('sends search and filters to list query', () => {
     render(<VenturesPage />)
-    fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'café' } })
+    fireEvent.change(screen.getByLabelText('Buscar emprendimiento o persona asociada'), { target: { value: 'café' } })
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'SUSPENDED' } })
     fireEvent.change(screen.getByLabelText('Publicación'), { target: { value: 'PUBLISHED' } })
     expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'café', status: 'SUSPENDED', publicationStatus: 'PUBLISHED', page: 1 }))
@@ -62,14 +62,14 @@ describe('VenturesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
     expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith(expect.objectContaining({ page: 3 }))
 
-    fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'postre' } })
+    fireEvent.change(screen.getByLabelText('Buscar emprendimiento o persona asociada'), { target: { value: 'postre' } })
     expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'postre', page: 1 }))
 
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'ACTIVE' } })
     fireEvent.change(screen.getByLabelText('Publicación'), { target: { value: 'PUBLISHED' } })
     expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'postre', status: 'ACTIVE', publicationStatus: 'PUBLISHED', page: 1 }))
 
-    fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('Buscar emprendimiento o persona asociada'), { target: { value: '' } })
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: '' } })
     fireEvent.change(screen.getByLabelText('Publicación'), { target: { value: '' } })
     expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith(expect.objectContaining({ search: '', status: undefined, publicationStatus: undefined, page: 1, limit: 20 }))

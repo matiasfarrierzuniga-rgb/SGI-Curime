@@ -71,8 +71,9 @@ beforeEach(() => {
     if (url === '/public/events') return Promise.resolve({ data: [] })
     if (url === '/financial/charges') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
-    if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
+    if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00', incomeCount: 0, expenseCount: 0, movementCount: 0, incomeAverage: '0.00', expenseAverage: '0.00', bySource: [], confirmedPayments: { total: '0.00', count: 0, byMethod: [] } } })
     if (url === '/financial/reports/dinadeco/annual') return Promise.resolve({ data: responseForDinadeco() })
+    if (url === '/admin-reports/affiliates') return Promise.resolve({ data: { metadata: { generatedAt: new Date().toISOString(), generatedBy: null, period: { from: null, to: null }, appliedFilters: {}, dataSource: 'AFFILIATE', reportVersion: '1.0' }, data: { data: [], total: 0, page: 1, limit: 20 } } })
     if (url === '/donations') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/volunteering/opportunities') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/institutional-profile') return Promise.resolve({ data: emptyInstitutionalProfile() })
@@ -151,6 +152,19 @@ describe('AppRoutes capability deep links', () => {
     renderRoute('/admin/users', 'Administrador')
 
     expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeInTheDocument()
+  })
+
+  it('allows administrators to open the affiliate report', async () => {
+    renderRoute('/app/admin/reports', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Reporte de afiliados' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay afiliados para mostrar')).toBeInTheDocument()
+  })
+
+  it('denies the affiliate report to roles without affiliate read access', async () => {
+    renderRoute('/app/admin/reports', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
 
   it('allows administrators to deep-link to audit logs', async () => {
@@ -359,7 +373,7 @@ describe('AppRoutes capability deep links', () => {
   it('preserves the financial movements route for treasurers', async () => {
     renderRoute('/app/financial/movements', 'Tesorero')
 
-    expect(await screen.findByRole('heading', { name: 'Movimientos financieros' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Reporte operativo financiero' })).toBeInTheDocument()
     expect(await screen.findByText('No hay movimientos financieros')).toBeInTheDocument()
     expect(httpGet).toHaveBeenCalledWith('/financial/movements', { params: expect.objectContaining({ page: 1, limit: 20 }) })
   })

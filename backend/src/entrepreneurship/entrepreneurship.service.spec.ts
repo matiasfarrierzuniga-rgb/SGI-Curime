@@ -42,6 +42,7 @@ describe('EntrepreneurshipService', () => {
     venture: {
       findMany: jest.fn(),
       count: jest.fn(),
+      groupBy: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -53,6 +54,18 @@ describe('EntrepreneurshipService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.$transaction.mockResolvedValue([[], 0]);
+    prisma.venture.groupBy.mockResolvedValue([]);
+  });
+
+  it('returns empty rows and empty groupings for an empty ventures report', async () => {
+    await expect(service.findAll({ page: 1, limit: 20 })).resolves.toMatchObject({
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 20,
+      byStatus: [],
+      byLocation: [],
+    });
   });
 
   it('lists three matching ventures with search, combined filters, and frontend pagination', async () => {
@@ -61,6 +74,9 @@ describe('EntrepreneurshipService', () => {
       { ...venture, id: 2, name: 'Café Curime', description: 'Postres caseros' },
       { ...venture, id: 3, name: 'Dulces', offerDescription: 'Postres para eventos' },
     ];
+    prisma.venture.groupBy
+      .mockResolvedValueOnce([{ status: 'ACTIVE', _count: { _all: 3 } }])
+      .mockResolvedValueOnce([{ locationText: 'Curime', _count: { _all: 2 } }]);
     prisma.$transaction.mockResolvedValue([matchingVentures, 3]);
 
     await expect(service.findAll({
@@ -69,23 +85,76 @@ describe('EntrepreneurshipService', () => {
       publicationStatus: 'UNPUBLISHED' as never,
       page: 2,
       limit: 10,
-    })).resolves.toEqual({ data: matchingVentures, total: 3, page: 2, limit: 10 });
+    })).resolves.toEqual({
+      data: matchingVentures,
+      total: 3,
+      page: 2,
+      limit: 10,
+      byStatus: [{ status: 'ACTIVE', count: 3 }],
+      byLocation: [{ location: 'Curime', count: 2 }],
+    });
     expect(prisma.venture.findMany).toHaveBeenCalledWith(expect.objectContaining({
       skip: 10,
       take: 10,
       where: {
         status: 'ACTIVE',
         publicationStatus: 'UNPUBLISHED',
+        incorporatedAt: undefined,
+        locationText: undefined,
         OR: [
           { name: { contains: 'postre', mode: 'insensitive' } },
           { description: { contains: 'postre', mode: 'insensitive' } },
           { offerDescription: { contains: 'postre', mode: 'insensitive' } },
           { businessEmail: { contains: 'postre', mode: 'insensitive' } },
+          {
+            associations: {
+              some: {
+                person: {
+                  OR: [
+                    { firstName: { contains: 'postre', mode: 'insensitive' } },
+                    { firstSurname: { contains: 'postre', mode: 'insensitive' } },
+                    { secondSurname: { contains: 'postre', mode: 'insensitive' } },
+                    { identification: { contains: 'postre', mode: 'insensitive' } },
+                  ],
+                },
+              },
+            },
+          },
         ],
       },
     }));
+    expect(prisma.venture.groupBy).toHaveBeenCalledWith(expect.objectContaining({
+      by: ['locationText'],
+      where: expect.objectContaining({ status: 'ACTIVE', publicationStatus: 'UNPUBLISHED' }),
+      _count: { _all: true },
+    }));
     expect(prisma.venture.count).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ status: 'ACTIVE', publicationStatus: 'UNPUBLISHED' }),
+    }));
+    expect(prisma.venture.groupBy).toHaveBeenCalledWith(expect.objectContaining({
+      by: ['status'],
+      where: expect.objectContaining({ status: 'ACTIVE', publicationStatus: 'UNPUBLISHED' }),
+      _count: { _all: true },
+    }));
+  });
+
+  it('filters incorporation dates and location in the database', async () => {
+    const dateFrom = new Date('2026-01-01T00:00:00.000Z');
+    const dateTo = new Date('2026-12-31T23:59:59.999Z');
+
+    await service.findAll({
+      location: 'Curime',
+      dateFrom,
+      dateTo,
+      page: 1,
+      limit: 20,
+    });
+
+    expect(prisma.venture.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        locationText: { contains: 'Curime', mode: 'insensitive' },
+        incorporatedAt: { gte: dateFrom, lte: dateTo },
+      }),
     }));
   });
 
@@ -95,13 +164,31 @@ describe('EntrepreneurshipService', () => {
     await service.findAll({ publicationStatus: 'PUBLISHED' as never, page: 1, limit: 20 });
 
     expect(prisma.venture.findMany).toHaveBeenNthCalledWith(1, expect.objectContaining({
-      where: { status: 'ACTIVE', publicationStatus: undefined, OR: undefined },
+      where: {
+        status: 'ACTIVE',
+        publicationStatus: undefined,
+        incorporatedAt: undefined,
+        locationText: undefined,
+        OR: undefined,
+      },
     }));
     expect(prisma.venture.findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      where: { status: undefined, publicationStatus: undefined, OR: undefined },
+      where: {
+        status: undefined,
+        publicationStatus: undefined,
+        incorporatedAt: undefined,
+        locationText: undefined,
+        OR: undefined,
+      },
     }));
     expect(prisma.venture.findMany).toHaveBeenNthCalledWith(3, expect.objectContaining({
-      where: { status: undefined, publicationStatus: 'PUBLISHED', OR: undefined },
+      where: {
+        status: undefined,
+        publicationStatus: 'PUBLISHED',
+        incorporatedAt: undefined,
+        locationText: undefined,
+        OR: undefined,
+      },
     }));
   });
 

@@ -99,7 +99,7 @@ export function InventoryMovementsPage() {
   }
 
   return (
-    <InventoryPageLayout title="Movimientos" description="Historial inmutable de entradas, salidas y ajustes de inventario.">
+    <InventoryPageLayout title="Movimientos" description="Historial inmutable de saldos iniciales, entradas, salidas y ajustes de inventario.">
       <div className="space-y-5">
       <form className="filters card" onSubmit={submit}>
         <label>Artículo<select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
@@ -108,6 +108,7 @@ export function InventoryMovementsPage() {
         </select></label>
         <label>Tipo<select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
           <option value="">Todos</option>
+          <option value="OPENING_BALANCE">Saldo inicial</option>
           <option value="ENTRY">Entrada</option>
           <option value="EXIT">Salida</option>
           <option value="ADJUSTMENT">Ajuste</option>

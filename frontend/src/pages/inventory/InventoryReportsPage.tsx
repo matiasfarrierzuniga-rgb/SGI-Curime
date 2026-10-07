@@ -101,6 +101,7 @@ export function InventoryReportsPage() {
         </select></label>
         <label>Tipo (movimientos)<select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
           <option value="">Todos</option>
+          <option value="OPENING_BALANCE">Saldo inicial</option>
           <option value="ENTRY">Entrada</option>
           <option value="EXIT">Salida</option>
           <option value="ADJUSTMENT">Ajuste</option>
@@ -130,12 +131,17 @@ export function InventoryReportsPage() {
             <h2 className="text-heading-3 font-semibold text-text-primary">Movimientos</h2>
             <p className="muted">{periodLabel}</p>
             <div className="report-grid">
-              {(['entries', 'exits', 'adjustments'] as const).map((key) => {
+              {([
+                ['openingBalances', 'OPENING_BALANCE'],
+                ['entries', 'ENTRY'],
+                ['exits', 'EXIT'],
+                ['adjustments', 'ADJUSTMENT'],
+              ] as const).map(([key, type]) => {
                 const value = movements?.summary[key]
                 return (
                   <div className="stat-card neutral" key={key}>
                     <div className="stat-value">{value?.count ?? 0}</div>
-                    <div className="stat-label">{movementTypeLabels[key === 'entries' ? 'ENTRY' : key === 'exits' ? 'EXIT' : 'ADJUSTMENT']} (cantidad: {value?.quantity ?? 0})</div>
+                    <div className="stat-label">{movementTypeLabels[type]} (cantidad: {value?.quantity ?? 0})</div>
                   </div>
                 )
               })}

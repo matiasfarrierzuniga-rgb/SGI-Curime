@@ -4,6 +4,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { hasCapability } from '../auth';
 import { CreateAssemblyDto } from './dto/assembly.dto';
+import { QueryAssembliesDto } from './dto/query-assemblies.dto';
 import {
   AssembliesService,
   calculateRequiredCount,
@@ -42,6 +43,9 @@ function prismaMock(overrides: Record<string, unknown> = {}) {
   };
   const prisma = {
     assembly: {
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+      groupBy: jest.fn().mockResolvedValue([]),
       findUnique: jest.fn().mockResolvedValue(assembly),
       create: jest.fn(),
       update: jest.fn(),
@@ -74,7 +78,109 @@ const audit = { log: jest.fn().mockResolvedValue(undefined) };
 const serviceFor = (prisma: unknown) =>
   new AssembliesService(prisma as never, audit as never);
 
+describe('Assembly report queries', () => {
+  it('returns empty rows and empty groupings for an empty assembly report', async () => {
+    const { prisma } = prismaMock();
+
+    await expect(serviceFor(prisma).findAll({ page: 1, limit: 20 })).resolves.toMatchObject({
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 20,
+      byStatus: [],
+      byType: [],
+    });
+  });
+
+  it('applies assembly filters and returns paged rows with database status counts', async () => {
+    const { prisma } = prismaMock();
+    const dateFrom = new Date('2026-01-01T00:00:00.000Z');
+    const dateTo = new Date('2026-12-31T23:59:59.999Z');
+    prisma.assembly.findMany.mockResolvedValue([
+      { ...assembly, legacyType: 'ORDINARY', _count: { convocations: 3 } },
+    ]);
+    prisma.assembly.count.mockResolvedValue(1);
+    prisma.assembly.groupBy
+      .mockResolvedValueOnce([
+      { status: 'SCHEDULED', _count: { _all: 1 } },
+      ])
+      .mockResolvedValueOnce([
+        { legacyType: 'ORDINARY', _count: { _all: 1 } },
+      ]);
+
+    const result = await serviceFor(prisma).findAll({
+      search: 'asamblea',
+      type: 'ORDINARY' as never,
+      status: 'SCHEDULED' as never,
+      dateFrom,
+      dateTo,
+      page: 2,
+      limit: 10,
+    });
+
+    const expectedWhere = {
+      status: 'SCHEDULED',
+      legacyType: 'ORDINARY',
+      legacyDate: { gte: dateFrom, lte: dateTo },
+      OR: [
+        { title: { contains: 'asamblea', mode: 'insensitive' } },
+        { place: { contains: 'asamblea', mode: 'insensitive' } },
+        { legacyType: { contains: 'asamblea', mode: 'insensitive' } },
+      ],
+    };
+    expect(prisma.assembly.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expectedWhere, skip: 10, take: 10 }),
+    );
+    expect(prisma.assembly.count).toHaveBeenCalledWith({
+      where: expectedWhere,
+    });
+    expect(prisma.assembly.groupBy).toHaveBeenCalledWith({
+      by: ['status'],
+      where: expectedWhere,
+      orderBy: { status: 'asc' },
+      _count: { _all: true },
+    });
+    expect(prisma.assembly.groupBy).toHaveBeenCalledWith({
+      by: ['legacyType'],
+      where: expectedWhere,
+      orderBy: { legacyType: 'asc' },
+      _count: { _all: true },
+    });
+    expect(result).toMatchObject({
+      total: 1,
+      page: 2,
+      limit: 10,
+      byStatus: [{ status: 'SCHEDULED', count: 1 }],
+      byType: [{ type: 'ORDINARY', count: 1 }],
+      data: [{ id: 1, _count: { convocations: 3 } }],
+    });
+  });
+});
+
 describe('Assemblies authorization and DTO validation', () => {
+  it('validates assembly report filters against the existing enums and paging contract', async () => {
+    const query = plainToInstance(QueryAssembliesDto, {
+      search: ' Asamblea ',
+      type: 'EXTRAORDINARY',
+      status: 'SCHEDULED',
+      dateFrom: '2026-01-01T00:00:00.000Z',
+      dateTo: '2026-12-31T23:59:59.999Z',
+      page: '2',
+      limit: '10',
+    });
+
+    expect(await validate(query)).toHaveLength(0);
+    expect(query).toMatchObject({
+      search: 'Asamblea',
+      type: 'EXTRAORDINARY',
+      status: 'SCHEDULED',
+      dateFrom: new Date('2026-01-01T00:00:00.000Z'),
+      dateTo: new Date('2026-12-31T23:59:59.999Z'),
+      page: 2,
+      limit: 10,
+    });
+  });
+
   it('grants create/manage only to Administrador', () => {
     expect(hasCapability('Administrador', 'adm.assemblies.manage')).toBe(true);
     expect(hasCapability('Vecino/Afiliado', 'adm.assemblies.manage')).toBe(

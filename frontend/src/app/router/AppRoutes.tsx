@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { InternalErpRoute, ProtectedRoute } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
 import { AffiliatesPage } from '@/features/affiliates'
+import { ReportsAndStatisticsPage } from '@/features/admin-reports'
 import { EventsManagementPage, PublicEventDetailPage, PublicEventsPage } from '@/features/events'
 import { AffiliateRequestsPage } from '@/features/affiliate-requests'
 import { AbsenceJustificationsPage, AffiliateAbsenceJustificationPage, AffiliateJustificationsPage } from '@/features/absence-justifications'
@@ -95,6 +96,7 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="adm.affiliates.read" />}>
             <Route path="/app/admin/affiliates" element={<AffiliatesPage />} />
+            <Route path="/app/admin/reports" element={<ReportsAndStatisticsPage />} />
           </Route>
           <Route element={<RoleRoute capability="adm.requests.read" />}>
             <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />

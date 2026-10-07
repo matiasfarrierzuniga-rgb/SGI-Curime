@@ -45,8 +45,21 @@ describe('InventoryReportsService', () => {
     prisma.inventoryCategory.count.mockResolvedValue(3);
     prisma.inventoryLoan.count.mockResolvedValue(2);
     prisma.inventoryMovement.groupBy.mockResolvedValue([
-      { type: InventoryMovementType.ENTRY, _count: 4, _sum: { quantity: 20 } },
-      { type: InventoryMovementType.EXIT, _count: 3, _sum: { quantity: 9 } },
+      {
+        type: InventoryMovementType.OPENING_BALANCE,
+        _count: { _all: 1 },
+        _sum: { legacyQuantity: 8 },
+      },
+      {
+        type: InventoryMovementType.ENTRY,
+        _count: { _all: 4 },
+        _sum: { legacyQuantity: 20 },
+      },
+      {
+        type: InventoryMovementType.EXIT,
+        _count: { _all: 3 },
+        _sum: { legacyQuantity: 9 },
+      },
     ]);
   });
 
@@ -83,6 +96,25 @@ describe('InventoryReportsService', () => {
       }),
     );
     expect(result.metadata.generatedAt).toBeInstanceOf(Date);
+  });
+
+  it('returns zero inventory counts for an empty inventory', async () => {
+    prisma.inventoryItem.count.mockResolvedValue(0);
+    prisma.inventoryCategory.count.mockResolvedValue(0);
+    prisma.inventoryLoan.count.mockResolvedValue(0);
+
+    const result = await service.summary();
+
+    expect(result.data).toEqual({
+      totalItems: 0,
+      activeItems: 0,
+      inactiveItems: 0,
+      totalCategories: 0,
+      lowStockCount: 0,
+      outOfStockCount: 0,
+      activeLoans: 0,
+      overdueLoans: 0,
+    });
   });
 
   it('uses the minimum quantity field for the low stock count', async () => {
@@ -127,10 +159,46 @@ describe('InventoryReportsService', () => {
     );
   });
 
+  it('preserves the paginated stock contract for a filtered page without matches', async () => {
+    prisma.inventoryItem.findMany.mockResolvedValueOnce([]);
+    prisma.inventoryItem.count.mockResolvedValueOnce(0);
+
+    const result = await service.stock({
+      categoryId: 9,
+      status: InventoryItemStatus.INACTIVE,
+      page: 3,
+      limit: 5,
+    });
+
+    expect(prisma.inventoryItem.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          categoryId: 9,
+          status: InventoryItemStatus.INACTIVE,
+        },
+        skip: 10,
+        take: 5,
+      }),
+    );
+    expect(prisma.inventoryItem.count).toHaveBeenCalledWith({
+      where: {
+        categoryId: 9,
+        status: InventoryItemStatus.INACTIVE,
+      },
+    });
+    expect(result.data).toEqual({ data: [], total: 0, page: 3, limit: 5 });
+    expect(result.metadata.appliedFilters).toEqual({
+      categoryId: 9,
+      status: InventoryItemStatus.INACTIVE,
+      page: 3,
+      limit: 5,
+    });
+  });
+
   it('reports movement totals grouped by type', async () => {
     const result = await service.movements({
-      dateFrom: '2026-01-01',
-      dateTo: '2026-12-31',
+      dateFrom: '2026-12-31T00:00:00.000Z',
+      dateTo: '2026-12-31T23:59:59.999Z',
       categoryId: 1,
       type: InventoryMovementType.ENTRY,
       page: 1,
@@ -143,33 +211,65 @@ describe('InventoryReportsService', () => {
           type: InventoryMovementType.ENTRY,
           item: { categoryId: 1 },
           createdAt: {
-            gte: new Date('2026-01-01'),
-            lte: new Date('2026-12-31'),
+            gte: new Date('2026-12-31T00:00:00.000Z'),
+            lte: new Date('2026-12-31T23:59:59.999Z'),
           },
         }),
       }),
     );
+    expect(result.data.summary.openingBalances).toEqual({
+      count: 1,
+      quantity: 8,
+    });
     expect(result.data.summary.entries).toEqual({ count: 4, quantity: 20 });
     expect(result.data.summary.exits).toEqual({ count: 3, quantity: 9 });
     expect(result.data.summary.adjustments).toEqual({ count: 0, quantity: 0 });
     expect(result.data.period).toEqual({
-      dateFrom: '2026-01-01',
-      dateTo: '2026-12-31',
+      dateFrom: '2026-12-31T00:00:00.000Z',
+      dateTo: '2026-12-31T23:59:59.999Z',
     });
     expect(result.metadata).toEqual(
       expect.objectContaining({
         period: {
-          from: new Date('2026-01-01'),
-          to: new Date('2026-12-31'),
+          from: new Date('2026-12-31T00:00:00.000Z'),
+          to: new Date('2026-12-31T23:59:59.999Z'),
         },
         appliedFilters: {
           categoryId: 1,
           type: InventoryMovementType.ENTRY,
-          dateFrom: new Date('2026-01-01'),
-          dateTo: new Date('2026-12-31'),
+          dateFrom: new Date('2026-12-31T00:00:00.000Z'),
+          dateTo: new Date('2026-12-31T23:59:59.999Z'),
         },
         dataSource: 'INVENTORY_MOVEMENT',
         reportVersion: '1.0',
+      }),
+    );
+  });
+
+  it('returns zeroed movement totals when there are no matching movements', async () => {
+    prisma.inventoryMovement.groupBy.mockResolvedValueOnce([]);
+
+    const result = await service.movements({
+      dateFrom: '2026-01-01',
+      dateTo: '2026-01-31',
+      page: 1,
+      limit: 20,
+    });
+
+    expect(result.data.summary).toEqual({
+      openingBalances: { count: 0, quantity: 0 },
+      entries: { count: 0, quantity: 0 },
+      exits: { count: 0, quantity: 0 },
+      adjustments: { count: 0, quantity: 0 },
+    });
+    expect(prisma.inventoryMovement.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          createdAt: {
+            gte: new Date('2026-01-01'),
+            lte: new Date('2026-01-31'),
+          },
+        }),
       }),
     );
   });
@@ -206,5 +306,65 @@ describe('InventoryReportsService', () => {
         reportVersion: '1.0',
       }),
     );
+  });
+
+  it('returns a complete zeroed loan summary for an empty filtered period', async () => {
+    const dateFrom = '2026-12-31T00:00:00.000Z';
+    const dateTo = '2026-12-31T23:59:59.999Z';
+    prisma.inventoryLoan.count.mockResolvedValue(0);
+
+    const result = await service.loans({
+      dateFrom,
+      dateTo,
+      categoryId: 9,
+      page: 1,
+      limit: 20,
+    });
+
+    expect(prisma.inventoryLoan.count).toHaveBeenCalledTimes(5);
+    expect(prisma.inventoryLoan.count).toHaveBeenNthCalledWith(1, {
+      where: {
+        item: { categoryId: 9 },
+        loanDate: { gte: new Date(dateFrom), lte: new Date(dateTo) },
+        status: 'ACTIVE',
+      },
+    });
+    expect(prisma.inventoryLoan.count).toHaveBeenNthCalledWith(2, {
+      where: {
+        item: { categoryId: 9 },
+        loanDate: { gte: new Date(dateFrom), lte: new Date(dateTo) },
+        status: 'RETURNED',
+      },
+    });
+    expect(prisma.inventoryLoan.count).toHaveBeenNthCalledWith(3, {
+      where: {
+        item: { categoryId: 9 },
+        loanDate: { gte: new Date(dateFrom), lte: new Date(dateTo) },
+        status: 'CANCELLED',
+      },
+    });
+    expect(prisma.inventoryLoan.count).toHaveBeenNthCalledWith(4, {
+      where: {
+        item: { categoryId: 9 },
+        loanDate: { gte: new Date(dateFrom), lte: new Date(dateTo) },
+        status: 'ACTIVE',
+        expectedReturnDate: { lt: expect.any(Date) },
+      },
+    });
+    expect(prisma.inventoryLoan.count).toHaveBeenNthCalledWith(5, {
+      where: {
+        item: { categoryId: 9 },
+        loanDate: { gte: new Date(dateFrom), lte: new Date(dateTo) },
+      },
+    });
+    expect(result.data).toEqual({
+      period: { dateFrom, dateTo },
+      summary: { active: 0, returned: 0, cancelled: 0, overdue: 0, total: 0 },
+    });
+    expect(result.metadata.appliedFilters).toEqual({
+      categoryId: 9,
+      dateFrom: new Date(dateFrom),
+      dateTo: new Date(dateTo),
+    });
   });
 });

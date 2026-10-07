@@ -3,7 +3,7 @@ import {
   hasCapability,
 } from './capability-policy';
 
-describe('donation capability policy', () => {
+describe('capability policy', () => {
   it('grants user-management capabilities only to Administrador', () => {
     for (const capability of [
       'usr.users.update',
@@ -38,6 +38,22 @@ describe('donation capability policy', () => {
     expect(hasCapability('Tesorero', 'fin.dinadeco.read')).toBe(true);
     expect(hasCapability('Gestor de Inventario', 'fin.dinadeco.read')).toBe(false);
     expect(hasCapability('Vecino/Afiliado', 'fin.dinadeco.read')).toBe(false);
+  });
+
+  it('grants financial operations only to Administrador and Tesorero', () => {
+    for (const capability of [
+      'fin.charges.read',
+      'fin.payments.record',
+      'fin.movements.read',
+      'fin.movements.create',
+      'fin.dinadeco.read',
+    ]) {
+      expect(hasCapability('Administrador', capability)).toBe(true);
+      expect(hasCapability('Tesorero', capability)).toBe(true);
+      expect(hasCapability('Gestor de Inventario', capability)).toBe(false);
+      expect(hasCapability('Vecino/Afiliado', capability)).toBe(false);
+      expect(hasCapability('Unknown', capability)).toBe(false);
+    }
   });
 
   it('grants every donation capability to Administrador', () => {

@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import {
+  FinancialMethod,
   FinancialMovementSource,
   FinancialMovementOriginType,
   FinancialMovementStatus,
@@ -41,6 +42,7 @@ describe('FinancialService movements', () => {
       findUnique: jest.fn(),
       groupBy: jest.fn(),
     },
+    payment: { groupBy: jest.fn() },
     $transaction: jest.fn(),
   };
   const audit = { log: jest.fn() };
@@ -59,6 +61,7 @@ describe('FinancialService movements', () => {
       movement({ recordedBy: { id: 17, fullName: 'Persona Tesorera' } }),
     );
     prisma.financialMovement.groupBy.mockResolvedValue([]);
+    prisma.payment.groupBy.mockResolvedValue([]);
     prisma.$transaction.mockImplementation((operations: Promise<unknown>[]) =>
       Promise.all(operations),
     );
@@ -192,6 +195,70 @@ describe('FinancialService movements', () => {
     });
   });
 
+  it('applies combined status, method, and text filters in the database query', async () => {
+    await service.findMovements({
+      type: FinancialMovementType.EXPENSE,
+      status: FinancialMovementStatus.POSTED,
+      method: FinancialMethod.CHECK,
+      search: '  mantenimiento  ',
+      page: 1,
+      limit: 20,
+    });
+
+    expect(prisma.financialMovement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          type: FinancialMovementType.EXPENSE,
+          status: FinancialMovementStatus.POSTED,
+          occurredAt: undefined,
+          AND: [
+            {
+              OR: [
+                {
+                  description: {
+                    contains: '  mantenimiento  ',
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  reference: {
+                    contains: '  mantenimiento  ',
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            },
+            {
+              OR: [
+                { payment: { is: { financialMethod: FinancialMethod.CHECK } } },
+                { disbursement: { is: { method: FinancialMethod.CHECK } } },
+                {
+                  originalDonation: {
+                    is: { financialMethod: FinancialMethod.CHECK },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    );
+  });
+
+  it('rejects an inverted date range', async () => {
+    await expect(
+      service.findMovements({
+        dateFrom: '2026-10-02',
+        dateTo: '2026-10-01',
+        page: 1,
+        limit: 20,
+      }),
+    ).rejects.toThrow(
+      'La fecha inicial debe ser anterior o igual a la fecha final',
+    );
+    expect(prisma.financialMovement.findMany).not.toHaveBeenCalled();
+  });
+
   it('returns movement detail with only the selected recorder identity', async () => {
     const result = await service.findMovement(10);
 
@@ -223,7 +290,9 @@ describe('FinancialService movements', () => {
       [
         {
           type: FinancialMovementType.INCOME,
+          legacySource: FinancialMovementSource.MANUAL,
           _sum: { amount: new Prisma.Decimal('100000.00') },
+          _count: { _all: 1 },
         },
       ],
       '100000.00',
@@ -234,7 +303,9 @@ describe('FinancialService movements', () => {
       [
         {
           type: FinancialMovementType.EXPENSE,
+          legacySource: FinancialMovementSource.MANUAL,
           _sum: { amount: new Prisma.Decimal('35000.00') },
+          _count: { _all: 1 },
         },
       ],
       '0.00',
@@ -245,11 +316,15 @@ describe('FinancialService movements', () => {
       [
         {
           type: FinancialMovementType.INCOME,
+          legacySource: FinancialMovementSource.MANUAL,
           _sum: { amount: new Prisma.Decimal('100000.10') },
+          _count: { _all: 1 },
         },
         {
           type: FinancialMovementType.EXPENSE,
+          legacySource: FinancialMovementSource.MANUAL,
           _sum: { amount: new Prisma.Decimal('35000.05') },
+          _count: { _all: 1 },
         },
       ],
       '100000.10',
@@ -261,7 +336,7 @@ describe('FinancialService movements', () => {
     async (groups, income, expenses, balance) => {
       prisma.financialMovement.groupBy.mockResolvedValueOnce(groups);
 
-      await expect(service.summarizeMovements({})).resolves.toEqual({
+      await expect(service.summarizeMovements({})).resolves.toMatchObject({
         currency: 'CRC',
         totalIncome: income,
         totalExpenses: expenses,
@@ -275,13 +350,22 @@ describe('FinancialService movements', () => {
     const dateTo = '2026-09-06T16:00:00.000Z';
     await service.summarizeMovements({ dateFrom, dateTo });
 
-    expect(prisma.financialMovement.groupBy).toHaveBeenCalledWith({
-      by: ['type'],
-      where: {
-        type: undefined,
-        occurredAt: { gte: new Date(dateFrom), lte: new Date(dateTo) },
-      },
-      _sum: { amount: true },
-    });
+    expect(prisma.financialMovement.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          type: undefined,
+          status: undefined,
+          occurredAt: { gte: new Date(dateFrom), lte: new Date(dateTo) },
+          AND: [
+            {
+              OR: [
+                { status: { not: FinancialMovementStatus.VOIDED } },
+                { status: null },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
   });
 });

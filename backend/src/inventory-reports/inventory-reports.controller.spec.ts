@@ -1,3 +1,6 @@
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { JwtAuthGuard, RolesGuard } from '../auth';
+import { ROLES_KEY } from '../auth/presentation/decorators/roles.decorator';
 import type { AuthenticatedUser } from '../auth';
 import { InventoryReportsController } from './inventory-reports.controller';
 import type { InventoryReportsService } from './inventory-reports.service';
@@ -25,6 +28,16 @@ describe('InventoryReportsController', () => {
   const query = { page: 1, limit: 20 };
 
   beforeEach(() => jest.clearAllMocks());
+
+  it('protects reports with authentication and the existing inventory roles', () => {
+    expect(
+      Reflect.getMetadata(GUARDS_METADATA, InventoryReportsController),
+    ).toEqual([JwtAuthGuard, RolesGuard]);
+    expect(Reflect.getMetadata(ROLES_KEY, InventoryReportsController)).toEqual([
+      'Administrador',
+      'Gestor de Inventario',
+    ]);
+  });
 
   it.each([
     ['summary', undefined],

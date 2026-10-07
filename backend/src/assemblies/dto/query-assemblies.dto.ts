@@ -9,12 +9,16 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { AssemblyStatus } from '../../../generated/prisma/enums';
+import {
+  AssemblyStatus,
+  AssemblyType,
+} from '../../../generated/prisma/enums';
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
 export class QueryAssembliesDto {
   @Transform(trim) @IsOptional() @IsString() @MaxLength(200) search?: string;
   @IsOptional() @IsEnum(AssemblyStatus) status?: AssemblyStatus;
+  @IsOptional() @IsEnum(AssemblyType) type?: AssemblyType;
   @Type(() => Date) @IsOptional() @IsDate() dateFrom?: Date;
   @Type(() => Date) @IsOptional() @IsDate() dateTo?: Date;
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) page = 1;

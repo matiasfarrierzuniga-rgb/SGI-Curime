@@ -36,6 +36,9 @@ describe('EntrepreneurshipController', () => {
       search: ' postre ',
       status: 'ACTIVE',
       publicationStatus: 'PUBLISHED',
+      location: ' Curime ',
+      dateFrom: '2026-01-01T00:00:00.000Z',
+      dateTo: '2026-12-31T23:59:59.999Z',
       page: '2',
       limit: '10',
     });
@@ -46,6 +49,9 @@ describe('EntrepreneurshipController', () => {
       search: 'postre',
       status: 'ACTIVE',
       publicationStatus: 'PUBLISHED',
+      location: 'Curime',
+      dateFrom: new Date('2026-01-01T00:00:00.000Z'),
+      dateTo: new Date('2026-12-31T23:59:59.999Z'),
       page: 2,
       limit: 10,
     });

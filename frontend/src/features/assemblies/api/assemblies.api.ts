@@ -1,8 +1,13 @@
 import { httpClient } from '@/shared/api/httpClient'
-import type { Assembly, AssemblyDetail, AssemblyPayload, EligibleAffiliate, MineAssembly } from '../model/assemblies.types'
+import type { AssembliesFilters, AssembliesPage, Assembly, AssemblyDetail, AssemblyPayload, EligibleAffiliate, MineAssembly } from '../model/assemblies.types'
 
 export const assembliesApi = {
-  list: async () => (await httpClient.get<{ data: Assembly[] }>('/assemblies', { params: { page: 1, limit: 100 } })).data.data,
+  list: async (filters: AssembliesFilters = { page: 1, limit: 100 }) => {
+    const params = Object.fromEntries(
+      Object.entries(filters).filter(([, value]) => value !== undefined && value !== ''),
+    )
+    return (await httpClient.get<AssembliesPage>('/assemblies', { params })).data
+  },
   detail: async (id: number) => (await httpClient.get<AssemblyDetail>(`/assemblies/${id}`)).data,
   mine: async () => (await httpClient.get<MineAssembly[]>('/assemblies/mine')).data,
   eligible: async () => (await httpClient.get<EligibleAffiliate[]>('/assemblies/eligible-affiliates')).data,

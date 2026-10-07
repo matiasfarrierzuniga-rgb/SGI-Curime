@@ -10,6 +10,7 @@ describe('getErpNavigation', () => {
     expect(items.find(item => item.label === 'Usuarios')).toBeUndefined()
     expect(items.find(item => item.label === 'Emprendimientos')).toMatchObject({ path: '/app/admin/ventures', capability: 'ent.ventures.read' })
     expect(items.find(item => item.label === 'Voluntariado')).toMatchObject({ path: '/app/admin/volunteering', capability: 'vol.opportunities.read' })
+    expect(items.find(item => item.label === 'Reportes y estadísticas')).toBeUndefined()
   })
 
   it('does not use role names as authorization input', () => {
@@ -29,6 +30,7 @@ describe('getErpNavigation', () => {
     expect(items).toEqual(expect.arrayContaining([
       expect.objectContaining({ path: '/app/reservations' }),
       expect.objectContaining({ path: '/app/admin/affiliates' }),
+      expect.objectContaining({ path: '/app/admin/reports', capability: 'adm.affiliates.read' }),
       expect.objectContaining({ path: '/app/admin/requests' }),
       expect.objectContaining({ path: '/app/events' }),
     ]))

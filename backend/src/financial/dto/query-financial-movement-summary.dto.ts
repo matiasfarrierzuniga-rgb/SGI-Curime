@@ -1,11 +1,3 @@
-import { IsDateString, IsOptional } from 'class-validator';
+import { FinancialMovementFiltersDto } from './financial-movement-filters.dto';
 
-export class QueryFinancialMovementSummaryDto {
-  @IsOptional()
-  @IsDateString()
-  dateFrom?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dateTo?: string;
-}
+export class QueryFinancialMovementSummaryDto extends FinancialMovementFiltersDto {}

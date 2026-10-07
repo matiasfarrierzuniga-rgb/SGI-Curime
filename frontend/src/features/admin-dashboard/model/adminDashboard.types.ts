@@ -1,5 +1,16 @@
+import type {
+  AffiliateMembershipStatistics,
+  AffiliateTypeDistribution,
+} from '@/features/admin-reports'
+
 export type AdminDashboardData = {
-  affiliates: { total: number; active: number; inactive: number }
+  affiliates: {
+    total: number
+    active: number
+    inactive: number
+    memberships: AffiliateMembershipStatistics
+    byAffiliateType: AffiliateTypeDistribution[]
+  }
   affiliateRequests: { pending: number }
   reservations: {
     total: number

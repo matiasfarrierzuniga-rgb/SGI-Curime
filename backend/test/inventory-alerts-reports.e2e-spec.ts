@@ -9,6 +9,7 @@ import { InventoryAlertsModule } from '../src/inventory-alerts/inventory-alerts.
 import { InventoryAlertsService } from '../src/inventory-alerts/inventory-alerts.service';
 import { InventoryReportsModule } from '../src/inventory-reports/inventory-reports.module';
 import { InventoryReportsService } from '../src/inventory-reports/inventory-reports.service';
+import { ROLE_CAPABILITIES } from '../src/auth/presentation/capabilities/capability-policy';
 import { buildPrismaAuthUser } from './helpers/auth-fixtures';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
@@ -29,16 +30,19 @@ describe('InventoryAlerts and InventoryReports (e2e)', () => {
     loans: jest.fn(),
   };
   const prisma = {
-    user: {
-      findUnique: jest.fn(() =>
-        Promise.resolve(buildPrismaAuthUser({ roleName: role })),
-      ),
-    },
+    user: { findUnique: jest.fn() },
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     role = 'Administrador';
+    prisma.user.findUnique.mockImplementation(() => {
+      const user = buildPrismaAuthUser({
+        roleName: role,
+        permissionCodes: ROLE_CAPABILITIES[role] ?? [],
+      });
+      return Promise.resolve(user);
+    });
     alertsService.findAll.mockResolvedValue({
       summary: {
         lowStock: 0,

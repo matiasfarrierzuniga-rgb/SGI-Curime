@@ -108,6 +108,7 @@ export class AssembliesService {
   async findAll(q: QueryAssembliesDto) {
     const where: Prisma.AssemblyWhereInput = {
       status: q.status,
+      legacyType: q.type,
       legacyDate:
         q.dateFrom || q.dateTo ? { gte: q.dateFrom, lte: q.dateTo } : undefined,
       OR: q.search
@@ -118,21 +119,45 @@ export class AssembliesService {
           ]
         : undefined,
     };
-    const [data, total] = await this.prisma.$transaction([
-      this.prisma.assembly.findMany({
-        where,
-        select: { ...select, _count: { select: { convocations: true } } },
-        orderBy: { legacyDate: 'desc' },
-        skip: (q.page - 1) * q.limit,
-        take: q.limit,
-      }),
-      this.prisma.assembly.count({ where }),
-    ]);
+    const [[data, total], [statusGroups, typeGroups]] = await Promise.all([
+      this.prisma.$transaction([
+        this.prisma.assembly.findMany({
+          where,
+          select: { ...select, _count: { select: { convocations: true } } },
+          orderBy: { legacyDate: 'desc' },
+          skip: (q.page - 1) * q.limit,
+          take: q.limit,
+        }),
+        this.prisma.assembly.count({ where }),
+      ]),
+      Promise.all([
+        this.prisma.assembly.groupBy({
+          by: ['status'],
+          where,
+          orderBy: { status: 'asc' },
+          _count: { _all: true },
+        }),
+        this.prisma.assembly.groupBy({
+          by: ['legacyType'],
+          where,
+          orderBy: { legacyType: 'asc' },
+          _count: { _all: true },
+        }),
+      ]),
+    ])
     return {
       data: data.map((item) => this.serializeAssembly(item)),
       total,
       page: q.page,
       limit: q.limit,
+      byStatus: statusGroups.map(({ status, _count }) => ({
+        status,
+        count: _count._all,
+      })),
+      byType: typeGroups.map(({ legacyType, _count }) => ({
+        type: legacyType,
+        count: _count._all,
+      })),
     };
   }
 

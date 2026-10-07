@@ -1,7 +1,11 @@
 import { ValidationPipe } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { FinancialMovementType } from '../../../generated/prisma/enums';
+import {
+  FinancialMethod,
+  FinancialMovementStatus,
+  FinancialMovementType,
+} from '../../../generated/prisma/enums';
 import { CreateFinancialMovementDto } from './create-financial-movement.dto';
 import { QueryFinancialMovementsDto } from './query-financial-movements.dto';
 
@@ -71,20 +75,34 @@ describe('Financial movement DTOs', () => {
 
   it('applies query defaults and transforms numeric pagination', async () => {
     const pipe = new ValidationPipe({ transform: true, whitelist: true });
-    const defaults = await pipe.transform(
-      {},
-      { type: 'query', metatype: QueryFinancialMovementsDto },
-    );
-    const explicit = await pipe.transform(
-      { page: '2', limit: '100', type: 'EXPENSE' },
-      { type: 'query', metatype: QueryFinancialMovementsDto },
-    );
-
-    expect(defaults).toMatchObject({ page: 1, limit: 20 });
-    expect(explicit).toMatchObject({
+    await expect(
+      pipe.transform(
+        {},
+        {
+          type: 'query',
+          metatype: QueryFinancialMovementsDto,
+        },
+      ),
+    ).resolves.toMatchObject({ page: 1, limit: 20 });
+    await expect(
+      pipe.transform(
+        {
+          page: '2',
+          limit: '100',
+          type: 'EXPENSE',
+          status: 'POSTED',
+          method: 'CHECK',
+          search: '  factura  ',
+        },
+        { type: 'query', metatype: QueryFinancialMovementsDto },
+      ),
+    ).resolves.toMatchObject({
       page: 2,
       limit: 100,
       type: FinancialMovementType.EXPENSE,
+      status: FinancialMovementStatus.POSTED,
+      method: FinancialMethod.CHECK,
+      search: 'factura',
     });
   });
 
@@ -93,6 +111,9 @@ describe('Financial movement DTOs', () => {
     { dateTo: '2026-13-01' },
     { page: '0' },
     { limit: '101' },
+    { status: 'CANCELLED' },
+    { method: 'CRYPTO' },
+    { search: 'x'.repeat(151) },
   ])('rejects invalid query values %#', async (input) => {
     const dto = plainToInstance(QueryFinancialMovementsDto, input);
     expect(await validate(dto)).not.toHaveLength(0);

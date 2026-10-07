@@ -1,10 +1,10 @@
 import { httpClient } from '@/shared/api/httpClient'
+import { inventoryItemsApi } from '@/features/inventory'
 import type {
   CreateAdjustmentInput,
   CreateInventoryItemInput,
   CreateMovementInput,
   InventoryItem,
-  InventoryItemListResponse,
   InventoryItemQuery,
   InventoryMovement,
   InventoryMovementListResponse,
@@ -14,10 +14,10 @@ import type {
 
 export const inventoryItemsService = {
   async list(params: InventoryItemQuery) {
-    return (await httpClient.get<InventoryItemListResponse>('/inventory/items', { params })).data
+    return inventoryItemsApi.list(params)
   },
   async get(id: number) {
-    return (await httpClient.get<InventoryItem>(`/inventory/items/${id}`)).data
+    return inventoryItemsApi.get(id)
   },
   async create(payload: CreateInventoryItemInput) {
     return (await httpClient.post<InventoryItem>('/inventory/items', payload)).data

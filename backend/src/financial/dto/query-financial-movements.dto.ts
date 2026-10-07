@@ -1,27 +1,8 @@
 import { Type } from 'class-transformer';
-import {
-  IsDateString,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  Max,
-  Min,
-} from 'class-validator';
-import { FinancialMovementType } from '../../../generated/prisma/enums';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { FinancialMovementFiltersDto } from './financial-movement-filters.dto';
 
-export class QueryFinancialMovementsDto {
-  @IsOptional()
-  @IsEnum(FinancialMovementType)
-  type?: FinancialMovementType;
-
-  @IsOptional()
-  @IsDateString()
-  dateFrom?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dateTo?: string;
-
+export class QueryFinancialMovementsDto extends FinancialMovementFiltersDto {
   @Type(() => Number)
   @IsOptional()
   @IsInt()

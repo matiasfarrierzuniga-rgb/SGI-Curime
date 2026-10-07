@@ -17,6 +17,8 @@ type PrismaAuthUserOptions = {
   roleName?: string;
   roleId?: number;
   roleIsActive?: boolean;
+  permissionCodes?: readonly string[];
+  permissionCodes?: readonly string[];
   hasPerson?: boolean;
   affiliateStatus?: 'ACTIVE' | 'INACTIVE' | null;
   affiliateRoleId?: number | null;
@@ -47,6 +49,13 @@ export function buildPrismaAuthUser(options: PrismaAuthUserOptions = {}) {
     role: {
       name: roleName,
       isActive: options.roleIsActive ?? true,
+      ...(options.permissionCodes
+        ? {
+            permissions: options.permissionCodes.map((code) => ({
+              permission: { code },
+            })),
+          }
+        : {}),
     },
     person: hasPerson
       ? {

@@ -1,17 +1,97 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Readable } from 'node:stream';
 import {
   AssemblyStatus,
   DonationStatus,
+  Prisma,
   ReservationStatus,
 } from '../../generated/prisma/client';
 import { FinancialService } from '../financial/financial.service';
 import { InventoryReportsService } from '../inventory-reports/inventory-reports.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { isSubscriptionExpired } from '../auth/domain/policies/subscription-expiration.policy';
 import {
   buildReportMetadata,
   type ReportGeneratedBy,
 } from '../reporting/report-metadata';
-import { AttendanceReportQueryDto } from './dto/report-query.dto';
+import {
+  AffiliateReportQueryDto,
+  AttendanceReportQueryDto,
+  type SubscriptionReportStatus,
+} from './dto/report-query.dto';
+
+const SUBSCRIPTION_ROLE = 'Subscription_L1';
+const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+const SUBSCRIPTION_EXPIRING_WITHIN_DAYS = 30;
+const AFFILIATE_EXPORT_BATCH_SIZE = 500;
+const affiliateReportSelect = {
+  id: true,
+  fullName: true,
+  identification: true,
+  affiliateType: true,
+  affiliationDate: true,
+  status: true,
+  person: {
+    select: {
+      user: {
+        select: {
+          subscriptionExpirationDate: true,
+          role: { select: { name: true } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.AffiliateSelect;
+
+type AffiliateReportRecord = Prisma.AffiliateGetPayload<{
+  select: typeof affiliateReportSelect;
+}>;
+
+function mapAffiliateReportRow(affiliate: AffiliateReportRecord, now: Date) {
+  const user = affiliate.person?.user;
+  const roleName = user?.role.name;
+  const expirationDate =
+    user && roleName === SUBSCRIPTION_ROLE
+      ? user.subscriptionExpirationDate
+      : null;
+  const subscriptionStatus: SubscriptionReportStatus =
+    expirationDate === null
+      ? 'UNSPECIFIED'
+      : isSubscriptionExpired(roleName ?? '', expirationDate, now)
+        ? 'EXPIRED'
+        : 'CURRENT';
+
+  return {
+    id: affiliate.id,
+    fullName: affiliate.fullName,
+    identification: affiliate.identification,
+    affiliateType: affiliate.affiliateType,
+    affiliationDate: affiliate.affiliationDate,
+    affiliateStatus: affiliate.status,
+    subscriptionExpirationDate: expirationDate,
+    subscriptionStatus,
+    daysRemaining:
+      expirationDate === null
+        ? null
+        : Math.max(
+            0,
+            Math.ceil(
+              (expirationDate.getTime() - now.getTime()) / DAY_IN_MILLISECONDS,
+            ),
+          ),
+  };
+}
+
+function csvCell(value: string | number | null) {
+  const text = String(value ?? '');
+  const safeText = /^\s*[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+}
+
+function csvDate(value: Date | null) {
+  return value?.toISOString().slice(0, 10) ?? '';
+}
+
 @Injectable()
 export class AdminReportsService {
   constructor(
@@ -98,21 +178,306 @@ export class AdminReportsService {
     };
   }
   async affiliatesSummary(generatedBy: ReportGeneratedBy | null = null) {
-    const [total, active, inactive, pendingRequests] =
-      await this.prisma.$transaction([
+    const now = new Date();
+    const expiringBefore = new Date(
+      now.getTime() + SUBSCRIPTION_EXPIRING_WITHIN_DAYS * DAY_IN_MILLISECONDS,
+    );
+    const subscriptionRoleFilter: Prisma.AffiliateWhereInput = {
+      person: {
+        is: {
+          user: {
+            is: { role: { is: { name: SUBSCRIPTION_ROLE } } },
+          },
+        },
+      },
+    };
+    const [
+      [
+        total,
+        active,
+        inactive,
+        pendingRequests,
+        totalMemberships,
+        activeMemberships,
+        expiredMemberships,
+        expiringMemberships,
+        affiliatesWithoutMembership,
+        membershipsWithoutExpiration,
+      ],
+      affiliateTypes,
+    ] = await Promise.all([
+      this.prisma.$transaction([
         this.prisma.affiliate.count(),
         this.prisma.affiliate.count({ where: { status: 'ACTIVE' } }),
         this.prisma.affiliate.count({ where: { status: 'INACTIVE' } }),
         this.prisma.affiliateRequest.count({ where: { status: 'PENDING' } }),
-      ]);
+        this.prisma.affiliate.count({ where: subscriptionRoleFilter }),
+        this.prisma.affiliate.count({
+          where: {
+            ...subscriptionRoleFilter,
+            person: {
+              is: {
+                user: {
+                  is: {
+                    role: { is: { name: SUBSCRIPTION_ROLE } },
+                    subscriptionExpirationDate: { gt: now },
+                  },
+                },
+              },
+            },
+          },
+        }),
+        this.prisma.affiliate.count({
+          where: {
+            ...subscriptionRoleFilter,
+            person: {
+              is: {
+                user: {
+                  is: {
+                    role: { is: { name: SUBSCRIPTION_ROLE } },
+                    subscriptionExpirationDate: { lte: now },
+                  },
+                },
+              },
+            },
+          },
+        }),
+        this.prisma.affiliate.count({
+          where: {
+            ...subscriptionRoleFilter,
+            person: {
+              is: {
+                user: {
+                  is: {
+                    role: { is: { name: SUBSCRIPTION_ROLE } },
+                    subscriptionExpirationDate: {
+                      gt: now,
+                      lte: expiringBefore,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }),
+        this.prisma.affiliate.count({
+          where: { NOT: subscriptionRoleFilter },
+        }),
+        this.prisma.affiliate.count({
+          where: {
+            ...subscriptionRoleFilter,
+            person: {
+              is: {
+                user: {
+                  is: {
+                    role: { is: { name: SUBSCRIPTION_ROLE } },
+                    subscriptionExpirationDate: null,
+                  },
+                },
+              },
+            },
+          },
+        }),
+      ]),
+      this.prisma.affiliate.groupBy({
+        by: ['affiliateType'],
+        _count: { _all: true },
+        orderBy: { affiliateType: 'asc' },
+      }),
+    ]);
     return {
       metadata: buildReportMetadata({
         generatedBy,
         dataSource: 'AFFILIATE',
       }),
-      data: { total, active, inactive, pendingRequests },
+      data: {
+        total,
+        active,
+        inactive,
+        pendingRequests,
+        memberships: {
+          total: totalMemberships,
+          active: activeMemberships,
+          expired: expiredMemberships,
+          expiringSoon: expiringMemberships,
+          withoutMembership: affiliatesWithoutMembership,
+          expirationUnspecified: membershipsWithoutExpiration,
+        },
+        byAffiliateType: affiliateTypes.map((group) => ({
+          affiliateType: group.affiliateType,
+          count: group._count._all,
+        })),
+      },
     };
   }
+
+  async affiliatesReport(
+    q: AffiliateReportQueryDto,
+    generatedBy: ReportGeneratedBy | null = null,
+  ) {
+    this.validateAffiliateReportDateRange(q);
+
+    const now = new Date();
+    const where = this.affiliateReportWhere(q, now);
+    const [affiliates, total] = await Promise.all([
+      this.prisma.affiliate.findMany({
+        where,
+        select: affiliateReportSelect,
+        orderBy: { fullName: 'asc' },
+        skip: (q.page - 1) * q.limit,
+        take: q.limit,
+      }),
+      this.prisma.affiliate.count({ where }),
+    ]);
+
+    const data = affiliates.map((affiliate) =>
+      mapAffiliateReportRow(affiliate, now),
+    );
+
+    return {
+      metadata: buildReportMetadata({
+        generatedBy,
+        dateFrom: q.dateFrom,
+        dateTo: q.dateTo,
+        filters: {
+          search: q.search,
+          affiliateType: q.affiliateType,
+          affiliateStatus: q.affiliateStatus,
+          subscriptionStatus: q.subscriptionStatus,
+          dateFrom: q.dateFrom,
+          dateTo: q.dateTo,
+          page: q.page,
+          limit: q.limit,
+        },
+        dataSource: 'AFFILIATE',
+      }),
+      data: { data, total, page: q.page, limit: q.limit },
+    };
+  }
+
+  exportAffiliatesCsv(q: AffiliateReportQueryDto): Readable {
+    this.validateAffiliateReportDateRange(q);
+    return Readable.from(this.iterateAffiliateCsv(q));
+  }
+
+  private async *iterateAffiliateCsv(
+    q: AffiliateReportQueryDto,
+  ): AsyncGenerator<string> {
+    const now = new Date();
+    const where = this.affiliateReportWhere(q, now);
+    const headers = [
+      'Nombre completo',
+      'Identificación',
+      'Tipo de afiliado',
+      'Estado del afiliado',
+      'Estado de membresía',
+      'Fecha de afiliación',
+      'Fecha de vencimiento',
+      'Días restantes',
+    ];
+    yield `\uFEFF${headers.map(csvCell).join(',')}\r\n`;
+
+    for (let skip = 0; ; skip += AFFILIATE_EXPORT_BATCH_SIZE) {
+      const affiliates = await this.prisma.affiliate.findMany({
+        where,
+        select: affiliateReportSelect,
+        orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
+        skip,
+        take: AFFILIATE_EXPORT_BATCH_SIZE,
+      });
+      if (affiliates.length === 0) return;
+
+      for (const affiliate of affiliates) {
+        const row = mapAffiliateReportRow(affiliate, now);
+        yield `${[
+          row.fullName,
+          row.identification,
+          row.affiliateType ?? '',
+          row.affiliateStatus === 'ACTIVE' ? 'Activo' : 'Inactivo',
+          row.subscriptionStatus === 'CURRENT'
+            ? 'Vigente'
+            : row.subscriptionStatus === 'EXPIRED'
+              ? 'Vencida'
+              : 'Sin vencimiento registrado',
+          csvDate(row.affiliationDate),
+          csvDate(row.subscriptionExpirationDate),
+          row.daysRemaining ?? '',
+        ]
+          .map(csvCell)
+          .join(',')}\r\n`;
+      }
+
+      if (affiliates.length < AFFILIATE_EXPORT_BATCH_SIZE) return;
+    }
+  }
+
+  private validateAffiliateReportDateRange(q: AffiliateReportQueryDto) {
+    if (q.dateFrom && q.dateTo && q.dateFrom > q.dateTo) {
+      throw new BadRequestException(
+        'La fecha inicial no puede ser posterior a la fecha final',
+      );
+    }
+  }
+
+  private affiliateReportWhere(
+    q: AffiliateReportQueryDto,
+    now: Date,
+  ): Prisma.AffiliateWhereInput {
+    const where: Prisma.AffiliateWhereInput = {
+      affiliateType: q.affiliateType
+        ? { contains: q.affiliateType, mode: 'insensitive' }
+        : undefined,
+      status: q.affiliateStatus,
+      affiliationDate:
+        q.dateFrom || q.dateTo ? { gte: q.dateFrom, lte: q.dateTo } : undefined,
+      OR: q.search
+        ? [
+            { fullName: { contains: q.search, mode: 'insensitive' } },
+            { identification: { contains: q.search, mode: 'insensitive' } },
+          ]
+        : undefined,
+    };
+
+    if (q.subscriptionStatus === 'CURRENT') {
+      where.person = {
+        is: {
+          user: {
+            is: {
+              role: { is: { name: SUBSCRIPTION_ROLE } },
+              subscriptionExpirationDate: { gt: now },
+            },
+          },
+        },
+      };
+    } else if (q.subscriptionStatus === 'EXPIRED') {
+      where.person = {
+        is: {
+          user: {
+            is: {
+              role: { is: { name: SUBSCRIPTION_ROLE } },
+              subscriptionExpirationDate: { lte: now },
+            },
+          },
+        },
+      };
+    } else if (q.subscriptionStatus === 'UNSPECIFIED') {
+      where.NOT = {
+        person: {
+          is: {
+            user: {
+              is: {
+                role: { is: { name: SUBSCRIPTION_ROLE } },
+                subscriptionExpirationDate: { not: null },
+              },
+            },
+          },
+        },
+      };
+    }
+
+    return where;
+  }
+
   async attendanceSummary(
     q: AttendanceReportQueryDto,
     generatedBy: ReportGeneratedBy | null = null,
@@ -143,13 +508,9 @@ export class AdminReportsService {
       const attendances = a.convocations.flatMap((item) =>
           item.attendance ? [item.attendance] : [],
         ),
-        present = attendances.filter(
-          (x) => x.status === 'PRESENT',
-        ).length,
+        present = attendances.filter((x) => x.status === 'PRESENT').length,
         absent = attendances.filter((x) => x.status === 'ABSENT').length,
-        justified = attendances.filter(
-          (x) => x.status === 'JUSTIFIED',
-        ).length;
+        justified = attendances.filter((x) => x.status === 'JUSTIFIED').length;
       return {
         id: a.id,
         title: a.title,

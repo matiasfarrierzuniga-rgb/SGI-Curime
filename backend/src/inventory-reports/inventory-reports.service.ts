@@ -162,17 +162,20 @@ export class InventoryReportsService {
       dateTo: query.dateTo ?? null,
     };
     const summary = {
+      openingBalances: { count: 0, quantity: 0 },
       entries: { count: 0, quantity: 0 },
       exits: { count: 0, quantity: 0 },
       adjustments: { count: 0, quantity: 0 },
     };
     for (const row of grouped) {
       const key =
-        row.type === InventoryMovementType.ENTRY
-          ? 'entries'
-          : row.type === InventoryMovementType.EXIT
-            ? 'exits'
-            : 'adjustments';
+        row.type === InventoryMovementType.OPENING_BALANCE
+          ? 'openingBalances'
+          : row.type === InventoryMovementType.ENTRY
+            ? 'entries'
+            : row.type === InventoryMovementType.EXIT
+              ? 'exits'
+              : 'adjustments';
       summary[key] = {
         count: row._count._all,
         quantity: row._sum.legacyQuantity ?? 0,

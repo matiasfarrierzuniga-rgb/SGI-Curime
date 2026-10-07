@@ -12,6 +12,7 @@ import {
   FinancialMovementSource,
   FinancialMovementStatus,
   FinancialMovementType,
+  PaymentMethod,
   PaymentStatus,
   Prisma,
 } from '../../generated/prisma/client';
@@ -21,6 +22,7 @@ import { AuditContext, AuditService } from '../audit/audit.service';
 import { CreateFinancialMovementDto } from './dto/create-financial-movement.dto';
 import { QueryFinancialMovementSummaryDto } from './dto/query-financial-movement-summary.dto';
 import { QueryFinancialMovementsDto } from './dto/query-financial-movements.dto';
+import { FinancialMovementFiltersDto } from './dto/financial-movement-filters.dto';
 import { QueryFinancialChargesDto } from './dto/query-financial-charges.dto';
 import { RecordPaymentDto } from './dto/record-payment.dto';
 
@@ -57,6 +59,7 @@ const financialMovementSelect = {
   id: true,
   type: true,
   legacySource: true,
+  status: true,
   amount: true,
   currency: true,
   description: true,
@@ -72,6 +75,15 @@ const financialMovementDetailSelect = {
   ...financialMovementSelect,
   recordedBy: { select: { id: true, fullName: true } },
 } satisfies Prisma.FinancialMovementSelect;
+
+const PAYMENT_METHOD_BY_FINANCIAL_METHOD: Partial<
+  Record<FinancialMethod, PaymentMethod>
+> = {
+  [FinancialMethod.CASH]: PaymentMethod.CASH,
+  [FinancialMethod.BANK_TRANSFER]: PaymentMethod.BANK_TRANSFER,
+  [FinancialMethod.SINPE_MOVIL]: PaymentMethod.SINPE_MOVIL,
+  [FinancialMethod.OTHER]: PaymentMethod.OTHER,
+};
 
 type FinancialTransaction = Pick<
   Prisma.TransactionClient,
@@ -139,16 +151,24 @@ export class FinancialService {
       });
       if (!charge) throw new NotFoundException('Financial charge not found');
       if (charge.status !== FinancialChargeStatus.PENDING) {
-        throw new ConflictException('El cargo financiero no está pendiente de pago');
+        throw new ConflictException(
+          'El cargo financiero no está pendiente de pago',
+        );
       }
       if (!charge.amount.greaterThan(0)) {
-        throw new ConflictException('El cargo financiero no tiene un balance pendiente mayor que cero');
+        throw new ConflictException(
+          'El cargo financiero no tiene un balance pendiente mayor que cero',
+        );
       }
       if (charge.currency !== 'CRC') {
-        throw new ConflictException('La moneda del cargo financiero no está soportada');
+        throw new ConflictException(
+          'La moneda del cargo financiero no está soportada',
+        );
       }
       if (!amount.equals(charge.amount)) {
-        throw new ConflictException('El monto del pago debe ser exactamente igual al balance pendiente');
+        throw new ConflictException(
+          'El monto del pago debe ser exactamente igual al balance pendiente',
+        );
       }
 
       const paidAt = new Date();
@@ -272,51 +292,253 @@ export class FinancialService {
   }
 
   async summarizeMovements(query: QueryFinancialMovementSummaryDto) {
-    const totals = await this.prisma.financialMovement.groupBy({
-      by: ['type'],
-      where: this.movementWhere(query),
-      _sum: { amount: true },
-    });
+    const [totals, paymentGroups] = await Promise.all([
+      this.prisma.financialMovement.groupBy({
+        by: ['type', 'legacySource'],
+        orderBy: [{ legacySource: 'asc' }, { type: 'asc' }],
+        where: this.movementWhere(query, true),
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      query.type === FinancialMovementType.EXPENSE
+        ? Promise.resolve([])
+        : this.prisma.payment.groupBy({
+            by: ['legacyMethod'],
+            orderBy: { legacyMethod: 'asc' },
+            where: {
+              status: PaymentStatus.CONFIRMED,
+              ...(query.method
+                ? {
+                    OR: [
+                      { financialMethod: query.method },
+                      ...(PAYMENT_METHOD_BY_FINANCIAL_METHOD[query.method]
+                        ? [
+                            {
+                              legacyMethod:
+                                PAYMENT_METHOD_BY_FINANCIAL_METHOD[
+                                  query.method
+                                ],
+                            },
+                          ]
+                        : []),
+                    ],
+                  }
+                : {}),
+              paidAt: { not: null, ...this.dateRange(query) },
+              movement: {
+                is: {
+                  type: FinancialMovementType.INCOME,
+                  status: query.status,
+                  AND: [
+                    ...(query.search
+                      ? [
+                          {
+                            OR: [
+                              {
+                                description: {
+                                  contains: query.search,
+                                  mode: 'insensitive' as const,
+                                },
+                              },
+                              {
+                                reference: {
+                                  contains: query.search,
+                                  mode: 'insensitive' as const,
+                                },
+                              },
+                            ],
+                          },
+                        ]
+                      : []),
+                    {
+                      OR: [
+                        {
+                          status: {
+                            not: FinancialMovementStatus.VOIDED,
+                          },
+                        },
+                        { status: null },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            _sum: { amount: true },
+            _count: { _all: true },
+          }),
+    ]);
     let totalIncome = new Prisma.Decimal(0);
     let totalExpenses = new Prisma.Decimal(0);
+    let incomeCount = 0;
+    let expenseCount = 0;
+    let confirmedPaymentTotal = new Prisma.Decimal(0);
+    let confirmedPaymentCount = 0;
+    const sourceTotals = new Map<
+      FinancialMovementSource,
+      {
+        incomeTotal: Prisma.Decimal;
+        incomeCount: number;
+        expenseTotal: Prisma.Decimal;
+        expenseCount: number;
+      }
+    >();
 
     for (const total of totals) {
       const amount = total._sum.amount ?? new Prisma.Decimal(0);
+      const source = sourceTotals.get(total.legacySource) ?? {
+        incomeTotal: new Prisma.Decimal(0),
+        incomeCount: 0,
+        expenseTotal: new Prisma.Decimal(0),
+        expenseCount: 0,
+      };
       if (total.type === FinancialMovementType.INCOME) {
-        totalIncome = amount;
+        totalIncome = totalIncome.plus(amount);
+        incomeCount += total._count._all;
+        source.incomeTotal = source.incomeTotal.plus(amount);
+        source.incomeCount += total._count._all;
       } else if (total.type === FinancialMovementType.EXPENSE) {
-        totalExpenses = amount;
+        totalExpenses = totalExpenses.plus(amount);
+        expenseCount += total._count._all;
+        source.expenseTotal = source.expenseTotal.plus(amount);
+        source.expenseCount += total._count._all;
       }
+      sourceTotals.set(total.legacySource, source);
     }
+
+    const paymentsByMethod = paymentGroups.map((group) => {
+      const amount = group._sum.amount ?? new Prisma.Decimal(0);
+      confirmedPaymentTotal = confirmedPaymentTotal.plus(amount);
+      confirmedPaymentCount += group._count._all;
+      return {
+        method: group.legacyMethod,
+        total: amount.toFixed(2),
+        count: group._count._all,
+      };
+    });
 
     return {
       currency: 'CRC',
       totalIncome: totalIncome.toFixed(2),
       totalExpenses: totalExpenses.toFixed(2),
       balance: totalIncome.minus(totalExpenses).toFixed(2),
+      incomeCount,
+      expenseCount,
+      movementCount: incomeCount + expenseCount,
+      incomeAverage:
+        incomeCount === 0
+          ? '0.00'
+          : totalIncome.dividedBy(incomeCount).toFixed(2),
+      expenseAverage:
+        expenseCount === 0
+          ? '0.00'
+          : totalExpenses.dividedBy(expenseCount).toFixed(2),
+      bySource: Array.from(sourceTotals, ([source, values]) => ({
+        source,
+        incomeTotal: values.incomeTotal.toFixed(2),
+        incomeCount: values.incomeCount,
+        expenseTotal: values.expenseTotal.toFixed(2),
+        expenseCount: values.expenseCount,
+      })),
+      confirmedPayments: {
+        total: confirmedPaymentTotal.toFixed(2),
+        count: confirmedPaymentCount,
+        byMethod: paymentsByMethod,
+      },
     };
   }
 
-  private movementWhere(query: {
-    type?: FinancialMovementType;
-    dateFrom?: string;
-    dateTo?: string;
-  }): Prisma.FinancialMovementWhereInput {
+  private movementWhere(
+    query: FinancialMovementFiltersDto,
+    excludeVoided = false,
+  ): Prisma.FinancialMovementWhereInput {
+    const and: Prisma.FinancialMovementWhereInput[] = [];
+    if (query.search) {
+      and.push({
+        OR: [
+          {
+            description: {
+              contains: query.search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            reference: {
+              contains: query.search,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      });
+    }
+    if (query.method) {
+      const paymentMethod = PAYMENT_METHOD_BY_FINANCIAL_METHOD[query.method];
+      and.push({
+        OR: [
+          { payment: { is: { financialMethod: query.method } } },
+          ...(paymentMethod
+            ? [{ payment: { is: { legacyMethod: paymentMethod } } }]
+            : []),
+          { disbursement: { is: { method: query.method } } },
+          { originalDonation: { is: { financialMethod: query.method } } },
+          ...(paymentMethod
+            ? [
+                {
+                  originalDonation: {
+                    is: { legacyMethod: paymentMethod },
+                  },
+                },
+              ]
+            : []),
+        ],
+      });
+    }
+    if (excludeVoided) {
+      and.push({
+        OR: [
+          { status: { not: FinancialMovementStatus.VOIDED } },
+          { status: null },
+        ],
+      });
+    }
+
     return {
       type: query.type,
+      status: query.status,
       occurredAt:
-        query.dateFrom || query.dateTo
-          ? {
-              gte: query.dateFrom ? new Date(query.dateFrom) : undefined,
-              lte: query.dateTo ? new Date(query.dateTo) : undefined,
-            }
-          : undefined,
+        query.dateFrom || query.dateTo ? this.dateRange(query) : undefined,
+      AND: and.length > 0 ? and : undefined,
     };
   }
 
-  private serializeMovement<T extends { amount: Prisma.Decimal }>(
-    movement: T,
+  private dateRange(
+    query: Pick<FinancialMovementFiltersDto, 'dateFrom' | 'dateTo'>,
   ) {
+    const isDateOnly =
+      query.dateTo !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(query.dateTo);
+    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+    if (isDateOnly && dateTo) {
+      dateTo.setUTCDate(dateTo.getUTCDate() + 1);
+    }
+    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
+    if (dateFrom && dateTo) {
+      const inclusiveDateTo = isDateOnly
+        ? dateTo.getTime() - 1
+        : dateTo.getTime();
+      if (dateFrom.getTime() > inclusiveDateTo) {
+        throw new BadRequestException(
+          'La fecha inicial debe ser anterior o igual a la fecha final',
+        );
+      }
+    }
+
+    return {
+      ...(dateFrom ? { gte: dateFrom } : {}),
+      ...(query.dateTo ? (isDateOnly ? { lt: dateTo } : { lte: dateTo }) : {}),
+    };
+  }
+
+  private serializeMovement<T extends { amount: Prisma.Decimal }>(movement: T) {
     const { legacySource, legacySourceId, ...rest } = movement as T & {
       legacySource?: FinancialMovementSource;
       legacySourceId?: number | null;

@@ -1,132 +1,214 @@
-export type FinancialChargeStatus = 'PENDING' | 'PAID' | 'CANCELLED'
-export type PaymentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED'
-export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'SINPE_MOVIL' | 'OTHER'
+export type FinancialChargeStatus = "PENDING" | "PAID" | "CANCELLED";
+export type PaymentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
+export type PaymentMethod = "CASH" | "BANK_TRANSFER" | "SINPE_MOVIL" | "OTHER";
 export type FinancialCharge = {
-  id: number
-  reservationId: number
-  amount: string
-  balance?: string
-  currency: string
-  status: FinancialChargeStatus
-  dueAt: string | null
-  createdAt: string
-  updatedAt: string
-}
+  id: number;
+  reservationId: number;
+  amount: string;
+  balance?: string;
+  currency: string;
+  status: FinancialChargeStatus;
+  dueAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 export type Payment = {
-  id: number
-  chargeId: number
-  amount: string
-  status: PaymentStatus
-  method: PaymentMethod
-  reference: string | null
-  paidAt: string
-  recordedById: number
-  createdAt: string
-  updatedAt: string
-}
-export type FinancialChargeDetail = FinancialCharge & { payments: Payment[] }
-export type FinancialChargeListFilters = { status?: FinancialChargeStatus; reservationId?: number; page?: number; limit?: number }
-export type PaginatedFinancialCharges = { data: FinancialCharge[]; total: number; page: number; limit: number }
-export type RecordPaymentInput = { amount: string; method: PaymentMethod; reference?: string }
-export const FINANCIAL_CHARGE_STATUSES: readonly FinancialChargeStatus[] = ['PENDING', 'PAID', 'CANCELLED']
-export const PAYMENT_METHODS: readonly PaymentMethod[] = ['CASH', 'BANK_TRANSFER', 'SINPE_MOVIL', 'OTHER']
+  id: number;
+  chargeId: number;
+  amount: string;
+  status: PaymentStatus;
+  method: PaymentMethod;
+  reference: string | null;
+  paidAt: string;
+  recordedById: number;
+  createdAt: string;
+  updatedAt: string;
+};
+export type FinancialChargeDetail = FinancialCharge & { payments: Payment[] };
+export type FinancialChargeListFilters = {
+  status?: FinancialChargeStatus;
+  reservationId?: number;
+  page?: number;
+  limit?: number;
+};
+export type PaginatedFinancialCharges = {
+  data: FinancialCharge[];
+  total: number;
+  page: number;
+  limit: number;
+};
+export type RecordPaymentInput = {
+  amount: string;
+  method: PaymentMethod;
+  reference?: string;
+};
+export const FINANCIAL_CHARGE_STATUSES: readonly FinancialChargeStatus[] = [
+  "PENDING",
+  "PAID",
+  "CANCELLED",
+];
+export const PAYMENT_METHODS: readonly PaymentMethod[] = [
+  "CASH",
+  "BANK_TRANSFER",
+  "SINPE_MOVIL",
+  "OTHER",
+];
 
-export type FinancialMovementType = 'INCOME' | 'EXPENSE'
-export type FinancialMovementSource = 'MANUAL' | 'RESERVATION_PAYMENT' | 'DONATION'
+export type FinancialMovementType = "INCOME" | "EXPENSE";
+export type FinancialMovementSource =
+  "MANUAL" | "RESERVATION_PAYMENT" | "DONATION";
+export type FinancialMovementStatus = "POSTED" | "VOIDED";
+export type FinancialMovementMethod = PaymentMethod | "CHECK";
 export type FinancialMovement = {
-  id: number
-  type: FinancialMovementType
-  source: FinancialMovementSource
-  amount: string
-  currency: string
-  description: string
-  reference: string | null
-  occurredAt: string
-  sourceId: number | null
-  recordedById: number | null
-  createdAt: string
-  updatedAt: string
-}
+  id: number;
+  type: FinancialMovementType;
+  source: FinancialMovementSource;
+  status: FinancialMovementStatus | null;
+  amount: string;
+  currency: string;
+  description: string;
+  reference: string | null;
+  occurredAt: string;
+  sourceId: number | null;
+  recordedById: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
 export type FinancialMovementDetail = FinancialMovement & {
-  recordedBy: { id: number; fullName: string } | null
-}
+  recordedBy: { id: number; fullName: string } | null;
+};
 export type CreateFinancialMovementInput = {
-  type: FinancialMovementType
-  amount: string
-  description: string
-  reference?: string
-  occurredAt: string
-}
+  type: FinancialMovementType;
+  amount: string;
+  description: string;
+  reference?: string;
+  occurredAt: string;
+};
 export type FinancialMovementListFilters = {
-  type?: FinancialMovementType
-  dateFrom?: string
-  dateTo?: string
-  page?: number
-  limit?: number
-}
+  type?: FinancialMovementType;
+  dateFrom?: string;
+  dateTo?: string;
+  status?: FinancialMovementStatus;
+  method?: FinancialMovementMethod;
+  search?: string;
+  page?: number;
+  limit?: number;
+};
 export type FinancialMovementListResponse = {
-  data: FinancialMovement[]
-  total: number
-  page: number
-  limit: number
-}
+  data: FinancialMovement[];
+  total: number;
+  page: number;
+  limit: number;
+};
 export type FinancialMovementSummary = {
-  currency: string
-  totalIncome: string
-  totalExpenses: string
-  balance: string
-}
-export const FINANCIAL_MOVEMENT_TYPES: readonly FinancialMovementType[] = ['INCOME', 'EXPENSE']
+  currency: string;
+  totalIncome: string;
+  totalExpenses: string;
+  balance: string;
+  incomeCount: number;
+  expenseCount: number;
+  movementCount: number;
+  incomeAverage: string;
+  expenseAverage: string;
+  bySource: FinancialMovementSourceSummary[];
+  confirmedPayments: {
+    total: string;
+    count: number;
+    byMethod: FinancialPaymentMethodSummary[];
+  };
+};
+export type FinancialMovementSummaryFilters = Pick<
+  FinancialMovementListFilters,
+  "type" | "dateFrom" | "dateTo" | "status" | "method" | "search"
+>;
+export type FinancialMovementSourceSummary = {
+  source: FinancialMovementSource;
+  incomeTotal: string;
+  incomeCount: number;
+  expenseTotal: string;
+  expenseCount: number;
+};
+export type FinancialPaymentMethodSummary = {
+  method: PaymentMethod;
+  total: string;
+  count: number;
+};
+export const FINANCIAL_MOVEMENT_TYPES: readonly FinancialMovementType[] = [
+  "INCOME",
+  "EXPENSE",
+];
+export const FINANCIAL_MOVEMENT_STATUSES: readonly FinancialMovementStatus[] = [
+  "POSTED",
+  "VOIDED",
+];
+export const FINANCIAL_MOVEMENT_METHODS: readonly FinancialMovementMethod[] = [
+  "CASH",
+  "BANK_TRANSFER",
+  "SINPE_MOVIL",
+  "CHECK",
+  "OTHER",
+];
 
-export type DinadecoSourceSummary = { total: string; count: number }
-export type DinadecoFieLine = Pick<FinancialMovement, 'id' | 'description' | 'amount' | 'occurredAt' | 'source'>
+export type DinadecoSourceSummary = { total: string; count: number };
+export type DinadecoFieLine = Pick<
+  FinancialMovement,
+  "id" | "description" | "amount" | "occurredAt" | "source"
+>;
 export type DinadecoInstitutionalProfile = {
-  legalName: string | null
-  legalIdentification: string | null
-  dinadecoRegistrationCode: string | null
-  dinadecoRegion: string | null
-  organizationType: 'INTEGRAL' | 'SPECIFIC' | null
-  province: string | null
-  canton: string | null
-  district: string | null
-  locality: string | null
-  correspondenceAddress: string | null
-  phone: string | null
-  telefax: string | null
-  email: string | null
-}
+  legalName: string | null;
+  legalIdentification: string | null;
+  dinadecoRegistrationCode: string | null;
+  dinadecoRegion: string | null;
+  organizationType: "INTEGRAL" | "SPECIFIC" | null;
+  province: string | null;
+  canton: string | null;
+  district: string | null;
+  locality: string | null;
+  correspondenceAddress: string | null;
+  phone: string | null;
+  telefax: string | null;
+  email: string | null;
+};
 export type DinadecoAnnualReport = {
   metadata: {
-    generatedAt: string
-    generatedBy: { id: number; fullName: string } | null
-    period: { from: string; to: string }
-    appliedFilters: { year: number }
-    dataSource: 'FINANCIAL_MOVEMENT'
-    reportVersion: string
-  }
+    generatedAt: string;
+    generatedBy: { id: number; fullName: string } | null;
+    period: { from: string; to: string };
+    appliedFilters: { year: number };
+    dataSource: "FINANCIAL_MOVEMENT";
+    reportVersion: string;
+  };
   data: {
-    year: number
-    currency: 'CRC'
-    openingBalance: string
-    income: { total: string; count: number; bySource: Partial<Record<FinancialMovementSource, DinadecoSourceSummary>> }
-    expenses: { total: string; count: number; bySource: Partial<Record<FinancialMovementSource, DinadecoSourceSummary>> }
-    netMovement: string
-    closingBalance: string
-    movementCount: number
-    institutionalProfile: DinadecoInstitutionalProfile
+    year: number;
+    currency: "CRC";
+    openingBalance: string;
+    income: {
+      total: string;
+      count: number;
+      bySource: Partial<Record<FinancialMovementSource, DinadecoSourceSummary>>;
+    };
+    expenses: {
+      total: string;
+      count: number;
+      bySource: Partial<Record<FinancialMovementSource, DinadecoSourceSummary>>;
+    };
+    netMovement: string;
+    closingBalance: string;
+    movementCount: number;
+    institutionalProfile: DinadecoInstitutionalProfile;
     fie: {
-      entries: DinadecoFieLine[]
-      exits: DinadecoFieLine[]
+      entries: DinadecoFieLine[];
+      exits: DinadecoFieLine[];
       capacity: {
-        entryCount: number
-        exitCount: number
-        entryCapacity: 15
-        exitCapacity: 15
-        entryOverflow: boolean
-        exitOverflow: boolean
-      }
-      totalIncomePlusOpeningBalance: string
-      totalExpensesPlusClosingBalance: string
-    }
-  }
-}
+        entryCount: number;
+        exitCount: number;
+        entryCapacity: 15;
+        exitCapacity: 15;
+        entryOverflow: boolean;
+        exitOverflow: boolean;
+      };
+      totalIncomePlusOpeningBalance: string;
+      totalExpensesPlusClosingBalance: string;
+    };
+  };
+};

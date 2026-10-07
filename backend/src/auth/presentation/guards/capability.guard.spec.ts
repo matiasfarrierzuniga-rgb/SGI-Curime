@@ -95,6 +95,63 @@ describe('CapabilityGuard', () => {
     expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
   });
 
+  it('enforces persisted grants for every financial operation', () => {
+    const financialCapabilities = [
+      'fin.charges.read',
+      'fin.payments.record',
+      'fin.movements.read',
+      'fin.movements.create',
+      'fin.dinadeco.read',
+    ] as const;
+
+    for (const capability of financialCapabilities) {
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([capability]);
+
+      expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
+      expect(guard.canActivate(contextFor('Tesorero'))).toBe(true);
+      expect(guard.canActivate(contextFor('Gestor de Inventario'))).toBe(false);
+      expect(guard.canActivate(contextFor('Vecino/Afiliado'))).toBe(false);
+    }
+  });
+
+  it('does not infer financial access from a role name', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['fin.movements.read']);
+
+    expect(guard.canActivate(contextFor('Tesorero', true, []))).toBe(false);
+    expect(
+      guard.canActivate(
+        contextFor('Unrecognized role', true, ['fin.movements.read']),
+      ),
+    ).toBe(true);
+  });
+
+  it('enforces donation operations using persisted capability grants', () => {
+    const donationCapabilities = [
+      ['don.donations.read', true],
+      ['don.donations.create', true],
+      ['don.donations.update', true],
+      ['don.donations.cancel', true],
+      ['don.donations.delete', false],
+    ] as const;
+
+    for (const [capability, treasurerHasCapability] of donationCapabilities) {
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([capability]);
+
+      expect(guard.canActivate(contextFor('Administrador'))).toBe(true);
+      expect(guard.canActivate(contextFor('Tesorero'))).toBe(
+        treasurerHasCapability,
+      );
+      expect(guard.canActivate(contextFor('Gestor de Inventario'))).toBe(false);
+      expect(guard.canActivate(contextFor('Vecino/Afiliado'))).toBe(false);
+    }
+  });
+
   it('denies a known role without required capability', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')

@@ -99,4 +99,58 @@ describe('DonationsController', () => {
     await expect(controller.findOne(41)).resolves.toEqual(result);
     expect(service.findOne).toHaveBeenCalledWith(41);
   });
+
+  it('updates a donation using the authenticated actor and request context', async () => {
+    const dto = { amount: '1500.00', reference: 'REF-2' };
+    const request = {
+      user: { id: 23 },
+      ip: '192.0.2.4',
+      get: jest.fn().mockReturnValue('update-agent'),
+    };
+    service.update.mockResolvedValueOnce({ id: 41, ...dto });
+
+    await expect(
+      controller.update(41, dto as never, request as never),
+    ).resolves.toEqual({ id: 41, ...dto });
+    expect(service.update).toHaveBeenCalledWith(41, dto, 23, {
+      ipAddress: '192.0.2.4',
+      userAgent: 'update-agent',
+    });
+  });
+
+  it('cancels a donation using the authenticated actor and request context', async () => {
+    const dto = { cancellationReason: 'Registro duplicado' };
+    const request = {
+      user: { id: 24 },
+      ip: '192.0.2.5',
+      get: jest.fn().mockReturnValue('cancel-agent'),
+    };
+    service.cancel.mockResolvedValueOnce({ id: 41, status: 'CANCELLED' });
+
+    await expect(
+      controller.cancel(41, dto as never, request as never),
+    ).resolves.toEqual({ id: 41, status: 'CANCELLED' });
+    expect(service.cancel).toHaveBeenCalledWith(41, dto, 24, {
+      ipAddress: '192.0.2.5',
+      userAgent: 'cancel-agent',
+    });
+  });
+
+  it('deletes a donation using the authenticated actor and request context', async () => {
+    const request = {
+      user: { id: 25 },
+      ip: '192.0.2.6',
+      get: jest.fn().mockReturnValue('delete-agent'),
+    };
+    service.remove.mockResolvedValueOnce({ deleted: true, id: 41 });
+
+    await expect(controller.remove(41, request as never)).resolves.toEqual({
+      deleted: true,
+      id: 41,
+    });
+    expect(service.remove).toHaveBeenCalledWith(41, 25, {
+      ipAddress: '192.0.2.6',
+      userAgent: 'delete-agent',
+    });
+  });
 });

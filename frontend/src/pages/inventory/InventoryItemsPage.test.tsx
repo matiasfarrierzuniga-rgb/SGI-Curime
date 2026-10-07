@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useInventoryItems } from '@/features/inventory'
 import { ToastProvider } from '@/shared/ui/Toast'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
@@ -22,6 +23,11 @@ vi.mock('../../services/inventoryItemsService', () => ({
 
 vi.mock('../../services/inventoryCategoriesService', () => ({
   inventoryCategoriesService: { list: vi.fn() },
+}))
+
+vi.mock('@/features/inventory', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/inventory')>()),
+  useInventoryItems: vi.fn(),
 }))
 
 const category = { id: 1, name: 'Herramientas', description: null, isActive: true, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }
@@ -55,32 +61,105 @@ const page = () =>
 describe('InventoryItemsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(inventoryItemsService.list).mockResolvedValue({ data: [item], total: 1, page: 1, limit: 10 })
+    vi.mocked(useInventoryItems).mockReturnValue({
+      data: { data: [item], total: 1, page: 1, limit: 10 },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    } as never)
     vi.mocked(inventoryItemsService.get).mockResolvedValue(item as never)
     vi.mocked(inventoryCategoriesService.list).mockResolvedValue({ data: [category], total: 1, page: 1, limit: 100 })
   })
 
   it('lists items with their data', async () => {
     page()
-    expect(await screen.findByText('Martillo')).toBeInTheDocument()
+    expect((await screen.findAllByText('Martillo')).length).toBeGreaterThan(0)
     expect(screen.getByText('HER-001')).toBeInTheDocument()
     expect(screen.getAllByText('Herramientas').length).toBeGreaterThan(0)
-    expect(screen.getByText('Bodega A')).toBeInTheDocument()
-    expect(screen.getByText('Bueno')).toBeInTheDocument()
+    expect(screen.getAllByText('Bodega A').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Bueno').length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: 'Ver detalle de Martillo' })).toHaveLength(2)
+    expect(screen.getByRole('table').parentElement).toHaveClass('lg:block')
+    expect(screen.getByRole('article')).toHaveClass('rounded-surface')
+  })
+
+  it('shows loading and retries after a list query error', async () => {
+    const refetch = vi.fn()
+    vi.mocked(useInventoryItems).mockReturnValue({
+      data: undefined,
+      isPending: true,
+      isError: false,
+      error: null,
+      refetch,
+    } as never)
+    const { rerender } = page()
+
+    expect(screen.getByText('Cargando artículos…')).toBeInTheDocument()
+
+    vi.mocked(useInventoryItems).mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: new Error('network error'),
+      refetch,
+    } as never)
+    rerender(
+      <ToastProvider>
+        <InventoryItemsPage />
+      </ToastProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
+
+    expect(refetch).toHaveBeenCalledOnce()
   })
 
   it('shows the empty state when there are no registered goods', async () => {
-    vi.mocked(inventoryItemsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
+    vi.mocked(useInventoryItems).mockReturnValue({
+      data: { data: [], total: 0, page: 1, limit: 10 },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    } as never)
     page()
 
     expect(await screen.findByText('No hay bienes registrados en el inventario.')).toBeInTheDocument()
   })
 
   it('shows an error state when the inventory cannot be loaded', async () => {
-    vi.mocked(inventoryItemsService.list).mockRejectedValueOnce(new Error('network error'))
+    vi.mocked(useInventoryItems).mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: new Error('network error'),
+      refetch: vi.fn(),
+    } as never)
     page()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar los artículos.')
+  })
+
+  it('passes the selected search and category filters to the inventory hook', async () => {
+    page()
+    await screen.findByRole('option', { name: 'Herramientas' })
+    fireEvent.change(screen.getByLabelText('Búsqueda (nombre o código)'), {
+      target: { value: 'HER' },
+    })
+    fireEvent.change(screen.getByLabelText('Categoría'), {
+      target: { value: '1' },
+    })
+
+    await waitFor(() =>
+      expect(useInventoryItems).toHaveBeenLastCalledWith({
+        page: 1,
+        limit: 10,
+        search: 'HER',
+        categoryId: 1,
+        status: undefined,
+        lowStock: undefined,
+      }),
+    )
   })
 
   it('creates an item through the modal', async () => {
@@ -113,7 +192,7 @@ describe('InventoryItemsPage', () => {
   it('updates an existing item through the edit form', async () => {
     vi.mocked(inventoryItemsService.update).mockResolvedValue({ ...item, name: 'Martillo reforzado' } as never)
     page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Ver detalle de Martillo' }))[0])
     await screen.findByRole('dialog', { name: /Artículo: Martillo/ })
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Martillo reforzado' } })
@@ -181,7 +260,7 @@ describe('InventoryItemsPage', () => {
 
   it('registers an adjustment', async () => {
     page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Ver detalle de Martillo' }))[0])
     await screen.findByRole('dialog', { name: /Artículo: Martillo/ })
     fireEvent.click(screen.getByRole('button', { name: 'Realizar ajuste' }))
     await screen.findByRole('dialog', { name: /Ajuste de inventario: Martillo/ })

@@ -48,6 +48,9 @@ export class QueryVenturesDto {
   @Transform(trim) @IsOptional() @IsString() @MaxLength(200) search?: string;
   @IsOptional() @IsEnum(VentureStatus) status?: VentureStatus;
   @IsOptional() @IsEnum(VenturePublicationStatus) publicationStatus?: VenturePublicationStatus;
+  @Transform(trim) @IsOptional() @IsString() @MaxLength(500) location?: string;
+  @Type(() => Date) @IsOptional() @IsDate() dateFrom?: Date;
+  @Type(() => Date) @IsOptional() @IsDate() dateTo?: Date;
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) page = 1;
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(100) limit = 20;
 }

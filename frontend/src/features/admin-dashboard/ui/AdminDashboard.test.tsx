@@ -8,7 +8,20 @@ import { httpClient } from '@/shared/api/httpClient'
 vi.mock('@/shared/api/httpClient', () => ({ httpClient: { get: vi.fn() } }))
 
 const data = {
-  affiliates: { total: 12, active: 9, inactive: 3 },
+  affiliates: {
+    total: 12,
+    active: 9,
+    inactive: 3,
+    memberships: {
+      total: 8,
+      active: 6,
+      expired: 2,
+      expiringSoon: 1,
+      withoutMembership: 4,
+      expirationUnspecified: 0,
+    },
+    byAffiliateType: [{ affiliateType: 'Asociado', count: 12 }],
+  },
   affiliateRequests: { pending: 4 },
   reservations: { total: 6, pending: 2, approved: 1, rejected: 0, cancelled: 0, confirmed: 2, completed: 1 },
   financial: { currency: 'CRC', totalIncome: '150000.00', totalExpenses: '40000.00', balance: '110000.00' },
@@ -64,7 +77,12 @@ const institutionalPanoramaMetrics = [
 
 const panoramaContractData = {
   ...data,
-  affiliates: { total: 101, active: 9, inactive: 102 },
+  affiliates: {
+    ...data.affiliates,
+    total: 101,
+    active: 9,
+    inactive: 102,
+  },
   reservations: { total: 103, pending: 2, approved: 104, rejected: 0, cancelled: 0, confirmed: 105, completed: 1 },
   donations: { total: 110, confirmed: 111, cancelled: 1 },
   inventory: { totalItems: 106, lowStockItems: 3, outOfStockItems: 1, activeLoans: 107, overdueLoans: 2 },

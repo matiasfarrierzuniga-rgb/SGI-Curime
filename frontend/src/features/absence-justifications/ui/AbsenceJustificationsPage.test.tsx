@@ -3,6 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAbsenceJustificationsList, useAbsenceJustificationsMutations } from '../hooks/useAbsenceJustificationsQueries'
 import { AbsenceJustificationsPage } from './AbsenceJustificationsPage'
 
+vi.mock('@/features/auth', () => ({
+  useAuth: () => ({
+    user: { permissionCodes: ['adm.justifications.approve', 'adm.justifications.reject'] },
+  }),
+}))
+
 vi.mock('../hooks/useAbsenceJustificationsQueries', () => ({
   useAbsenceJustificationsList: vi.fn(),
   useAbsenceJustificationsMutations: vi.fn(),

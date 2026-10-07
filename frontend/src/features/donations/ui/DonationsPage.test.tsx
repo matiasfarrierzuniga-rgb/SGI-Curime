@@ -113,7 +113,7 @@ describe('DonationsPage', () => {
     render(<DonationsPage />)
     expect(screen.getByRole('heading', { name: 'Donaciones' })).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Buscar' })).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'Ver detalle' }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /Ver detalle de donación/ }).length).toBeGreaterThan(0)
     expect(screen.queryByText('No tiene permiso para consultar donaciones.')).not.toBeInTheDocument()
   })
 })

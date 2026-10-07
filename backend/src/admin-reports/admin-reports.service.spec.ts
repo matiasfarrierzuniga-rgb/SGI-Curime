@@ -18,9 +18,9 @@ function assembly(
   return {
     id,
     title: `Asamblea ${id}`,
-    date,
+    legacyDate: date,
     status: AssemblyStatus.COMPLETED,
-    attendances,
+    convocations: attendances.map((attendance) => ({ attendance })),
     _count: { convocations: convokedCount },
   };
 }
@@ -28,7 +28,7 @@ function assembly(
 describe('AdminReportsService attendanceSummary', () => {
   const prisma = {
     assembly: { findMany: jest.fn(), groupBy: jest.fn() },
-    affiliate: { count: jest.fn() },
+    affiliate: { count: jest.fn(), groupBy: jest.fn() },
     affiliateRequest: { count: jest.fn() },
     absenceJustification: { groupBy: jest.fn() },
     affiliateSanction: { groupBy: jest.fn() },
@@ -50,7 +50,7 @@ describe('AdminReportsService attendanceSummary', () => {
   });
 
   it('consolidates real domain summaries without adding donations to finance', async () => {
-    prisma.$transaction.mockResolvedValue([12, 9, 3, 4]);
+    prisma.$transaction.mockResolvedValue([12, 9, 3, 4, 8, 6, 2, 1, 4, 0]);
     prisma.absenceJustification.groupBy.mockResolvedValue([
       { status: 'PENDING', _count: { _all: 2 } },
       { status: 'APPROVED', _count: { _all: 5 } },
@@ -68,6 +68,9 @@ describe('AdminReportsService attendanceSummary', () => {
     prisma.donation.groupBy.mockResolvedValue([
       { status: 'CONFIRMED', _count: { _all: 6 } },
       { status: 'CANCELLED', _count: { _all: 1 } },
+    ]);
+    prisma.affiliate.groupBy.mockResolvedValue([
+      { affiliateType: 'Asociado', _count: { _all: 12 } },
     ]);
     financialService.summarizeMovements.mockResolvedValue({
       currency: 'CRC',
@@ -97,7 +100,20 @@ describe('AdminReportsService attendanceSummary', () => {
     expect(financialService.summarizeMovements).toHaveBeenCalledWith({});
     expect(inventoryReportsService.summary).toHaveBeenCalledWith();
     expect(result.data).toEqual({
-      affiliates: { total: 12, active: 9, inactive: 3 },
+      affiliates: {
+        total: 12,
+        active: 9,
+        inactive: 3,
+        memberships: {
+          total: 8,
+          active: 6,
+          expired: 2,
+          expiringSoon: 1,
+          withoutMembership: 4,
+          expirationUnspecified: 0,
+        },
+        byAffiliateType: [{ affiliateType: 'Asociado', count: 12 }],
+      },
       affiliateRequests: { pending: 4 },
       reservations: {
         total: 6,
@@ -153,7 +169,8 @@ describe('AdminReportsService attendanceSummary', () => {
   });
 
   it('returns explicit zero counts when grouped domains have no data', async () => {
-    prisma.$transaction.mockResolvedValue([0, 0, 0, 0]);
+    prisma.$transaction.mockResolvedValue([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    prisma.affiliate.groupBy.mockResolvedValue([]);
     prisma.absenceJustification.groupBy.mockResolvedValue([]);
     prisma.reservation.groupBy.mockResolvedValue([]);
     prisma.assembly.groupBy.mockResolvedValue([]);
@@ -180,11 +197,62 @@ describe('AdminReportsService attendanceSummary', () => {
 
     const result = await service.dashboard();
 
-    expect(result.data.reservations.total).toBe(0);
-    expect(result.data.reservations.confirmed).toBe(0);
-    expect(result.data.assemblies.in_progress).toBe(0);
-    expect(result.data.donations.confirmed).toBe(0);
-    expect(result.data.justifications.pending).toBe(0);
+    expect(result.data).toEqual({
+      affiliates: {
+        total: 0,
+        active: 0,
+        inactive: 0,
+        memberships: {
+          total: 0,
+          active: 0,
+          expired: 0,
+          expiringSoon: 0,
+          withoutMembership: 0,
+          expirationUnspecified: 0,
+        },
+        byAffiliateType: [],
+      },
+      affiliateRequests: { pending: 0 },
+      reservations: {
+        total: 0,
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        cancelled: 0,
+        confirmed: 0,
+        completed: 0,
+      },
+      financial: {
+        currency: 'CRC',
+        totalIncome: '0.00',
+        totalExpenses: '0.00',
+        balance: '0.00',
+      },
+      donations: { total: 0, confirmed: 0, cancelled: 0 },
+      inventory: {
+        totalItems: 0,
+        lowStockItems: 0,
+        outOfStockItems: 0,
+        activeLoans: 0,
+        overdueLoans: 0,
+      },
+      assemblies: {
+        total: 0,
+        scheduled: 0,
+        in_progress: 0,
+        completed: 0,
+        cancelled: 0,
+      },
+      justifications: { pending: 0 },
+    });
+    expect(result.metadata).toEqual(
+      expect.objectContaining({
+        generatedBy: null,
+        period: { from: null, to: null },
+        appliedFilters: {},
+        reportVersion: '1.0',
+      }),
+    );
   });
 
   it('calculates attendance from the assembly convocation population', async () => {
@@ -322,7 +390,7 @@ describe('AdminReportsService attendanceSummary', () => {
       expect.objectContaining({
         where: {
           id: 7,
-          date: { gte: dateFrom, lte: dateTo },
+          legacyDate: { gte: dateFrom, lte: dateTo },
         },
       }),
     );
@@ -361,12 +429,15 @@ describe('AdminReportsService attendanceSummary', () => {
   ] as const)(
     'wraps %s without changing its summary data',
     async (method, source) => {
-      prisma.$transaction.mockResolvedValue([10, 7, 2, 1]);
+      prisma.$transaction.mockResolvedValue([10, 7, 2, 1, 5, 4, 1, 2, 5, 0]);
       prisma.absenceJustification.groupBy.mockResolvedValue([
         { status: 'APPROVED', _count: { _all: 2 } },
       ]);
       prisma.affiliateSanction.groupBy.mockResolvedValue([
         { status: 'ACTIVE', _count: { _all: 3 } },
+      ]);
+      prisma.affiliate.groupBy.mockResolvedValue([
+        { affiliateType: 'Asociado', _count: { _all: 12 } },
       ]);
 
       const result = await service[method]();
@@ -387,6 +458,15 @@ describe('AdminReportsService attendanceSummary', () => {
           active: 7,
           inactive: 2,
           pendingRequests: 1,
+          memberships: {
+            total: 5,
+            active: 4,
+            expired: 1,
+            expiringSoon: 2,
+            withoutMembership: 5,
+            expirationUnspecified: 0,
+          },
+          byAffiliateType: [{ affiliateType: 'Asociado', count: 12 }],
         },
         justificationsSummary: {
           total: 2,
