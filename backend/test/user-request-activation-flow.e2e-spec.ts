@@ -53,6 +53,7 @@ describe('User request activation flow (e2e)', () => {
       secondSurname: null,
       identification: requestRecord.identification,
       identificationType: requestRecord.identificationType,
+      normalizedIdentification: '123456789',
       phoneCountryCode: null,
       phoneNationalNumber: null,
       address: null,
@@ -96,6 +97,9 @@ describe('User request activation flow (e2e)', () => {
           },
         ),
       },
+      identityReconciliationManifest: {
+        upsert: jest.fn(async () => ({})),
+      },
     };
     const prisma = {
       user: {
@@ -128,6 +132,7 @@ describe('User request activation flow (e2e)', () => {
 
     await approval.approve(requestRecord.id, { roleId: 2 }, 1);
 
+    expect(tx.identityReconciliationManifest.upsert).toHaveBeenCalledTimes(1);
     expect(user.status).toBe('INACTIVE');
     expect(tokenRecord.tokenHash).toMatch(/^[0-9a-f]{64}$/);
     const messages = fakeEmail.getMessages();
