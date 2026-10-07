@@ -1,2 +1,24 @@
 import { Link } from 'react-router-dom'
-export function ForbiddenPage() { return <main className="auth-page card"><h1>Acceso no autorizado</h1><p>No tienes permisos para ver esta página.</p><Link to="/profile">Volver a mi perfil</Link></main> }
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
+
+export function ForbiddenPage() {
+  const { user } = useAuth()
+  const hasErpAccess = user?.permissionCodes?.length > 0
+  return (
+    <main className="auth-page card">
+      <h1>Acceso no autorizado</h1>
+      <p>No tienes permisos para ver esta página.</p>
+      {hasErpAccess ? (
+        <>
+          <p>Tienes acceso al ERP SGI-Curime, pero no a este recurso específico.</p>
+          <Link to="/app" className="primary">
+            Ir al ERP
+          </Link>
+        </>
+      ) : (
+        <p>Inicia sesión para acceder al sistema.</p>
+      )}
+    </main>
+  )
+}
