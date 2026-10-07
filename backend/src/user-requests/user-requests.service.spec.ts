@@ -23,6 +23,8 @@ describe('UserRequestsService', () => {
     updatedAt: new Date(),
   };
   const tx = {
+    $queryRaw: jest.fn(),
+    role: { findUnique: jest.fn() },
     userRequest: {
       create: jest.fn(),
       updateMany: jest.fn(),
@@ -91,6 +93,8 @@ describe('UserRequestsService', () => {
     prisma.userRequest.create.mockResolvedValue(pending);
     prisma.userRequest.updateMany.mockResolvedValue({ count: 1 });
     prisma.role.findUnique.mockResolvedValue({ id: 2, isActive: true });
+    tx.$queryRaw.mockResolvedValue([{ locked: 1 }]);
+    tx.role.findUnique.mockResolvedValue({ id: 2, isActive: true });
     tx.userRequest.updateMany.mockResolvedValue({ count: 1 });
     tx.userRequest.create.mockResolvedValue(pending);
     tx.userRequest.findUniqueOrThrow.mockResolvedValue({
@@ -310,7 +314,9 @@ describe('UserRequestsService', () => {
       where: { id: pending.personId },
     });
     expect(personResolver.resolveWithinTransaction).not.toHaveBeenCalled();
-    expect(personResolver.resolveExistingForReviewWithinTransaction).not.toHaveBeenCalled();
+    expect(
+      personResolver.resolveExistingForReviewWithinTransaction,
+    ).not.toHaveBeenCalled();
     expect(tx.identityReconciliationManifest.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({
@@ -350,7 +356,9 @@ describe('UserRequestsService', () => {
 
     await service.approve(10, { roleId: 2 }, 1);
 
-    expect(personResolver.resolveExistingForReviewWithinTransaction).toHaveBeenCalledWith(
+    expect(
+      personResolver.resolveExistingForReviewWithinTransaction,
+    ).toHaveBeenCalledWith(
       pending.identificationType,
       pending.identification,
       tx,
@@ -435,14 +443,14 @@ describe('UserRequestsService', () => {
   });
 
   it('rejects an unknown role', async () => {
-    prisma.role.findUnique.mockResolvedValue(null);
+    tx.role.findUnique.mockResolvedValue(null);
     await expect(
       service.approve(10, { roleId: 999 }, 1),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('rejects an inactive role', async () => {
-    prisma.role.findUnique.mockResolvedValue({ id: 2, isActive: false });
+    tx.role.findUnique.mockResolvedValue({ id: 2, isActive: false });
     await expect(service.approve(10, { roleId: 2 }, 1)).rejects.toBeInstanceOf(
       ConflictException,
     );

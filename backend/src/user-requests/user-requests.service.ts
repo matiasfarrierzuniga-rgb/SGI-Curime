@@ -224,101 +224,29 @@ export class UserRequestsService {
       userRequest.email,
       userRequest.identification,
     );
-    const role = await this.prisma.role.findUnique({
-      where: { id: dto.roleId },
-    });
-    if (!role) throw new NotFoundException('Role not found');
-    if (!role.isActive) throw new ConflictException('Role is inactive');
-
     const generated = this.tokenService.generate();
     const reviewedAt = new Date();
-    const result = await this.prisma.$transaction(async (tx) => {
-      const resolution = await this.resolvePersonForApproval(tx, userRequest);
-      if (resolution.status !== 'PERSON_REUSED') {
-        return { reviewOutcome: resolution };
-      }
-      const person = resolution.person;
-
-      const claimed = await tx.userRequest.updateMany({
-        where: { id, status: 'PENDING' },
-        data: {
-          status: 'APPROVED',
-          rejectionReason: null,
-          reviewedAt,
+    let result: Awaited<
+      ReturnType<UserRequestsService['approveWithinTransaction']>
+    >;
+    try {
+      result = await this.prisma.$transaction((tx) =>
+        this.approveWithinTransaction(
+          tx,
+          id,
+          dto.roleId,
           reviewedById,
-          ...(userRequest.personId === null ? { personId: person.id } : {}),
-        },
-      });
-      if (claimed.count !== 1) {
-        throw new ConflictException('User request has already been resolved');
+          reviewedAt,
+          generated,
+          userRequest,
+        ),
+      );
+    } catch (error) {
+      if (isUserUniqueConflict(error)) {
+        throw new ConflictException('User identity is already registered');
       }
-      if (
-        (userRequest.personId !== null && person.id !== userRequest.personId) ||
-        !person.firstName ||
-        !person.firstSurname ||
-        !person.identification ||
-        !person.identificationType
-      ) {
-        throw new ConflictException('User request person identity is invalid');
-      }
-      const existingUser = await tx.user.findUnique({
-        where: { personId: person.id },
-        select: { id: true },
-      });
-      if (existingUser) {
-        throw new ConflictException('Person identity already has a user');
-      }
-      const fullName = [
-        person.firstName,
-        person.firstSurname,
-        person.secondSurname,
-      ]
-        .filter((part): part is string => Boolean(part))
-        .join(' ');
-      const user = await tx.user.create({
-        data: {
-          personId: person.id,
-          fullName,
-          identification: person.identification,
-          identificationType: person.identificationType as IdentificationType,
-          email: userRequest.email,
-          phone: userRequest.phone,
-          phoneCountryCode: userRequest.phoneCountryCode,
-          phoneNationalNumber: userRequest.phoneNationalNumber,
-          address: userRequest.address,
-          passwordHash: null,
-          status: 'INACTIVE',
-          roleId: role.id,
-        },
-        select: {
-          id: true,
-          fullName: true,
-          identification: true,
-          identificationType: true,
-          email: true,
-          phoneCountryCode: true,
-          phoneNationalNumber: true,
-          phone: true,
-          address: true,
-          status: true,
-          roleId: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-      await tx.accountActivationToken.create({
-        data: {
-          userId: user.id,
-          tokenHash: generated.tokenHash,
-          expiresAt: generated.expiresAt,
-        },
-      });
-      const approvedRequest = await tx.userRequest.findUniqueOrThrow({
-        where: { id },
-        select: requestSelect,
-      });
-      return { user, userRequest: approvedRequest };
-    });
+      throw error;
+    }
 
     if ('reviewOutcome' in result) {
       throw new ConflictException(
@@ -340,7 +268,7 @@ export class UserRequestsService {
       module: 'USERS',
       entityType: 'User',
       entityId: result.user.id,
-      details: { roleId: role.id },
+      details: { roleId: dto.roleId },
       ...context,
     });
     await this.audit?.log({
@@ -356,6 +284,109 @@ export class UserRequestsService {
       ...result,
       userRequest: toUserRequestSnapshotResponse(result.userRequest),
     };
+  }
+
+  private async approveWithinTransaction(
+    tx: Prisma.TransactionClient,
+    id: number,
+    roleId: number,
+    reviewedById: number,
+    reviewedAt: Date,
+    generated: ReturnType<ActivationTokenService['generate']>,
+    userRequest: Awaited<ReturnType<UserRequestsService['requirePending']>>,
+  ) {
+    await tx.$queryRaw(
+      Prisma.sql`SELECT 1::integer AS locked FROM "Role" WHERE id = ${roleId} FOR UPDATE`,
+    );
+    const role = await tx.role.findUnique({ where: { id: roleId } });
+    if (!role) throw new NotFoundException('Role not found');
+    if (!role.isActive) throw new ConflictException('Role is inactive');
+
+    const resolution = await this.resolvePersonForApproval(tx, userRequest);
+    if (resolution.status !== 'PERSON_REUSED') {
+      return { reviewOutcome: resolution };
+    }
+    const person = resolution.person;
+
+    const claimed = await tx.userRequest.updateMany({
+      where: { id, status: 'PENDING' },
+      data: {
+        status: 'APPROVED',
+        rejectionReason: null,
+        reviewedAt,
+        reviewedById,
+        ...(userRequest.personId === null ? { personId: person.id } : {}),
+      },
+    });
+    if (claimed.count !== 1) {
+      throw new ConflictException('User request has already been resolved');
+    }
+    if (
+      (userRequest.personId !== null && person.id !== userRequest.personId) ||
+      !person.firstName ||
+      !person.firstSurname ||
+      !person.identification ||
+      !person.identificationType
+    ) {
+      throw new ConflictException('User request person identity is invalid');
+    }
+    const existingUser = await tx.user.findUnique({
+      where: { personId: person.id },
+      select: { id: true },
+    });
+    if (existingUser) {
+      throw new ConflictException('Person identity already has a user');
+    }
+    const fullName = [
+      person.firstName,
+      person.firstSurname,
+      person.secondSurname,
+    ]
+      .filter((part): part is string => Boolean(part))
+      .join(' ');
+    const user = await tx.user.create({
+      data: {
+        personId: person.id,
+        fullName,
+        identification: person.identification,
+        identificationType: person.identificationType as IdentificationType,
+        email: userRequest.email,
+        phone: userRequest.phone,
+        phoneCountryCode: userRequest.phoneCountryCode,
+        phoneNationalNumber: userRequest.phoneNationalNumber,
+        address: userRequest.address,
+        passwordHash: null,
+        status: 'INACTIVE',
+        roleId,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        identification: true,
+        identificationType: true,
+        email: true,
+        phoneCountryCode: true,
+        phoneNationalNumber: true,
+        phone: true,
+        address: true,
+        status: true,
+        roleId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    await tx.accountActivationToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: generated.tokenHash,
+        expiresAt: generated.expiresAt,
+      },
+    });
+    const approvedRequest = await tx.userRequest.findUniqueOrThrow({
+      where: { id },
+      select: requestSelect,
+    });
+    return { user, userRequest: approvedRequest };
   }
 
   private async requirePending(id: number) {
@@ -465,7 +496,12 @@ export class UserRequestsService {
   private reviewManifestData(
     source: UserRequestManifestSource,
     identity: ReturnType<typeof normalizeIdentification>,
-    outcome: { status: string; person?: { id: number }; matchingPersonCount?: number; reason?: string },
+    outcome: {
+      status: string;
+      person?: { id: number };
+      matchingPersonCount?: number;
+      reason?: string;
+    },
     safe: boolean,
   ) {
     const conflictCodes = safe
@@ -487,7 +523,7 @@ export class UserRequestsService {
         ? `${identity.identificationType}:${identity.normalizedIdentification}`
         : null,
       classification: safe ? 'IDENTITY_MATCH' : outcome.status,
-      selectedPersonId: safe ? outcome.person?.id ?? null : null,
+      selectedPersonId: safe ? (outcome.person?.id ?? null) : null,
       personCreationAllowed: false,
       conflictCodes,
       nameReconciliationRequired: !safe,
@@ -540,6 +576,24 @@ export class UserRequestsService {
       );
     }
   }
+}
+
+function isUserUniqueConflict(error: unknown): boolean {
+  if (
+    !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+    error.code !== 'P2002'
+  ) {
+    return false;
+  }
+  const metadata = JSON.stringify(error.meta ?? '').toLowerCase();
+  return (
+    metadata.includes('user_personid') ||
+    metadata.includes('user_email') ||
+    metadata.includes('user_identification') ||
+    metadata.includes('personid') ||
+    metadata.includes('email') ||
+    metadata.includes('identification')
+  );
 }
 
 /**
