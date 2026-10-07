@@ -210,6 +210,10 @@ For each sensitive module, evidence covers navigation, direct route, API access,
 - If capability migration denies or exposes incorrect access, restore the previous controller policy as one reviewed application rollback while preserving RolePermission and audit data, then forward-fix the mapping.
 - Existing activation tokens and Sessions remain valid across rollback because their persistence and validation contracts do not change.
 
+## Approved UserRequest capability contract (2026-10-06)
+
+Product approval authorizes two new static capability identifiers: `usr.user-requests.read` for `GET /user-requests` and `GET /user-requests/:id`, and `usr.user-requests.review` for `PATCH /user-requests/:id/approve` and `PATCH /user-requests/:id/reject`. Public `POST /user-requests` remains publicly accessible subject to existing throttling. `adm.requests.read` remains scoped to Affiliate Requests and must not authorize account-review routes. Existing `Administrador` seed mapping receives both new grants; other seeded roles receive neither. Runtime authorization uses server-resolved persisted permissions and `JwtAuthGuard` followed by `CapabilityGuard`; no permanent `RolesGuard` is retained on these handlers. This approval adds no tables, migrations, governance-to-software-role mappings or dynamic RBAC administration. Task 2.5 remains open until automated and actor-level verification proves the whole lifecycle contract.
+
 ## Open Questions
 
 None. Material V1 behavior is fixed by the institutional access report and this change's specification; module-specific capability mapping must be resolved from repository evidence during the inventory task, not guessed during implementation.
