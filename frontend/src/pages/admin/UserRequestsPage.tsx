@@ -37,6 +37,8 @@ export function UserRequestsPage() {
   const [items, setItems] = useState<UserRequest[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [roleId, setRoleId] = useState("");
+  // Roles are only loaded for Reviewer capability (usr.user-requests.review).
+  // Readers (usr.user-requests.read only) must not fetch role data.
   const [reason, setReason] = useState("");
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);

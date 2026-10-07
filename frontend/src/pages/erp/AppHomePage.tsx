@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { ArrowRight, Boxes, CalendarDays, CalendarPlus, ClipboardList, FileCheck2, FileClock, Package, TriangleAlert, UserRound, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 import { AdminDashboard } from '@/features/admin-dashboard'
-import { getRoleName } from '@/shared/security/roles'
 import { inventoryReportsService } from '@/services/inventoryReportsService'
 import type { InventoryReportSummary } from '@/types/inventory'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -25,46 +25,62 @@ const communityLinks = [
 
 export function AppHomePage() {
   const { user } = useAuth()
-  const roleName = getRoleName(user?.role)
-  const isCommunityUser = roleName === 'Vecino/Afiliado'
-  const isAdministrator = roleName === 'Administrador'
-  const canViewInventory = roleName === 'Gestor de Inventario'
+  const permissionCodes = user?.permissionCodes ?? []
+
+  // Capability-based visibility instead of role names
+  const canViewRequests = hasCapability(permissionCodes, 'usr.user-requests.read')
+  const canViewUsers = hasCapability(permissionCodes, 'usr.users.read')
+  const canViewInventory = hasCapability(permissionCodes, 'inv.inventory.read')
+  const canViewFinancialMovements = hasCapability(permissionCodes, 'fin.movements.read')
+  const canViewDinadeco = hasCapability(permissionCodes, 'fin.dinadeco.read')
+  const canViewAuditLogs = hasCapability(permissionCodes, 'aud.logs.read')
+  const canViewReservations = hasCapability(permissionCodes, 'res.reservations.read')
+  const canViewAffiliates = hasCapability(permissionCodes, 'adm.affiliates.read')
+  const canViewAssemblies = hasCapability(permissionCodes, 'adm.assemblies.read')
+  // Events capability tracked for future dashboard section
+
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
   const [loading, setLoading] = useState(canViewInventory)
-  const [summaryUnavailable, setSummaryUnavailable] = useState(false)
+
+  const firstName = user?.fullName?.trim().split(/\s+/)[0]
 
   useEffect(() => {
     if (!canViewInventory) return
     let active = true
     inventoryReportsService.summary()
       .then((data) => { if (active) setSummary(data) })
-      .catch(() => { if (active) setSummaryUnavailable(true) })
-      .finally(() => { if (active) setLoading(false) })
+      .catch(() => setLoading(false))
+      .finally(() => setLoading(false))
     return () => { active = false }
   }, [canViewInventory])
-
-  const firstName = user?.fullName?.trim().split(/\s+/)[0]
 
   return (
     <PageContainer className="max-w-[1440px] space-y-10">
       <PageHeader
         title="Dashboard"
         titleClassName="font-sans"
-        description={isCommunityUser
-          ? `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Desde aquí puede solicitar servicios y consultar la información de su cuenta.`
-          : `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Consulte el resumen general de las áreas disponibles para su trabajo en SGI-Curime.`}
+        description={`
+          Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}.
+          Consulte el resumen general de las áreas disponibles para su trabajo en SGI-Curime.
+        `}
       />
 
-      {isAdministrator && <AdminDashboard permissionCodes={user?.permissionCodes} />}
+      {canViewUsers && <AdminDashboard permissionCodes={user?.permissionCodes} />}
 
       {canViewInventory && (
         <section aria-labelledby="summary-title">
           <div className="mb-4 flex items-center justify-between gap-4">
-            <div><h2 id="summary-title" className="text-xl font-bold text-brand-ink">Resumen de inventario</h2><p className="mt-1 text-sm text-foreground-muted">Datos actuales del módulo de inventario.</p></div>
+            <div>
+              <h2 id="summary-title" className="text-xl font-bold text-brand-ink">Resumen de inventario</h2>
+              <p className="mt-1 text-sm text-foreground-muted">Datos actuales del módulo de inventario.</p>
+            </div>
             <Link to="/inventory" className="hidden items-center gap-1 text-sm font-bold text-brand-primary underline-offset-4 hover:underline sm:flex">Ver detalle <ArrowRight className="size-4" aria-hidden="true" /></Link>
           </div>
           {loading ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Cargando resumen"><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Cargando resumen">
+              <Skeleton className="h-28" /><Skeleton className="h-28" />
+              <Skeleton className="h-28" /><Skeleton className="h-28" />
+            </div>
           ) : summary ? (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <Metric label="Artículos activos" value={summary.activeItems} icon={Package} />
@@ -73,32 +89,82 @@ export function AppHomePage() {
               <Metric label="Préstamos vencidos" value={summary.overdueLoans} icon={FileClock} attention={summary.overdueLoans > 0} />
             </div>
           ) : (
-            <Card><CardContent className="text-sm text-foreground-muted">{summaryUnavailable ? 'El resumen no está disponible en este momento. Puede consultar el módulo de Inventario.' : 'No hay datos de inventario para mostrar.'}</CardContent></Card>
+            <Card><CardContent className="text-sm text-foreground-muted">No hay datos de inventario para mostrar.</CardContent></Card>
           )}
         </section>
       )}
 
-      {isCommunityUser && (
-        <>
-          <section aria-labelledby="community-actions-title">
-            <h2 id="community-actions-title" className="text-xl font-bold text-brand-ink">¿Qué desea hacer?</h2>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              {communityActions.map((action) => <ActionCard key={action.path} action={action} />)}
-            </div>
-          </section>
-
-          <section aria-labelledby="community-links-title">
-            <h2 id="community-links-title" className="text-xl font-bold text-brand-ink">También puede consultar</h2>
-            <nav aria-label="Consultas de la comunidad" className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-              {communityLinks.map((item) => {
-                const Icon = item.icon
-                return <Link key={item.path} to={item.path} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-card px-4 font-semibold text-brand-deep hover:border-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"><Icon className="size-4" aria-hidden="true" />{item.label}</Link>
-              })}
-            </nav>
-          </section>
-        </>
+      {canViewFinancialMovements && (
+        <section>
+          <h2 className="text-xl font-bold text-brand-ink">Movimientos financieros</h2>
+          <p className="mt-1 text-sm text-foreground-muted">Registro de movimientos financieros.</p>
+          <Link to="/app/financial/movements" className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-brand-primary underline-offset-4 hover:underline">
+            Ver detalle <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        </section>
       )}
 
+      {canViewDinadeco && (
+        <section>
+          <h2 className="text-xl font-bold text-brand-ink">DINADECO</h2>
+          <p className="mt-1 text-sm text-foreground-muted">Información DINADECO.</p>
+          <Link to="/app/financial/dinadeco" className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-brand-primary underline-offset-4 hover:underline">
+            Ver detalle <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        </section>
+      )}
+
+      {canViewAuditLogs && (
+        <section>
+          <h2 className="text-xl font-bold text-brand-ink">Auditoría</h2>
+          <p className="mt-1 text-sm text-foreground-muted">Bitácora de auditoría.</p>
+        </section>
+      )}
+
+      {canViewRequests && (
+        <section aria-labelledby="community-actions-title">
+          <h2 id="community-actions-title" className="text-xl font-bold text-brand-ink">¿Qué desea hacer?</h2>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {communityActions.map((action) => <ActionCard key={action.path} action={action} />)}
+          </div>
+        </section>
+      )}
+
+      {canViewRequests && (
+        <section aria-labelledby="community-links-title">
+          <h2 id="community-links-title" className="text-xl font-bold text-brand-ink">También puede consultar</h2>
+          <nav aria-label="Consultas de la comunidad" className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            {communityLinks.map((item) => {
+              const Icon = item.icon
+              return <Link key={item.path} to={item.path} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-card px-4 font-semibold text-brand-deep hover:border-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"><Icon className="size-4" aria-hidden="true" />{item.label}</Link>
+            })}
+          </nav>
+        </section>
+      )}
+
+      {canViewReservations && (
+        <section>
+          <h2 className="text-xl font-bold text-brand-ink">Reservas</h2>
+          <p className="mt-1 text-sm text-foreground-muted">Gestión de reservas comunitarias.</p>
+          <Link to="/app/reservations" className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-brand-primary underline-offset-4 hover:underline">
+            Ver reservas <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        </section>
+      )}
+
+      {canViewAffiliates && (
+        <section>
+          <h2 className="text-xl font-bold text-brand-ink">Afiliados</h2>
+          <p className="mt-1 text-sm text-foreground-muted">Gestión de afiliados.</p>
+        </section>
+      )}
+
+      {canViewAssemblies && (
+        <section>
+          <h2 className="text-xl font-bold text-brand-ink">Asambleas</h2>
+          <p className="mt-1 text-sm text-foreground-muted">Información de asambleas.</p>
+        </section>
+      )}
     </PageContainer>
   )
 }

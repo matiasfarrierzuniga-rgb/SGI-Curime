@@ -17,7 +17,7 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const submitting = useRef(false)
 
-  async function submit(event: FormEvent) {
+async function submit(event: FormEvent) {
     event.preventDefault()
     if (submitting.current) return
     submitting.current = true
@@ -26,10 +26,13 @@ export function LoginPage() {
     try {
       const user = await login({ email: email.trim().toLowerCase(), password })
       const requested = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
-      const hasInternalAccess = user.canAccessErp === true && user.permissionCodes.length > 0
+      // Determine post-login destination using effective capabilities, not role names
+      const hasErpCapability = user.permissionCodes.length > 0
       const isInternalRequest = requested?.startsWith('/app') || requested?.startsWith('/admin') || requested?.startsWith('/inventory')
-      const authorizedRequest = requested && (!isInternalRequest || hasInternalAccess) ? requested : undefined
-      navigate(authorizedRequest || (hasInternalAccess ? '/app' : '/servicios'), { replace: true })
+      const authorizedRequest = requested && (!isInternalRequest || hasErpCapability) ? requested : undefined
+      // Navigate to authorized request, or default based on capability presence
+      const defaultDestination = hasErpCapability ? '/app' : '/servicios'
+      navigate(authorizedRequest || defaultDestination, { replace: true })
     } catch {
       setError('No fue posible iniciar sesión. Verifique sus credenciales.')
     } finally {

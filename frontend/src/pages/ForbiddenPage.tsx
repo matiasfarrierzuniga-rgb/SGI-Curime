@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
-import { hasCapability } from '@/shared/security/access'
 
 export function ForbiddenPage() {
   const { user } = useAuth()
-  const hasErpAccess = user?.permissionCodes?.length > 0
+  const permissionCodes = user?.permissionCodes ?? []
+  const hasErpAccess = permissionCodes.length > 0
   return (
     <main className="auth-page card">
       <h1>Acceso no autorizado</h1>
