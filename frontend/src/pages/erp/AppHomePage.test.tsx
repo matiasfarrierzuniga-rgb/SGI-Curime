@@ -51,10 +51,10 @@ describe('AppHomePage', () => {
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
   })
 
-  it('omits legacy financial actions and cumulative financial metrics for treasurers', () => {
+  it('shows only available operational modules and omits cumulative financial metrics for treasurers', () => {
     auth.user = { fullName: 'Carlos Ruiz', role: 'Tesorero', permissionCodes: ['fin.movements.read', 'fin.dinadeco.read'] }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
-    expect(screen.getByRole('heading', { name: 'Accesos rápidos' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Módulos disponibles' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Movimientos financieros/ })).toHaveAttribute('href', '/app/financial/movements')
     expect(screen.getByRole('link', { name: /DINADECO/ })).toHaveAttribute('href', '/app/financial/dinadeco')
     expect(screen.queryByText('Ingresos')).not.toBeInTheDocument()
@@ -68,7 +68,39 @@ describe('AppHomePage', () => {
     auth.user = { fullName: 'Laura Díaz', role: 'Usuario', permissionCodes: [] }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
 
-    expect(screen.queryByRole('navigation', { name: 'Accesos rápidos operativos' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Módulos disponibles' })).not.toBeInTheDocument()
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
+  })
+
+  it('does not render false zeroes while the inventory summary is loading', () => {
+    auth.user = { fullName: 'Luis Mora', role: 'Gestor de Inventario', permissionCodes: ['inv.inventory.read'] }
+    vi.mocked(inventoryReportsService.summary).mockReturnValue(new Promise<never>(() => {}))
+    render(<MemoryRouter><AppHomePage /></MemoryRouter>)
+
+    expect(screen.getByLabelText('Cargando resumen de inventario')).toBeInTheDocument()
+    expect(screen.queryByText('Artículos activos')).not.toBeInTheDocument()
+    expect(screen.queryByText('Préstamos activos')).not.toBeInTheDocument()
+  })
+
+  it('distinguishes a real zero inventory summary from an empty or error state', async () => {
+    auth.user = { fullName: 'Luis Mora', role: 'Gestor de Inventario', permissionCodes: ['inv.inventory.read'] }
+    vi.mocked(inventoryReportsService.summary).mockResolvedValue({ ...summary, activeItems: 0, activeLoans: 0, lowStockCount: 0, outOfStockCount: 0, overdueLoans: 0 })
+    render(<MemoryRouter><AppHomePage /></MemoryRouter>)
+
+    expect(await screen.findByText('Artículos activos')).toBeInTheDocument()
+    expect(screen.getByText('Préstamos activos')).toBeInTheDocument()
+    expect(screen.getAllByText('0')).toHaveLength(2)
+    expect(screen.getByText('No hay alertas de inventario pendientes.')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows a compact inventory error without inventing summary values', async () => {
+    auth.user = { fullName: 'Luis Mora', role: 'Gestor de Inventario', permissionCodes: ['inv.inventory.read'] }
+    vi.mocked(inventoryReportsService.summary).mockRejectedValue(new Error('network'))
+    render(<MemoryRouter><AppHomePage /></MemoryRouter>)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar el resumen de inventario.')
+    expect(screen.queryByText('Artículos activos')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Inventario/ })).toHaveAttribute('href', '/inventory')
   })
 })

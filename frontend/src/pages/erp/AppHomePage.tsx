@@ -89,8 +89,9 @@ export function AppHomePage() {
             <Link to="/inventory" className="hidden items-center gap-1 text-sm font-bold text-brand-primary underline-offset-4 hover:underline sm:flex">Ver detalle <ArrowRight className="size-4" aria-hidden="true" /></Link>
           </div>
           {loading ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Cargando resumen de inventario" aria-busy="true">
-              <Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" />
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)]" aria-label="Cargando resumen de inventario" aria-busy="true">
+              <div className="grid gap-3 md:grid-cols-2"><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
+              <div><Skeleton className="h-6 w-44" /><Skeleton className="mt-2 h-4 w-64 max-w-full" /><Skeleton className="mt-3 h-12" /></div>
             </div>
           ) : summary ? (
             <InventoryOverview summary={summary} />
@@ -103,7 +104,7 @@ export function AppHomePage() {
       {availableOperationalActions.length > 0 && (
         <section aria-labelledby="operational-actions-title">
           <SectionHeading id="operational-actions-title" title="Módulos disponibles" description="Áreas operativas habilitadas para su cuenta." />
-          <nav aria-label="Módulos disponibles" className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <nav aria-label="Módulos disponibles" className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {availableOperationalActions.map((action) => <ActionCard key={action.path} action={action} compact />)}
           </nav>
         </section>
@@ -136,7 +137,7 @@ export function AppHomePage() {
 
 function ActionCard({ action, compact = false }: { action: { label: string; description: string; path: string; icon: typeof Package }; compact?: boolean }) {
   const Icon = action.icon
-  return <Link to={action.path} className="group rounded-surface focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"><Card size={compact ? 'sm' : 'default'} className="h-full shadow-none transition-colors group-hover:border-brand-soft group-hover:bg-surface-elevated"><CardHeader className={compact ? 'grid-cols-[auto_1fr_auto] items-center gap-x-3' : undefined}><div className={compact ? 'flex size-9 items-center justify-center rounded-control bg-brand-soft/20 text-brand-deep' : 'mb-2 flex size-9 items-center justify-center rounded-control bg-brand-soft/25 text-brand-deep'}><Icon className="size-5" aria-hidden="true" /></div><div><CardTitle>{action.label}</CardTitle><CardDescription className="mt-1">{action.description}</CardDescription></div>{compact && <ArrowRight className="size-4 text-foreground-muted transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />}</CardHeader></Card></Link>
+  return <Link to={action.path} className="group rounded-surface focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"><Card size={compact ? 'sm' : 'default'} className="h-full shadow-none transition-colors group-hover:border-brand-soft group-hover:bg-surface-elevated group-focus-visible:border-brand-primary"><CardHeader className={compact ? 'grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3' : undefined}><div className={compact ? 'flex size-9 items-center justify-center rounded-control bg-brand-soft/20 text-brand-deep' : 'mb-2 flex size-9 items-center justify-center rounded-control bg-brand-soft/25 text-brand-deep'}><Icon className="size-5" aria-hidden="true" /></div><div className="min-w-0"><CardTitle>{action.label}</CardTitle><CardDescription className="mt-1">{action.description}</CardDescription></div>{compact && <ArrowRight className="size-4 shrink-0 text-foreground-muted transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />}</CardHeader></Card></Link>
 }
 
 function Metric({ label, value, icon: Icon, attention = false }: { label: string; value: number; icon: typeof Package; attention?: boolean }) {
@@ -150,7 +151,7 @@ function InventoryOverview({ summary }: { summary: InventoryReportSummary }) {
     summary.lowStockCount > 0 ? { label: 'Stock bajo', value: summary.lowStockCount, path: '/inventory/alerts', icon: TriangleAlert } : null,
   ].filter((item): item is NonNullable<typeof item> => item !== null)
 
-  return <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)]"><div className="grid gap-3 sm:grid-cols-2"><Metric label="Artículos activos" value={summary.activeItems} icon={Package} /><Metric label="Préstamos activos" value={summary.activeLoans} icon={FileClock} /></div><section aria-labelledby="inventory-attention-title"><SectionHeading id="inventory-attention-title" title="Atención requerida" description="Alertas reales que requieren revisión." />{attentionItems.length > 0 ? <div className="mt-3 grid gap-2">{attentionItems.map((item) => { const Icon = item.icon; return <Link key={item.label} to={item.path} className="group flex min-h-12 items-center gap-3 rounded-control border border-border bg-surface-card px-3 py-2 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"><Icon className="size-5 shrink-0 text-warning" aria-hidden="true" /><span className="min-w-0 flex-1 text-sm font-semibold text-text-primary">{item.label}</span><span className="tabular-nums text-sm font-bold text-text-primary">{item.value.toLocaleString('es-CR')}</span><ArrowRight className="size-4 shrink-0 text-foreground-muted transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" /></Link> })}</div> : <p className="mt-3 rounded-control border border-border-subtle bg-surface-muted px-4 py-3 text-sm text-text-secondary">No hay alertas de inventario pendientes.</p>}</section></div>
+  return <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)]"><div className="grid gap-3 md:grid-cols-2"><Metric label="Artículos activos" value={summary.activeItems} icon={Package} /><Metric label="Préstamos activos" value={summary.activeLoans} icon={FileClock} /></div><section aria-labelledby="inventory-attention-title"><SectionHeading id="inventory-attention-title" title="Atención requerida" description="Alertas reales que requieren revisión." />{attentionItems.length > 0 ? <div className="mt-3 grid gap-2">{attentionItems.map((item) => { const Icon = item.icon; return <Link key={item.label} to={item.path} className="group flex min-h-12 items-center gap-3 rounded-control border border-border bg-surface-card px-3 py-2 transition-colors hover:border-brand-soft hover:bg-surface-elevated focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"><Icon className="size-5 shrink-0 text-warning" aria-hidden="true" /><span className="min-w-0 flex-1 text-sm font-semibold text-text-primary">{item.label}</span><span className="tabular-nums text-sm font-bold text-text-primary">{item.value.toLocaleString('es-CR')}</span><ArrowRight className="size-4 shrink-0 text-foreground-muted transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" /></Link> })}</div> : <p className="mt-3 rounded-control border border-border-subtle bg-surface-muted px-4 py-3 text-sm text-text-secondary">No hay alertas de inventario pendientes.</p>}</section></div>
 }
 
 function SectionHeading({ id, title, description }: { id: string; title: string; description: string }) {

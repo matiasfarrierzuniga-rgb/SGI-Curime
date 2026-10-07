@@ -48,18 +48,18 @@ const attentionCases = [
 ] as const
 
 const institutionalPanoramaMetrics = [
-  ['Afiliados', '12'],
-  ['Afiliados inactivos', '3'],
-  ['Reservas totales', '6'],
-  ['Reservas aprobadas', '1'],
-  ['Reservas confirmadas', '2'],
-  ['Artículos de inventario', '20'],
-  ['Préstamos activos', '4'],
-  ['Asambleas programadas', '2'],
-  ['Asambleas en progreso', '1'],
-  ['Asambleas completadas', '4'],
-  ['Donaciones registradas', '7'],
-  ['Donaciones confirmadas', '6'],
+  ['Afiliación', 'Afiliados registrados', '12'],
+  ['Afiliación', 'Afiliados inactivos', '3'],
+  ['Reservas', 'Total', '6'],
+  ['Reservas', 'Aprobadas', '1'],
+  ['Reservas', 'Confirmadas', '2'],
+  ['Inventario y préstamos', 'Artículos', '20'],
+  ['Inventario y préstamos', 'Préstamos activos', '4'],
+  ['Asambleas', 'Programadas', '2'],
+  ['Asambleas', 'En progreso', '1'],
+  ['Asambleas', 'Completadas', '4'],
+  ['Donaciones', 'Registradas', '7'],
+  ['Donaciones', 'Confirmadas', '6'],
 ] as const
 
 const panoramaContractData = {
@@ -72,18 +72,18 @@ const panoramaContractData = {
 }
 
 const panoramaContractMetrics = [
-  ['Afiliados', '101'],
-  ['Afiliados inactivos', '102'],
-  ['Reservas totales', '103'],
-  ['Reservas aprobadas', '104'],
-  ['Reservas confirmadas', '105'],
-  ['Artículos de inventario', '106'],
-  ['Préstamos activos', '107'],
-  ['Asambleas programadas', '108'],
-  ['Asambleas en progreso', '109'],
-  ['Asambleas completadas', '112'],
-  ['Donaciones registradas', '110'],
-  ['Donaciones confirmadas', '111'],
+  ['Afiliación', 'Afiliados registrados', '101'],
+  ['Afiliación', 'Afiliados inactivos', '102'],
+  ['Reservas', 'Total', '103'],
+  ['Reservas', 'Aprobadas', '104'],
+  ['Reservas', 'Confirmadas', '105'],
+  ['Inventario y préstamos', 'Artículos', '106'],
+  ['Inventario y préstamos', 'Préstamos activos', '107'],
+  ['Asambleas', 'Programadas', '108'],
+  ['Asambleas', 'En progreso', '109'],
+  ['Asambleas', 'Completadas', '112'],
+  ['Donaciones', 'Registradas', '110'],
+  ['Donaciones', 'Confirmadas', '111'],
 ] as const
 
 const quickActionCases = [
@@ -124,11 +124,12 @@ describe('AdminDashboard', () => {
     })
     expect(screen.getByRole('heading', { name: 'Atención requerida' })).toBeInTheDocument()
     const panorama = screen.getByRole('region', { name: 'Panorama institucional' })
-    const panoramaCards = within(panorama).getAllByRole('article')
-    expect(panoramaCards).toHaveLength(12)
-    institutionalPanoramaMetrics.forEach(([label, value], index) => {
-      expect(within(panoramaCards[index]).getByText(label)).toBeInTheDocument()
-      expect(within(panoramaCards[index]).getByText(value)).toBeInTheDocument()
+    expect(within(panorama).getAllByRole('heading', { level: 4 })).toHaveLength(5)
+    institutionalPanoramaMetrics.forEach(([group, label, value]) => {
+      const card = within(panorama).getByRole('heading', { level: 4, name: group }).closest('[data-slot="card"]')
+      expect(card).not.toBeNull()
+      expect(within(card!).getByText(label)).toBeInTheDocument()
+      expect(within(card!).getByText(value)).toBeInTheDocument()
     })
     expect(screen.getByText('Artículos con stock bajo')).toBeInTheDocument()
     const outOfStockRisk = screen.getByText('Artículos agotados')
@@ -152,11 +153,12 @@ describe('AdminDashboard', () => {
     renderDashboard()
 
     const panorama = await screen.findByRole('region', { name: 'Panorama institucional' })
-    const panoramaCards = within(panorama).getAllByRole('article')
-    expect(panoramaCards).toHaveLength(12)
-    panoramaContractMetrics.forEach(([label, value], index) => {
-      expect(within(panoramaCards[index]).getByText(label)).toBeInTheDocument()
-      expect(within(panoramaCards[index]).getByText(value)).toBeInTheDocument()
+    expect(within(panorama).getAllByRole('heading', { level: 4 })).toHaveLength(5)
+    panoramaContractMetrics.forEach(([group, label, value]) => {
+      const card = within(panorama).getByRole('heading', { level: 4, name: group }).closest('[data-slot="card"]')
+      expect(card).not.toBeNull()
+      expect(within(card!).getByText(label)).toBeInTheDocument()
+      expect(within(card!).getByText(value)).toBeInTheDocument()
     })
   })
 
@@ -204,7 +206,7 @@ describe('AdminDashboard', () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response })
     renderDashboard([capability])
 
-    const actions = await screen.findByRole('navigation', { name: 'Accesos rápidos administrativos' })
+    const actions = await screen.findByRole('navigation', { name: 'Acciones prioritarias administrativas' })
     expect(within(actions).getByRole('link', { name: new RegExp(label, 'i') })).toHaveAttribute('href', path)
     expect(within(actions).getAllByRole('link')).toHaveLength(1)
   })
@@ -213,8 +215,8 @@ describe('AdminDashboard', () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response })
     renderDashboard([])
 
-    expect(screen.queryByRole('navigation', { name: 'Accesos rápidos administrativos' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Accesos rápidos' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Acciones prioritarias administrativas' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Acciones prioritarias' })).not.toBeInTheDocument()
   })
 
   it('shows an accessible error state', async () => {
@@ -225,7 +227,7 @@ describe('AdminDashboard', () => {
     expect(screen.getByRole('button', { name: /Reintentar/ })).toBeInTheDocument()
   })
 
-  it('shows a clear empty state when every source is empty', async () => {
+  it('renders real zero values and a positive attention state when every source is zero', async () => {
     const empty = JSON.parse(JSON.stringify(data)) as typeof data
     for (const section of Object.values(empty)) {
       for (const key of Object.keys(section)) {
@@ -236,6 +238,11 @@ describe('AdminDashboard', () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: { ...response, data: empty } })
     renderDashboard()
 
-    expect(await screen.findByText('Aún no hay datos administrativos para mostrar.')).toBeInTheDocument()
+    const summary = await screen.findByRole('region', { name: 'Resumen general' })
+    expect(within(summary).getAllByRole('article')).toHaveLength(4)
+    expect(within(summary).getAllByText('0')).toHaveLength(4)
+    expect(screen.getByRole('region', { name: 'Panorama institucional' })).toBeInTheDocument()
+    expect(screen.getByText('Todo está al día.')).toBeInTheDocument()
+    expect(screen.queryByText('Aún no hay datos administrativos para mostrar.')).not.toBeInTheDocument()
   })
 })

@@ -1,8 +1,7 @@
-import { AlertTriangle, ArrowRight, Boxes, CalendarCheck, CalendarDays, ClipboardList, FileClock, FileText, HandCoins, PackageX, RefreshCw, Users } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Boxes, CalendarCheck, CalendarDays, CheckCircle2, ClipboardList, FileClock, FileText, HandCoins, PackageX, RefreshCw, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button, buttonVariants } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
-import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { MetricCard } from '@/shared/ui/MetricCard'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -36,12 +35,13 @@ export function AdminDashboard({ permissionCodes }: AdminDashboardProps) {
     return (
       <section aria-busy="true">
         <DashboardSummaryHeading />
-        <div className="mt-5 space-y-6" aria-label="Cargando indicadores administrativos">
-          <SkeletonGroup titleWidth="w-44" metrics={4} gridClassName="md:grid-cols-2 lg:grid-cols-4" />
-          <div className="grid gap-6 lg:grid-cols-2">
+        <div className="mt-5 space-y-8" aria-label="Cargando indicadores administrativos">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-28" />)}</div>
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
             <SkeletonGroup titleWidth="w-48" metrics={3} gridClassName="grid-cols-1" />
-            <SkeletonGroup titleWidth="w-36" metrics={3} gridClassName="grid-cols-1" />
+            <SkeletonGroup titleWidth="w-44" metrics={3} gridClassName="grid-cols-1" />
           </div>
+          <SkeletonGroup titleWidth="w-52" metrics={5} gridClassName="md:grid-cols-2 xl:grid-cols-6 xl:[&>*]:col-span-2 xl:[&>*:nth-last-child(-n+2)]:col-span-3" />
         </div>
       </section>
     )
@@ -55,33 +55,20 @@ export function AdminDashboard({ permissionCodes }: AdminDashboardProps) {
           className="mt-6"
           title="No fue posible cargar los indicadores"
           message="Intente nuevamente para consultar el estado administrativo actual."
-          action={<Button variant="outline" size="sm" onClick={() => void dashboard.refetch()}><RefreshCw aria-hidden="true" /> Reintentar</Button>}
+          action={<Button variant="outline" size="sm" className="min-h-11" onClick={() => void dashboard.refetch()}><RefreshCw aria-hidden="true" /> Reintentar</Button>}
         />
       </section>
     )
   }
 
   const { data, metadata } = dashboard.data
-  if (!hasData(data)) {
-    return (
-      <section>
-        <DashboardSummaryHeading />
-        <EmptyState
-          className="mt-6"
-          title="Aún no hay datos administrativos para mostrar."
-          description="Los indicadores aparecerán cuando los módulos registren información."
-        />
-      </section>
-    )
-  }
-
   const quickActions = adminQuickActions.filter((action) => hasCapability(permissionCodes, action.capability))
 
   return (
     <section>
       <DashboardSummary data={data} generatedAt={metadata.generatedAt} />
       <div className="mt-8 space-y-10">
-        <div className={quickActions.length > 0 ? 'grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]' : undefined}>
+        <div className={quickActions.length > 0 ? 'grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]' : undefined}>
           <AttentionPanel data={data} permissionCodes={permissionCodes} />
           {quickActions.length > 0 && <QuickActions actions={quickActions} />}
         </div>
@@ -96,7 +83,7 @@ function DashboardSummary({ data, generatedAt }: { data: AdminDashboardData; gen
   return (
     <section aria-labelledby="admin-indicators-title">
       <DashboardSummaryHeading generatedAt={generatedAt} />
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <Metric label="Solicitudes pendientes" value={data.affiliateRequests.pending} icon={Users} className="h-full border-l-2 border-l-brand-primary bg-surface-elevated p-4 shadow-none" />
         <Metric label="Justificaciones pendientes" value={data.justifications.pending} icon={FileText} className="h-full border-l-2 border-l-brand-primary bg-surface-elevated p-4 shadow-none" />
         <Metric label="Reservas pendientes" value={data.reservations.pending} icon={CalendarCheck} className="h-full border-l-2 border-l-brand-primary bg-surface-elevated p-4 shadow-none" />
@@ -113,10 +100,11 @@ function InstitutionalPanorama({ data }: { data: AdminDashboardData }) {
         <h3 id="admin-snapshot-title" className="font-sans text-body font-semibold text-text-primary">Panorama institucional</h3>
         <p className="mt-1 text-body-small text-foreground-muted">Totales y actividad registrada en los módulos institucionales.</p>
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
         <PanoramaGroup
           title="Afiliación"
           icon={Users}
+          className="xl:col-span-2"
           metrics={[
             { label: 'Afiliados registrados', value: data.affiliates.total },
             { label: 'Afiliados inactivos', value: data.affiliates.inactive },
@@ -125,6 +113,7 @@ function InstitutionalPanorama({ data }: { data: AdminDashboardData }) {
         <PanoramaGroup
           title="Reservas"
           icon={CalendarCheck}
+          className="xl:col-span-2"
           metrics={[
             { label: 'Total', value: data.reservations.total },
             { label: 'Aprobadas', value: data.reservations.approved },
@@ -134,6 +123,7 @@ function InstitutionalPanorama({ data }: { data: AdminDashboardData }) {
         <PanoramaGroup
           title="Inventario y préstamos"
           icon={Boxes}
+          className="xl:col-span-2"
           metrics={[
             { label: 'Artículos', value: data.inventory.totalItems },
             { label: 'Préstamos activos', value: data.inventory.activeLoans },
@@ -142,6 +132,7 @@ function InstitutionalPanorama({ data }: { data: AdminDashboardData }) {
         <PanoramaGroup
           title="Asambleas"
           icon={CalendarDays}
+          className="xl:col-span-3"
           metrics={[
             { label: 'Programadas', value: data.assemblies.scheduled },
             { label: 'En progreso', value: data.assemblies.in_progress },
@@ -151,6 +142,7 @@ function InstitutionalPanorama({ data }: { data: AdminDashboardData }) {
         <PanoramaGroup
           title="Donaciones"
           icon={HandCoins}
+          className="xl:col-span-3"
           metrics={[
             { label: 'Registradas', value: data.donations.total },
             { label: 'Confirmadas', value: data.donations.confirmed },
@@ -161,9 +153,9 @@ function InstitutionalPanorama({ data }: { data: AdminDashboardData }) {
   )
 }
 
-function PanoramaGroup({ title, icon: Icon, metrics }: { title: string; icon: typeof Users; metrics: readonly { label: string; value: number }[] }) {
+function PanoramaGroup({ title, icon: Icon, metrics, className }: { title: string; icon: typeof Users; metrics: readonly { label: string; value: number }[]; className?: string }) {
   return (
-    <Card size="sm" className="border-border-subtle bg-surface-muted shadow-none">
+    <Card size="sm" className={`border-border-subtle bg-surface-muted shadow-none ${className ?? ''}`}>
       <CardContent>
         <div className="flex items-center gap-2 border-b border-border-subtle pb-2.5">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-brand-soft/20 text-brand-deep"><Icon className="size-4" aria-hidden="true" /></span>
@@ -246,7 +238,10 @@ function AttentionPanel({ data, permissionCodes, className }: { data: AdminDashb
       <GroupHeading id="admin-risks-title" title="Atención requerida" description="Pendientes y riesgos operativos que necesitan revisión." />
       <div className="mt-4 space-y-2">
         {items.length > 0 ? items.map((item) => <AttentionItem key={item.label} item={item} canAct={item.action !== undefined && hasCapability(permissionCodes, item.action.capability)} />) : (
-          <EmptyState title="No hay pendientes de atención." description="No se registran solicitudes pendientes ni alertas operativas." className="py-5" />
+          <div className="flex items-start gap-3 rounded-surface border border-border-subtle bg-surface-muted px-4 py-3 text-text-secondary">
+            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-status-success" aria-hidden="true" />
+            <div><p className="font-semibold text-text-primary">Todo está al día.</p><p className="mt-0.5 text-body-small">No se registran solicitudes pendientes ni alertas operativas.</p></div>
+          </div>
         )}
       </div>
     </section>
@@ -257,13 +252,13 @@ function AttentionItem({ item, canAct }: { item: AttentionItemData; canAct: bool
   const Icon = item.icon
   return (
     <Card size="sm" className="border-border-default bg-surface-card shadow-none">
-      <CardContent className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start">
+      <CardContent className="flex flex-col items-stretch gap-3 md:flex-row md:items-start">
         <div className={item.status === 'danger' ? 'flex size-9 shrink-0 items-center justify-center rounded-control bg-status-danger-surface text-status-danger' : 'flex size-9 shrink-0 items-center justify-center rounded-control bg-status-warning-surface text-status-warning'}><Icon className="size-5" aria-hidden="true" /></div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><h4 className="font-semibold text-text-primary">{item.label}</h4><StatusBadge variant={item.status}>{item.statusLabel}</StatusBadge></div>
           <p className="mt-1 text-body-small text-text-secondary"><span className="font-semibold tabular-nums text-text-primary">{item.count.toLocaleString('es-CR')}</span> {item.detail.toLocaleLowerCase()}</p>
         </div>
-        {canAct && item.action && <Link to={item.action.path} className={buttonVariants({ variant: 'link', size: 'sm', className: 'min-h-11 shrink-0 self-start px-0 sm:min-h-9' })}>{item.action.label}</Link>}
+        {canAct && item.action && <Link to={item.action.path} className={buttonVariants({ variant: 'link', size: 'sm', className: 'min-h-11 shrink-0 self-start px-0 md:min-h-9' })}>{item.action.label}</Link>}
       </CardContent>
     </Card>
   )
@@ -271,11 +266,7 @@ function AttentionItem({ item, canAct }: { item: AttentionItemData; canAct: bool
 
 function Metric({ label, value, icon: Icon, state, stateLabel, className }: { label: string; value: string | number; icon?: typeof Users; state?: 'warning' | 'danger'; stateLabel?: string; className?: string }) {
   const metricValue = typeof value === 'number' ? value.toLocaleString('es-CR') : value
-  const icon = Icon ? <span className="flex size-9 items-center justify-center rounded-control border border-border-subtle bg-background-subtle text-foreground-brand"><Icon className="size-4" /></span> : undefined
+  const icon = Icon ? <span className="flex size-9 items-center justify-center rounded-control border border-border-subtle bg-background-subtle text-foreground-brand"><Icon className="size-4" aria-hidden="true" /></span> : undefined
   const metricValueNode = <span className="text-3xl leading-none tracking-[-0.03em]">{metricValue}</span>
   return state ? <MetricCard label={label} value={metricValueNode} icon={icon} state={state} stateLabel={stateLabel ?? ''} className={className} /> : <MetricCard label={label} value={metricValueNode} icon={icon} className={className} />
-}
-
-function hasData(data: AdminDashboardData) {
-  return data.affiliates.total > 0 || data.affiliateRequests.pending > 0 || data.reservations.total > 0 || data.donations.total > 0 || data.inventory.totalItems > 0 || data.assemblies.total > 0 || data.justifications.pending > 0 || Number(data.financial.totalIncome) !== 0 || Number(data.financial.totalExpenses) !== 0
 }
