@@ -63,7 +63,7 @@ describe('initial role seed', () => {
   });
 
   it('persists every compatibility capability and mapped role grant idempotently', async () => {
-    expect(INITIAL_PERMISSIONS).toHaveLength(43);
+    expect(INITIAL_PERMISSIONS).toHaveLength(45);
     expect(ROLE_CAPABILITIES.Administrador).toHaveLength(43);
     expect(INITIAL_PERMISSIONS).toEqual(
       expect.arrayContaining([
@@ -77,6 +77,8 @@ describe('initial role seed', () => {
           name: 'adm.justifications.reject',
         },
         { code: 'usr.users.update', name: 'usr.users.update' },
+        { code: 'usr.user-requests.read', name: 'usr.user-requests.read' },
+        { code: 'usr.user-requests.review', name: 'usr.user-requests.review' },
         { code: 'ent.ventures.read', name: 'ent.ventures.read' },
         { code: 'ent.ventures.create', name: 'ent.ventures.create' },
         { code: 'ent.ventures.update', name: 'ent.ventures.update' },
