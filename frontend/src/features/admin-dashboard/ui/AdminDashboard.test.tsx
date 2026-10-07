@@ -177,7 +177,7 @@ describe('AdminDashboard', () => {
 
     const attention = await screen.findByRole('region', { name: 'Atención requerida' })
     expect(within(attention).queryByRole('heading', { level: 4, name: label })).not.toBeInTheDocument()
-    expect(within(attention).getByText('No hay pendientes de atención.')).toBeInTheDocument()
+    expect(within(attention).getByText('Todo está al día.')).toBeInTheDocument()
   })
 
   it('keeps genuine attention items visible without session permissions but hides contextual actions', async () => {
