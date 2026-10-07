@@ -11,7 +11,7 @@ import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProfilePage } from '@/features/profile'
-import { RegisterPage } from '@/features/auth'
+import { RegisterPage } from '@/features/user-requests'
 import { TokenPasswordPage } from '@/features/auth'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
 import { UserRequestsPage } from '@/pages/admin/UserRequestsPage'
@@ -98,6 +98,8 @@ export function AppRoutes() {
           </Route>
           <Route element={<RoleRoute capability="adm.requests.read" />}>
             <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />
+          </Route>
+          <Route element={<RoleRoute capability="usr.user-requests.read" />}>
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
           </Route>
           <Route element={<RoleRoute capability="adm.assemblies.read" />}>

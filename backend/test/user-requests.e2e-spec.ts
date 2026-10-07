@@ -26,6 +26,7 @@ describe('UserRequestsController (e2e)', () => {
   let app: INestApplication<App>;
   let jwt: JwtService;
   let role = 'Administrador';
+  let permissionCodes: readonly string[] = [];
   const service = {
     create: jest.fn(),
     findAll: jest.fn(),
@@ -35,15 +36,28 @@ describe('UserRequestsController (e2e)', () => {
   };
   const prisma = {
     user: {
-      findUnique: jest.fn(() =>
-        Promise.resolve(buildPrismaAuthUser({ roleName: role })),
-      ),
+      findUnique: jest.fn(() => {
+        const user = buildPrismaAuthUser({ roleName: role });
+        return Promise.resolve({
+          ...user,
+          role: {
+            ...user.role,
+            permissions: permissionCodes.map((code) => ({
+              permission: { code },
+            })),
+          },
+        });
+      }),
     },
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     role = 'Administrador';
+    permissionCodes = [
+      'usr.user-requests.read',
+      'usr.user-requests.review',
+    ];
     service.create.mockResolvedValue({ id: 10, status: 'PENDING' });
     service.findAll.mockResolvedValue({
       data: [],
@@ -53,6 +67,7 @@ describe('UserRequestsController (e2e)', () => {
     });
     service.findOne.mockResolvedValue({ id: 10, status: 'PENDING' });
     service.reject.mockResolvedValue({ id: 10, status: 'REJECTED' });
+    service.approve.mockResolvedValue({ id: 10, status: 'APPROVED' });
 
     const module = await Test.createTestingModule({
       imports: [UserRequestsModule],
@@ -242,16 +257,64 @@ describe('UserRequestsController (e2e)', () => {
       .expect(400);
   });
 
-  it('requires JWT to list requests', async () => {
-    await request(app.getHttpServer()).get('/user-requests').expect(401);
-  });
+  it.each(['/user-requests', '/user-requests/10'])(
+    'requires JWT to read requests at %s',
+    async (path) => {
+      await request(app.getHttpServer()).get(path).expect(401);
+      expect(service.findAll).not.toHaveBeenCalled();
+      expect(service.findOne).not.toHaveBeenCalled();
+    },
+  );
 
-  it('rejects a non-administrator role', async () => {
+  it.each([
+    ['/user-requests', 'findAll'],
+    ['/user-requests/10', 'findOne'],
+  ] as const)(
+    'rejects a role without read capability at %s',
+    async (path, serviceMethod) => {
+      role = 'Tesorero';
+      permissionCodes = [];
+      await request(app.getHttpServer())
+        .get(path)
+        .set('Authorization', await authorization())
+        .expect(403);
+      expect(service[serviceMethod]).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['get', '/user-requests', undefined, 'findAll'],
+    ['get', '/user-requests/10', undefined, 'findOne'],
+    ['patch', '/user-requests/10/approve', { roleId: 3 }, 'approve'],
+    [
+      'patch',
+      '/user-requests/10/reject',
+      { rejectionReason: 'No cumple requisitos' },
+      'reject',
+    ],
+  ] as const)(
+    'does not treat adm.requests.read as UserRequest access for %s %s',
+    async (method, path, body, serviceMethod) => {
+      permissionCodes = ['adm.requests.read'];
+      const operation =
+        method === 'get'
+          ? request(app.getHttpServer()).get(path)
+          : request(app.getHttpServer()).patch(path).send(body);
+      await operation
+        .set('Authorization', await authorization())
+        .expect(403);
+      expect(service[serviceMethod]).not.toHaveBeenCalled();
+    },
+  );
+
+  it('allows a non-administrator with read capability and ERP access', async () => {
     role = 'Tesorero';
+    permissionCodes = ['usr.user-requests.read'];
     await request(app.getHttpServer())
       .get('/user-requests')
       .set('Authorization', await authorization())
-      .expect(403);
+      .expect(200);
+    expect(service.findAll).toHaveBeenCalledTimes(1);
   });
 
   it('allows an administrator to list requests', async () => {
@@ -259,6 +322,16 @@ describe('UserRequestsController (e2e)', () => {
       .get('/user-requests?status=PENDING&page=1&limit=10')
       .set('Authorization', await authorization())
       .expect(200);
+  });
+
+  it('allows a non-administrator with read capability and ERP access to get request detail', async () => {
+    role = 'Tesorero';
+    permissionCodes = ['usr.user-requests.read'];
+    await request(app.getHttpServer())
+      .get('/user-requests/10')
+      .set('Authorization', await authorization())
+      .expect(200);
+    expect(service.findOne).toHaveBeenCalledWith(10);
   });
 
   it('returns 404 for an unknown request', async () => {
@@ -279,7 +352,60 @@ describe('UserRequestsController (e2e)', () => {
       .expect(400);
   });
 
-  it('passes the authenticated administrator id when rejecting', async () => {
+  it.each([
+    ['/user-requests/10/approve', { roleId: 3 }, 'approve'],
+    [
+      '/user-requests/10/reject',
+      { rejectionReason: 'No cumple requisitos' },
+      'reject',
+    ],
+  ] as const)(
+    'requires JWT to review requests at %s',
+    async (path, body, serviceMethod) => {
+      await request(app.getHttpServer()).patch(path).send(body).expect(401);
+      expect(service[serviceMethod]).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['/user-requests/10/approve', { roleId: 3 }, 'approve'],
+    [
+      '/user-requests/10/reject',
+      { rejectionReason: 'No cumple requisitos' },
+      'reject',
+    ],
+  ] as const)(
+    'rejects review without review capability at %s',
+    async (path, body, serviceMethod) => {
+      permissionCodes = ['usr.user-requests.read'];
+      await request(app.getHttpServer())
+        .patch(path)
+        .set('Authorization', await authorization())
+        .send(body)
+        .expect(403);
+      expect(service[serviceMethod]).not.toHaveBeenCalled();
+    },
+  );
+
+  it('allows a non-administrator with review capability and ERP access to approve', async () => {
+    role = 'Tesorero';
+    permissionCodes = ['usr.user-requests.review'];
+    await request(app.getHttpServer())
+      .patch('/user-requests/10/approve')
+      .set('Authorization', await authorization())
+      .send({ roleId: 3 })
+      .expect(200);
+    expect(service.approve).toHaveBeenCalledWith(
+      10,
+      { roleId: 3 },
+      1,
+      expect.objectContaining({ ipAddress: expect.any(String) }),
+    );
+  });
+
+  it('allows a non-administrator with review capability and ERP access to reject', async () => {
+    role = 'Tesorero';
+    permissionCodes = ['usr.user-requests.review'];
     await request(app.getHttpServer())
       .patch('/user-requests/10/reject')
       .set('Authorization', await authorization())

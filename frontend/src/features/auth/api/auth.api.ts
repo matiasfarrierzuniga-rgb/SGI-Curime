@@ -1,9 +1,8 @@
 import { httpClient } from '@/shared/api/httpClient'
 import type { ApiMessage } from '@/shared/api/api.types'
-import type { AuthenticatedUser, LoginCredentials, LoginResponse, PasswordWithConfirmation, RegisteredUser, RegisterUser } from '../model/auth.types'
+import type { AuthenticatedUser, LoginCredentials, LoginResponse, PasswordWithConfirmation } from '../model/auth.types'
 
 export const authService = {
-  async register(payload: RegisterUser) { return (await httpClient.post<RegisteredUser>('/register', payload)).data },
   async login(payload: LoginCredentials) { return (await httpClient.post<LoginResponse>('/login', payload)).data },
   async refresh() { return (await httpClient.post<{ accessToken: string }>('/refresh')).data },
   async logout() { return (await httpClient.post<ApiMessage>('/logout')).data },

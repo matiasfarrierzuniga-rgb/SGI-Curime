@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_DB: sgi_curime_integration_test
+      POSTGRES_USER: sgi_curime_test
+      POSTGRES_PASSWORD: sgi_curime_test_password
+    ports:
+      - "${TEST_POSTGRES_PORT}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data:rw,noexec,nosuid,size=256m
+    labels:
+      com.sgi-curime.disposable: "true"
+      com.sgi-curime.run-token: "${TEST_RUN_TOKEN}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sgi_curime_test -d sgi_curime_integration_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 2s

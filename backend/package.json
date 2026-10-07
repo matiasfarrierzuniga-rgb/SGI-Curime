@@ -6,6 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "prebuild": "prisma generate --config prisma.config.ts",
     "build": "nest build",
     "postinstall": "prisma generate --config prisma.config.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -22,12 +23,22 @@
     "db:reset-admin-password": "tsx prisma/reset-admin-password.ts",
     "email:test": "tsx src/modules/notifications/infrastructure/scripts/send-test-email.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "pretest": "prisma generate --config prisma.config.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config ./test/jest-e2e.json",
-    "test:migration:frozen-v1.1": "node ./test/migration/frozen-target-v1.1-disposable.mjs"
+    "test:migration:frozen-v1.1": "node ./test/migration/frozen-target-v1.1-disposable.mjs",
+    "test:postgres:guard": "node --test ./test/helpers/disposable-postgres-guard.test.mjs",
+    "test:postgres:up": "node ./test/helpers/disposable-postgres-lifecycle.mjs start",
+    "test:postgres:health": "node ./test/helpers/disposable-postgres-lifecycle.mjs health",
+    "test:postgres:migrate": "node ./test/helpers/disposable-postgres-lifecycle.mjs migrate",
+    "test:postgres:smoke": "node ./test/helpers/disposable-postgres-lifecycle.mjs smoke",
+    "test:postgres:cleanup": "node ./test/helpers/disposable-postgres-lifecycle.mjs cleanup",
+    "test:postgres:down": "node ./test/helpers/disposable-postgres-lifecycle.mjs down",
+    "test:postgres:certify": "node ./test/helpers/disposable-postgres-lifecycle.mjs certify",
+    "test:postgres:user-requests": "node ./test/helpers/disposable-postgres-user-requests-certification.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

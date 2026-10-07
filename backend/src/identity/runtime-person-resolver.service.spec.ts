@@ -127,6 +127,68 @@ describe('RuntimePersonResolverService', () => {
     expect(database.person.create).not.toHaveBeenCalled();
   });
 
+  it('finds only a complete compatible existing Person for public submission', async () => {
+    database.person.findMany.mockResolvedValue([person]);
+
+    await expect(
+      resolver.findSafeExisting(input, database as never),
+    ).resolves.toEqual({
+      status: 'PERSON_REUSED',
+      person,
+      profileEnrichmentRequired: false,
+    });
+    expect(database.person.create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['no matching Person', []],
+    ['incompatible Person', [{ ...person, firstName: 'Different' }]],
+    ['incomplete Person', [{ ...person, firstSurname: null }]],
+  ])('does not link or create for public submission with %s', async (_, rows) => {
+    database.person.findMany.mockResolvedValue(rows);
+
+    await expect(
+      resolver.findSafeExisting(input, database as never),
+    ).resolves.toBeNull();
+    expect(database.person.create).not.toHaveBeenCalled();
+  });
+
+  it('review resolution reuses only one complete Person by typed normalized key', async () => {
+    database.person.findMany.mockResolvedValue([person]);
+    const transaction = {
+      ...database,
+      $queryRaw: jest.fn(),
+    };
+
+    await expect(
+      resolver.resolveExistingForReviewWithinTransaction(
+        input.identificationType,
+        input.identification,
+        transaction as never,
+      ),
+    ).resolves.toEqual({ status: 'PERSON_REUSED', person });
+    expect(transaction.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(database.person.create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['missing Person', [], 'IDENTITY_NOT_FOUND'],
+    ['incomplete Person', [{ ...person, firstSurname: null }], 'MANUAL_REVIEW_REQUIRED'],
+    ['duplicate Person rows', [person, { ...person, id: 13 }], 'IDENTITY_DUPLICATE_CORRUPTION'],
+  ])('review resolution returns a non-mutating outcome for %s', async (_, rows, status) => {
+    database.person.findMany.mockResolvedValue(rows);
+    const transaction = { ...database, $queryRaw: jest.fn() };
+
+    await expect(
+      resolver.resolveExistingForReviewWithinTransaction(
+        input.identificationType,
+        input.identification,
+        transaction as never,
+      ),
+    ).resolves.toMatchObject({ status });
+    expect(database.person.create).not.toHaveBeenCalled();
+  });
+
   it('returns identity conflict without mutation', async () => {
     database.person.findMany.mockResolvedValue([
       { ...person, firstName: 'Different' },

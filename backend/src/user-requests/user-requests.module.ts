@@ -23,6 +23,7 @@ import { UserRequestsService } from './user-requests.service';
     ActivationTokenService,
     ActivationTokenDeliveryService,
   ],
+  exports: [UserRequestsService],
 })
 export class UserRequestsModule {}
 

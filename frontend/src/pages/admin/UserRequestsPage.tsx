@@ -6,11 +6,29 @@ import { userRequestsService } from "@/features/user-requests";
 import { rolesService } from "@/features/roles";
 import type { RequestStatus, UserRequest } from "@/features/user-requests";
 import type { RoleOption } from "@/features/users";
+import axios from "axios";
 import { getErrorMessage } from "@/shared/lib/errors";
 import { useToast } from "@/shared/ui/Toast";
+import { useAuth } from "@/features/auth";
+import { hasCapability } from "@/shared/security/access";
 const limit = 10;
+
+function reviewRequiredMessage(error: unknown) {
+  const message = axios.isAxiosError(error)
+    ? error.response?.data && typeof error.response.data === "object" && "message" in error.response.data
+      ? String(error.response.data.message)
+      : ""
+    : "";
+  if (axios.isAxiosError(error) && error.response?.status === 409 && /identity|review/i.test(message)) {
+    return "La solicitud sigue pendiente: la identidad requiere revisión institucional antes de aprobarla.";
+  }
+  return getErrorMessage(error);
+}
+
 export function UserRequestsPage() {
   const { notify } = useToast();
+  const { user } = useAuth();
+  const canReview = hasCapability(user?.permissionCodes, "usr.user-requests.review");
   const [items, setItems] = useState<UserRequest[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [roleId, setRoleId] = useState("");
@@ -46,15 +64,17 @@ export function UserRequestsPage() {
     void load();
   }, [load]);
   useEffect(() => {
+    if (!canReview) return;
     rolesService
       .listActive()
       .then(setRoles)
       .catch((e) =>
         setError(getErrorMessage(e, "No fue posible cargar los roles.")),
       );
-  }, []);
+  }, [canReview]);
   const run = async () => {
     if (
+      !canReview ||
       !selected ||
       !action ||
       (action === "approve" && !roleId) ||
@@ -76,7 +96,7 @@ export function UserRequestsPage() {
       setReason("");
       await load();
     } catch (e) {
-      notify(getErrorMessage(e), "error");
+      notify(action === "approve" ? reviewRequiredMessage(e) : getErrorMessage(e), "error");
     } finally {
       setBusy(false);
     }
@@ -191,7 +211,7 @@ export function UserRequestsPage() {
               </div>
             )}
           </dl>
-          {selected.status === "PENDING" && (
+          {canReview && selected.status === "PENDING" && (
             <div className="actions">
               <button className="primary" onClick={() => setAction("approve")}>
                 Aprobar
