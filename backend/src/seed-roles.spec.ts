@@ -64,7 +64,7 @@ describe('initial role seed', () => {
 
   it('persists every compatibility capability and mapped role grant idempotently', async () => {
     expect(INITIAL_PERMISSIONS).toHaveLength(45);
-    expect(ROLE_CAPABILITIES.Administrador).toHaveLength(43);
+    expect(ROLE_CAPABILITIES.Administrador).toHaveLength(45);
     expect(INITIAL_PERMISSIONS).toEqual(
       expect.arrayContaining([
         { code: 'adm.justifications.read', name: 'adm.justifications.read' },
