@@ -73,6 +73,10 @@ describe('User request activation flow (e2e)', () => {
     };
 
     const tx = {
+      $queryRaw: jest.fn(async () => [{ locked: 1 }]),
+      role: {
+        findUnique: jest.fn(async () => ({ id: 2, isActive: true })),
+      },
       userRequest: {
         updateMany: jest.fn(async () => {
           requestRecord.status = 'APPROVED';
@@ -107,7 +111,6 @@ describe('User request activation flow (e2e)', () => {
         findUnique: jest.fn(async () => null),
       },
       userRequest: { findUnique: jest.fn(async () => requestRecord) },
-      role: { findUnique: jest.fn(async () => ({ id: 2, isActive: true })) },
       $transaction: jest.fn(
         async (work: (client: typeof tx) => Promise<unknown>) => work(tx),
       ),
@@ -132,6 +135,8 @@ describe('User request activation flow (e2e)', () => {
 
     await approval.approve(requestRecord.id, { roleId: 2 }, 1);
 
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(tx.role.findUnique).toHaveBeenCalledWith({ where: { id: 2 } });
     expect(tx.identityReconciliationManifest.upsert).toHaveBeenCalledTimes(1);
     expect(user.status).toBe('INACTIVE');
     expect(tokenRecord.tokenHash).toMatch(/^[0-9a-f]{64}$/);
