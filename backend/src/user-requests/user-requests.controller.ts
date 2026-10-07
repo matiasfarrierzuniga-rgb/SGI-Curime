@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import { CapabilityGuard, JwtAuthGuard, RequireCapabilities } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { CreateUserRequestDto } from './dto/create-user-request.dto';
@@ -35,22 +35,22 @@ export class UserRequestsController {
   }
 
   @Get()
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequireCapabilities('usr.user-requests.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findAll(@Query() query: QueryUserRequestDto) {
     return this.service.findAll(query);
   }
 
   @Get(':id')
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequireCapabilities('usr.user-requests.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
   @Patch(':id/reject')
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequireCapabilities('usr.user-requests.review')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   reject(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RejectUserRequestDto,
@@ -65,8 +65,8 @@ export class UserRequestsController {
   }
 
   @Patch(':id/approve')
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequireCapabilities('usr.user-requests.review')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   approve(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ApproveUserRequestDto,
