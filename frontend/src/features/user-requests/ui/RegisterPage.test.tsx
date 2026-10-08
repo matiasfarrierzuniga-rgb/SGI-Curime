@@ -61,6 +61,7 @@ describe('RegisterPage', () => {
     fireEvent.submit(screen.getByRole('button', { name: 'Enviar solicitud' }).closest('form')!)
 
     expect(await screen.findByText(/pendiente de revisión administrativa/i)).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(/cuenta inactiva y recibirá por correo/i)
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
     expect(authenticatedStorage()).toBe(false)
   })

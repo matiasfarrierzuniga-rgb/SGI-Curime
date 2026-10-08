@@ -12,6 +12,11 @@ import { useToast } from "@/shared/ui/Toast";
 import { useAuth } from "@/features/auth";
 import { hasCapability } from "@/shared/security/access";
 const limit = 10;
+const statusLabels: Record<RequestStatus, string> = {
+  PENDING: "Pendiente",
+  APPROVED: "Aprobada",
+  REJECTED: "Rechazada",
+};
 
 function reviewRequiredMessage(error: unknown) {
   const message = axios.isAxiosError(error)
@@ -32,6 +37,8 @@ export function UserRequestsPage() {
   const [items, setItems] = useState<UserRequest[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [roleId, setRoleId] = useState("");
+  // Roles are only loaded for Reviewer capability (usr.user-requests.review).
+  // Readers (usr.user-requests.read only) must not fetch role data.
   const [reason, setReason] = useState("");
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -155,7 +162,7 @@ export function UserRequestsPage() {
                     <td>{item.fullName}</td>
                     <td>{item.email}</td>
                     <td>
-                      <span className="badge">{item.status}</span>
+                      <span className="badge">{statusLabels[item.status]}</span>
                     </td>
                     <td>{new Date(item.createdAt).toLocaleDateString()}</td>
                     <td>
@@ -230,8 +237,9 @@ export function UserRequestsPage() {
           busy={busy}
         >
           <p>
-            Selecciona el rol que tendrá la nueva cuenta y confirma la
-            aprobación.
+            Seleccione el rol que tendrá la nueva cuenta. Al aprobar, la cuenta
+            se creará inactiva y la persona recibirá por correo el enlace de
+            activación.
           </p>
           <label>
             Rol
@@ -265,11 +273,13 @@ export function UserRequestsPage() {
             <textarea
               required
               maxLength={500}
+              aria-invalid={!reason.trim()}
+              aria-describedby="rejection-reason-help"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
           </label>
-          <p className="muted">El motivo es obligatorio.</p>
+          <p id="rejection-reason-help" className="muted">El motivo es obligatorio y se conservará con la solicitud.</p>
           <div className="actions">
             <button onClick={() => setAction(null)}>Cancelar</button>
             <button

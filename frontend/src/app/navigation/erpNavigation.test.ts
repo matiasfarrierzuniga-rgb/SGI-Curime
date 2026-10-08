@@ -21,6 +21,21 @@ describe('getErpNavigation', () => {
     expect(profile).toMatchObject({ path: '/app/profile' })
   })
 
+  it('hides affiliate justification navigation without a linked affiliate', () => {
+    const items = getErpNavigation([], null).flatMap(section => section.items)
+
+    expect(items.find(item => item.label === 'Enviar justificación')).toBeUndefined()
+    expect(items.find(item => item.label === 'Mis justificaciones')).toBeUndefined()
+    expect(items.find(item => item.label === 'Mi perfil')).toBeDefined()
+  })
+
+  it('shows affiliate justification navigation when an affiliate is linked', () => {
+    const items = getErpNavigation([], '18').flatMap(section => section.items)
+
+    expect(items.find(item => item.label === 'Enviar justificación')).toMatchObject({ path: '/app/affiliate/absence-justifications/new' })
+    expect(items.find(item => item.label === 'Mis justificaciones')).toMatchObject({ path: '/app/affiliate/justifications' })
+  })
+
   it('keeps public routes out of ERP navigation while preserving administrative routes', () => {
     const items = getErpNavigation(['res.reservations.read', 'adm.affiliates.read', 'adm.requests.read', 'pub.events.manage'])
       .flatMap(section => section.items)

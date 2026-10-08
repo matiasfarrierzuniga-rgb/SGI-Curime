@@ -1,7 +1,6 @@
 import { Eye, EyeOff } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { homePathForRole } from '@/shared/security/roles'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -18,7 +17,7 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const submitting = useRef(false)
 
-  async function submit(event: FormEvent) {
+async function submit(event: FormEvent) {
     event.preventDefault()
     if (submitting.current) return
     submitting.current = true
@@ -27,8 +26,12 @@ export function LoginPage() {
     try {
       const user = await login({ email: email.trim().toLowerCase(), password })
       const requested = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
-      const authorizedRequest = requested && (!requested.startsWith('/app') || user.canAccessErp) ? requested : undefined
-      navigate(authorizedRequest || homePathForRole(user.role, user.canAccessErp), { replace: true })
+      // Backend-computed effective access remains authoritative for ERP entry.
+      const hasErpAccess = user.canAccessErp === true
+      const isInternalRequest = requested?.startsWith('/app') || requested?.startsWith('/admin') || requested?.startsWith('/inventory')
+      const authorizedRequest = requested && (!isInternalRequest || hasErpAccess) ? requested : undefined
+      const defaultDestination = hasErpAccess ? '/app' : '/servicios'
+      navigate(authorizedRequest || defaultDestination, { replace: true })
     } catch {
       setError('No fue posible iniciar sesión. Verifique sus credenciales.')
     } finally {

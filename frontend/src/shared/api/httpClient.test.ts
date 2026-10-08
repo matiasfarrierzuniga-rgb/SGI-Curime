@@ -60,9 +60,12 @@ describe('httpClient session handling', () => {
   it('does not refresh or emit unauthorized for 403 responses', async () => {
     const post = vi.spyOn(httpClient, 'post')
     const listener = vi.fn(); window.addEventListener('auth:unauthorized', listener)
+    const accessListener = vi.fn(); window.addEventListener('auth:access-changed', accessListener)
     await expect(responseHandler()(responseError('/users/me', 403))).rejects.toMatchObject({ response: { status: 403 } })
     expect(post).not.toHaveBeenCalled()
     expect(listener).not.toHaveBeenCalled()
+    expect(accessListener).toHaveBeenCalledOnce()
     window.removeEventListener('auth:unauthorized', listener)
+    window.removeEventListener('auth:access-changed', accessListener)
   })
 })

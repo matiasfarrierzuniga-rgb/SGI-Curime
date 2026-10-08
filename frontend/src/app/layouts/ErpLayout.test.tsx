@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ErpLayout } from './ErpLayout'
 
-const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
+const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', affiliateId: null as string | null, permissionCodes: ['inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }))
 
 function renderLayout(initialPath = '/app') {
@@ -11,7 +11,7 @@ function renderLayout(initialPath = '/app') {
 }
 
 describe('ErpLayout', () => {
-  beforeEach(() => { vi.clearAllMocks(); auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
+  beforeEach(() => { vi.clearAllMocks(); auth.user = { fullName: 'Ana Pérez', role: 'Administrador', affiliateId: null, permissionCodes: ['inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
 
   it('renders desktop navigation, session context, and public-site actions', () => {
     renderLayout()
@@ -21,6 +21,16 @@ describe('ErpLayout', () => {
     expect(screen.getByRole('navigation', { name: 'Ubicación actual' })).toHaveTextContent('Área de gestiónInicio')
     expect(screen.getAllByRole('link', { name: 'Ver sitio público' })[0]).toHaveAttribute('href', '/')
     expect(screen.getAllByRole('main')).toHaveLength(1)
+    expect(screen.queryByRole('link', { name: 'Enviar justificación' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Mis justificaciones' })).not.toBeInTheDocument()
+  })
+
+  it('shows affiliate navigation when the ERP user has a linked affiliate', () => {
+    auth.user = { ...auth.user, affiliateId: '18' }
+    renderLayout()
+
+    expect(screen.getAllByRole('link', { name: 'Enviar justificación' })[0]).toHaveAttribute('href', '/app/affiliate/absence-justifications/new')
+    expect(screen.getAllByRole('link', { name: 'Mis justificaciones' })[0]).toHaveAttribute('href', '/app/affiliate/justifications')
   })
 
   it('opens accessible mobile navigation and closes it after navigation', () => {
@@ -67,7 +77,7 @@ describe('ErpLayout', () => {
     ['fin.movements.read', 'Movimientos financieros'],
     ['fin.dinadeco.read', 'DINADECO'],
   ])('routes a collapsed finance group to its authorized %s child', (permissionCode, childLabel) => {
-    auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: [permissionCode] }
+    auth.user = { fullName: 'Ana Pérez', role: 'Administrador', affiliateId: null, permissionCodes: [permissionCode] }
     renderLayout()
     fireEvent.click(screen.getByRole('link', { name: 'Finanzas' }))
 

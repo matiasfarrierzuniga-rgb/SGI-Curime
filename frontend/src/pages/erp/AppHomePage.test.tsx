@@ -4,7 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppHomePage } from './AppHomePage'
 import { inventoryReportsService } from '@/services/inventoryReportsService'
 
-const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador' } }))
+const auth = vi.hoisted(() => ({ user: {} as {
+  fullName: string
+  role: string
+  affiliateId: string | null
+  affiliateStatus: 'ACTIVE' | 'INACTIVE' | null
+  permissionCodes: string[]
+} }))
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }))
 vi.mock('@/features/admin-dashboard', () => ({ AdminDashboard: () => <section><h2>Indicadores administrativos</h2><p>Afiliados activos</p></section> }))
 vi.mock('@/services/inventoryReportsService', () => ({ inventoryReportsService: { summary: vi.fn() } }))
@@ -15,7 +21,7 @@ describe('AppHomePage', () => {
   beforeEach(() => { vi.clearAllMocks(); vi.mocked(inventoryReportsService.summary).mockResolvedValue(summary) })
 
   it('renders V1 administrative dashboard without broad legacy quick actions', async () => {
-    auth.user = { fullName: 'Ana Pérez', role: 'Administrador' }
+    auth.user = { fullName: 'Ana Pérez', role: 'Administrador', affiliateId: null, affiliateStatus: null, permissionCodes: ['usr.users.read', 'usr.user-requests.read'] }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
     expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
     expect(await screen.findByText('Afiliados activos')).toBeInTheDocument()
@@ -24,10 +30,12 @@ describe('AppHomePage', () => {
     expect(screen.queryByRole('link', { name: /Gestionar usuarios|Revisar solicitudes|Consultar bitácora|Movimientos financieros/ })).not.toBeInTheDocument()
     expect(screen.queryByText(/Módulo en desarrollo/i)).not.toBeInTheDocument()
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
+    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Enviar justificación/ })).not.toBeInTheDocument()
   })
 
   it('keeps inventory summary without broad legacy action grid', async () => {
-    auth.user = { fullName: 'Luis Mora', role: 'Gestor de Inventario' }
+    auth.user = { fullName: 'Luis Mora', role: 'Gestor de Inventario', affiliateId: null, affiliateStatus: 'ACTIVE', permissionCodes: ['inv.inventory.read'] }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
     expect(await screen.findByText('Artículos activos')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Accesos rápidos' })).not.toBeInTheDocument()
@@ -35,8 +43,8 @@ describe('AppHomePage', () => {
     expect(screen.queryByRole('heading', { name: 'Indicadores administrativos' })).not.toBeInTheDocument()
   })
 
-  it('shows a clear set of real account actions to community users', () => {
-    auth.user = { fullName: 'María Solano', role: 'Vecino/Afiliado' }
+  it('shows affiliate actions from linked affiliation regardless of affiliate status', () => {
+    auth.user = { fullName: 'María Solano', role: 'Vecino/Afiliado', affiliateId: '18', affiliateStatus: 'INACTIVE', permissionCodes: [] }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
     expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toHaveAttribute('href', '/servicios/reservas')
     expect(screen.getByRole('link', { name: /Enviar justificación/ })).toHaveAttribute('href', '/app/affiliate/absence-justifications/new')
@@ -51,14 +59,24 @@ describe('AppHomePage', () => {
   })
 
   it('omits legacy financial actions and cumulative financial metrics for treasurers', () => {
-    auth.user = { fullName: 'Carlos Ruiz', role: 'Tesorero' }
+    auth.user = { fullName: 'Carlos Ruiz', role: 'Tesorero', affiliateId: null, affiliateStatus: null, permissionCodes: ['fin.movements.read', 'fin.dinadeco.read'] }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
     expect(screen.queryByRole('heading', { name: 'Accesos rápidos' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Cargos financieros|Movimientos financieros|Informe DINADECO/ })).not.toBeInTheDocument()
     expect(screen.queryByText('Ingresos')).not.toBeInTheDocument()
     expect(screen.queryByText('Egresos')).not.toBeInTheDocument()
     expect(screen.queryByText('Balance')).not.toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Afiliación' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Afiliación' })).toHaveAttribute('href', '/afiliacion')
     expect(screen.queryByRole('heading', { name: 'Indicadores administrativos' })).not.toBeInTheDocument()
+  })
+
+  it('does not treat UserRequest administration permission as community affiliation', () => {
+    auth.user = { fullName: 'Laura Vega', role: 'Revisora', affiliateId: null, affiliateStatus: null, permissionCodes: ['usr.user-requests.read'] }
+    render(<MemoryRouter><AppHomePage /></MemoryRouter>)
+
+    expect(screen.getByRole('link', { name: /Solicitar una reserva/ })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Enviar justificación/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Mis justificaciones/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Mi perfil' })).toBeInTheDocument()
   })
 })
