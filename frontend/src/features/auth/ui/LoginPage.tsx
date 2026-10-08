@@ -26,12 +26,11 @@ async function submit(event: FormEvent) {
     try {
       const user = await login({ email: email.trim().toLowerCase(), password })
       const requested = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
-      // Determine post-login destination using effective capabilities, not role names
-      const hasErpCapability = user.permissionCodes.length > 0
+      // Backend-computed effective access remains authoritative for ERP entry.
+      const hasErpAccess = user.canAccessErp === true
       const isInternalRequest = requested?.startsWith('/app') || requested?.startsWith('/admin') || requested?.startsWith('/inventory')
-      const authorizedRequest = requested && (!isInternalRequest || hasErpCapability) ? requested : undefined
-      // Navigate to authorized request, or default based on capability presence
-      const defaultDestination = hasErpCapability ? '/app' : '/servicios'
+      const authorizedRequest = requested && (!isInternalRequest || hasErpAccess) ? requested : undefined
+      const defaultDestination = hasErpAccess ? '/app' : '/servicios'
       navigate(authorizedRequest || defaultDestination, { replace: true })
     } catch {
       setError('No fue posible iniciar sesión. Verifique sus credenciales.')

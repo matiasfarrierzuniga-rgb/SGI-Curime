@@ -3,8 +3,7 @@ import { useAuth } from '@/features/auth'
 
 export function ForbiddenPage() {
   const { user } = useAuth()
-  const permissionCodes = user?.permissionCodes ?? []
-  const hasErpAccess = permissionCodes.length > 0
+  const hasErpAccess = user?.canAccessErp === true
   return (
     <main className="auth-page card">
       <h1>Acceso no autorizado</h1>

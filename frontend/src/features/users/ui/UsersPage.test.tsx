@@ -101,7 +101,8 @@ describe('UsersPage', () => {
   })
 
   it('renders Person-root rows with independent account and affiliation contexts', async () => {
-    vi.mocked(usersService.list).mockResolvedValue({ data: [personWithAccountAndAffiliation, personWithAccount, personWithAffiliation, personOnly] as never, total: 4, page: 1, limit: 10 })
+    const inactiveAccount = { ...personWithAccount, access: { ...personWithAccount.access, status: 'INACTIVE' as const } }
+    vi.mocked(usersService.list).mockResolvedValue({ data: [personWithAccountAndAffiliation, inactiveAccount, personWithAffiliation, personOnly] as never, total: 4, page: 1, limit: 10 })
     page()
     await screen.findByText('Ana Pérez')
 
@@ -109,6 +110,8 @@ describe('UsersPage', () => {
     expect(screen.getByText('ana.cuenta@test.com')).toBeInTheDocument()
     expect(screen.getAllByText('Sin cuenta SGI')).toHaveLength(2)
     expect(screen.getByText('Afiliación inactiva')).toBeInTheDocument()
+    expect(screen.getByText('Inactiva')).toBeInTheDocument()
+    expect(screen.queryByText('Pendiente de activación')).not.toBeInTheDocument()
     expect(screen.getAllByText('Sin afiliación')).toHaveLength(2)
     expect(screen.queryByText('999')).not.toBeInTheDocument()
   })

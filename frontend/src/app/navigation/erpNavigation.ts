@@ -29,6 +29,7 @@ export type ErpNavigationItem = {
   label: string
   path?: string
   capability?: AccessCapability
+  requiresAffiliation?: boolean
   icon?: LucideIcon
   children?: readonly ErpNavigationItem[]
 }
@@ -196,26 +197,30 @@ const navigation: readonly ErpNavigationSection[] = [
       {
         label: 'Enviar justificación',
         path: '/app/affiliate/absence-justifications/new',
+        requiresAffiliation: true,
         icon: FileCheck2,
       },
       {
         label: 'Mis justificaciones',
         path: '/app/affiliate/justifications',
+        requiresAffiliation: true,
         icon: FileCheck2,
       },
     ],
   },
 ]
 
-function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] | null | undefined): boolean {
+function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] | null | undefined, hasAffiliation: boolean): boolean {
+  if (item.requiresAffiliation && !hasAffiliation) return false
   return item.capability === undefined || hasCapability(permissionCodes, item.capability)
 }
 
-export function getErpNavigation(permissionCodes: readonly string[] | null | undefined): ErpNavigationSection[] {
+export function getErpNavigation(permissionCodes: readonly string[] | null | undefined, affiliateId?: string | null): ErpNavigationSection[] {
+  const hasAffiliation = affiliateId != null
   return navigation.flatMap((section) => {
     const items = section.items.flatMap((item) => {
-      const children = item.children?.filter((child) => isVisible(child, permissionCodes))
-      if (!isVisible(item, permissionCodes) || (item.children !== undefined && children?.length === 0)) return []
+      const children = item.children?.filter((child) => isVisible(child, permissionCodes, hasAffiliation))
+      if (!isVisible(item, permissionCodes, hasAffiliation) || (item.children !== undefined && children?.length === 0)) return []
 
       return [
         {

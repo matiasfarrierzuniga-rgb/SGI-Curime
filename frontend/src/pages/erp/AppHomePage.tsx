@@ -12,9 +12,9 @@ import { PageHeader } from '@/shared/ui/PageHeader'
 import { Skeleton } from '@/shared/ui/skeleton'
 
 const communityActions = [
-  { label: 'Solicitar una reserva', description: 'Pida el uso de un espacio comunitario.', path: '/servicios/reservas', icon: CalendarPlus },
-  { label: 'Enviar justificación', description: 'Justifique una ausencia a una asamblea.', path: '/app/affiliate/absence-justifications/new', icon: FileCheck2 },
-  { label: 'Mis justificaciones', description: 'Revise el estado de lo que ha enviado.', path: '/app/affiliate/justifications', icon: ClipboardList },
+  { label: 'Solicitar una reserva', description: 'Pida el uso de un espacio comunitario.', path: '/servicios/reservas', icon: CalendarPlus, requiresAffiliation: false },
+  { label: 'Enviar justificación', description: 'Justifique una ausencia a una asamblea.', path: '/app/affiliate/absence-justifications/new', icon: FileCheck2, requiresAffiliation: true },
+  { label: 'Mis justificaciones', description: 'Revise el estado de lo que ha enviado.', path: '/app/affiliate/justifications', icon: ClipboardList, requiresAffiliation: true },
 ] as const
 
 const communityLinks = [
@@ -28,7 +28,6 @@ export function AppHomePage() {
   const permissionCodes = user?.permissionCodes ?? []
 
   // Capability-based visibility instead of role names
-  const canViewRequests = hasCapability(permissionCodes, 'usr.user-requests.read')
   const canViewUsers = hasCapability(permissionCodes, 'usr.users.read')
   const canViewInventory = hasCapability(permissionCodes, 'inv.inventory.read')
   const canViewFinancialMovements = hasCapability(permissionCodes, 'fin.movements.read')
@@ -37,6 +36,8 @@ export function AppHomePage() {
   const canViewReservations = hasCapability(permissionCodes, 'res.reservations.read')
   const canViewAffiliates = hasCapability(permissionCodes, 'adm.affiliates.read')
   const canViewAssemblies = hasCapability(permissionCodes, 'adm.assemblies.read')
+  const hasAffiliation = user?.affiliateId != null
+  const availableCommunityActions = communityActions.filter((action) => !action.requiresAffiliation || hasAffiliation)
   // Events capability tracked for future dashboard section
 
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
@@ -121,26 +122,22 @@ export function AppHomePage() {
         </section>
       )}
 
-      {canViewRequests && (
-        <section aria-labelledby="community-actions-title">
-          <h2 id="community-actions-title" className="text-xl font-bold text-brand-ink">¿Qué desea hacer?</h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {communityActions.map((action) => <ActionCard key={action.path} action={action} />)}
-          </div>
-        </section>
-      )}
+      <section aria-labelledby="community-actions-title">
+        <h2 id="community-actions-title" className="text-xl font-bold text-brand-ink">¿Qué desea hacer?</h2>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {availableCommunityActions.map((action) => <ActionCard key={action.path} action={action} />)}
+        </div>
+      </section>
 
-      {canViewRequests && (
-        <section aria-labelledby="community-links-title">
-          <h2 id="community-links-title" className="text-xl font-bold text-brand-ink">También puede consultar</h2>
-          <nav aria-label="Consultas de la comunidad" className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            {communityLinks.map((item) => {
-              const Icon = item.icon
-              return <Link key={item.path} to={item.path} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-card px-4 font-semibold text-brand-deep hover:border-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"><Icon className="size-4" aria-hidden="true" />{item.label}</Link>
-            })}
-          </nav>
-        </section>
-      )}
+      <section aria-labelledby="community-links-title">
+        <h2 id="community-links-title" className="text-xl font-bold text-brand-ink">También puede consultar</h2>
+        <nav aria-label="Consultas de la comunidad" className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          {communityLinks.map((item) => {
+            const Icon = item.icon
+            return <Link key={item.path} to={item.path} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-card px-4 font-semibold text-brand-deep hover:border-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"><Icon className="size-4" aria-hidden="true" />{item.label}</Link>
+          })}
+        </nav>
+      </section>
 
       {canViewReservations && (
         <section>
