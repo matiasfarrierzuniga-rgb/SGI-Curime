@@ -51,25 +51,27 @@
   --color-admin-primary: #2f5f91;
   --color-admin-border: #d9dde3;
 
-  /* ERP semantic palette. Additive aliases preserve legacy and public-site tokens. */
-  --color-erp-canvas: #f4efe8;
-  --color-erp-surface: #fffdf9;
+  /* ERP semantic palette. Public-site aliases above remain intentionally unchanged. */
+  --color-erp-canvas: #f7f8f6;
+  --color-erp-surface: #ffffff;
   --color-erp-surface-raised: #ffffff;
-  --color-erp-surface-subtle: #f2eadf;
-  --color-erp-border: #d8d0c6;
-  --color-erp-border-strong: #b8aea3;
-  --color-erp-text: #2b2723;
-  --color-erp-text-muted: #5f574f;
-  --color-erp-navigation: #2f4a38;
-  --color-erp-navigation-foreground: #fffdf9;
-  --color-erp-navigation-muted: #b8c4b4;
-  --color-erp-navigation-hover: #263d2e;
-  --color-erp-navigation-active: #c98a2d;
-  --color-erp-navigation-active-foreground: #2f4a38;
-  --color-erp-action: #2f4a38;
-  --color-erp-action-hover: #263d2e;
-  --color-erp-action-active: #1e3226;
-  --color-erp-focus: #b03a2e;
+  --color-erp-surface-subtle: #f1f4f1;
+  --color-erp-border: #dce4dd;
+  --color-erp-border-strong: #bccbc0;
+  --color-erp-text: #24342a;
+  --color-erp-text-muted: #536358;
+  --color-erp-accent: #c98a2d;
+  --color-erp-secondary: #75b5a6;
+  --color-erp-navigation: #243e2f;
+  --color-erp-navigation-foreground: #ffffff;
+  --color-erp-navigation-muted: #75b5a6;
+  --color-erp-navigation-hover: #314c3b;
+  --color-erp-navigation-active: #405d49;
+  --color-erp-navigation-active-foreground: #ffffff;
+  --color-erp-action: #243e2f;
+  --color-erp-action-hover: #314c3b;
+  --color-erp-action-active: #1c3024;
+  --color-erp-focus: #c98a2d;
 
   --color-primary: #2f4a38;
   --color-primary-foreground: #fffdf9;
