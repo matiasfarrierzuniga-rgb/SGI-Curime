@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AffiliateRequestDetail } from './AffiliateRequestDetail'
-import { useAffiliateRequestDetail, useAffiliateRequestMutations } from '../hooks/useAffiliateRequestsQueries'
+import { AffiliateRequestsPage } from './AffiliateRequestsPage'
+import { useAffiliateRequestDetail, useAffiliateRequestMutations, useAffiliateRequestsList } from '../hooks/useAffiliateRequestsQueries'
 
 vi.mock('../hooks/useAffiliateRequestsQueries', () => ({ useAffiliateRequestDetail: vi.fn(), useAffiliateRequestMutations: vi.fn(), useAffiliateRequestsList: vi.fn() }))
 
@@ -12,6 +13,7 @@ describe('AffiliateRequestDetail approval', () => {
     vi.clearAllMocks()
     vi.mocked(useAffiliateRequestDetail).mockReturnValue({ data: request, isPending: false, isError: false, refetch: vi.fn() } as never)
     vi.mocked(useAffiliateRequestMutations).mockReturnValue({ approve, reject } as never)
+    vi.mocked(useAffiliateRequestsList).mockReturnValue({ data: { data: [request], total: 1 }, isPending: false, isError: false, refetch: vi.fn() } as never)
   })
 
   it('allows approval without role selector', () => {
@@ -70,5 +72,48 @@ describe('AffiliateRequestDetail approval', () => {
     expect(screen.getByText('Información incompleta')).toBeVisible()
     expect(screen.getByText('Luis Mora (luis@example.com)')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Aprobar solicitud' })).not.toBeInTheDocument()
+  })
+})
+
+describe('AffiliateRequestsPage filters', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(useAffiliateRequestsList).mockReturnValue({ data: { data: [request], total: 1 }, isPending: false, isError: false, refetch: vi.fn() } as never)
+  })
+
+  it('applies a valid email on Enter and shows its applied state', () => {
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: ' ana@example.com ' } })
+    fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!)
+
+    expect(vi.mocked(useAffiliateRequestsList)).toHaveBeenLastCalledWith(expect.objectContaining({ email: 'ana@example.com', page: 1 }))
+    expect(screen.getByText('Aplicado: ana@example.com')).toBeVisible()
+    expect(screen.getByText('Correo: ana@example.com')).toBeVisible()
+  })
+
+  it('keeps an invalid email unapplied and explains how to correct it', () => {
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'correo-invalido' } })
+    fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!)
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Ingrese un correo válido para aplicarlo.')
+    expect(vi.mocked(useAffiliateRequestsList)).toHaveBeenLastCalledWith(expect.objectContaining({ email: '', page: 1 }))
+  })
+
+  it('makes active filters visible and resets query filters predictably', () => {
+    render(<AffiliateRequestsPage />)
+
+    fireEvent.change(screen.getByLabelText('Búsqueda'), { target: { value: 'Ana' } })
+    fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'PENDING' } })
+
+    expect(screen.getByText('Búsqueda: Ana')).toBeVisible()
+    expect(screen.getByText('Estado: Pendiente')).toBeVisible()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+
+    expect(vi.mocked(useAffiliateRequestsList)).toHaveBeenLastCalledWith({ search: '', email: '', identification: '', status: undefined, page: 1, limit: 20 })
+    expect(screen.queryByText('Filtros aplicados')).not.toBeInTheDocument()
   })
 })
