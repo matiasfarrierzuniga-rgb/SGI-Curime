@@ -1,3 +1,6 @@
+import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
+import { Select } from '@/shared/ui/select'
 import type { AffiliateStatus } from '../model/affiliates.types'
 
 type AffiliateFiltersProps = {
@@ -12,32 +15,35 @@ export function AffiliateFilters({ search, status, onSearchChange, onStatusChang
   const hasFilters = Boolean(search || status)
 
   return (
-    <form className="flex flex-col gap-4 rounded-surface border border-border-default bg-surface-card p-4 sm:flex-row sm:items-end" onSubmit={(event) => event.preventDefault()}>
-      <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium text-text-primary">
-        Búsqueda
-        <input
-          className="min-h-10 rounded-control border border-border-default bg-surface-base px-3 text-text-primary"
-          type="search"
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Nombre, identificación o correo"
-        />
-      </label>
-      <label className="flex min-w-40 flex-col gap-1 text-sm font-medium text-text-primary">
+    <form className="grid gap-4 border-y border-border-default py-4 md:grid-cols-[minmax(0,1fr)_12rem_auto] md:items-end" onSubmit={(event) => event.preventDefault()}>
+      <div className="min-w-0">
+        <label htmlFor="affiliate-search" className="flex min-w-0 flex-col gap-2 text-label font-semibold text-text-primary">
+          Búsqueda
+          <Input
+            id="affiliate-search"
+            type="search"
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Nombre, identificación o correo"
+            aria-describedby="affiliate-search-hint"
+          />
+        </label>
+        <span id="affiliate-search-hint" className="mt-2 block text-caption text-text-secondary">La búsqueda se aplica mientras escribe.</span>
+      </div>
+      <label className="flex min-w-0 flex-col gap-2 text-label font-semibold text-text-primary">
         Estado
-        <select
-          className="min-h-10 rounded-control border border-border-default bg-surface-base px-3 text-text-primary"
+        <Select
           value={status}
           onChange={(event) => onStatusChange(event.target.value as AffiliateStatus | '')}
         >
           <option value="">Todos</option>
           <option value="ACTIVE">Activo</option>
           <option value="INACTIVE">Inactivo</option>
-        </select>
+        </Select>
       </label>
-      <button className="min-h-10 rounded-control border border-border-default px-4 text-sm font-semibold text-text-primary disabled:cursor-not-allowed disabled:opacity-50" type="button" onClick={onClear} disabled={!hasFilters}>
+      <Button className="w-full md:w-auto" variant="outline" type="button" onClick={onClear} disabled={!hasFilters}>
         Limpiar filtros
-      </button>
+      </Button>
     </form>
   )
 }
