@@ -36,7 +36,7 @@ import { DonationsPage } from '@/features/donations'
 import { AssembliesAdminPage, AssemblyManagementPage, MineAssembliesPage } from '@/features/assemblies'
 import { InstitutionalProfilePage } from '@/features/institutional-profile'
 import { InstitutionalBoardPage } from '@/features/institutional-board'
-import { VenturesPage } from '@/features/entrepreneurship'
+import { VenturesPage, VenturesSummaryPage } from '@/features/entrepreneurship'
 import { OpportunitiesPage } from '@/features/volunteering'
 export function AppRoutes() {
   return (
@@ -116,9 +116,10 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="adm.institutional-board.read" />}>
             <Route path="/app/admin/institutional-board" element={<InstitutionalBoardPage />} />
           </Route>
-           <Route element={<RoleRoute capability="ent.ventures.read" />}>
-             <Route path="/app/admin/ventures" element={<VenturesPage />} />
-           </Route>
+            <Route element={<RoleRoute capability="ent.ventures.read" />}>
+              <Route path="/app/admin/ventures" element={<VenturesPage />} />
+              <Route path="/app/admin/ventures/summary" element={<VenturesSummaryPage />} />
+            </Route>
            <Route element={<RoleRoute capability="vol.opportunities.read" />}>
              <Route path="/app/admin/volunteering" element={<OpportunitiesPage />} />
            </Route>

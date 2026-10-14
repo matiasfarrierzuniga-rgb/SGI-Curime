@@ -115,9 +115,13 @@ const navigation: readonly ErpNavigationSection[] = [
       },
       {
         label: 'Emprendimientos',
-        path: '/app/admin/ventures',
+        path: '/app/admin/ventures/summary',
         capability: 'ent.ventures.read',
         icon: BriefcaseBusiness,
+        children: [
+          { label: 'Resumen', path: '/app/admin/ventures/summary', capability: 'ent.ventures.read', icon: ChartNoAxesCombined },
+          { label: 'Directorio', path: '/app/admin/ventures', capability: 'ent.ventures.read', icon: BriefcaseBusiness },
+        ],
       },
       {
         label: 'Voluntariado',

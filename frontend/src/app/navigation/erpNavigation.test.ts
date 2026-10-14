@@ -8,7 +8,14 @@ describe('getErpNavigation', () => {
     expect(items.find(item => item.label === 'Asambleas')).toMatchObject({ capability: 'adm.assemblies.read' })
     expect(items.find(item => item.label === 'Justificaciones de ausencia')).toMatchObject({ capability: 'adm.justifications.read' })
     expect(items.find(item => item.label === 'Usuarios')).toBeUndefined()
-    expect(items.find(item => item.label === 'Emprendimientos')).toMatchObject({ path: '/app/admin/ventures', capability: 'ent.ventures.read' })
+    expect(items.find(item => item.label === 'Emprendimientos')).toMatchObject({
+      path: '/app/admin/ventures/summary',
+      capability: 'ent.ventures.read',
+      children: [
+        expect.objectContaining({ label: 'Resumen', path: '/app/admin/ventures/summary', capability: 'ent.ventures.read' }),
+        expect.objectContaining({ label: 'Directorio', path: '/app/admin/ventures', capability: 'ent.ventures.read' }),
+      ],
+    })
     expect(items.find(item => item.label === 'Voluntariado')).toMatchObject({ path: '/app/admin/volunteering', capability: 'vol.opportunities.read' })
   })
 
@@ -48,5 +55,12 @@ describe('getErpNavigation', () => {
 
     expect(movementOnly).toMatchObject({ path: '/app/financial/movements', children: [expect.objectContaining({ path: '/app/financial/movements' })] })
     expect(dinadecoOnly).toMatchObject({ path: '/app/financial/dinadeco', children: [expect.objectContaining({ path: '/app/financial/dinadeco' })] })
+  })
+
+  it('hides the entrepreneurship group and both destinations without venture read capability', () => {
+    const items = getErpNavigation([]).flatMap(section => section.items)
+
+    expect(items.find(item => item.label === 'Emprendimientos')).toBeUndefined()
+    expect(items.flatMap(item => item.children ?? []).some(item => item.path === '/app/admin/ventures/summary' || item.path === '/app/admin/ventures')).toBe(false)
   })
 })

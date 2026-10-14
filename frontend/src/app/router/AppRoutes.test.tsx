@@ -74,6 +74,7 @@ beforeEach(() => {
     if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
     if (url === '/financial/reports/dinadeco/annual') return Promise.resolve({ data: responseForDinadeco() })
     if (url === '/donations') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
+    if (url === '/ventures') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 1 } })
     if (url === '/volunteering/opportunities') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/institutional-profile') return Promise.resolve({ data: emptyInstitutionalProfile() })
     throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
@@ -269,6 +270,20 @@ describe('AppRoutes capability deep links', () => {
 
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Solicitudes de afiliación' })).not.toBeInTheDocument()
+  })
+
+  it('renders the ventures summary for users with venture read capability', async () => {
+    renderRoute('/app/admin/ventures/summary', 'Administrador')
+
+    expect(await screen.findByRole('heading', { name: 'Emprendimientos' })).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/ventures', { params: { page: 1, limit: 1 } })
+  })
+
+  it('denies venture summary deep links without venture read capability before requesting data', async () => {
+    renderRoute('/app/admin/ventures/summary', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(httpGet).not.toHaveBeenCalledWith('/ventures', expect.anything())
   })
 
   it('renders the real affiliate requests page for administrators without HTTP requests', async () => {
