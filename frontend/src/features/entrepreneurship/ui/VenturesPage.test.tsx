@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuth } from '@/features/auth'
 import { useToast } from '@/shared/ui/Toast'
@@ -10,11 +10,12 @@ vi.mock('@/shared/ui/Toast', () => ({ useToast: vi.fn() }))
 vi.mock('../hooks/useVentures', () => ({ useVentures: vi.fn(), useVenture: vi.fn(), useVentureMutations: vi.fn() }))
 
 const venture = { id: 1, name: 'Café Curime', description: null, offerDescription: null, businessPhone: null, businessEmail: null, websiteUrl: null, socialUrl: null, locationText: null, status: 'ACTIVE', publicationStatus: 'UNPUBLISHED', incorporatedAt: '2024-01-10T00:00:00.000Z', createdAt: '2024-01-10T00:00:00.000Z', updatedAt: '2024-01-10T00:00:00.000Z' }
+const detailedVenture = { ...venture, description: 'Café de producción local.', offerDescription: 'Bebidas y repostería artesanal.', businessPhone: '+506 8888-1234', businessEmail: 'hola@cafecurime.cr', websiteUrl: 'https://cafecurime.cr', socialUrl: 'https://facebook.com/cafecurime', locationText: 'Curime, Nicoya' }
 const refetch = vi.fn()
 
-function ready(data = [venture], total = data.length, page = 1) {
+function ready(data = [venture], total = data.length, page = 1, detail = venture) {
   vi.mocked(useVentures).mockReturnValue({ isPending: false, isError: false, data: { data, total, page, limit: 20 }, refetch } as never)
-  vi.mocked(useVenture).mockReturnValue({ isPending: false, isError: false, data: venture } as never)
+  vi.mocked(useVenture).mockReturnValue({ isPending: false, isError: false, data: detail } as never)
 }
 
 describe('VenturesPage', () => {
@@ -66,12 +67,30 @@ describe('VenturesPage', () => {
     render(<VenturesPage />)
     fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalle' })[0])
     expect(useVenture).toHaveBeenLastCalledWith(1)
-    fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    const detailDialog = screen.getByRole('dialog', { name: 'Detalle del emprendimiento' })
+    fireEvent.click(within(detailDialog).getByRole('button', { name: 'Volver al directorio' }))
+    expect(screen.queryByRole('dialog', { name: 'Detalle del emprendimiento' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Tabla' }))
     expect(screen.getByRole('button', { name: 'Tabla' })).toHaveAttribute('aria-pressed', 'true')
     expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith({ page: 1, limit: 20 })
     fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalle' })[0])
     expect(useVenture).toHaveBeenLastCalledWith(1)
+  })
+
+  it('presents supported detail information, safe links, and an accessible return action', () => {
+    ready([detailedVenture], 1, 1, detailedVenture)
+    render(<VenturesPage />)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalle' })[0])
+    const detailDialog = screen.getByRole('dialog', { name: 'Detalle del emprendimiento' })
+    expect(within(detailDialog).getByRole('button', { name: 'Volver al directorio' })).toBeInTheDocument()
+    expect(within(detailDialog).getByText('Café de producción local.')).toBeInTheDocument()
+    expect(within(detailDialog).getByText('Bebidas y repostería artesanal.')).toBeInTheDocument()
+    expect(within(detailDialog).getByText('Curime, Nicoya')).toBeInTheDocument()
+    expect(within(detailDialog).getByText('+506 8888-1234')).toBeInTheDocument()
+    expect(within(detailDialog).getByRole('link', { name: 'hola@cafecurime.cr' })).toHaveAttribute('href', 'mailto:hola@cafecurime.cr')
+    expect(within(detailDialog).getByRole('link', { name: /https:\/\/cafecurime.cr/ })).toHaveAttribute('href', 'https://cafecurime.cr/')
+    expect(within(detailDialog).getByRole('link', { name: /https:\/\/facebook.com\/cafecurime/ })).toHaveAttribute('href', 'https://facebook.com/cafecurime')
+    expect(within(detailDialog).getByRole('button', { name: 'Editar' })).toBeInTheDocument()
   })
 
   it('keeps create and edit capability gated', () => {
