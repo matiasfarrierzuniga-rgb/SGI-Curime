@@ -80,7 +80,7 @@ export function PublicFooter() {
               </li>
               {isAuthenticated ? (
                 <li>
-                  <Button variant="inverse" size="sm" type="button" onClick={() => void logout()}>
+                  <Button variant="ghost" size="sm" type="button" className="min-h-11 px-0 text-text-inverse/80 hover:bg-brand-ivory/10 hover:text-brand-accent focus-visible:border-text-inverse focus-visible:ring-text-inverse/40" onClick={() => void logout()}>
                     Cerrar sesión
                   </Button>
                 </li>

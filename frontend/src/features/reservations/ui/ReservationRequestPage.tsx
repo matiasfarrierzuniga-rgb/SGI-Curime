@@ -103,7 +103,7 @@ export function ReservationRequestPage() {
   if (resources.isPending) return <LoadingState label="Cargando espacios disponibles..." />
   if (resources.isError) return <ErrorState title="No fue posible cargar los espacios" message={getErrorMessage(resources.error)} action={<Button variant="outline" type="button" onClick={() => void resources.refetch()}>Reintentar</Button>} />
 
-  return <section className="mx-auto max-w-3xl space-y-6">
+  return <section className="public-container max-w-4xl space-y-6 py-8 md:py-12">
     <PageHeader context="Servicios" title="Solicitar una reserva" description="Elija el espacio y horario. Verifique disponibilidad, revise datos y envíe su solicitud para revisión." />
     <ReservationProcessStepper completedSteps={completedSteps} reviewing={reviewing} completed={Boolean(confirmation)} />
     {confirmation ? <ReservationSubmitted confirmation={confirmation} onNewRequest={() => { form.reset(blank); setAvailability('idle'); setConfirmation(null); setReviewing(false) }} /> : reviewing ? <ReservationReview values={values} resource={selectedResource} availability={availability} submitting={submitting} onEdit={() => setReviewing(false)} onSubmit={form.handleSubmit(submit)} /> : <form noValidate onSubmit={event => { event.preventDefault(); void openReview() }} aria-busy={submitting}>

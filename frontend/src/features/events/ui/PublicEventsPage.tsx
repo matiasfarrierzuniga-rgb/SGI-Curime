@@ -6,14 +6,10 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { usePublicEvents } from '../hooks/useEventsQueries'
-import type { EventStatus } from '../model/events.types'
+import { getPublicEventPresentation } from '../model/publicEventPresentation'
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('es-CR', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value))
-}
-
-function statusLabel(status: EventStatus) {
-  return status === 'CANCELLED' ? 'Cancelado' : status === 'COMPLETED' ? 'Finalizado' : 'Programado'
 }
 
 export function PublicEventsPage() {
@@ -44,11 +40,11 @@ export function PublicEventsPage() {
           {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length === 0 ? <EmptyState title="No hay eventos publicados en este momento" description="Cuando la Asociación publique una actividad, aparecerá en esta agenda." /> : null}
           {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length > 0 ? (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {eventsQuery.data.map((event) => (
-                <article key={event.publicId} className="flex min-w-0 flex-col rounded-xl border border-border bg-white p-6 shadow-sm">
+              {eventsQuery.data.map((event) => {
+                const presentation = getPublicEventPresentation(event)
+                return <article key={event.publicId} className={`flex min-w-0 flex-col rounded-xl border bg-white p-6 shadow-sm ${presentation.isPast ? 'border-brand-sage/80' : 'border-border'}`}>
                   <div className="flex items-start justify-between gap-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-primary">{statusLabel(event.status)}</p>
-                    {event.status === 'CANCELLED' ? <span className="rounded-full bg-danger/10 px-3 py-1 text-xs font-semibold text-danger">Cancelado</span> : null}
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-primary">{presentation.label}</p>
                   </div>
                   <h2 className="mt-4 font-heading text-heading-3 font-semibold text-brand-ink"><Link className="rounded-sm hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to={`/eventos/${event.publicId}`}>{event.title}</Link></h2>
                   <p className="mt-3 flex-1 text-body text-brand-ink/75">{event.summary}</p>
@@ -58,7 +54,7 @@ export function PublicEventsPage() {
                   </dl>
                   <Link aria-label={`Ver detalle de ${event.title}`} className="mt-6 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to={`/eventos/${event.publicId}`}>Ver detalle</Link>
                 </article>
-              ))}
+              })}
             </div>
           ) : null}
         </section>

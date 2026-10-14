@@ -73,7 +73,7 @@ describe('PublicFooter authentication states', () => {
     expect(screen.getByRole('link', { name: 'Ver servicios' })).toHaveAttribute('href', '/servicios')
     expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
     const logout = screen.getByRole('button', { name: 'Cerrar sesión' })
-    expect(logout).toHaveClass('bg-brand-ivory', 'text-brand-ink')
+    expect(logout).toHaveClass('text-text-inverse/80', 'hover:bg-brand-ivory/10')
     fireEvent.click(logout)
     expect(auth.logout).toHaveBeenCalledOnce()
   })

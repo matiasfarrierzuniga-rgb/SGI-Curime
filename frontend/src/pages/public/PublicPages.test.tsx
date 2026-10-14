@@ -141,18 +141,18 @@ describe('portal público', () => {
     expect(screen.getByRole('link', { name: /ir a transparencia/i })).toHaveAttribute('href', '/transparencia')
   })
 
-  it('conserva jerarquía de Home Pública V1', () => {
+  it('conserva jerarquía institucional de Home Pública', () => {
     const { container } = renderPublic()
     const headings = Array.from(container.querySelectorAll('main h1, main h2')).map((heading) => heading.textContent)
 
     expect(container.querySelectorAll('main h1')).toHaveLength(1)
     expect(headings).toEqual([
       'Curime, más cerca de su comunidad',
+      'Encuentre lo que necesita',
+      'Próximas actividades',
       'Lo más reciente',
       'Un pueblo unido, un futuro compartido',
-      'Encuentre lo que necesita',
       'Un espacio para encontrarnos',
-      'Próximas actividades',
       'Información pública para la comunidad',
     ])
   })
@@ -219,9 +219,9 @@ describe('portal público', () => {
     expect(firstName).toHaveAttribute('autocomplete', 'given-name')
     expect(lastNames).toHaveAttribute('autocomplete', 'family-name')
     expect(email).toHaveAttribute('autocomplete', 'email')
-    expect(contact.getByRole('button', { name: 'Enviar consulta' })).toBeVisible()
+    expect(contact.getByRole('button', { name: 'Revisar consulta' })).toBeVisible()
 
-    fireEvent.click(contact.getByRole('button', { name: 'Enviar consulta' }))
+    fireEvent.click(contact.getByRole('button', { name: 'Revisar consulta' }))
 
     expect(firstName).toHaveAttribute('aria-invalid', 'true')
     expect(lastNames).toHaveAttribute('aria-invalid', 'true')
