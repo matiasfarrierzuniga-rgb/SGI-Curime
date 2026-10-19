@@ -29,20 +29,20 @@ vi.mock('@/services/inventoryReportsService', () => ({
 let httpGet: ReturnType<typeof vi.spyOn>
 
 const ADMIN_PERMISSION_CODES = [...ACCESS_CAPABILITIES]
-const TREASURER_PERMISSION_CODES = ['erp.dashboard.read', 'fin.charges.read', 'fin.payments.record', 'fin.movements.read', 'fin.movements.create', 'fin.dinadeco.read', 'don.donations.read', 'don.donations.create', 'don.donations.update', 'don.donations.cancel']
-const INVENTORY_MANAGER_PERMISSION_CODES = ['erp.dashboard.read', 'usr.profile.read', 'inv.inventory.read']
+const TREASURER_PERMISSION_CODES = ['fin.charges.read', 'fin.payments.record', 'fin.movements.read', 'fin.movements.create', 'fin.dinadeco.read', 'don.donations.read', 'don.donations.create', 'don.donations.update', 'don.donations.cancel']
+const INVENTORY_MANAGER_PERMISSION_CODES = ['usr.profile.read', 'inv.inventory.read']
 
 function permissionCodesFor(role: string, canAccessErp: boolean) {
   if (!canAccessErp) return []
   if (role === 'Administrador') return ADMIN_PERMISSION_CODES
   if (role === 'Tesorero') return TREASURER_PERMISSION_CODES
   if (role === 'Gestor de Inventario') return INVENTORY_MANAGER_PERMISSION_CODES
-  return ['erp.dashboard.read']
+  return []
 }
 
-function renderRoute(path: string, role: string | null, canAccessErp = role !== null) {
+function renderRoute(path: string, role: string | null, canAccessErp = role !== null, permissionCodesOverride?: string[]) {
   if (role !== null) {
-    const permissionCodes = permissionCodesFor(role, canAccessErp)
+    const permissionCodes = permissionCodesOverride ?? permissionCodesFor(role, canAccessErp)
     sessionStorage.setItem('sgi-curime-session', JSON.stringify({
       token: 'test-token',
       user: { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role, canAccessErp, permissionCodes },
@@ -178,10 +178,60 @@ describe('AppRoutes capability deep links', () => {
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
 
-  it('allows authenticated users into /app', async () => {
+  it('redirects administrators from /app to the dashboard', async () => {
     renderRoute('/app', 'Administrador')
 
+    expect(await screen.findByRole('heading', { name: 'Dashboard' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Inicio' })[0]).toHaveAttribute('href', '/app/dashboard')
+  })
+
+  it('allows the dashboard only with its read capability', async () => {
+    renderRoute('/app/dashboard', 'Administrador', true, ['erp.dashboard.read'])
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+  })
+
+  it('denies a dashboard deep link without its read capability', async () => {
+    renderRoute('/app/dashboard', 'Tesorero')
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Dashboard' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
+  })
+
+  it('redirects a finance actor without dashboard access from /app to finance', async () => {
+    renderRoute('/app', 'Tesorero')
+    expect(await screen.findByRole('heading', { name: 'Cargos de reservas' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
+  })
+
+  it('redirects an inventory actor without dashboard access from /app to inventory', async () => {
+    renderRoute('/app', 'Gestor de Inventario')
+    expect(await screen.findByRole('heading', { name: 'Inventario' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
+  })
+
+  it('allows an inventory deep link without dashboard access', async () => {
+    renderRoute('/inventory', 'Gestor de Inventario')
+    expect(await screen.findByRole('heading', { name: 'Inventario' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
+  })
+
+  it('denies an inventory deep link before rendering its module without the capability', async () => {
+    renderRoute('/inventory', 'Vecino/Afiliado')
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Inventario' })).not.toBeInTheDocument()
+    expect(inventoryReportsService.summary).not.toHaveBeenCalled()
+  })
+
+  it('redirects an ERP affiliate without administrative capabilities to personal profile', async () => {
+    renderRoute('/app', 'Vecino/Afiliado')
+    expect(await screen.findByRole('heading', { name: 'Mi perfil' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
+  })
+
+  it('keeps Subscription_L1 outside ERP even when a permission is present', async () => {
+    renderRoute('/app', 'Subscription_L1', false, ['erp.dashboard.read'])
+    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Dashboard' })).not.toBeInTheDocument()
   })
 
   it('renders profile inside the ERP shell while preserving the public profile route', async () => {
@@ -202,7 +252,7 @@ describe('AppRoutes capability deep links', () => {
   })
 
   it('preserves the authenticated session when returning to the public portal', async () => {
-    renderRoute('/app', 'Administrador')
+    renderRoute('/app/dashboard', 'Administrador')
 
     await screen.findByRole('heading', { name: 'Dashboard' })
     fireEvent.click(screen.getAllByRole('link', { name: 'Ver sitio público' })[0])
@@ -211,7 +261,7 @@ describe('AppRoutes capability deep links', () => {
   })
 
   it('clears the session and redirects logout to login', async () => {
-    const sessionView = renderRoute('/app', 'Administrador')
+    const sessionView = renderRoute('/app/dashboard', 'Administrador')
 
     await screen.findByRole('heading', { name: 'Dashboard' })
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])

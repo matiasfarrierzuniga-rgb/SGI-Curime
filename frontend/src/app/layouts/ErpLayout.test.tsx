@@ -3,15 +3,15 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ErpLayout } from './ErpLayout'
 
-const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
+const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }))
 
-function renderLayout(initialPath = '/app') {
-  return render(<MemoryRouter initialEntries={[initialPath]}><Routes><Route element={<ErpLayout />}><Route path="/app" element={<h1>Área de gestión</h1>} /><Route path="/app/profile" element={<h1>Mi perfil</h1>} /><Route path="/inventory" element={<h1>Inventario</h1>} /><Route path="/inventory/items" element={<h1>Artículos</h1>} /><Route path="/app/financial" element={<h1>Finanzas</h1>} /><Route path="/app/financial/movements" element={<h1>Movimientos financieros</h1>} /><Route path="/app/financial/dinadeco" element={<h1>DINADECO</h1>} /></Route><Route path="/login" element={<h1>Iniciar sesión</h1>} /></Routes></MemoryRouter>)
+function renderLayout(initialPath = '/app/dashboard') {
+  return render(<MemoryRouter initialEntries={[initialPath]}><Routes><Route element={<ErpLayout />}><Route path="/app/dashboard" element={<h1>Área de gestión</h1>} /><Route path="/app/profile" element={<h1>Mi perfil</h1>} /><Route path="/inventory" element={<h1>Inventario</h1>} /><Route path="/inventory/items" element={<h1>Artículos</h1>} /><Route path="/app/financial" element={<h1>Finanzas</h1>} /><Route path="/app/financial/movements" element={<h1>Movimientos financieros</h1>} /><Route path="/app/financial/dinadeco" element={<h1>DINADECO</h1>} /></Route><Route path="/login" element={<h1>Iniciar sesión</h1>} /></Routes></MemoryRouter>)
 }
 
 describe('ErpLayout', () => {
-  beforeEach(() => { vi.clearAllMocks(); auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
+  beforeEach(() => { vi.clearAllMocks(); auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
 
   it('renders desktop navigation, session context, and public-site actions', () => {
     renderLayout()
@@ -76,7 +76,7 @@ describe('ErpLayout', () => {
   })
 
   it('does not expand the collapsed sidebar for a simple item', () => {
-    renderLayout()
+    renderLayout('/app/profile')
     fireEvent.click(screen.getByRole('link', { name: 'Inicio' }))
 
     expect(screen.getByRole('button', { name: 'Expandir navegación' })).toBeInTheDocument()
