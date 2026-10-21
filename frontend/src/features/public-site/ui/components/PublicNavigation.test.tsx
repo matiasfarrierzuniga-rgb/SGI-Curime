@@ -27,6 +27,28 @@ beforeEach(() => {
 })
 
 describe('PublicHeader authentication states', () => {
+  it('uses a semantic navigation list and returns focus after Escape', () => {
+    renderHeader()
+
+    const toggle = screen.getByRole('button', { name: 'Abrir menú de navegación' })
+    fireEvent.click(toggle)
+
+    expect(screen.getByRole('navigation', { name: 'Navegación pública' })).toContainElement(screen.getByRole('list'))
+    expect(screen.getAllByRole('listitem')).toHaveLength(9)
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(screen.getByRole('button', { name: 'Abrir menú de navegación' })).toHaveFocus()
+  })
+
+  it('keeps the public ventures directory in primary navigation', () => {
+    renderHeader()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
+
+    expect(screen.getByRole('link', { name: 'Emprendimientos' })).toHaveAttribute('href', '/ventures')
+  })
+
   it('shows public access without authenticated actions to guests', () => {
     renderHeader()
 
@@ -73,7 +95,7 @@ describe('PublicFooter authentication states', () => {
     expect(screen.getByRole('link', { name: 'Ver servicios' })).toHaveAttribute('href', '/servicios')
     expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
     const logout = screen.getByRole('button', { name: 'Cerrar sesión' })
-    expect(logout).toHaveClass('bg-brand-ivory', 'text-brand-ink')
+    expect(logout).toHaveClass('text-text-inverse/80', 'hover:bg-brand-ivory/10')
     fireEvent.click(logout)
     expect(auth.logout).toHaveBeenCalledOnce()
   })

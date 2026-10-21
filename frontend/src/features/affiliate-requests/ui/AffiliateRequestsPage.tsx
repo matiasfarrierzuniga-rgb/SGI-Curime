@@ -5,6 +5,7 @@ import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Pagination } from '@/shared/ui/Pagination'
+import { Button } from '@/shared/ui/button'
 import { useAffiliateRequestsList } from '../hooks/useAffiliateRequestsQueries'
 import type { AffiliateRequestStatus } from '../model/affiliateRequests.types'
 import { AffiliateRequestsFilters } from './AffiliateRequestsFilters'
@@ -40,38 +41,48 @@ export function AffiliateRequestsPage() {
   }
 
   return (
-    <section className="space-y-6">
-      <PageHeader context="Gestión administrativa" title="Solicitudes de afiliación" description="Consulte las solicitudes recibidas y filtre los resultados administrativos." />
-      <AffiliateRequestsFilters
-        search={search}
-        email={emailDraft}
-        identification={identification}
-        status={status}
-        onSearchChange={(value) => updateFilter(() => setSearch(value))}
-        onEmailChange={(value) => {
-          setEmailDraft(value)
-          if (!value) updateFilter(() => setEmail(''))
-        }}
-        onEmailApply={(value) => updateFilter(() => setEmail(value.trim()))}
-        onIdentificationChange={(value) => updateFilter(() => setIdentification(value))}
-        onStatusChange={(value) => updateFilter(() => setStatus(value))}
-        onClear={clearFilters}
-      />
+    <section className="space-y-8">
+      <PageHeader context="Administración · Afiliaciones" title="Solicitudes de afiliación" description="Revise, filtre y gestione las solicitudes recibidas." />
+      <section aria-labelledby="affiliate-request-filters-heading">
+        <AffiliateRequestsFilters
+          search={search}
+          email={emailDraft}
+          appliedEmail={email}
+          identification={identification}
+          status={status}
+          onSearchChange={(value) => updateFilter(() => setSearch(value))}
+          onEmailChange={(value) => {
+            setEmailDraft(value)
+            if (!value) updateFilter(() => setEmail(''))
+          }}
+          onEmailApply={(value) => updateFilter(() => setEmail(value.trim()))}
+          onIdentificationChange={(value) => updateFilter(() => setIdentification(value))}
+          onStatusChange={(value) => updateFilter(() => setStatus(value))}
+          onClear={clearFilters}
+        />
+      </section>
       {listQuery.isPending ? (
         <LoadingState label="Cargando solicitudes de afiliación..." />
       ) : listQuery.isError ? (
-        <ErrorState message={getErrorMessage(listQuery.error, 'No fue posible cargar las solicitudes de afiliación.')} action={<button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={() => void listQuery.refetch()}>Reintentar</button>} />
+        <ErrorState message={getErrorMessage(listQuery.error, 'No fue posible cargar las solicitudes de afiliación.')} action={<Button type="button" variant="outline" onClick={() => void listQuery.refetch()}>Reintentar</Button>} />
       ) : requests.length === 0 ? (
         <EmptyState
           title={hasFilters ? 'No hay resultados para estos filtros' : 'No hay solicitudes de afiliación'}
           description={hasFilters ? 'Pruebe con otros criterios o limpie los filtros.' : 'Aún no se han recibido solicitudes de afiliación.'}
-          action={hasFilters ? <button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={clearFilters}>Limpiar filtros</button> : undefined}
+          action={hasFilters ? <Button type="button" variant="outline" onClick={clearFilters}>Limpiar filtros</Button> : undefined}
         />
       ) : (
-        <>
+        <section className="space-y-4" aria-labelledby="affiliate-request-results-heading">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+            <div>
+              <h2 id="affiliate-request-results-heading" className="text-heading-2 font-bold text-text-primary">Resultados</h2>
+              <p className="text-body-small text-text-secondary" aria-live="polite">{total} {total === 1 ? 'solicitud encontrada' : 'solicitudes encontradas'}</p>
+            </div>
+            <p className="text-caption text-text-secondary">Seleccione una solicitud para revisar sus datos.</p>
+          </div>
           <AffiliateRequestsTable requests={requests} onView={setSelectedRequestId} />
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
-        </>
+        </section>
       )}
       {selectedRequestId !== null && <AffiliateRequestDetail key={selectedRequestId} requestId={selectedRequestId} onClose={() => setSelectedRequestId(null)} />}
     </section>

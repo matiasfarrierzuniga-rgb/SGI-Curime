@@ -26,6 +26,7 @@ describe('EventForm', () => {
     fireEvent.change(screen.getByLabelText('Resumen'), { target: { value: 'Información confirmada.' } })
     fireEvent.change(screen.getByLabelText('Fecha y hora de inicio'), { target: { value: '2030-01-02T10:00' } })
     fireEvent.change(screen.getByLabelText('Fecha y hora de finalización'), { target: { value: '2030-01-02T09:00' } })
+    fireEvent.blur(screen.getByLabelText('Fecha y hora de finalización'))
 
     expect(screen.getByText('La fecha final debe ser posterior a la inicial.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Guardar evento' })).toBeDisabled()

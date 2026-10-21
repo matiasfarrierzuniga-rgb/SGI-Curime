@@ -24,6 +24,11 @@ const pendingBlocks = [
   "Objetivos",
   "Junta Directiva",
 ];
+const transparencyGroups = [
+  { title: 'Información pública', items: ['Documentos públicos', 'Informes', 'Proyectos'] },
+  { title: 'Rendición de cuentas', items: ['Rendición de cuentas', 'Reportes administrativos', 'Reportes financieros autorizados'] },
+  { title: 'Marco institucional', items: ['Información relacionada con DINADECO'] },
+] as const;
 export function AboutPage() {
   return (
     <>
@@ -36,15 +41,13 @@ export function AboutPage() {
         intro="Conozca la Asociación de Desarrollo Integral de Curime."
       />
       <Breadcrumbs current="Nosotros" />
-      <SectionContainer>
-        <div className="info-grid">
-          {pendingBlocks.map((title) => (
-            <article className="content-card" key={title}>
-              <h2>{title}</h2>
-              <p>{site.pending}</p>
-            </article>
-          ))}
-        </div>
+      <SectionContainer className="space-y-10 md:space-y-14">
+        <section className="grid gap-8 border-b border-brand-sage/70 pb-10 lg:grid-cols-[minmax(0,7fr)_minmax(15rem,4fr)] lg:items-start lg:gap-16">
+          <div><p className="public-eyebrow text-brand-primary">La Asociación</p><h2 className="public-heading mt-3 text-brand-ink">Una institución al servicio de Curime</h2><p className="mt-5 max-w-2xl text-body-large leading-relaxed text-foreground-muted">La información institucional se publicará en este espacio una vez que sea revisada y autorizada por la Asociación.</p></div>
+          <aside className="border-l-2 border-brand-accent pl-5 text-body-small leading-relaxed text-foreground-muted"><p>Este portal no sustituye los acuerdos, documentos o comunicados oficiales de la ADI.</p></aside>
+        </section>
+        <section aria-labelledby="identity-title" className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10"><div><p className="public-eyebrow text-brand-primary">Identidad institucional</p><h2 id="identity-title" className="public-heading mt-3 text-brand-ink">Historia, misión y visión</h2></div><div className="grid gap-px overflow-hidden rounded-surface border border-brand-sage/75 bg-brand-sage/75 sm:grid-cols-3">{pendingBlocks.slice(0, 3).map(title => <article key={title} className="bg-card-white p-5"><h3 className="font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-3 text-body-small leading-relaxed text-foreground-muted">{site.pending}</p></article>)}</div></section>
+        <section aria-labelledby="governance-title" className="rounded-surface border border-brand-sage/75 bg-surface-muted p-6 md:p-8"><div className="grid gap-7 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-10"><div><p className="public-eyebrow text-brand-primary">Organización</p><h2 id="governance-title" className="public-heading mt-3 text-brand-ink">Objetivos y Junta Directiva</h2></div><div className="grid gap-4 sm:grid-cols-2">{pendingBlocks.slice(3).map(title => <div key={title} className="border-t border-brand-sage/70 pt-4"><h3 className="font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-2 text-body-small leading-relaxed text-foreground-muted">{site.pending}</p></div>)}</div></div></section>
       </SectionContainer>
       <CTASection />
     </>
@@ -59,26 +62,16 @@ export function CommunityPage() {
         intro="Un espacio para las iniciativas, actividades y proyectos de Curime."
       />
       <Breadcrumbs current="Comunidad" />
-      <SectionContainer>
-        <div className="info-grid">
-          {[
-            "Curime",
-            "Iniciativas comunitarias",
-            "Proyectos comunitarios",
-            "Actividades",
-            "Galería futura",
-          ].map((title) => (
-            <article className="content-card" key={title}>
-              <h2>{title}</h2>
-              <p>{site.pending}</p>
-            </article>
-          ))}
-        </div>
+      <SectionContainer className="space-y-10 md:space-y-14">
+        <section className="grid gap-7 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center lg:gap-14"><figure className="overflow-hidden rounded-surface border border-brand-sage/75 bg-surface-muted shadow-sm"><img src="/images/public/home/community-curime-wide.webp" alt="Actividad comunitaria en la cancha de la comunidad." width="1500" height="1000" className="aspect-[16/10] size-full object-cover" /><figcaption className="border-t border-brand-sage/70 bg-card-white p-4 text-body-small text-foreground-muted">Fotografía autorizada de actividad comunitaria.</figcaption></figure><div><p className="public-eyebrow text-brand-primary">Curime</p><h2 className="public-heading mt-3 text-brand-ink">Un espacio para participar y encontrarse</h2><p className="mt-5 max-w-xl text-body-large leading-relaxed text-foreground-muted">Esta sección reunirá información autorizada sobre iniciativas, proyectos y actividades de la comunidad.</p></div></section>
+        <section aria-labelledby="initiatives-title" className="grid gap-5 md:grid-cols-2"><div className="rounded-surface border border-brand-sage/75 bg-card-white p-6 shadow-sm"><p className="public-eyebrow text-brand-primary">Participación local</p><h2 id="initiatives-title" className="mt-3 font-heading text-heading-2 font-normal text-brand-ink">Iniciativas comunitarias</h2><p className="mt-4 text-body-small leading-relaxed text-foreground-muted">{site.pending}</p></div><div className="rounded-surface border border-brand-sage/75 bg-brand-deep p-6 text-brand-ivory shadow-sm"><p className="public-eyebrow text-brand-accent">Desarrollo compartido</p><h2 className="mt-3 font-heading text-heading-2 font-normal">Proyectos comunitarios</h2><p className="mt-4 text-body-small leading-relaxed text-brand-ivory/80">{site.pending}</p></div></section>
+        <section aria-labelledby="activities-title" className="border-y border-brand-sage/70 py-8 md:py-10"><div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]"><div><p className="public-eyebrow text-brand-primary">Vida comunitaria</p><h2 id="activities-title" className="public-heading mt-3 text-brand-ink">Actividades y galería</h2></div><div className="grid gap-4 sm:grid-cols-2"><div><h3 className="font-heading text-heading-3 text-brand-ink">Actividades</h3><p className="mt-2 text-body-small leading-relaxed text-foreground-muted">{site.pending}</p></div><div><h3 className="font-heading text-heading-3 text-brand-ink">Galería comunitaria</h3><p className="mt-2 text-body-small leading-relaxed text-foreground-muted">Se incorporarán fotografías adicionales cuando cuenten con autorización institucional.</p></div></div></div></section>
       </SectionContainer>
     </>
   );
 }
 export function NewsPage() {
+  const verifiedNews = publicContentService.listNews().filter((item) => item.date !== 'Próximamente');
   return (
     <>
       <Seo
@@ -91,11 +84,11 @@ export function NewsPage() {
       />
       <Breadcrumbs current="Noticias" />
       <SectionContainer>
-        <div className="card-grid">
-          {publicContentService.listNews().map((item) => (
+        {verifiedNews.length === 0 ? <EmptyContentState title="No hay noticias verificadas publicadas" text="Los comunicados y noticias oficiales aparecerán aquí cuando la Asociación los autorice." /> : <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {verifiedNews.map((item) => (
             <NewsCard key={item.slug} item={item} />
           ))}
-        </div>
+        </div>}
       </SectionContainer>
     </>
   );
@@ -104,18 +97,21 @@ export function NewsDetailPage() {
   const { slug } = useParams();
   const item = slug ? publicContentService.getNews(slug) : undefined;
   if (!item) return <Navigate to="/noticias" replace />;
+  const isPending = item.date === 'Próximamente';
   return (
     <>
       <Seo title={item.title} description={item.excerpt} />
       <Breadcrumbs current="Noticias" />
-      <SectionContainer className="article">
-        <p className="eyebrow">
+      <SectionContainer className="max-w-3xl">
+        {isPending ? <EmptyContentState title="Esta noticia está en preparación" text="El contenido de esta ruta aún no corresponde a un comunicado publicado. Consulte el listado de noticias para futuras publicaciones autorizadas." /> : <>
+        <p className="public-eyebrow text-brand-primary">
           {item.category} · {item.date}
         </p>
-        <h1>{item.title}</h1>
-        <p className="lead">{item.excerpt}</p>
-        <p>{item.body}</p>
-        <Link to="/noticias">Volver a noticias</Link>
+        <h1 className="public-heading mt-4 text-brand-ink">{item.title}</h1>
+        <p className="mt-5 text-body-large leading-relaxed text-foreground-muted">{item.excerpt}</p>
+        <div className="mt-8 border-y border-brand-sage/70 py-7 text-body leading-relaxed text-foreground-secondary"><p>{item.body}</p></div>
+        <Link className="mt-6 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/noticias">Volver a noticias</Link>
+        </>}
       </SectionContainer>
     </>
   );
@@ -131,7 +127,7 @@ export function ServicesPage() {
           { label: "Crear una cuenta", to: "/register" },
         ],
     volunteering: [],
-    entrepreneurship: [],
+    entrepreneurship: [{ label: "Ver emprendimientos", to: "/ventures" }],
     donations: [],
   } as const;
 
@@ -144,18 +140,18 @@ export function ServicesPage() {
       />
       <Breadcrumbs current="Servicios" />
       <SectionContainer>
-        <div className="card-grid">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {services.map((item) => (
             <ServiceCard key={item.key} service={item} enabled={moduleAvailability[item.key].enabled} actions={serviceActions[item.key]} />
           ))}
           {!isAuthenticated && moduleAvailability.userRegistration.enabled && (
-            <article className="service-card">
+            <article className="flex min-h-60 flex-col rounded-surface border border-brand-sage/75 bg-card-white p-6 shadow-sm">
               <StatusBadge status="disponible" />
-              <h3>Crear una cuenta</h3>
-              <p>Cree su cuenta para acceder a los servicios digitales disponibles.</p>
-              <div className="actions">
-                <Link className="button button-small" to="/register">Crear una cuenta</Link>
-                <Link className="button button-small button-ghost" to="/login">Iniciar sesión</Link>
+              <h3 className="mt-5 font-heading text-heading-2 font-normal text-brand-ink">Crear una cuenta</h3>
+              <p className="mt-3 flex-1 text-body-small leading-relaxed text-foreground-muted">Cree su cuenta para acceder a los servicios digitales disponibles.</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link className="inline-flex min-h-11 items-center rounded-control bg-brand-deep px-4 text-body-small font-bold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/register">Crear una cuenta</Link>
+                <Link className="inline-flex min-h-11 items-center rounded-control border border-brand-deep px-4 text-body-small font-bold text-brand-deep transition-colors hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/login">Iniciar sesión</Link>
               </div>
             </article>
           )}
@@ -165,15 +161,6 @@ export function ServicesPage() {
   );
 }
 export function TransparencyPage() {
-  const areas = [
-    "Documentos públicos",
-    "Informes",
-    "Proyectos",
-    "Rendición de cuentas",
-    "Reportes administrativos",
-    "Reportes financieros autorizados",
-    "Información relacionada con DINADECO",
-  ];
   return (
     <>
       <Seo
@@ -185,12 +172,9 @@ export function TransparencyPage() {
         intro="Un espacio preparado para publicar información institucional autorizada."
       />
       <Breadcrumbs current="Transparencia" />
-      <SectionContainer>
-        <div className="info-grid">
-          {areas.map((title) => (
-            <EmptyContentState key={title} title={title} />
-          ))}
-        </div>
+      <SectionContainer className="space-y-10 md:space-y-14">
+        <section className="max-w-3xl border-l-2 border-brand-accent pl-5"><p className="text-body-large leading-relaxed text-foreground-muted">La información se publica únicamente cuando cuenta con autorización institucional. Por el momento, no hay documentos disponibles para descarga.</p></section>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">{transparencyGroups.map((group) => <section key={group.title} className="border-t border-brand-sage/75 pt-5 first:border-t-0 first:pt-0 lg:first:border-t lg:first:pt-5"><h2 className="font-heading text-heading-2 font-normal text-brand-ink">{group.title}</h2><div className="mt-5 grid gap-3 sm:grid-cols-2">{group.items.map(title => <div key={title} className="rounded-control border border-border-subtle bg-card-white p-4"><h3 className="font-semibold text-brand-ink">{title}</h3><p className="mt-2 text-body-small leading-relaxed text-foreground-muted">{site.pending}</p></div>)}</div></section>)}</div>
       </SectionContainer>
     </>
   );

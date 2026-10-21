@@ -48,7 +48,8 @@ export function AffiliationPage() {
       <Breadcrumbs current="Afiliación" />
       {success ? <Success /> : (
         <div className="mx-auto grid max-w-3xl gap-6">
-          <form className="grid gap-5 rounded-surface border border-brand-sage bg-card-white p-6" noValidate onSubmit={form.handleSubmit(submit)} aria-busy={form.formState.isSubmitting}>
+          <div className="border-l-2 border-brand-accent pl-4 text-body-small leading-relaxed text-foreground-muted"><p>Los campos marcados como obligatorios son necesarios para revisar su solicitud. Recibirá respuesta mediante los datos de contacto indicados.</p></div>
+          <form className="grid gap-5 rounded-surface border border-brand-sage bg-card-white p-6 shadow-sm sm:p-8" noValidate onSubmit={form.handleSubmit(submit)} aria-busy={form.formState.isSubmitting}>
             {requestError ? <p role="alert" className="field-error">{requestError}</p> : null}
             <fieldset disabled={form.formState.isSubmitting} className="contents">
               <section className="grid gap-5" aria-labelledby="identity-title">
@@ -82,5 +83,5 @@ export function AffiliationPage() {
   </>
 }
 
-function Success() { return <section className="mx-auto max-w-2xl rounded-surface border border-success/40 bg-success-bg p-6" aria-labelledby="affiliation-success-title"><h2 id="affiliation-success-title" className="font-heading text-heading-2">Recibimos su solicitud</h2><p className="mt-3">La Asociación se comunicará con usted. No necesita enviar otra solicitud.</p><div className="mt-6 flex flex-wrap gap-3"><Link className="primary" to="/">Volver al inicio</Link><Link className="secondary" to="/contacto">Contactar a la Asociación</Link></div></section> }
+function Success() { return <section className="mx-auto max-w-2xl rounded-surface border border-success/40 bg-success-bg p-6 shadow-sm sm:p-8" aria-labelledby="affiliation-success-title"><h2 id="affiliation-success-title" className="font-heading text-heading-2">Recibimos su solicitud</h2><p className="mt-3 text-body leading-relaxed">La Asociación se comunicará con usted. No necesita enviar otra solicitud.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Link className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-deep px-4 font-bold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/">Volver al inicio</Link><Link className="inline-flex min-h-11 items-center justify-center rounded-control border border-brand-deep px-4 font-bold text-brand-deep transition-colors hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/contacto">Contactar a la Asociación</Link></div></section> }
 function Field({ label, id, error, children }: { label: string; id: string; error?: string; children: ReactElement<any> }) { return <FormField id={id} label={label} error={error}>{children}</FormField> }

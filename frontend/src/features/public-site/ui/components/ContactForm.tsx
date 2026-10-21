@@ -62,7 +62,7 @@ export function ContactForm() {
       subject: normalizeText(current.subject),
       message: normalizeText(current.message),
     }))
-    setNotice('El envío en línea aún no está disponible. Puede enviar su consulta mediante el correo oficial de la Asociación.')
+    setNotice('Su consulta no se ha enviado porque el formulario en línea aún no está habilitado. Puede copiar estos datos y escribir al correo oficial de la Asociación.')
   }
 
   const fieldProps = (name: ContactField) => ({
@@ -76,7 +76,7 @@ export function ContactForm() {
   return (
     <div className="rounded-xl border border-border bg-surface p-5 shadow-sm sm:p-7 lg:p-8">
       <h2 className="text-heading-2 text-brand-deep">Envíe su consulta</h2>
-      <p className="mt-2 text-body-small text-foreground-muted">Complete los campos requeridos. La integración de envío en línea se habilitará posteriormente.</p>
+      <p className="mt-2 text-body-small text-foreground-muted">Este formulario le ayuda a revisar su consulta. No envía mensajes en línea; use el correo oficial para contactar a la Asociación.</p>
       <form className="mt-6 grid gap-5" onSubmit={submit} noValidate>
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="grid gap-2 text-label font-semibold" htmlFor="firstName">Nombre <span aria-hidden="true">*</span>
@@ -101,7 +101,7 @@ export function ContactForm() {
           {errors.message && <span id="message-error" className="field-error" role="alert">{errors.message}</span>}
         </label>
         {notice && <p className="rounded-lg border border-brand-accent bg-brand-ivory p-3 text-sm leading-relaxed text-brand-deep" role="status">{notice}</p>}
-        <button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold sm:w-auto sm:justify-self-start" type="submit">Enviar consulta</button>
+        <button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold sm:w-auto sm:justify-self-start" type="submit">Revisar consulta</button>
       </form>
     </div>
   )

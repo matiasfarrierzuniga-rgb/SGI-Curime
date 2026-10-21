@@ -20,7 +20,7 @@ function syncModalAccessibility() {
   })
 }
 
-export function Modal({ title, children, onClose, busy = false, initialFocusRef }: { title: string; children: ReactNode; onClose: () => void; busy?: boolean; initialFocusRef?: RefObject<HTMLElement | null> }) {
+export function Modal({ title, children, footer, onClose, busy = false, initialFocusRef }: { title: string; children: ReactNode; footer?: ReactNode; onClose: () => void; busy?: boolean; initialFocusRef?: RefObject<HTMLElement | null> }) {
   const titleId = useId(); const overlay = useRef<HTMLDivElement>(null); const dialog = useRef<HTMLDivElement>(null); const onCloseRef = useRef(onClose); const busyRef = useRef(busy); const initialFocusRefRef = useRef(initialFocusRef); const token = useRef(Symbol('modal'))
   onCloseRef.current = onClose
   busyRef.current = busy
@@ -86,5 +86,5 @@ export function Modal({ title, children, onClose, busy = false, initialFocusRef 
     }
   }, [])
   if (typeof document === 'undefined') return null
-  return createPortal(<div className="modal-overlay" role="presentation" ref={overlay} onMouseDown={e => { if (e.target === e.currentTarget) requestClose() }}><div className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId} aria-busy={busy} tabIndex={-1} ref={dialog}><div className="modal-header"><h2 id={titleId}>{title}</h2><button type="button" aria-label="Cerrar diálogo" onClick={requestClose} disabled={busy}>×</button></div>{children}</div></div>, document.body)
+  return createPortal(<div className="modal-overlay" role="presentation" ref={overlay} onMouseDown={e => { if (e.target === e.currentTarget) requestClose() }}><div className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId} aria-busy={busy} tabIndex={-1} ref={dialog}><div className="modal-header"><h2 id={titleId}>{title}</h2><button type="button" aria-label="Cerrar diálogo" onClick={requestClose} disabled={busy}>×</button></div><div className="modal-body">{children}</div>{footer ? <div className="modal-footer">{footer}</div> : null}</div></div>, document.body)
 }

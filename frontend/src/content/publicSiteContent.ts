@@ -21,6 +21,7 @@ export const site = {
     { label: "Inicio", to: "/" },
     { label: "Nosotros", to: "/nosotros" },
     { label: "Comunidad", to: "/comunidad" },
+    { label: "Emprendimientos", to: "/ventures" },
     { label: "Noticias", to: "/noticias" },
     { label: "Eventos", to: "/eventos" },
     { label: "Servicios", to: "/servicios" },
@@ -33,7 +34,7 @@ export const moduleAvailability = {
   affiliation: { enabled: true },
   reservations: { enabled: true },
   volunteering: { enabled: false },
-  entrepreneurship: { enabled: false },
+   entrepreneurship: { enabled: true },
   donations: { enabled: false },
   userRegistration: { enabled: true },
 } as const;

@@ -34,15 +34,10 @@ export function PublicHeader() {
   const close = () => setOpen(false)
   const accessTo = !isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'
   const accessLabel = !isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'
-  const desktopGrid = isAuthenticated
-    ? 'min-[1200px]:grid-cols-[11rem_minmax(0,1fr)_auto] min-[1200px]:gap-x-6'
-    : 'lg:grid-cols-[10rem_minmax(0,1fr)_auto] lg:gap-x-5 min-[1200px]:grid-cols-[11rem_minmax(0,1fr)_auto] min-[1200px]:gap-x-6'
-  const desktopNav = isAuthenticated
-    ? 'min-[1200px]:col-auto min-[1200px]:mt-0 min-[1200px]:flex min-[1200px]:w-auto min-[1200px]:flex-row min-[1200px]:justify-self-start min-[1200px]:gap-0.5 min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none'
-    : 'lg:col-auto lg:mt-0 lg:flex lg:w-auto lg:flex-row lg:justify-self-start lg:gap-0.5 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none'
-  const desktopItem = isAuthenticated
-    ? 'min-[1200px]:min-h-11 min-[1200px]:px-2.5 min-[1200px]:py-2 min-[1200px]:text-sm 2xl:px-3'
-    : 'lg:min-h-10 lg:px-2 lg:py-2 lg:text-xs min-[1200px]:min-h-11 min-[1200px]:px-2.5 min-[1200px]:text-sm 2xl:px-3'
+  const desktopGrid = 'min-[1200px]:grid-cols-[11rem_minmax(0,1fr)_auto] min-[1200px]:gap-x-6'
+  const desktopNav = 'min-[1200px]:col-auto min-[1200px]:mt-0 min-[1200px]:flex min-[1200px]:w-auto min-[1200px]:flex-row min-[1200px]:justify-self-start min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none'
+  const desktopNavList = 'min-[1200px]:flex min-[1200px]:w-auto min-[1200px]:flex-row min-[1200px]:gap-0.5'
+  const desktopItem = 'min-[1200px]:min-h-11 min-[1200px]:px-2.5 min-[1200px]:py-2 min-[1200px]:text-sm 2xl:px-3'
   const handleLogout = () => {
     close()
     void logout()
@@ -76,7 +71,7 @@ export function PublicHeader() {
           }
           aria-expanded={open}
           aria-controls={id}
-          className={`inline-flex size-11 items-center justify-center rounded-control border border-primary text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring ${isAuthenticated ? 'min-[1200px]:hidden' : 'lg:hidden'}`}
+          className="inline-flex size-11 items-center justify-center rounded-control border border-primary text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring min-[1200px]:hidden"
         >
           {open ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
         </button>
@@ -86,35 +81,40 @@ export function PublicHeader() {
           aria-label="Navegación pública"
           className={`${open ? 'flex' : 'hidden'} col-span-2 mt-2 w-full flex-col items-stretch rounded-surface border border-border bg-surface-muted p-2 shadow-surface ${desktopNav}`}
         >
-          {site.nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              onClick={close}
-              className={`relative flex min-h-11 items-center rounded-control px-3 text-base font-medium text-brand-deep transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${desktopItem} aria-[current=page]:font-semibold aria-[current=page]:after:absolute aria-[current=page]:after:bottom-0 aria-[current=page]:after:left-2 aria-[current=page]:after:h-0.5 aria-[current=page]:after:w-7 aria-[current=page]:after:bg-brand-accent`}
-            >
-              {item.label}
-            </NavLink>
-          ))}
+          <ul className={`flex flex-col gap-0.5 ${desktopNavList}`}>
+            {site.nav.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  end={item.to === '/'}
+                  onClick={close}
+                  className={`relative flex min-h-11 items-center rounded-control px-3 text-base font-medium text-brand-deep transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${desktopItem} aria-[current=page]:font-semibold aria-[current=page]:after:absolute aria-[current=page]:after:bottom-0 aria-[current=page]:after:left-2 aria-[current=page]:after:h-0.5 aria-[current=page]:after:w-7 aria-[current=page]:after:bg-brand-accent`}
+                >
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
 
-          <Button
-            nativeButton={false}
-            render={<Link to={accessTo} />}
-            onClick={close}
-            size="sm"
-            className={`mt-2 w-full ${isAuthenticated ? 'min-[1200px]:hidden' : 'lg:hidden'}`}
-          >
-            {accessLabel}
-          </Button>
-          {isAuthenticated && (
-            <Button onClick={handleLogout} size="sm" variant="outline" className="mt-2 w-full min-[1200px]:hidden">
-              <LogOut className="size-4" aria-hidden="true" />Cerrar sesión
+          <div className="flex flex-col gap-2 min-[1200px]:hidden">
+            <Button
+              nativeButton={false}
+              render={<Link to={accessTo} />}
+              onClick={close}
+              size="sm"
+              className="mt-2 w-full"
+            >
+              {accessLabel}
             </Button>
-          )}
+            {isAuthenticated && (
+              <Button onClick={handleLogout} size="sm" variant="outline" className="w-full">
+                <LogOut className="size-4" aria-hidden="true" />Cerrar sesión
+              </Button>
+            )}
+          </div>
         </nav>
 
-        <div className={`hidden items-center justify-self-end gap-2.5 ${isAuthenticated ? 'min-[1200px]:flex' : 'lg:flex'}`}>
+        <div className="hidden items-center justify-self-end gap-2.5 min-[1200px]:flex">
           <Button nativeButton={false} render={<Link to={accessTo} />} size="sm" className="px-3.5 min-[1200px]:px-4">
             <LogIn className="size-4" aria-hidden="true" />{accessLabel}
           </Button>

@@ -51,3 +51,9 @@ export class QueryVenturesDto {
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) page = 1;
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(100) limit = 20;
 }
+
+export class QueryPublicVenturesDto {
+  @Transform(trim) @IsOptional() @IsString() @MaxLength(200) search?: string;
+  @Type(() => Number) @IsOptional() @IsInt() @Min(1) page = 1;
+  @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(100) limit = 20;
+}
