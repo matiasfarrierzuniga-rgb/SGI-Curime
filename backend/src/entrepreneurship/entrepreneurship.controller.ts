@@ -19,6 +19,7 @@ import {
 } from '../auth';
 import {
   CreateVentureDto,
+  QueryPublicVenturesDto,
   QueryVenturesDto,
   UpdateVentureDto,
 } from './dto/venture.dto';
@@ -59,7 +60,34 @@ export class EntrepreneurshipController {
     return this.service.update(id, dto, req.user.id, this.context(req));
   }
 
+  @Patch(':id/publish')
+  @RequireCapabilities('ent.ventures.publish')
+  publish(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
+    return this.service.publish(id, req.user.id, this.context(req));
+  }
+
+  @Patch(':id/unpublish')
+  @RequireCapabilities('ent.ventures.publish')
+  unpublish(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
+    return this.service.unpublish(id, req.user.id, this.context(req));
+  }
+
   private context(req: Request) {
     return { ipAddress: req.ip, userAgent: req.get('user-agent') };
+  }
+}
+
+@Controller('public/ventures')
+export class PublicEntrepreneurshipController {
+  constructor(private readonly service: EntrepreneurshipService) {}
+
+  @Get()
+  findAll(@Query() query: QueryPublicVenturesDto) {
+    return this.service.findPublic(query);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findPublicOne(id);
   }
 }

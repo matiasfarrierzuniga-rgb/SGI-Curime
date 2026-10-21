@@ -56,7 +56,7 @@ describe('portal público', () => {
 
     expect(screen.getByRole('heading', { name: 'Crear una cuenta' })).toBeVisible()
     expect(screen.getByText('Cree su cuenta para acceder a los servicios digitales disponibles.')).toBeVisible()
-    expect(screen.getAllByText('Próximamente')).toHaveLength(3)
+    expect(screen.getAllByText('Próximamente')).toHaveLength(2)
   })
 
   it('permite reservar y oculta la creación de cuenta cuando hay sesión', () => {
@@ -66,7 +66,7 @@ describe('portal público', () => {
     expect(screen.getByRole('link', { name: 'Solicitar una reserva' })).toHaveAttribute('href', '/servicios/reservas')
     expect(screen.queryByRole('heading', { name: 'Crear una cuenta' })).not.toBeInTheDocument()
     expect(screen.queryByText('Cree su cuenta para acceder a los servicios digitales disponibles.')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Próximamente')).toHaveLength(3)
+    expect(screen.getAllByText('Próximamente')).toHaveLength(2)
   })
 
   it('muestra la landing y navega al inicio de sesión', () => {
@@ -141,18 +141,18 @@ describe('portal público', () => {
     expect(screen.getByRole('link', { name: /ir a transparencia/i })).toHaveAttribute('href', '/transparencia')
   })
 
-  it('conserva jerarquía de Home Pública V1', () => {
+  it('conserva jerarquía institucional de Home Pública', () => {
     const { container } = renderPublic()
     const headings = Array.from(container.querySelectorAll('main h1, main h2')).map((heading) => heading.textContent)
 
     expect(container.querySelectorAll('main h1')).toHaveLength(1)
     expect(headings).toEqual([
       'Curime, más cerca de su comunidad',
+      'Encuentre lo que necesita',
+      'Próximas actividades',
       'Lo más reciente',
       'Un pueblo unido, un futuro compartido',
-      'Encuentre lo que necesita',
       'Un espacio para encontrarnos',
-      'Próximas actividades',
       'Información pública para la comunidad',
     ])
   })
@@ -162,7 +162,8 @@ describe('portal público', () => {
     expect(screen.getByRole('heading', { name: /encuentre lo que necesita/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /consultar sobre afiliación/i })).toHaveAttribute('href', '/afiliacion')
     expect(screen.getByRole('link', { name: /agenda y eventos/i })).toHaveAttribute('href', '/eventos')
-    expect(screen.getByRole('link', { name: /emprendimientos/i })).toHaveAttribute('href', '/comunidad')
+    const communityAccess = within(screen.getByRole('navigation', { name: 'Accesos comunitarios' }))
+    expect(communityAccess.getByRole('link', { name: /emprendimientos/i })).toHaveAttribute('href', '/ventures')
     expect(screen.getByRole('link', { name: /ver todo/i })).toHaveAttribute('href', '/noticias')
     expect(screen.getByRole('heading', { name: /lo más reciente/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /consultar sobre reservas/i })).toHaveAttribute('href', '/servicios/reservas')
@@ -219,9 +220,9 @@ describe('portal público', () => {
     expect(firstName).toHaveAttribute('autocomplete', 'given-name')
     expect(lastNames).toHaveAttribute('autocomplete', 'family-name')
     expect(email).toHaveAttribute('autocomplete', 'email')
-    expect(contact.getByRole('button', { name: 'Enviar consulta' })).toBeVisible()
+    expect(contact.getByRole('button', { name: 'Revisar consulta' })).toBeVisible()
 
-    fireEvent.click(contact.getByRole('button', { name: 'Enviar consulta' }))
+    fireEvent.click(contact.getByRole('button', { name: 'Revisar consulta' }))
 
     expect(firstName).toHaveAttribute('aria-invalid', 'true')
     expect(lastNames).toHaveAttribute('aria-invalid', 'true')

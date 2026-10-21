@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { AuditAction } from '../audit/audit-actions';
 import { EntrepreneurshipService } from './entrepreneurship.service';
 
@@ -41,10 +41,13 @@ describe('EntrepreneurshipService', () => {
     $transaction: jest.fn(),
     venture: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       count: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
     },
   };
   const audit = { log: jest.fn() };
@@ -148,5 +151,171 @@ describe('EntrepreneurshipService', () => {
   it('returns not found for unknown venture detail', async () => {
     prisma.venture.findUnique.mockResolvedValue(null);
     await expect(service.findOne(999)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('lists only active published ventures with search, stable pagination, and public fields', async () => {
+    const publicRecord = {
+      ...venture,
+      publicationStatus: 'PUBLISHED',
+      incorporatedAt: new Date('2020-01-01T00:00:00.000Z'),
+      createdAt: new Date('2020-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2020-01-01T00:00:00.000Z'),
+      associations: [],
+    };
+    prisma.$transaction.mockResolvedValue([[publicRecord], 1]);
+
+    await expect(service.findPublic({ search: ' café ', page: 2, limit: 10 })).resolves.toEqual({
+      data: [{
+        id: venture.id,
+        name: venture.name,
+        description: venture.description,
+        offerDescription: venture.offerDescription,
+        businessPhone: venture.businessPhone,
+        businessEmail: venture.businessEmail,
+        websiteUrl: venture.websiteUrl,
+        socialUrl: venture.socialUrl,
+        locationText: venture.locationText,
+      }],
+      total: 1,
+      page: 2,
+      limit: 10,
+    });
+    expect(prisma.venture.findMany).toHaveBeenCalledWith({
+      where: {
+        status: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
+        OR: [
+          { name: { contains: ' café ', mode: 'insensitive' } },
+          { description: { contains: ' café ', mode: 'insensitive' } },
+          { offerDescription: { contains: ' café ', mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        offerDescription: true,
+        businessPhone: true,
+        businessEmail: true,
+        websiteUrl: true,
+        socialUrl: true,
+        locationText: true,
+      },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      skip: 10,
+      take: 10,
+    });
+    expect(prisma.venture.count).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ status: 'ACTIVE', publicationStatus: 'PUBLISHED' }),
+    }));
+  });
+
+  it.each([
+    { status: 'SUSPENDED', publicationStatus: 'PUBLISHED' },
+    { status: 'ACTIVE', publicationStatus: 'UNPUBLISHED' },
+  ])(
+    'does not reveal $status/$publicationStatus ventures through public detail',
+    async () => {
+      prisma.venture.findFirst.mockResolvedValue(null);
+
+      await expect(service.findPublicOne(venture.id)).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.venture.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+        where: {
+          id: venture.id,
+          status: 'ACTIVE',
+          publicationStatus: 'PUBLISHED',
+        },
+      }));
+    },
+  );
+
+  it('returns 404 for a nonexistent public venture', async () => {
+    prisma.venture.findFirst.mockResolvedValue(null);
+
+    await expect(service.findPublicOne(999)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('returns only approved fields for public venture detail', async () => {
+    prisma.venture.findFirst.mockResolvedValue({
+      ...venture,
+      publicationStatus: 'PUBLISHED',
+      incorporatedAt: new Date('2020-01-01T00:00:00.000Z'),
+      createdAt: new Date('2020-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2020-01-01T00:00:00.000Z'),
+      associations: [],
+    });
+
+    await expect(service.findPublicOne(venture.id)).resolves.toEqual({
+      id: venture.id,
+      name: venture.name,
+      description: venture.description,
+      offerDescription: venture.offerDescription,
+      businessPhone: venture.businessPhone,
+      businessEmail: venture.businessEmail,
+      websiteUrl: venture.websiteUrl,
+      socialUrl: venture.socialUrl,
+      locationText: venture.locationText,
+    });
+    expect(prisma.venture.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: venture.id,
+        status: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        offerDescription: true,
+        businessPhone: true,
+        businessEmail: true,
+        websiteUrl: true,
+        socialUrl: true,
+        locationText: true,
+      },
+    });
+  });
+
+  it('publishes only active unpublished ventures atomically and audits the transition', async () => {
+    prisma.venture.findUnique.mockResolvedValue(venture);
+    prisma.venture.updateMany.mockResolvedValue({ count: 1 });
+    prisma.venture.findUniqueOrThrow.mockResolvedValue({ ...venture, publicationStatus: 'PUBLISHED' });
+    prisma.$transaction.mockImplementation(async (operation: (tx: { venture: typeof prisma.venture }) => Promise<unknown>) => operation({ venture: prisma.venture }));
+
+    await expect(service.publish(7, 2)).resolves.toMatchObject({ publicationStatus: 'PUBLISHED' });
+    expect(prisma.venture.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 7, publicationStatus: 'UNPUBLISHED', status: 'ACTIVE' },
+      data: { publicationStatus: 'PUBLISHED' },
+    }));
+    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({
+      action: AuditAction.VENTURE_PUBLISHED,
+      details: { from: 'UNPUBLISHED', to: 'PUBLISHED' },
+    }), expect.anything());
+  });
+
+  it('rejects inactive publication and concurrent transition conflicts without auditing', async () => {
+    prisma.$transaction.mockImplementation(async (operation: (tx: { venture: typeof prisma.venture }) => Promise<unknown>) => operation({ venture: prisma.venture }));
+    prisma.venture.findUnique.mockResolvedValue({ ...venture, status: 'SUSPENDED' });
+    await expect(service.publish(7, 2)).rejects.toBeInstanceOf(BadRequestException);
+
+    prisma.venture.findUnique.mockResolvedValue(venture);
+    prisma.venture.updateMany.mockResolvedValue({ count: 0 });
+    await expect(service.publish(7, 2)).rejects.toBeInstanceOf(ConflictException);
+    expect(audit.log).not.toHaveBeenCalled();
+  });
+
+  it('unpublishes only published ventures and audits the transition', async () => {
+    prisma.venture.findUnique.mockResolvedValue({ ...venture, publicationStatus: 'PUBLISHED' });
+    prisma.venture.updateMany.mockResolvedValue({ count: 1 });
+    prisma.venture.findUniqueOrThrow.mockResolvedValue(venture);
+    prisma.$transaction.mockImplementation(async (operation: (tx: { venture: typeof prisma.venture }) => Promise<unknown>) => operation({ venture: prisma.venture }));
+
+    await service.unpublish(7, 2);
+
+    expect(prisma.venture.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 7, publicationStatus: 'PUBLISHED' },
+      data: { publicationStatus: 'UNPUBLISHED' },
+    }));
+    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ action: AuditAction.VENTURE_UNPUBLISHED }), expect.anything());
   });
 });

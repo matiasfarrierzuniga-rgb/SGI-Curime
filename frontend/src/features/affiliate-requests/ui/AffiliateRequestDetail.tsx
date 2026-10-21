@@ -7,6 +7,7 @@ import { LoadingState } from '@/shared/ui/LoadingState'
 import { Modal } from '@/shared/ui/Modal'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
+import { Button } from '@/shared/ui/button'
 import { useAffiliateRequestDetail, useAffiliateRequestMutations } from '../hooks/useAffiliateRequestsQueries'
 import type { AffiliateRequestStatus } from '../model/affiliateRequests.types'
 
@@ -34,7 +35,7 @@ function formatPhone(phoneCountryCode: string | null, phoneNationalNumber: strin
 }
 
 function DetailField({ label, value }: { label: string; value: string | null | undefined }) {
-  return <div className="min-w-0"><dt className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{label}</dt><dd className="mt-1 break-words text-text-primary">{valueOrFallback(value)}</dd></div>
+  return <div className="min-w-0"><dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">{label}</dt><dd className="mt-1 break-words whitespace-pre-wrap text-body-small text-text-primary">{valueOrFallback(value)}</dd></div>
 }
 
 function getMutationErrorMessage(error: unknown) {
@@ -174,18 +175,18 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
         ) : detailQuery.isError ? (
           <ErrorState title="No fue posible cargar la solicitud" message={getErrorMessage(detailQuery.error, 'Intente nuevamente.')} action={<button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={() => void detailQuery.refetch()}>Reintentar</button>} />
         ) : request ? (
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-default pb-4">
-              <div><p className="text-sm text-text-secondary">Solicitud #{request.id}</p><p className="font-heading text-heading-3 text-text-primary">{request.fullName}</p></div>
+            <div className="space-y-7">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-default pb-4">
+               <div><p className="text-body-small text-text-secondary">Solicitud #{request.id}</p><p className="text-heading-3 font-semibold text-text-primary">{request.fullName}</p></div>
               <StatusBadge variant={statusPresentation[request.status].variant}>{statusPresentation[request.status].label}</StatusBadge>
             </div>
             <StatusMessage error={actionError} success={success} />
-            <section aria-labelledby="identity-heading"><h3 id="identity-heading" className="font-heading text-heading-4 text-text-primary">Identidad</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Identificación" value={request.identification} /><DetailField label="Tipo de identificación" value={request.identificationType} /><DetailField label="Fecha de nacimiento" value={formatBirthDate(request.birthDate)} /><DetailField label="Género" value={request.gender} /></dl></section>
-            <section aria-labelledby="contact-heading"><h3 id="contact-heading" className="font-heading text-heading-4 text-text-primary">Contacto</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Correo electrónico" value={request.email} /><DetailField label="Teléfono" value={formatPhone(request.phoneCountryCode, request.phoneNationalNumber, request.phone)} /><DetailField label="Dirección" value={request.address} /></dl></section>
-            <section aria-labelledby="employment-heading"><h3 id="employment-heading" className="font-heading text-heading-4 text-text-primary">Información laboral</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Ocupación" value={request.occupation} /><DetailField label="Lugar de trabajo" value={request.workplace} /></dl></section>
-            <section aria-labelledby="request-heading"><h3 id="request-heading" className="font-heading text-heading-4 text-text-primary">Solicitud</h3><dl className="mt-3 grid gap-4"><DetailField label="Motivo de afiliación" value={request.affiliationReason} /></dl></section>
-            <section aria-labelledby="review-heading"><h3 id="review-heading" className="font-heading text-heading-4 text-text-primary">Revisión</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Revisada el" value={formatTimestamp(request.reviewedAt)} /><DetailField label="Revisada por" value={request.reviewedBy ? `${request.reviewedBy.fullName} (${request.reviewedBy.email})` : null} />{request.status === 'REJECTED' && <DetailField label="Motivo de rechazo" value={request.rejectionReason} />}</dl></section>
-            {request.status === 'PENDING' && <div className="flex flex-wrap justify-end gap-3 border-t border-border-default pt-4"><button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('approve-confirm') } }} disabled={busy}>Aprobar solicitud</button><button className="min-h-10 rounded-control bg-danger px-4 font-semibold text-white" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('reject-reason') } }} disabled={busy}>Rechazar solicitud</button></div>}
+             <section aria-labelledby="identity-heading"><h3 id="identity-heading" className="text-heading-3 font-semibold text-text-primary">Identidad</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Identificación" value={request.identification} /><DetailField label="Tipo de identificación" value={request.identificationType} /><DetailField label="Fecha de nacimiento" value={formatBirthDate(request.birthDate)} /><DetailField label="Género" value={request.gender} /></dl></section>
+             <section aria-labelledby="contact-heading"><h3 id="contact-heading" className="text-heading-3 font-semibold text-text-primary">Contacto</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Correo electrónico" value={request.email} /><DetailField label="Teléfono" value={formatPhone(request.phoneCountryCode, request.phoneNationalNumber, request.phone)} /><DetailField label="Dirección" value={request.address} /></dl></section>
+             <section aria-labelledby="employment-heading"><h3 id="employment-heading" className="text-heading-3 font-semibold text-text-primary">Información laboral</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Ocupación" value={request.occupation} /><DetailField label="Lugar de trabajo" value={request.workplace} /></dl></section>
+             <section aria-labelledby="request-heading"><h3 id="request-heading" className="text-heading-3 font-semibold text-text-primary">Solicitud</h3><dl className="mt-3 grid gap-4"><DetailField label="Motivo de afiliación" value={request.affiliationReason} /></dl></section>
+             <section aria-labelledby="review-heading"><h3 id="review-heading" className="text-heading-3 font-semibold text-text-primary">Revisión</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Revisada el" value={formatTimestamp(request.reviewedAt)} /><DetailField label="Revisada por" value={request.reviewedBy ? `${request.reviewedBy.fullName} (${request.reviewedBy.email})` : null} />{request.status === 'REJECTED' && <DetailField label="Motivo de rechazo" value={request.rejectionReason} />}</dl></section>
+             {request.status === 'PENDING' && <div className="flex flex-wrap justify-end gap-3 border-t border-border-default pt-4"><Button type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('approve-confirm') } }} disabled={busy}>Aprobar solicitud</Button><Button variant="danger" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('reject-reason') } }} disabled={busy}>Rechazar solicitud</Button></div>}
           </div>
         ) : null}
       </div>

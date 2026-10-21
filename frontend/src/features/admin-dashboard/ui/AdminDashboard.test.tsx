@@ -47,6 +47,15 @@ const attentionCases = [
   { label: 'Reservas', set: (value: number) => ({ ...withoutAttentionData(), reservations: { ...withoutAttentionData().reservations, pending: value } }) },
 ] as const
 
+const attentionItems = [
+  ['Artículos agotados', 'Crítico'],
+  ['Préstamos vencidos', 'Vencido'],
+  ['Artículos con stock bajo', 'Stock bajo'],
+  ['Solicitudes de afiliación', 'Pendiente'],
+  ['Justificaciones de ausencia', 'Pendiente'],
+  ['Reservas', 'Pendiente'],
+] as const
+
 const institutionalPanoramaMetrics = [
   ['Afiliados', '12'],
   ['Afiliados inactivos', '3'],
@@ -104,13 +113,16 @@ describe('AdminDashboard', () => {
     expect(screen.getByLabelText('Cargando indicadores administrativos')).toBeInTheDocument()
   })
 
-  it('keeps V1 dashboard content while omitting legacy financial and duplicate activity content', async () => {
+  it('renders institutional administrator hierarchy while excluding finance', async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response })
     renderDashboard()
 
-    expect(screen.getByRole('heading', { name: 'Resumen general' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Panel administrativo' })).toBeInTheDocument()
+    expect(screen.getByText('Resumen de la gestión institucional')).toBeInTheDocument()
     expect(await screen.findByText('Afiliados activos')).toBeInTheDocument()
-    const summary = screen.getByRole('region', { name: 'Resumen general' })
+    expect(screen.getByText('Última actualización:')).toBeInTheDocument()
+    expect(screen.getByText('Última actualización:').parentElement?.querySelector('time')).toHaveAttribute('datetime', response.metadata.generatedAt)
+    const summary = screen.getByRole('region', { name: 'Panel administrativo' })
     const summaryMetrics = within(summary).getAllByRole('article')
     expect(summaryMetrics).toHaveLength(4)
     ;[
@@ -122,7 +134,7 @@ describe('AdminDashboard', () => {
       expect(within(summaryMetrics[index]).getByText(label)).toBeInTheDocument()
       expect(within(summaryMetrics[index]).getByText(value)).toBeInTheDocument()
     })
-    expect(screen.getByRole('heading', { name: 'Atención requerida' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Requiere atención' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Actividad' })).toBeInTheDocument()
     expect(screen.getByText('Serie temporal no disponible')).toBeInTheDocument()
     const panorama = screen.getByRole('region', { name: 'Panorama institucional' })
@@ -132,12 +144,15 @@ describe('AdminDashboard', () => {
       expect(within(panoramaCards[index]).getByText(label)).toBeInTheDocument()
       expect(within(panoramaCards[index]).getByText(value)).toBeInTheDocument()
     })
-    expect(screen.getByText('Artículos con stock bajo')).toBeInTheDocument()
-    const outOfStockRisk = screen.getByText('Artículos agotados')
-    const overdueLoanRisk = screen.getByText('Préstamos vencidos')
-    const lowStockRisk = screen.getByText('Artículos con stock bajo')
-    expect(outOfStockRisk.compareDocumentPosition(overdueLoanRisk) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(overdueLoanRisk.compareDocumentPosition(lowStockRisk) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const attention = screen.getByRole('region', { name: 'Requiere atención' })
+    const attentionCards = within(attention).getAllByRole('heading', { level: 4 }).map((heading) => heading.closest('[data-slot="card"]'))
+    expect(attentionCards).toHaveLength(attentionItems.length)
+    attentionCards.forEach((card, index) => {
+      expect(card).not.toBeNull()
+      const [label, severity] = attentionItems[index]
+      expect(within(card!).getByRole('heading', { level: 4 })).toHaveTextContent(label)
+      expect(within(card!).getByText(severity)).toBeInTheDocument()
+    })
     expect(screen.getByRole('heading', { name: 'Actividad reciente' })).toBeInTheDocument()
     expect(screen.getByText('Actividad reciente no disponible')).toBeInTheDocument()
     expect(screen.getByText(/no incluye eventos operativos ni su cronología/i)).toBeInTheDocument()
@@ -148,6 +163,9 @@ describe('AdminDashboard', () => {
     expect(screen.queryByText('Ingresos')).not.toBeInTheDocument()
     expect(screen.queryByText('Egresos')).not.toBeInTheDocument()
     expect(screen.queryByText('Balance')).not.toBeInTheDocument()
+    expect(screen.queryByText('150000.00')).not.toBeInTheDocument()
+    expect(screen.queryByText('40000.00')).not.toBeInTheDocument()
+    expect(screen.queryByText('110000.00')).not.toBeInTheDocument()
     expect(httpClient.get).toHaveBeenCalledWith('/admin-reports/dashboard')
   })
 
@@ -168,7 +186,7 @@ describe('AdminDashboard', () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: { ...response, data: set(1) } })
     renderDashboard()
 
-    const attention = await screen.findByRole('region', { name: 'Atención requerida' })
+    const attention = await screen.findByRole('region', { name: 'Requiere atención' })
     expect(within(attention).getByRole('heading', { level: 4, name: label })).toBeInTheDocument()
     expect(within(attention).getAllByRole('heading', { level: 4 })).toHaveLength(1)
   })
@@ -177,7 +195,7 @@ describe('AdminDashboard', () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: { ...response, data: set(0) } })
     renderDashboard()
 
-    const attention = await screen.findByRole('region', { name: 'Atención requerida' })
+    const attention = await screen.findByRole('region', { name: 'Requiere atención' })
     expect(within(attention).queryByRole('heading', { level: 4, name: label })).not.toBeInTheDocument()
     expect(within(attention).getByText('No hay pendientes de atención.')).toBeInTheDocument()
   })
@@ -186,7 +204,7 @@ describe('AdminDashboard', () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response })
     renderDashboard([])
 
-    const attention = await screen.findByRole('region', { name: 'Atención requerida' })
+    const attention = await screen.findByRole('region', { name: 'Requiere atención' })
     expect(within(attention).getAllByRole('heading', { level: 4 })).toHaveLength(6)
     attentionCases.forEach(({ label }) => expect(within(attention).getByRole('heading', { level: 4, name: label })).toBeInTheDocument())
     expect(within(attention).queryAllByRole('link')).toHaveLength(0)
@@ -194,14 +212,20 @@ describe('AdminDashboard', () => {
 
   it('shows contextual actions only for available route capabilities', async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response })
-    renderDashboard(['inv.inventory.read', 'adm.requests.read'])
+    renderDashboard(['inv.inventory.read', 'adm.requests.read', 'adm.justifications.read', 'res.reservations.read'])
 
     expect((await screen.findAllByRole('link', { name: 'Ver alertas' })).every((link) => link.getAttribute('href') === '/inventory/alerts')).toBe(true)
-    expect(screen.getByRole('link', { name: 'Revisar' })).toHaveAttribute('href', '/app/admin/requests')
     expect(screen.getByRole('link', { name: 'Ver préstamos' })).toHaveAttribute('href', '/inventory/loans')
-    const justifications = screen.getByText('Justificaciones de ausencia').closest('[data-slot="card"]')
+    const attention = screen.getByRole('region', { name: 'Requiere atención' })
+    const requests = within(attention).getByText('Solicitudes de afiliación').closest('[data-slot="card"]')
+    const justifications = within(attention).getByText('Justificaciones de ausencia').closest('[data-slot="card"]')
+    const reservations = within(attention).getByText('Reservas').closest('[data-slot="card"]')
+    expect(requests).not.toBeNull()
     expect(justifications).not.toBeNull()
-    expect(within(justifications!).queryByRole('link', { name: 'Revisar' })).not.toBeInTheDocument()
+    expect(reservations).not.toBeNull()
+    expect(within(requests!).getByRole('link', { name: 'Revisar' })).toHaveAttribute('href', '/app/admin/requests')
+    expect(within(justifications!).getByRole('link', { name: 'Revisar' })).toHaveAttribute('href', '/app/admin/absence-justifications')
+    expect(within(reservations!).getByRole('link', { name: 'Revisar' })).toHaveAttribute('href', '/app/reservations')
   })
 
   it.each(quickActionCases)('shows $label only with $capability and routes it to $path', async ({ capability, label, path }) => {

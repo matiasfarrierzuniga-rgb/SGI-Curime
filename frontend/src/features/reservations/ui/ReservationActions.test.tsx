@@ -5,26 +5,26 @@ import { ReservationActions } from './ReservationActions'
 
 vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes: ['res.reservations.approve', 'res.reservations.reject', 'res.reservations.cancel'] } }) }))
 
-function renderActions(status: ComponentProps<typeof ReservationActions>['status']) {
-  render(<ReservationActions status={status} onApprove={vi.fn()} onReject={vi.fn()} onCancel={vi.fn()} />)
+type Status = ComponentProps<typeof ReservationActions>['status']
+type Capability = 'res.reservations.approve' | 'res.reservations.reject' | 'res.reservations.cancel'
+const statuses: Status[] = ['PENDING', 'APPROVED', 'CONFIRMED', 'REJECTED', 'CANCELLED', 'COMPLETED']
+const capabilities: Capability[] = ['res.reservations.approve', 'res.reservations.reject', 'res.reservations.cancel']
+const actionFor = (status: Status, capability: Capability) => status === 'PENDING' && capability === 'res.reservations.approve' ? 'Aprobar' : status === 'PENDING' && capability === 'res.reservations.reject' ? 'Rechazar' : (status === 'PENDING' || status === 'APPROVED' || status === 'CONFIRMED') && capability === 'res.reservations.cancel' ? 'Cancelar reserva' : null
+
+function renderActions(status: Status, permissionCodes?: readonly string[]) {
+  render(<ReservationActions status={status} permissionCodes={permissionCodes} onApprove={vi.fn()} onReject={vi.fn()} onCancel={vi.fn()} />)
 }
 
 describe('ReservationActions', () => {
-  it('shows all pending transitions only for matching capabilities', () => {
-    renderActions('PENDING')
-    expect(screen.getByRole('button', { name: 'Aprobar' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Rechazar' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Cancelar reserva' })).toBeInTheDocument()
+  it.each(statuses.flatMap(status => capabilities.map(capability => [status, capability, actionFor(status, capability)] as const)))('shows only %s action for isolated %s capability', (status, capability, expectedAction) => {
+    renderActions(status, [capability])
+    if (expectedAction) expect(screen.getByRole('button', { name: expectedAction })).toBeInTheDocument()
+    else expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryAllByRole('button')).toHaveLength(expectedAction ? 1 : 0)
   })
 
-  it.each(['APPROVED', 'CONFIRMED'] as const)('shows cancellation for %s', (status) => {
-    renderActions(status)
-    expect(screen.getByRole('button', { name: 'Cancelar reserva' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Aprobar' })).not.toBeInTheDocument()
-  })
-
-  it.each(['REJECTED', 'CANCELLED', 'COMPLETED'] as const)('hides transitions for terminal %s status', (status) => {
-    renderActions(status)
+  it('uses explicit permissionCodes instead of authenticated permissions', () => {
+    renderActions('PENDING', [])
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 })

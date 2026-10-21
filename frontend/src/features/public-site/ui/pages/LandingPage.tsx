@@ -26,9 +26,10 @@ export function LandingPage() {
     <div className="overflow-clip bg-brand-ivory font-sans text-brand-ink">
       <HeroSection />
       <QuickLinksSection />
+      <ServicesSection />
+      <AgendaSection />
       <LatestNewsSection />
       <AboutSection />
-      <ServicesSection />
       <section aria-labelledby="community-title" className="border-y border-brand-sage/70 bg-surface-muted py-12 md:py-16 lg:flex lg:min-h-[min(44rem,calc(100svh-var(--size-header-desktop)))] lg:min-h-[min(44rem,calc(100dvh-var(--size-header-desktop)))] lg:items-center xl:py-20">
         <div className="public-container grid gap-8 md:gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-20 xl:gap-28">
           <figure className="order-2 relative aspect-[4/3] overflow-hidden rounded-surface border border-brand-sage/80 bg-brand-ivory shadow-sm lg:order-1 lg:aspect-[3/2]">
@@ -48,7 +49,6 @@ export function LandingPage() {
           </div>
         </div>
       </section>
-      <AgendaSection />
       <TransparencySection />
     </div>
   )
