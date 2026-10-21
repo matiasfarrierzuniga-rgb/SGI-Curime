@@ -22,5 +22,7 @@ export function useVentureMutations() {
   return {
     create: useMutation({ mutationFn: (input: Required<Pick<VentureInput, 'name' | 'incorporatedAt'>> & VentureInput) => venturesApi.create(input), onSuccess: invalidate }),
     update: useMutation({ mutationFn: ({ id, input }: { id: number; input: VentureInput }) => venturesApi.update(id, input), onSuccess: invalidate }),
+    publish: useMutation({ mutationFn: venturesApi.publish, onSuccess: invalidate }),
+    unpublish: useMutation({ mutationFn: venturesApi.unpublish, onSuccess: invalidate }),
   }
 }

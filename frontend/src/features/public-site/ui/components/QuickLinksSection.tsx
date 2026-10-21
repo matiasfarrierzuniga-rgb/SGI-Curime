@@ -11,8 +11,8 @@ const quickLinks = [
   {
     icon: Sprout,
     title: 'Emprendimientos',
-    text: 'Explore espacios comunitarios para impulsar iniciativas locales.',
-    to: '/comunidad',
+    text: 'Conozca emprendimientos locales publicados por la Asociación.',
+    to: '/ventures',
   },
   {
     icon: HandHeart,

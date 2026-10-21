@@ -10,6 +10,7 @@ export const VENTURE_CAPABILITIES = {
   read: 'ent.ventures.read',
   create: 'ent.ventures.create',
   update: 'ent.ventures.update',
+  publish: 'ent.ventures.publish',
 } as const;
 
 export const VOLUNTEER_OPPORTUNITY_CAPABILITIES = {
@@ -61,6 +62,7 @@ export const CAPABILITIES = [
   VENTURE_CAPABILITIES.read,
   VENTURE_CAPABILITIES.create,
   VENTURE_CAPABILITIES.update,
+  VENTURE_CAPABILITIES.publish,
   VOLUNTEER_OPPORTUNITY_CAPABILITIES.read,
   VOLUNTEER_OPPORTUNITY_CAPABILITIES.create,
   VOLUNTEER_OPPORTUNITY_CAPABILITIES.update,

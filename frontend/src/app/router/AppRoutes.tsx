@@ -36,7 +36,7 @@ import { DonationsPage } from '@/features/donations'
 import { AssembliesAdminPage, AssemblyManagementPage, MineAssembliesPage } from '@/features/assemblies'
 import { InstitutionalProfilePage } from '@/features/institutional-profile'
 import { InstitutionalBoardPage } from '@/features/institutional-board'
-import { VenturesPage, VenturesSummaryPage } from '@/features/entrepreneurship'
+import { PublicVentureDetailPage, PublicVenturesPage, VenturesPage, VenturesSummaryPage } from '@/features/entrepreneurship'
 import { OpportunitiesPage } from '@/features/volunteering'
 export function AppRoutes() {
   return (
@@ -49,6 +49,8 @@ export function AppRoutes() {
         <Route path="/noticias/:slug" element={<NewsDetailPage />} />
         <Route path="/eventos" element={<PublicEventsPage />} />
         <Route path="/eventos/:publicId" element={<PublicEventDetailPage />} />
+        <Route path="/ventures" element={<PublicVenturesPage />} />
+        <Route path="/ventures/:id" element={<PublicVentureDetailPage />} />
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/transparencia" element={<TransparencyPage />} />
         <Route path="/contacto" element={<ContactPage />} />

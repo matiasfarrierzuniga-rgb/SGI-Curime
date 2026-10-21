@@ -37,7 +37,7 @@ export type ErpNavigationSection = { label: string; items: readonly ErpNavigatio
 
 const navigation: readonly ErpNavigationSection[] = [
   {
-    label: 'General',
+    label: 'Panel principal',
     items: [
       {
         label: 'Inicio',
@@ -47,8 +47,26 @@ const navigation: readonly ErpNavigationSection[] = [
     ],
   },
   {
-    label: 'Comunidad',
+    label: 'Gobierno institucional',
     items: [
+      {
+        label: 'Perfil institucional',
+        path: '/app/admin/institutional-profile',
+        capability: 'adm.institutional-profile.read',
+        icon: Building2,
+      },
+      {
+        label: 'Junta Directiva',
+        path: '/app/admin/institutional-board',
+        capability: 'adm.institutional-board.read',
+        icon: UserRoundCog,
+      },
+      {
+        label: 'Asambleas',
+        path: '/app/admin/assemblies',
+        capability: 'adm.assemblies.read',
+        icon: CalendarCheck,
+      },
       {
         label: 'Mis asambleas',
         path: '/app/assemblies/mine',
@@ -57,7 +75,7 @@ const navigation: readonly ErpNavigationSection[] = [
     ],
   },
   {
-    label: 'Gestión administrativa',
+    label: 'Personas y afiliación',
     items: [
       {
         label: 'Usuarios',
@@ -89,24 +107,11 @@ const navigation: readonly ErpNavigationSection[] = [
         capability: 'adm.justifications.read',
         icon: FileCheck2,
       },
-      {
-        label: 'Asambleas',
-        path: '/app/admin/assemblies',
-        capability: 'adm.assemblies.read',
-        icon: CalendarCheck,
-      },
-      {
-        label: 'Perfil institucional',
-        path: '/app/admin/institutional-profile',
-        capability: 'adm.institutional-profile.read',
-        icon: Building2,
-      },
-      {
-        label: 'Junta Directiva',
-        path: '/app/admin/institutional-board',
-        capability: 'adm.institutional-board.read',
-        icon: UserRoundCog,
-      },
+    ],
+  },
+  {
+    label: 'Desarrollo comunitario',
+    items: [
       {
         label: 'Eventos',
         path: '/app/events',
@@ -132,7 +137,7 @@ const navigation: readonly ErpNavigationSection[] = [
     ],
   },
   {
-    label: 'Operación',
+    label: 'Recursos y operaciones',
     items: [
       {
         label: 'Reservas',
@@ -158,7 +163,7 @@ const navigation: readonly ErpNavigationSection[] = [
     ],
   },
   {
-    label: 'Gestión financiera',
+    label: 'Finanzas',
     items: [
       {
         label: 'Finanzas',
@@ -179,7 +184,7 @@ const navigation: readonly ErpNavigationSection[] = [
     ],
   },
   {
-    label: 'Información',
+    label: 'Seguridad y auditoría',
     items: [
       {
         label: 'Bitácora',
@@ -190,7 +195,7 @@ const navigation: readonly ErpNavigationSection[] = [
     ],
   },
   {
-    label: 'Cuenta',
+    label: 'Mi espacio',
     items: [
       {
         label: 'Mi perfil',

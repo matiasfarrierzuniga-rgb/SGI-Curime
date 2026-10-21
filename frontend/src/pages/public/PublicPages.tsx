@@ -127,7 +127,7 @@ export function ServicesPage() {
           { label: "Crear una cuenta", to: "/register" },
         ],
     volunteering: [],
-    entrepreneurship: [],
+    entrepreneurship: [{ label: "Ver emprendimientos", to: "/ventures" }],
     donations: [],
   } as const;
 

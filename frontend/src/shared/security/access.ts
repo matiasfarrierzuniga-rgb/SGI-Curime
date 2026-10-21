@@ -41,6 +41,7 @@ export const ACCESS_CAPABILITIES = [
   'ent.ventures.read',
   'ent.ventures.create',
   'ent.ventures.update',
+  'ent.ventures.publish',
   'vol.opportunities.read',
   'vol.opportunities.create',
   'vol.opportunities.update',

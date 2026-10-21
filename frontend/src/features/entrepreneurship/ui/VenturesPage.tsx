@@ -8,6 +8,7 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { Modal } from '@/shared/ui/Modal'
@@ -16,7 +17,7 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { Select } from '@/shared/ui/select'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { useToast } from '@/shared/ui/Toast'
-import { useVenture, useVentures } from '../hooks/useVentures'
+import { useVenture, useVentureMutations, useVentures } from '../hooks/useVentures'
 import type { Venture, VenturePublicationStatus, VentureStatus, VenturesFilters } from '../model/ventures.types'
 import { VentureForm } from './VentureForm'
 
@@ -28,6 +29,7 @@ const date = (value: string) => new Intl.DateTimeFormat('es-CR', { dateStyle: 'm
 export function VenturesPage() {
   const { user } = useAuth()
   const { notify } = useToast()
+  const { publish, unpublish } = useVentureMutations()
   const [filters, setFilters] = useState(INITIAL_FILTERS)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<VentureStatus | undefined>()
@@ -36,16 +38,37 @@ export function VenturesPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [formVenture, setFormVenture] = useState<Venture | undefined>()
   const [creating, setCreating] = useState(false)
+  const [publishTarget, setPublishTarget] = useState<Venture>()
+  const [publicationError, setPublicationError] = useState('')
   const ventures = useVentures(filters)
   const detail = useVenture(selectedId)
   const mayCreate = hasCapability(user?.permissionCodes, 'ent.ventures.create')
   const mayUpdate = hasCapability(user?.permissionCodes, 'ent.ventures.update')
+  const mayPublish = hasCapability(user?.permissionCodes, 'ent.ventures.publish')
   const filtersActive = Boolean(filters.search || filters.status || filters.publicationStatus)
   const applyFilters = () => setFilters(current => ({ ...current, search: search.trim() || undefined, status, publicationStatus, page: 1 }))
   const clearFilters = () => { setSearch(''); setStatus(undefined); setPublicationStatus(undefined); setFilters(INITIAL_FILTERS) }
   const changePage = (page: number) => setFilters(current => ({ ...current, page }))
   const closeDetail = () => setSelectedId(null)
   const venturesFound = ventures.data?.total ?? 0
+  const publicationBusy = publish.isPending || unpublish.isPending
+  const publishVenture = async () => {
+    if (!publishTarget || publicationBusy) return
+    setPublicationError('')
+    try {
+      await publish.mutateAsync(publishTarget.id)
+      notify('Emprendimiento publicado correctamente.', 'success')
+      setPublishTarget(undefined)
+    } catch (reason) { setPublicationError(getErrorMessage(reason, 'No fue posible publicar el emprendimiento.')) }
+  }
+  const unpublishVenture = async (venture: Venture) => {
+    if (publicationBusy) return
+    setPublicationError('')
+    try {
+      await unpublish.mutateAsync(venture.id)
+      notify('Publicación retirada correctamente.', 'success')
+    } catch (reason) { setPublicationError(getErrorMessage(reason, 'No fue posible retirar la publicación.')) }
+  }
 
   return <section className="space-y-6">
     <PageHeader context="Gestión administrativa" title="Directorio de emprendimientos" description="Consulta y gestiona los emprendimientos registrados en la comunidad." actions={mayCreate ? <Button type="button" onClick={() => setCreating(true)}><Plus aria-hidden="true" /> Registrar emprendimiento</Button> : undefined} />
@@ -78,9 +101,10 @@ export function VenturesPage() {
         <Pagination page={ventures.data.page} total={ventures.data.total} limit={ventures.data.limit} onChange={changePage} />
       </>}
     </> : null}
-    {selectedId !== null ? <VentureDetail venture={detail.data} loading={detail.isPending} error={detail.isError ? getErrorMessage(detail.error) : ''} onClose={closeDetail} onEdit={mayUpdate && detail.data ? () => { closeDetail(); setFormVenture(detail.data) } : undefined} /> : null}
+    {selectedId !== null ? <VentureDetail venture={detail.data} loading={detail.isPending} error={detail.isError ? getErrorMessage(detail.error) : ''} publicationError={publicationError} onClose={closeDetail} onEdit={mayUpdate && detail.data ? () => { closeDetail(); setFormVenture(detail.data) } : undefined} mayPublish={mayPublish} publicationBusy={publicationBusy} onPublish={venture => setPublishTarget(venture)} onUnpublish={unpublishVenture} /> : null}
     {creating ? <VentureForm onClose={() => setCreating(false)} onSuccess={() => notify('Emprendimiento registrado correctamente.', 'success')} /> : null}
     {formVenture ? <VentureForm venture={formVenture} onClose={() => setFormVenture(undefined)} onSuccess={() => notify('Emprendimiento actualizado correctamente.', 'success')} /> : null}
+    <Dialog open={Boolean(publishTarget)} onOpenChange={open => { if (!open && !publish.isPending) setPublishTarget(undefined) }}><DialogContent size="sm"><DialogHeader><DialogTitle>Publicar emprendimiento</DialogTitle><DialogDescription>Al publicar “{publishTarget?.name}”, se marcará como publicado en el registro institucional. Esto no crea ni habilita un directorio público.</DialogDescription></DialogHeader>{publicationError ? <ErrorState title="No fue posible publicar" message={publicationError} /> : null}<DialogFooter><Button type="button" variant="outline" disabled={publish.isPending} onClick={() => setPublishTarget(undefined)}>Cancelar</Button><Button type="button" loading={publish.isPending} onClick={() => void publishVenture()}>Publicar</Button></DialogFooter></DialogContent></Dialog>
   </section>
 }
 
@@ -92,8 +116,19 @@ function VentureTable({ ventures, onDetail }: { ventures: Venture[]; onDetail: (
   return <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block"><table className="min-w-[52rem] w-full text-left text-body-small"><thead className="bg-surface-subtle text-text-secondary"><tr><th scope="col" className="p-4 font-semibold">Emprendimiento</th><th scope="col" className="p-4 font-semibold">Estado</th><th scope="col" className="p-4 font-semibold">Publicación</th><th scope="col" className="p-4 font-semibold">Incorporación</th><th scope="col" className="p-4"><span className="sr-only">Acciones</span></th></tr></thead><tbody>{ventures.map(venture => <tr key={venture.id} className="border-t border-border align-middle transition-colors hover:bg-surface-subtle/70"><td className="p-4"><p className="font-semibold text-text-primary">{venture.name}</p><p className="mt-1 max-w-md truncate text-text-secondary">{venture.locationText ?? venture.businessPhone ?? 'Sin información de ubicación o contacto'}</p></td><td className="p-4"><StatusBadge variant={stateVariant(venture.status)}>{stateLabel(venture.status)}</StatusBadge></td><td className="p-4"><StatusBadge variant={stateVariant(venture.publicationStatus)}>{stateLabel(venture.publicationStatus)}</StatusBadge></td><td className="whitespace-nowrap p-4 text-text-secondary">{date(venture.incorporatedAt)}</td><td className="p-4 text-right"><Button type="button" size="sm" variant="outline" onClick={() => onDetail(venture.id)}>Ver detalle</Button></td></tr>)}</tbody></table></div>
 }
 
-function VentureDetail({ venture, loading, error, onClose, onEdit }: { venture?: Venture; loading: boolean; error: string; onClose: () => void; onEdit?: () => void }) {
-  return <Modal title="Detalle del emprendimiento" onClose={onClose}>{loading ? <LoadingState label="Cargando detalle..." /> : error ? <ErrorState title="No fue posible cargar el detalle" message={error} /> : venture ? <div className="grid gap-5"><div className="flex flex-wrap items-center justify-between gap-3"><Button type="button" variant="outline" onClick={onClose}><ArrowLeft aria-hidden="true" /> Volver al directorio</Button>{onEdit ? <Button type="button" onClick={onEdit}><Pencil aria-hidden="true" /> Editar</Button> : null}</div><VentureDetailHeader venture={venture} /><Details venture={venture} /></div> : null}</Modal>
+function VentureDetail({ venture, loading, error, publicationError, onClose, onEdit, mayPublish, publicationBusy, onPublish, onUnpublish }: { venture?: Venture; loading: boolean; error: string; publicationError: string; onClose: () => void; onEdit?: () => void; mayPublish: boolean; publicationBusy: boolean; onPublish: (venture: Venture) => void; onUnpublish: (venture: Venture) => void }) {
+  const footer = <VentureDetailFooter venture={venture} onClose={onClose} onEdit={onEdit} mayPublish={mayPublish} busy={publicationBusy} onPublish={onPublish} onUnpublish={onUnpublish} />
+  return <Modal title="Detalle del emprendimiento" onClose={onClose} busy={publicationBusy} footer={footer}>{loading ? <LoadingState label="Cargando detalle..." /> : error ? <ErrorState title="No fue posible cargar el detalle" message={error} /> : venture ? <div className="grid gap-5">{publicationError ? <ErrorState title="No fue posible actualizar la publicación" message={publicationError} /> : null}<VentureDetailHeader venture={venture} /><Details venture={venture} /></div> : null}</Modal>
+}
+
+function VentureDetailFooter({ venture, onClose, onEdit, mayPublish, busy, onPublish, onUnpublish }: { venture?: Venture; onClose: () => void; onEdit?: () => void; mayPublish: boolean; busy: boolean; onPublish: (venture: Venture) => void; onUnpublish: (venture: Venture) => void }) {
+  return <><Button type="button" variant="outline" onClick={onClose} disabled={busy}><ArrowLeft aria-hidden="true" /> Volver al directorio</Button>{onEdit ? <Button type="button" variant="outline" onClick={onEdit} disabled={busy}><Pencil aria-hidden="true" /> Editar</Button> : null}{venture && mayPublish ? <PublicationAction venture={venture} busy={busy} onPublish={onPublish} onUnpublish={onUnpublish} /> : null}</>
+}
+
+function PublicationAction({ venture, busy, onPublish, onUnpublish }: { venture: Venture; busy: boolean; onPublish: (venture: Venture) => void; onUnpublish: (venture: Venture) => void }) {
+  if (venture.publicationStatus === 'PUBLISHED') return <Button type="button" variant="outline" disabled={busy} onClick={() => void onUnpublish(venture)}>{busy ? 'Retirando…' : 'Retirar publicación'}</Button>
+  const inactive = venture.status !== 'ACTIVE'
+  return <Button type="button" disabled={busy || inactive} title={inactive ? 'Solo los emprendimientos activos pueden publicarse.' : undefined} onClick={() => onPublish(venture)}>{busy ? 'Publicando…' : 'Publicar'}</Button>
 }
 
 function VentureDetailHeader({ venture }: { venture: Venture }) {

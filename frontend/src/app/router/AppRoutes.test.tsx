@@ -69,6 +69,7 @@ beforeEach(() => {
     if (url === '/affiliate-requests') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/events') return Promise.resolve({ data: [] })
     if (url === '/public/events') return Promise.resolve({ data: [] })
+    if (url === '/public/ventures') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 12 } })
     if (url === '/financial/charges') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
@@ -88,6 +89,14 @@ afterEach(() => {
 })
 
 describe('AppRoutes capability deep links', () => {
+  it('renders the anonymous public ventures directory through the public layout', async () => {
+    renderRoute('/ventures', null)
+
+    expect(await screen.findByRole('heading', { name: 'Emprendimientos' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay emprendimientos publicados en este momento')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/public/ventures', { params: { page: 1, limit: 12 } })
+  })
+
   it('sends anonymous portal access to login', () => {
     renderRoute('/', null)
 

@@ -15,4 +15,10 @@ export const venturesApi = {
   async update(id: number, input: VentureInput) {
     return (await httpClient.patch<Venture>(`/ventures/${id}`, input)).data
   },
+  async publish(id: number) {
+    return (await httpClient.patch<Venture>(`/ventures/${id}/publish`)).data
+  },
+  async unpublish(id: number) {
+    return (await httpClient.patch<Venture>(`/ventures/${id}/unpublish`)).data
+  },
 }
