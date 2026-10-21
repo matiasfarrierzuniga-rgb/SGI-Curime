@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { getErpNavigation } from './erpNavigation'
+import { getErpEntryPath, getErpNavigation } from './erpNavigation'
 
 describe('getErpNavigation', () => {
+  it('shows Inicio only with dashboard access and points it to the protected dashboard', () => {
+    const items = (codes: string[]) => getErpNavigation(codes).flatMap(section => section.items)
+    expect(items([]).find(item => item.label === 'Inicio')).toBeUndefined()
+    expect(items(['erp.dashboard.read']).find(item => item.label === 'Inicio')).toMatchObject({ path: '/app/dashboard', capability: 'erp.dashboard.read' })
+  })
+
+  it('selects a capability-backed entry before the personal fallback', () => {
+    expect(getErpEntryPath(['erp.dashboard.read'])).toBe('/app/dashboard')
+    expect(getErpEntryPath(['fin.charges.read', 'erp.dashboard.read'])).toBe('/app/dashboard')
+    expect(getErpEntryPath(['fin.charges.read'])).toBe('/app/financial')
+    expect(getErpEntryPath(['inv.inventory.read'])).toBe('/inventory')
+    expect(getErpEntryPath(['inv.inventory.read', 'fin.charges.read'])).toBe('/app/financial')
+    expect(getErpEntryPath([])).toBe('/app/profile')
+  })
   it('uses delivered permission codes for capability-gated navigation', () => {
     const items = getErpNavigation(['adm.assemblies.read', 'adm.justifications.read', 'ent.ventures.read', 'vol.opportunities.read'])
       .flatMap(section => section.items)

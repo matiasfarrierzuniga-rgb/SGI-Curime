@@ -41,7 +41,8 @@ const navigation: readonly ErpNavigationSection[] = [
     items: [
       {
         label: 'Inicio',
-        path: '/app',
+        path: '/app/dashboard',
+        capability: 'erp.dashboard.read',
         icon: Home,
       },
     ],
@@ -228,4 +229,20 @@ export function getErpNavigation(permissionCodes: readonly string[] | null | und
 
     return items.length > 0 ? [{ ...section, items }] : []
   })
+}
+
+export function getErpEntryPath(permissionCodes: readonly string[] | null | undefined): string {
+  if (hasCapability(permissionCodes, 'erp.dashboard.read')) return '/app/dashboard'
+  if (hasCapability(permissionCodes, 'fin.charges.read')) return '/app/financial'
+  if (hasCapability(permissionCodes, 'inv.inventory.read')) return '/inventory'
+
+  for (const section of getErpNavigation(permissionCodes)) {
+    for (const item of section.items) {
+      if (item.capability && item.path) return item.path
+      const authorizedChild = item.children?.find((child) => child.capability && child.path)
+      if (authorizedChild?.path) return authorizedChild.path
+    }
+  }
+
+  return '/app/profile'
 }

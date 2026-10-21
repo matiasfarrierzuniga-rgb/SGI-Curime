@@ -1,5 +1,5 @@
-import { Route, Routes } from 'react-router-dom'
-import { InternalErpRoute, ProtectedRoute } from '@/features/auth'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { InternalErpRoute, ProtectedRoute, useAuth } from '@/features/auth'
 import { RoleRoute } from '@/features/auth'
 import { AffiliatesPage } from '@/features/affiliates'
 import { EventsManagementPage, PublicEventDetailPage, PublicEventsPage } from '@/features/events'
@@ -38,6 +38,13 @@ import { InstitutionalProfilePage } from '@/features/institutional-profile'
 import { InstitutionalBoardPage } from '@/features/institutional-board'
 import { VenturesPage } from '@/features/entrepreneurship'
 import { OpportunitiesPage } from '@/features/volunteering'
+import { getErpEntryPath } from '@/app/navigation/erpNavigation'
+
+function ErpEntryRedirect() {
+  const { user } = useAuth()
+  return <Navigate to={getErpEntryPath(user?.permissionCodes)} replace />
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -70,7 +77,10 @@ export function AppRoutes() {
       </Route>
       <Route element={<InternalErpRoute />}>
         <Route element={<ErpLayout />}>
-          <Route path="/app" element={<AppHomePage />} />
+          <Route path="/app" element={<ErpEntryRedirect />} />
+          <Route element={<RoleRoute capability="erp.dashboard.read" />}>
+            <Route path="/app/dashboard" element={<AppHomePage />} />
+          </Route>
           <Route path="/app/profile" element={<ProfilePage />} />
            <Route element={<RoleRoute capability="res.reservations.read" />}>
              <Route path="/app/reservations" element={<ReservationAdminPage />} />
