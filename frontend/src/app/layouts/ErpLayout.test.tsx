@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ErpLayout } from './ErpLayout'
 
-const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
+const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }))
 
 function renderLayout(initialPath = '/app/dashboard') {
@@ -11,7 +11,7 @@ function renderLayout(initialPath = '/app/dashboard') {
 }
 
 describe('ErpLayout', () => {
-  beforeEach(() => { vi.clearAllMocks(); auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
+  beforeEach(() => { vi.clearAllMocks(); auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
 
   it('renders desktop navigation, session context, and public-site actions', () => {
     renderLayout()
@@ -104,5 +104,53 @@ describe('ErpLayout', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
     expect(auth.logout).toHaveBeenCalledOnce()
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+  })
+
+  it('temporarily expands compact desktop navigation on hover without pinning it', () => {
+    renderLayout()
+    const sidebar = document.getElementById('erp-sidebar-navigation')!
+    expect(sidebar).toHaveClass('w-20')
+    fireEvent.mouseEnter(sidebar)
+    expect(sidebar).toHaveClass('w-[18rem]')
+    fireEvent.mouseLeave(sidebar)
+    expect(sidebar).toHaveClass('w-20')
+  })
+
+  it('keeps the navigation expanded when the user pins it', () => {
+    renderLayout()
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir navegación' }))
+    const sidebar = document.getElementById('erp-sidebar-navigation')!
+    fireEvent.mouseLeave(sidebar)
+    expect(sidebar).toHaveClass('w-[18rem]')
+    expect(screen.getByRole('button', { name: 'Contraer navegación' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('keeps empty mobile groups collapsed and exposes their state to keyboard users', () => {
+    renderLayout()
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir navegación' }))
+    const group = screen.getByRole('button', { name: 'Finanzas' })
+    expect(group).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(group)
+    expect(group).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('renders visible, named sidebar controls instead of blank light buttons', () => {
+    renderLayout()
+    const headerControl = screen.getByRole('button', { name: 'Expandir navegación' })
+    expect(headerControl.querySelector('svg')).not.toBeNull()
+    expect(headerControl).toHaveClass('!bg-erp-navigation', '!text-erp-navigation-foreground')
+    fireEvent.mouseEnter(document.getElementById('erp-sidebar-navigation')!)
+    const pinControl = screen.getByRole('button', { name: 'Fijar navegación expandida' })
+    expect(pinControl.querySelector('svg')).not.toBeNull()
+    expect(pinControl).toHaveClass('!bg-erp-navigation-hover', '!text-erp-navigation-foreground')
+    for (const label of ['Expandir Emprendimientos', 'Expandir Inventario', 'Expandir Finanzas']) {
+      const control = screen.getByRole('button', { name: label })
+      expect(control.querySelector('svg')).not.toBeNull()
+      expect(control).toHaveClass('!bg-transparent', '!text-erp-navigation-foreground')
+    }
+    const logout = screen.getAllByRole('button', { name: 'Cerrar sesión' })[0]
+    expect(logout).toHaveTextContent('Cerrar sesión')
+    expect(logout).toHaveClass('!bg-erp-navigation', '!text-red-200')
+    expect(logout.querySelector('svg')).not.toBeNull()
   })
 })

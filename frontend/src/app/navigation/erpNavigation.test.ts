@@ -43,7 +43,7 @@ describe('getErpNavigation', () => {
     expect(navigation.map(section => section.label)).toEqual([
       'Panel principal',
       'Gobierno institucional',
-      'Personas y afiliación',
+      'Personas y accesos',
       'Desarrollo comunitario',
       'Recursos y operaciones',
       'Finanzas',
@@ -53,7 +53,7 @@ describe('getErpNavigation', () => {
     expect(navigation.map(section => [section.label, section.items.map(item => item.label)])).toEqual([
       ['Panel principal', ['Inicio']],
       ['Gobierno institucional', ['Perfil institucional', 'Junta Directiva', 'Asambleas', 'Mis asambleas']],
-      ['Personas y afiliación', ['Usuarios', 'Afiliados', 'Solicitudes de afiliación', 'Solicitudes de registro', 'Justificaciones de ausencia']],
+      ['Personas y accesos', ['Usuarios', 'Afiliados', 'Solicitudes de cuenta', 'Solicitudes de afiliación', 'Justificaciones de ausencia']],
       ['Desarrollo comunitario', ['Eventos', 'Emprendimientos', 'Voluntariado']],
       ['Recursos y operaciones', ['Reservas', 'Inventario']],
       ['Finanzas', ['Finanzas', 'Donaciones']],
@@ -92,6 +92,7 @@ describe('getErpNavigation', () => {
       '/app/affiliate/absence-justifications/new',
       '/app/affiliate/justifications',
     ]))
+    expect(navigation.map(section => section.accent)).toEqual(['lime', 'green', 'cyan', 'blue', 'teal', 'maize', 'terracotta', 'violet'])
   })
 
   it('uses delivered permission codes for capability-gated navigation', () => {
