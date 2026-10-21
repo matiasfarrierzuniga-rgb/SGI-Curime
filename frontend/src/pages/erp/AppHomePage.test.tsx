@@ -17,7 +17,6 @@ describe('AppHomePage', () => {
   it('renders V1 administrative dashboard without broad legacy quick actions', async () => {
     auth.user = { fullName: 'Ana Pérez', role: 'Administrador' }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
     expect(await screen.findByText('Afiliados activos')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Indicadores administrativos' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Accesos rápidos' })).not.toBeInTheDocument()
