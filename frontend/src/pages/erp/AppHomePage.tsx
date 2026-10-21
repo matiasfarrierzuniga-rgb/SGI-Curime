@@ -8,7 +8,6 @@ import { inventoryReportsService } from '@/services/inventoryReportsService'
 import type { InventoryReportSummary } from '@/types/inventory'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { PageContainer } from '@/shared/ui/PageContainer'
-import { PageHeader } from '@/shared/ui/PageHeader'
 import { Skeleton } from '@/shared/ui/skeleton'
 
 const communityActions = [
@@ -46,16 +45,8 @@ export function AppHomePage() {
   const firstName = user?.fullName?.trim().split(/\s+/)[0]
 
   return (
-    <PageContainer className="max-w-[1440px] space-y-10">
-      <PageHeader
-        title="Dashboard"
-        titleClassName="font-sans"
-        description={isCommunityUser
-          ? `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Desde aquí puede solicitar servicios y consultar la información de su cuenta.`
-          : `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Consulte el resumen general de las áreas disponibles para su trabajo en SGI-Curime.`}
-      />
-
-      {isAdministrator && <AdminDashboard permissionCodes={user?.permissionCodes} />}
+    <PageContainer className={isAdministrator ? 'max-w-[1440px]' : 'max-w-[1440px] space-y-10'}>
+      {isAdministrator ? <AdminDashboard permissionCodes={user?.permissionCodes} /> : <header><h1 className="font-sans text-heading-1 font-bold text-text-primary">Dashboard</h1><p className="mt-1 text-body text-text-secondary">{isCommunityUser ? `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Desde aquí puede solicitar servicios y consultar la información de su cuenta.` : `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Consulte el resumen general de las áreas disponibles para su trabajo en SGI-Curime.`}</p></header>}
 
       {canViewInventory && (
         <section aria-labelledby="summary-title">
