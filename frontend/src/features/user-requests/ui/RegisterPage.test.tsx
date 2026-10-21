@@ -10,12 +10,20 @@ vi.mock('../api/userRequests.api', () => ({ userRequestsService: { create: vi.fn
 describe('RegisterPage', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  function fillRequiredSnapshots() {
-    fireEvent.change(screen.getByLabelText(/^Nombre$/), { target: { value: 'Ana María' } })
+  function fillPersonalData(secondSurname = '') {
+    fireEvent.change(screen.getByLabelText(/Nombre/), { target: { value: 'Ana María' } })
     fireEvent.change(screen.getByLabelText(/Primer apellido/), { target: { value: 'Rodríguez' } })
+    if (secondSurname) fireEvent.change(screen.getByLabelText(/Segundo apellido/), { target: { value: secondSurname } })
     fireEvent.change(screen.getByLabelText(/Número de identificación/), { target: { value: '123456789' } })
+    fireEvent.click(screen.getByRole('button', { name: /Continuar/ }))
+  }
+
+  function fillRequiredSnapshots(secondSurname = '') {
+    fillPersonalData(secondSurname)
     fireEvent.change(screen.getByLabelText(/Correo electrónico/), { target: { value: ' ANA@EXAMPLE.COM ' } })
     fireEvent.change(screen.getByLabelText(/Motivo de la solicitud/), { target: { value: 'Participar' } })
+    fireEvent.click(screen.getByRole('button', { name: /Continuar/ }))
+    fireEvent.click(screen.getByLabelText(/Acepto que la Asociación/))
   }
 
   it('limits numeric fields and exposes autocomplete', () => {
@@ -23,8 +31,11 @@ describe('RegisterPage', () => {
     const identification = screen.getByLabelText(/Número de identificación/) as HTMLInputElement
     fireEvent.change(identification, { target: { value: '123456789abc0' } })
     expect(identification.value).toBe('123456789')
-    expect(screen.getByLabelText(/^Nombre$/)).toHaveAttribute('autocomplete', 'given-name')
+    fireEvent.change(screen.getByLabelText(/Nombre/), { target: { value: 'Ana María' } })
+    fireEvent.change(screen.getByLabelText(/Primer apellido/), { target: { value: 'Rodríguez' } })
+    expect(screen.getByLabelText(/Nombre/)).toHaveAttribute('autocomplete', 'given-name')
     expect(screen.getByLabelText(/Primer apellido/)).toHaveAttribute('autocomplete', 'family-name')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar/ }))
     expect(screen.getByLabelText(/Correo electrónico/)).toHaveAttribute('autocomplete', 'email')
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
   })
@@ -33,8 +44,8 @@ describe('RegisterPage', () => {
     vi.mocked(userRequestsService.create).mockImplementation(() => new Promise(resolve => { release = () => resolve({} as never) }))
     render(<MemoryRouter><RegisterPage /></MemoryRouter>)
     fillRequiredSnapshots()
-    fireEvent.submit(screen.getByRole('button', { name: 'Enviar solicitud' }).closest('form')!)
-    await waitFor(() => expect(screen.getByRole('button')).toBeDisabled())
+    fireEvent.submit(screen.getByRole('button', { name: /Enviar solicitud/ }).closest('form')!)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Enviar solicitud/ })).toBeDisabled())
     expect(userRequestsService.create).toHaveBeenCalledTimes(1)
     expect(userRequestsService.create).toHaveBeenCalledWith({
       firstName: 'Ana María',
@@ -58,7 +69,7 @@ describe('RegisterPage', () => {
     vi.mocked(userRequestsService.create).mockResolvedValue({} as never)
     render(<MemoryRouter><RegisterPage /></MemoryRouter>)
     fillRequiredSnapshots()
-    fireEvent.submit(screen.getByRole('button', { name: 'Enviar solicitud' }).closest('form')!)
+    fireEvent.submit(screen.getByRole('button', { name: /Enviar solicitud/ }).closest('form')!)
 
     expect(await screen.findByText(/pendiente de revisión administrativa/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
@@ -79,7 +90,7 @@ describe('RegisterPage', () => {
     ))
     render(<MemoryRouter><RegisterPage /></MemoryRouter>)
     fillRequiredSnapshots()
-    fireEvent.submit(screen.getByRole('button', { name: 'Enviar solicitud' }).closest('form')!)
+    fireEvent.submit(screen.getByRole('button', { name: /Enviar solicitud/ }).closest('form')!)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('A pending request already uses this email')
   })
@@ -87,9 +98,8 @@ describe('RegisterPage', () => {
   it('constructs a three-part full-name snapshot without submitting a Person link', async () => {
     vi.mocked(userRequestsService.create).mockResolvedValue({} as never)
     render(<MemoryRouter><RegisterPage /></MemoryRouter>)
-    fillRequiredSnapshots()
-    fireEvent.change(screen.getByLabelText(/Segundo apellido/), { target: { value: 'Mora' } })
-    fireEvent.submit(screen.getByRole('button', { name: 'Enviar solicitud' }).closest('form')!)
+    fillRequiredSnapshots('Mora')
+    fireEvent.submit(screen.getByRole('button', { name: /Enviar solicitud/ }).closest('form')!)
 
     await waitFor(() => expect(userRequestsService.create).toHaveBeenCalledWith(expect.objectContaining({
       firstName: 'Ana María',
