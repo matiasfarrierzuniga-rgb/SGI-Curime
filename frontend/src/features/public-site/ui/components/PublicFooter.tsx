@@ -86,7 +86,7 @@ export function PublicFooter() {
                 </li>
               ) : (
                 <li>
-                  <Link className="inline-flex min-h-11 items-center rounded-sm text-text-inverse/80 underline decoration-brand-accent/50 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-text-inverse" to="/register">
+                  <Link className="inline-flex min-h-11 items-center rounded-control bg-brand-primary px-4 font-bold text-text-inverse shadow-sm transition-colors hover:bg-brand-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-text-inverse" to="/register">
                     Solicitar una cuenta
                   </Link>
                 </li>

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { site } from '@/content/publicSiteContent'
 import { CurimeBrandAccent } from '@/shared/ui/brand/CurimeBrandAccent'
+import { Eye } from 'lucide-react'
 
 export function AboutSection() {
   return (
@@ -30,11 +31,17 @@ export function AboutSection() {
               Conozca la Asociación
             </Link>
           </div>
-          <figure className="relative aspect-[5/4] overflow-hidden rounded-surface border border-brand-sage/80 bg-background-subtle shadow-sm md:aspect-[3/2] lg:aspect-[5/6]">
-            <figcaption className="absolute inset-x-0 bottom-0 border-t border-brand-sage/80 bg-brand-ivory/95 p-4 text-body-small leading-relaxed text-brand-ink/75">
-              Fotografía institucional pendiente de autorización.
-            </figcaption>
-          </figure>
+          <div className="grid gap-4">
+            <figure className="relative aspect-[2/1] overflow-hidden rounded-surface border border-brand-sage/80 bg-background-subtle shadow-sm">
+              <figcaption className="absolute inset-x-0 bottom-0 border-t border-brand-sage/80 bg-brand-ivory/95 p-4 text-body-small leading-relaxed text-brand-ink/75">Fotografía institucional pendiente de autorización.</figcaption>
+            </figure>
+            <aside className="rounded-surface border border-brand-sage/80 bg-brand-ivory p-5 shadow-sm">
+              <Eye className="size-6 text-brand-primary" aria-hidden="true" />
+              <h3 className="mt-3 font-heading text-heading-3 text-brand-ink">Transparencia y rendición de cuentas</h3>
+              <p className="mt-2 text-body-small leading-relaxed text-brand-ink/75">Acceda a información pública de la Asociación.</p>
+              <Link to="/transparencia" className="mt-4 inline-flex min-h-11 items-center rounded-control bg-brand-deep px-4 text-body-small font-bold text-brand-ivory hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">Ir a transparencia</Link>
+            </aside>
+          </div>
         </div>
       </div>
     </section>

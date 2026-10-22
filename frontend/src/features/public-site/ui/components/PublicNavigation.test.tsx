@@ -33,18 +33,20 @@ describe('PublicHeader authentication states', () => {
     const toggle = screen.getByRole('button', { name: 'Abrir menú de navegación' })
     fireEvent.click(toggle)
 
-    expect(screen.getByRole('navigation', { name: 'Navegación pública' })).toContainElement(screen.getByRole('list'))
-    expect(screen.getAllByRole('listitem')).toHaveLength(9)
+    const navigation = screen.getByRole('navigation', { name: 'Navegación pública' })
+    expect(navigation.querySelector(':scope > ul')).toBeInTheDocument()
+    expect(navigation.querySelectorAll(':scope > ul > li')).toHaveLength(5)
 
     fireEvent.keyDown(window, { key: 'Escape' })
 
     expect(screen.getByRole('button', { name: 'Abrir menú de navegación' })).toHaveFocus()
   })
 
-  it('keeps the public ventures directory in primary navigation', () => {
+  it('keeps the public ventures directory inside Explorar', () => {
     renderHeader()
 
     fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Explorar' }))
 
     expect(screen.getByRole('link', { name: 'Emprendimientos' })).toHaveAttribute('href', '/ventures')
   })
@@ -52,7 +54,7 @@ describe('PublicHeader authentication states', () => {
   it('shows public access without authenticated actions to guests', () => {
     renderHeader()
 
-    expect(screen.getAllByRole('button', { name: 'Iniciar sesión' })).not.toHaveLength(0)
+    expect(screen.getByRole('link', { name: 'Mi espacio' })).toHaveAttribute('href', '/login')
     expect(screen.queryByRole('button', { name: 'Ir al panel' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
   })
@@ -62,9 +64,10 @@ describe('PublicHeader authentication states', () => {
     auth.user = { canAccessErp: false }
     renderHeader()
 
-    expect(screen.getAllByRole('button', { name: 'Ver servicios' })).not.toHaveLength(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Mi espacio' }))
+    expect(screen.getByRole('link', { name: /^Ver servicios/ })).toHaveAttribute('href', '/servicios')
     expect(screen.queryByRole('button', { name: 'Ir al panel' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).not.toHaveLength(0)
+    expect(screen.getByRole('button', { name: /^Cerrar sesión/ })).toBeInTheDocument()
   })
 
   it('shows panel and logout to an ERP user and keeps logout functional', () => {
@@ -72,8 +75,9 @@ describe('PublicHeader authentication states', () => {
     auth.user = { canAccessErp: true }
     renderHeader()
 
-    expect(screen.getAllByRole('button', { name: 'Ir al panel' })).not.toHaveLength(0)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Mi espacio' }))
+    expect(screen.getByRole('link', { name: /^Ir al panel/ })).toHaveAttribute('href', '/app')
+    fireEvent.click(screen.getByRole('button', { name: /^Cerrar sesión/ }))
     expect(auth.logout).toHaveBeenCalledOnce()
   })
 })
