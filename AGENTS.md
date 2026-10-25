@@ -1,14 +1,14 @@
-# SGI-Curime Agent Orchestrator
+# SGI-Curime Engineering Guide
 
 ## Purpose
 
-Coordinate the repository skills so that SGI-Curime keeps its current technical architecture intact while raising the quality of the frontend substantially.
+Shared guide for every SGI-Curime agent and collaborator. It applies to backend, frontend, persistence, security, documentation, testing and requirements work.
 
-The architecture is considered stable. The current improvement objective is **frontend UI/UX quality**, not architectural redesign.
+Preserve existing contracts, architecture rules and authorized scope. Functional decisions must retain traceability to related V2 use cases, V1 evidence and OpenSpec when applicable.
 
-A technically correct interface that still looks unfinished is not considered complete when the task is explicitly visual.
+Visual improvement is a priority only for tasks explicitly scoped to UI/UX or visual refinement. The existing frontend design and quality rules remain authoritative for that work.
 
-This file defines which guidance leads, which guidance constrains, and how conflicts are resolved. It does not replace the detailed skills or `frontend/CONVENTIONS.md`.
+This file defines shared guidance, precedence and constraints. It does not require delegation to specialized agents or replace detailed skills, backend rules or `frontend/CONVENTIONS.md`.
 
 ---
 
@@ -307,72 +307,58 @@ Improve boldly **inside the requested frontend scope** and conservatively **outs
 
 Do not redesign unrelated modules, refactor stable architecture or introduce new dependencies unless the task explicitly requires it.
 
-The default goal for current frontend work is:
+The default goal is:
 
-> Preserve the architecture. Improve the experience. Raise the visual quality.
+> Preserve contracts and architecture. Deliver authorized scope. Improve visual quality boldly only inside an explicitly visual frontend task.
 
 ---
 
-## Cooperative agent team (multi-agent operating system)
+## Alcance para cualquier agente o compañero
 
-This repository runs inside the global multi-agent architecture (see
-`~/.config/opencode/MULTI-AGENT.md` and the global agents under
-`~/.config/opencode/agents/`). The sections above remain the authoritative
-sources of truth for frontend work. This section adds the team routing and
-does not rewrite them.
+- Trabaja con **un agente ejecutor por tarea**. No delegues automáticamente en Terra, Atlas, Forge, Pixel, Sentinel ni otros agentes históricos. Los archivos `backend/AGENTS.md` y `frontend/AGENTS.md` son **reglas por directorio**, no otros agentes.
+- No nombres una rama, worktree, commit, permiso o estado de despliegue como vigente sin verificar Git, código y configuración actuales. `PROJECT-STATE.md` es evidencia operativa que puede estar desactualizada: si contradice Git, informa la discrepancia sin corregirla silenciosamente.
+- Respeta `CONTRIBUTING.md`: los cambios compartidos entran por rama dedicada, revisión y Pull Request hacia `main`, no por push directo.
+- Cuando el árbol contiene modificaciones o untracked ajenos, no los sobrescribas, limpies, muevas ni incorpores al cambio. No uses `reset --hard`, `clean`, `stash`, `rebase`, `merge` ni `switch` para resolver el bloqueo sin instrucción expresa y plan de preservación. Puede hacerse análisis de solo lectura aun si el árbol está sucio.
+- Las fases son **EXPLORE** (inspección sin cambios), **PROPOSE** (especificación en workspace aprobado), **APPLY** (código solo con autorización expresa), **VERIFY** (evidencia de pruebas) y **ARCHIVE** (cerrar especificaciones solo cuando corresponda). No infieras permiso para APPLY a partir de una solicitud de análisis.
+- Diferencia en cada informe `IMPLEMENTED`, `PROPOSED`, `PARTIAL`, `BLOCKED` y `NOT_VERIFIED`; nunca marques pruebas `PASSED` sin ejecutarlas ni afirmes que una tabla equivale a un proceso funcional completo.
+- Documenta cada incremento con objetivo, alcance, exclusiones, archivos afectados, contratos API/DB, migración/rollback si aplica, pruebas y riesgos. Evita correcciones fuera de alcance.
+- Nunca ejecutes migraciones, seeds, resets, backfills o suites destructivas contra datos reales sin autorización expresa, copia restaurable y entorno identificado. No imprimas datos personales, secretos, contraseñas ni tokens completos.
+- Todo cambio funcional debe identificar los CU V2 relacionados, contrastarlos con código, pruebas y contratos vigentes de V1, y declarar por separado estado de especificación, implementación y validación. El catálogo V2 puede permanecer `NOT_VERIFIED` localmente hasta que su fuente inmutable se incorpore y valide.
+- Un CU del catálogo V2 no prueba que exista código V1 ni aprueba una regla institucional. Conserva los identificadores originales `CU-01` a `CU-155`; enlaza los CU relacionados con reglas, OpenSpec, historias de usuario y evidencia de pruebas, indicando referencias pendientes.
 
-### Roles
+## Autoridad y documentación
 
-| Agent | Role | Primary ownership in this repository |
-|---|---|---|
-| `terra` | Tech Lead | coordination, sequencing, contract integrity, escalation. Not a universal implementer. |
-| `pulse` | Scrum Master | reads reports and git state; reports evidence-backed status. Never edits code. |
-| `atlas` | Database | `backend/prisma` schema, migrations, relations, constraints, indexes. |
-| `forge` | Backend | `backend/` NestJS controllers, services, DTOs, APIs, authorization, business rules. |
-| `pixel` | Frontend | `frontend/` React/TypeScript, UI, UX, accessibility, forms, TanStack Query (uses the frontend skills below). |
-| `sentinel` | QA | review, regression, test case design, evidence review. Never runs the project test suite. |
+1. Instrucciones explícitas y alcance aprobado por el responsable del proyecto.
+2. Evidencia actual de código, restricciones de base de datos, pruebas y configuración verificadas en la rama de trabajo (y `main` como referencia de integración).
+3. Decisiones arquitectónicas y reglas institucionales expresamente aprobadas.
+4. Este `AGENTS.md` y sus reglas especializadas en `backend/` y `frontend/`.
+5. `frontend/CONVENTIONS.md`, `CONTRIBUTING.md` y documentación técnica vigente, siempre cotejadas con el código.
+6. OpenSpec, especificaciones de casos de uso y documentación histórica, con su estado documental explícito.
 
-### Routing
+Una propuesta de OpenSpec no sustituye un contrato implementado ni modifica decisiones institucionales por sí misma. El catálogo de **155 casos de uso V2** corresponde a la especificación documental V2, no a 155 funcionalidades implementadas en V1. Preserva los identificadores CU y no mezcla estados de ambos repositorios.
 
-- **Direct mode:** Daniel talks to a single specialist directly (e.g. `@pixel`) for a
-  small single-domain task. No orchestrator needed.
-- **Orchestrated mode:** Daniel routes an objective through `terra` when it crosses
-  domains (e.g. schema + API + UI). Terra selects the minimal specialist set from the
-  table above and follows the global `orchestration` skill.
-- Specialists must honor the precedence in "Sources of truth" above. This AGENTS.md
-  still wins for frontend-specific routing and skill selection.
+## Contrato transversal de identidad y registro comunitario
 
-### Domain-specific skill selection
+Antes de tocar `/register`, `UserRequest`, `Person`, `User`, `Role`, `Permission`, `AccountActivationToken`, correo o autenticación, lee **`docs/decisions/community-account-registration.md`**. Es un **contrato objetivo en estado PROPUESTO**, no evidencia de que el comportamiento ya cambió.
 
-Specialists pick the relevant local and global skills, never all of them:
+- **Comportamiento actual verificado en V1 (baseline PR #114):** el `/register` público genera `UserRequest(PENDING)`; una revisión con `usr.user-requests.review` aprueba, resuelve una `Person` existente y crea `User(INACTIVE)` más token; la activación establece contraseña y permite iniciar sesión. La aprobación puede bloquearse si la `Person` no existe o es ambigua.
+- **Cambio objetivo sujeto a OpenSpec y aprobación:** registro comunitario abierto con nombre, correo, contraseña, verificación de correo y activación **sin aprobación administrativa de una cuenta básica**.
+- Verificar un correo demuestra control del buzón, **no identidad legal, afiliación a la ADI, cargo en Junta Directiva ni autorización sobre otras personas o recursos**.
+- `Person` (identidad física), `User` (acceso), `Affiliate` (afiliación), `Role`/`Permission` (autorización), `Venture` (emprendimiento), `VolunteerApplication` (postulación) y relaciones de negocio tienen responsabilidades diferentes.
+- La cuenta comunitaria no obtiene capacidades de administración del ERP. Las aprobaciones de afiliación, publicación de emprendimientos, representación institucional y permisos privilegiados son procesos independientes.
+- El voluntariado debe permitir participación sin cuenta, según su contrato funcional; una cuenta puede facilitar el seguimiento, no ser requisito.
+- El modelo V1 actual exige `User.identification` y tiene una ruta de reconciliación `Person` con limitaciones: **no inventar identificaciones, no enlazar automáticamente a un `Person`/`Affiliate` por coincidencia de nombres/correo/cédula y no modificar Prisma o migraciones sin cambio aprobado**.
+- Las solicitudes `UserRequest` históricas, las cuentas actuales, tokens/sesiones válidos, seeds, roles y permisos administrativos deben preservarse. No reutilizar el registro público para crear un usuario administrador.
 
-- Atlas: no local SGI skill exists; use `agent-report` and `handoff`, plus global
-  protocol skills.
-- Forge: `sgi-development-foundation` for repository safety and conventions.
-- Pixel: the frontend skills routed in this AGENTS.md (`sgi-frontend-design`,
-  `sgi-frontend-architecture`, `sgi-forms-validation`, `sgi-dashboard-ux`,
-  `sgi-responsive-accessibility`, `sgi-development-foundation`) and `frontend/CONVENTIONS.md`.
-- Sentinel: `sgi-development-foundation` for quality gates; see the Sentinel rule below.
+## Integridad entre frontend y backend
 
-### Sentinel rule (critical)
+- Asegura tres niveles para operaciones protegidas: visibilidad/acciones frontend, rutas frontend y **control de autorización en API**. Ocultar un botón no constituye protección.
+- Los permisos efectivos se derivan en servidor de la persistencia. No confíes en `roleId`, `permissionCodes` o identidad enviada por el navegador para conceder acceso.
+- Conserva la arquitectura frontend `app -> features -> shared` y las pautas de `frontend/CONVENTIONS.md`. Para código NestJS y Prisma, aplica `backend/AGENTS.md`.
+- Un incremento transversal se certifica con casos positivos, negativos, rutas directas, duplicados, concurrencia, tokens vencidos y compatibilidad. Identifica explícitamente pruebas no ejecutadas.
 
-Daniel executes the project test suites personally. Sentinel inspects tests, designs
-test cases, prepares exact commands, and analyzes results Daniel provides. Sentinel
-does **not** execute the suite automatically. Validation vocabulary:
-`NOT_EXECUTED | PASSED | FAILED | NOT_APPLICABLE`. Never claim `PASSED` without
-evidence of a real run. This reinforces the "Testing and validation" section above.
+## Trabajo compartido
 
-### Reports and evidence
-
-- Every participating agent produces an Agent Report (protocol `agent-report`).
-- Operational evidence lands in `.opencode/reports/<YYYY-MM-DD>/` (git-ignored).
-- Persistent documentation is handled separately/manual with explicit human approval.
-- Contradictions between reports are marked `UNRESOLVED` and raised to Daniel. They
-  are never resolved silently.
-
-### Human authority
-
-Daniel remains the final authority. Agents escalate (stop and ask) on destructive
-changes, major scope expansion, architectural contradictions, irreversible actions,
-credential needs, or any decision Daniel reserves for himself. No micro-approval for
-trivial actions.
+- Los archivos `AGENTS.md` deben versionarse y revisarse por PR para que todos los compañeros reciban las mismas reglas. No incluyas secretos ni rutas personales en ellos.
+- Si detectas conflicto entre el `AGENTS.md` raíz existente, instrucciones globales locales del agente, documentación o estado real, señala la contradicción y propone un cambio mínimo, sin borrar silenciosamente decisiones anteriores.
+- El usuario decide el avance entre fases. Una autorización de escritura documental no autoriza construir, migrar ni desplegar.
