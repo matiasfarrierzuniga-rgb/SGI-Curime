@@ -191,6 +191,7 @@ function toActivationToken(token: ActivationTokenRow): ActivationToken {
     usedAt: token.usedAt,
     expiresAt: token.expiresAt,
     userStatus: token.user.status,
+    purpose: token.purpose,
   };
 }
 
@@ -205,9 +206,13 @@ function toResetToken(token: ResetTokenRow): ResetToken {
 
 function toAuthTransaction(tx: Prisma.TransactionClient): AuthTransaction {
   return {
-    async claimActivationToken(tokenId: number, now: Date): Promise<boolean> {
+    async claimActivationToken(
+      tokenId: number,
+      now: Date,
+      purpose: 'LEGACY_ACCOUNT_ACTIVATION',
+    ): Promise<boolean> {
       const claimed = await tx.accountActivationToken.updateMany({
-        where: { id: tokenId, usedAt: null, expiresAt: { gt: now } },
+        where: { id: tokenId, purpose, usedAt: null, expiresAt: { gt: now } },
         data: { usedAt: now },
       });
       return claimed.count === 1;

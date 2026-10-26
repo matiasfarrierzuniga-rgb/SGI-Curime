@@ -24,6 +24,10 @@ describe('NotificationService', () => {
       NotificationCategory.SECURITY,
     ],
     [
+      NotificationEventType.COMMUNITY_EMAIL_VERIFICATION,
+      NotificationCategory.SECURITY,
+    ],
+    [
       NotificationEventType.PASSWORD_RESET_REQUESTED,
       NotificationCategory.SECURITY,
     ],
@@ -79,6 +83,23 @@ describe('NotificationService', () => {
     expect(sent.subject).toBe('Restablezca su contraseña de SGI-Curime');
     expect(sent.html).toContain('Restablecimiento de contraseña');
     expect(sent.text).toContain('reset-password?token=reset-token');
+  });
+
+  it('selects the community verification template without legacy approval copy', async () => {
+    await service.send({
+      type: NotificationEventType.COMMUNITY_EMAIL_VERIFICATION,
+      to: 'persona@example.test',
+      recipientName: 'Persona',
+      token: 'community-token',
+      expiresAt: new Date('2026-08-28T18:00:00.000Z'),
+    });
+    const sent = provider.getMessages()[0];
+    expect(sent.subject).toBe(
+      'Verifique su correo para completar su cuenta comunitaria',
+    );
+    expect(sent.html).toContain('Verificación de correo');
+    expect(sent.html).not.toContain('solicitud fue aprobada');
+    expect(sent.text).toContain('verify-community-email?token=community-token');
   });
 
   it('selects the password changed template without a token', async () => {

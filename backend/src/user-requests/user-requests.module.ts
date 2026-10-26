@@ -7,6 +7,10 @@ import { ActivationTokenDeliveryService } from './activation-token-delivery.serv
 import { ActivationTokenService } from './activation-token.service';
 import { UserRequestsController } from './user-requests.controller';
 import { UserRequestsService } from './user-requests.service';
+import { CommunityAccountsController } from './community-accounts.controller';
+import { CommunityAccountsService } from './community-accounts.service';
+import { CommunityEmailVerificationDeliveryService } from './community-email-verification-delivery.service';
+import { QaFakeEmailInboxController } from './qa-fake-email-inbox.controller';
 
 @Module({
   imports: [
@@ -17,11 +21,17 @@ import { UserRequestsService } from './user-requests.service';
       baseUrl: publicAppUrl(),
     }),
   ],
-  controllers: [UserRequestsController],
+  controllers: [
+    UserRequestsController,
+    CommunityAccountsController,
+    QaFakeEmailInboxController,
+  ],
   providers: [
     UserRequestsService,
     ActivationTokenService,
     ActivationTokenDeliveryService,
+    CommunityAccountsService,
+    CommunityEmailVerificationDeliveryService,
   ],
   exports: [UserRequestsService],
 })

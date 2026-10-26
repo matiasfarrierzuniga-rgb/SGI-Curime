@@ -1,4 +1,4 @@
-export type EmailProviderName = 'fake' | 'gmail-app-password';
+export type EmailProviderName = 'fake' | 'gmail-app-password' | 'resend';
 
 export interface EmailRuntimeConfig {
   readonly provider: EmailProviderName;
@@ -8,6 +8,9 @@ export interface EmailRuntimeConfig {
   readonly replyTo?: string;
   readonly gmailUser?: string;
   readonly gmailAppPassword?: string;
+  readonly resendApiKey?: string;
+  readonly resendQaAllowedRecipient?: string;
+  readonly resendTimeoutMs: number;
 }
 
 export type NotificationEnvironment = Readonly<
@@ -31,6 +34,11 @@ export function loadEmailConfig(
     replyTo: optionalValue(environment.EMAIL_REPLY_TO),
     gmailUser: optionalValue(environment.GMAIL_USER),
     gmailAppPassword: optionalValue(environment.GMAIL_APP_PASSWORD),
+    resendApiKey: optionalValue(environment.RESEND_API_KEY),
+    resendQaAllowedRecipient: isQaEnvironment(environment)
+      ? optionalValue(environment.RESEND_QA_ALLOWED_RECIPIENT)
+      : undefined,
+    resendTimeoutMs: parseTimeout(environment.RESEND_TIMEOUT_MS),
   };
 
   validateHeaderValue('EMAIL_FROM', config.from);
@@ -53,17 +61,78 @@ export function loadEmailConfig(
     }
   }
 
+  if (sendEnabled && provider === 'resend') {
+    const missing = [
+      ['EMAIL_FROM', config.from],
+      ['RESEND_API_KEY', config.resendApiKey],
+      ...(isQaEnvironment(environment)
+        ? [['RESEND_QA_ALLOWED_RECIPIENT', config.resendQaAllowedRecipient]]
+        : []),
+    ]
+      .filter((entry) => !entry[1])
+      .map((entry) => entry[0]);
+    if (missing.length > 0) {
+      throw new Error(
+        `Email configuration is incomplete. Missing: ${missing.join(', ')}.`,
+      );
+    }
+    if (
+      isQaEnvironment(environment) &&
+      !isEmail(config.resendQaAllowedRecipient)
+    ) {
+      throw new Error('RESEND_QA_ALLOWED_RECIPIENT must be a valid email.');
+    }
+    if (
+      isProductionEnvironment(environment) &&
+      isResendTestSender(config.from)
+    ) {
+      throw new Error(
+        'EMAIL_FROM cannot use onboarding@resend.dev in production.',
+      );
+    }
+  }
+
   return config;
+}
+
+function isQaEnvironment(environment: NotificationEnvironment): boolean {
+  return environment.NODE_ENV?.trim() === 'test';
+}
+
+function isProductionEnvironment(
+  environment: NotificationEnvironment,
+): boolean {
+  return environment.NODE_ENV?.trim() === 'production';
+}
+
+function isResendTestSender(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() === 'onboarding@resend.dev';
 }
 
 function parseProvider(value: string | undefined): EmailProviderName {
   const provider = optionalValue(value) ?? 'fake';
-  if (provider !== 'fake' && provider !== 'gmail-app-password') {
+  if (
+    provider !== 'fake' &&
+    provider !== 'gmail-app-password' &&
+    provider !== 'resend'
+  ) {
     throw new Error(
-      'EMAIL_PROVIDER must be either "fake" or "gmail-app-password".',
+      'EMAIL_PROVIDER must be "fake", "gmail-app-password", or "resend".',
     );
   }
   return provider;
+}
+
+function parseTimeout(value: string | undefined): number {
+  const normalized = optionalValue(value);
+  if (!normalized) return 10_000;
+  const timeout = Number(normalized);
+  if (!Number.isInteger(timeout) || timeout < 1_000 || timeout > 60_000) {
+    throw new Error(
+      'RESEND_TIMEOUT_MS must be an integer between 1000 and 60000.',
+    );
+  }
+  return timeout;
 }
 
 function parseSendEnabled(value: string | undefined): boolean {
@@ -83,4 +152,13 @@ function validateHeaderValue(name: string, value: string | undefined): void {
   if (value && /[\r\n]/.test(value)) {
     throw new Error(`${name} cannot contain CR or LF characters.`);
   }
+}
+
+function isEmail(value: string | undefined): boolean {
+  return Boolean(
+    value &&
+    value.length <= 254 &&
+    !/[\r\n]/.test(value) &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+  );
 }

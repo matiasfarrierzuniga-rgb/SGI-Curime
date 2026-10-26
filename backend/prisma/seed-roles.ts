@@ -10,6 +10,7 @@ export const INITIAL_ROLES = [
   { name: 'Vecino/Afiliado', description: 'Accede a las funciones disponibles para vecinos y afiliados.' },
   { name: 'Miembro de Junta Directiva', description: 'Representa a una persona integrante de la Junta Directiva.' },
   { name: 'Subscription_L1', description: 'Acceso de suscripción de nivel 1.' },
+  { name: 'Cuenta comunitaria', description: 'Acceso mínimo para una cuenta comunitaria verificada.' },
 ] as const;
 
 export const INITIAL_PERMISSIONS = CAPABILITIES.map((code) => ({
