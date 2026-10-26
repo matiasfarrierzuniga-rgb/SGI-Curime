@@ -74,17 +74,20 @@ describe('LoginUseCase', () => {
     });
   });
 
-  it('throws an application error when the account is not ACTIVE', async () => {
-    repository.findCredentialsByEmail.mockResolvedValueOnce({
-      ...account,
-      status: 'INACTIVE',
-    });
+  it.each(['INACTIVE', 'PENDING_EMAIL_VERIFICATION', 'BLOCKED'] as const)(
+    'throws an application error when the account is %s',
+    async (status) => {
+      repository.findCredentialsByEmail.mockResolvedValueOnce({
+        ...account,
+        status,
+      });
 
-    await expect(
-      useCase.execute('admin@example.com', 'secret'),
-    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
-    expect(hasher.compare).not.toHaveBeenCalled();
-  });
+      await expect(
+        useCase.execute('admin@example.com', 'secret'),
+      ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
+      expect(hasher.compare).not.toHaveBeenCalled();
+    },
+  );
 
   it('denies an expired Subscription_L1 after valid credentials with 403 error code', async () => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
@@ -212,6 +215,33 @@ describe('LoginUseCase', () => {
         canAccessErp: true,
       },
     });
+  });
+
+  it('creates a standard session for an active community account without ERP access', async () => {
+    repository.findCredentialsByEmail.mockResolvedValueOnce({
+      ...account,
+      fullName: 'Community User',
+      email: 'community@example.test',
+      roleName: 'Cuenta comunitaria',
+      permissionCodes: [],
+      hasPerson: true,
+      affiliateStatus: 'ACTIVE',
+    });
+
+    const result = await useCase.execute('community@example.test', 'secret');
+
+    expect(repository.recordLoginSuccessAndCreateSession).toHaveBeenCalledWith(
+      1,
+      'refresh-hash',
+      expect.any(Date),
+    );
+    expect(result.user).toEqual(
+      expect.objectContaining({
+        role: 'Cuenta comunitaria',
+        permissionCodes: [],
+        canAccessErp: false,
+      }),
+    );
   });
 
   it.each([

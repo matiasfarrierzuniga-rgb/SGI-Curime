@@ -3,7 +3,7 @@
   "rootDir": "..",
   "testEnvironment": "node",
   "testTimeout": 30000,
-  "testRegex": "user-request-approval\\.postgres\\.integration-spec\\.ts$",
+  "testRegex": "(user-request-approval|community-account)\\.postgres\\.integration-spec\\.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },

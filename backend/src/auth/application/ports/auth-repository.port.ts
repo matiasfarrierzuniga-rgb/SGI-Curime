@@ -7,7 +7,11 @@ import type {
 export const AUTH_REPOSITORY = Symbol('AUTH_REPOSITORY');
 
 export interface AuthTransaction {
-  claimActivationToken(tokenId: number, now: Date): Promise<boolean>;
+  claimActivationToken(
+    tokenId: number,
+    now: Date,
+    purpose: 'LEGACY_ACCOUNT_ACTIVATION',
+  ): Promise<boolean>;
   activateUser(userId: number, passwordHash: string): Promise<boolean>;
   claimResetToken(tokenId: number, now: Date): Promise<boolean>;
   setUserPassword(userId: number, passwordHash: string): Promise<void>;

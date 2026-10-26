@@ -40,7 +40,7 @@ export interface AdminPersonReadModel {
 export interface User {
   id: number;
   fullName: string;
-  identification: string;
+  identification: string | null;
   identificationType: 'NATIONAL' | 'DIMEX' | null;
   email: string;
   phoneCountryCode: string | null;

@@ -1,6 +1,7 @@
 export const ROLE_ADMIN = 'Administrador'
 export const ROLE_INVENTORY_MANAGER = 'Gestor de Inventario'
 export const ROLE_TREASURER = 'Tesorero'
+export const ROLE_COMMUNITY_ACCOUNT = 'Cuenta comunitaria'
 
 export type RoleLike =
   | string
@@ -41,5 +42,6 @@ export function canManageInventory(role: RoleLike): boolean {
 }
 
 export function homePathForRole(role: RoleLike, canAccessErp = false): string {
+  if (getRoleName(role) === ROLE_COMMUNITY_ACCOUNT) return '/mi-comunidad'
   return getRoleName(role) && canAccessErp ? '/app' : '/servicios'
 }

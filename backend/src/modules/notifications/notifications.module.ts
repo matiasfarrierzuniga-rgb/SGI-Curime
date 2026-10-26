@@ -43,7 +43,7 @@ export class NotificationsModule {
         NotificationUrlBuilder,
         NotificationService,
       ],
-      exports: [NotificationService, EMAIL_PROVIDER],
+      exports: [NotificationService, EMAIL_PROVIDER, FakeEmailProvider],
     };
   }
 }
