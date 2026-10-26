@@ -36,20 +36,19 @@ describe('ErpLayout', () => {
 
   it('provides a collapsible navigation control for tablet layouts', () => {
     renderLayout()
-    const trigger = screen.getByRole('button', { name: 'Expandir navegación' })
-    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    const trigger = screen.getAllByRole('button', { name: 'Contraer navegación' })[0]
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
     fireEvent.click(trigger)
-    expect(screen.getByRole('button', { name: 'Contraer navegación' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: 'Expandir navegación' })).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('expands a collapsed sidebar and opens a generic navigation group before navigating', () => {
     renderLayout()
     const inventory = screen.getByRole('link', { name: 'Inventario' })
 
-    expect(inventory).toHaveAttribute('title', 'Inventario')
     fireEvent.click(inventory)
 
-    expect(screen.getByRole('button', { name: 'Contraer navegación' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Contraer navegación' }).length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: 'Resumen' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Artículos' })).toBeInTheDocument()
   })
@@ -58,7 +57,7 @@ describe('ErpLayout', () => {
     renderLayout()
     fireEvent.click(screen.getByRole('link', { name: 'Finanzas' }))
 
-    expect(screen.getByRole('button', { name: 'Contraer navegación' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Contraer navegación' }).length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: 'Resumen' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Movimientos financieros' })).toBeInTheDocument()
   })
@@ -71,7 +70,7 @@ describe('ErpLayout', () => {
     renderLayout()
     fireEvent.click(screen.getByRole('link', { name: 'Finanzas' }))
 
-    expect(screen.getByRole('button', { name: 'Contraer navegación' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Contraer navegación' }).length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: childLabel })).toHaveAttribute('aria-current', 'page')
   })
 
@@ -79,7 +78,7 @@ describe('ErpLayout', () => {
     renderLayout('/app/profile')
     fireEvent.click(screen.getByRole('link', { name: 'Inicio' }))
 
-    expect(screen.getByRole('button', { name: 'Expandir navegación' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Contraer navegación' }).length).toBeGreaterThan(0)
   })
 
   it('opens profile inside ERP layout and marks the account item current', () => {
@@ -92,10 +91,9 @@ describe('ErpLayout', () => {
 
   it('keeps an opened group expanded while navigating between its children', () => {
     renderLayout('/inventory')
-    fireEvent.click(screen.getByRole('button', { name: 'Expandir navegación' }))
     fireEvent.click(screen.getByRole('link', { name: 'Artículos' }))
 
-    expect(screen.getByRole('button', { name: 'Contraer navegación' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Contraer navegación' }).length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: 'Artículos' })).toHaveAttribute('aria-current', 'page')
   })
 
@@ -106,23 +104,22 @@ describe('ErpLayout', () => {
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
   })
 
-  it('temporarily expands compact desktop navigation on hover without pinning it', () => {
+  it('keeps desktop navigation expanded by default', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
-    expect(sidebar).toHaveClass('w-20')
+    expect(sidebar).toHaveClass('w-[15.25rem]')
     fireEvent.mouseEnter(sidebar)
-    expect(sidebar).toHaveClass('w-[18rem]')
+    expect(sidebar).toHaveClass('w-[15.25rem]')
     fireEvent.mouseLeave(sidebar)
-    expect(sidebar).toHaveClass('w-20')
+    expect(sidebar).toHaveClass('w-[15.25rem]')
   })
 
-  it('keeps the navigation expanded when the user pins it', () => {
+  it('keeps the navigation expanded after pointer leaves', () => {
     renderLayout()
-    fireEvent.click(screen.getByRole('button', { name: 'Expandir navegación' }))
     const sidebar = document.getElementById('erp-sidebar-navigation')!
     fireEvent.mouseLeave(sidebar)
-    expect(sidebar).toHaveClass('w-[18rem]')
-    expect(screen.getByRole('button', { name: 'Contraer navegación' })).toHaveAttribute('aria-expanded', 'true')
+    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(screen.getAllByRole('button', { name: 'Contraer navegación' })[0]).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('keeps empty mobile groups collapsed and exposes their state to keyboard users', () => {
@@ -136,11 +133,10 @@ describe('ErpLayout', () => {
 
   it('renders visible, named sidebar controls instead of blank light buttons', () => {
     renderLayout()
-    const headerControl = screen.getByRole('button', { name: 'Expandir navegación' })
+    const headerControl = screen.getAllByRole('button', { name: 'Contraer navegación' })[0]
     expect(headerControl.querySelector('svg')).not.toBeNull()
     expect(headerControl).toHaveClass('!bg-erp-navigation', '!text-erp-navigation-foreground')
-    fireEvent.mouseEnter(document.getElementById('erp-sidebar-navigation')!)
-    const pinControl = screen.getByRole('button', { name: 'Fijar navegación expandida' })
+    const pinControl = screen.getAllByRole('button', { name: 'Contraer navegación' })[1]
     expect(pinControl.querySelector('svg')).not.toBeNull()
     expect(pinControl).toHaveClass('!bg-erp-navigation-hover', '!text-erp-navigation-foreground')
     for (const label of ['Expandir Emprendimientos', 'Expandir Inventario', 'Expandir Finanzas']) {

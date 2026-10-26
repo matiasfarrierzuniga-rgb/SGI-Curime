@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, ExternalLink, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Bell, ChevronDown, ChevronRight, ExternalLink, Landmark, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { getErpNavigation, type ErpNavigationItem, type ErpNavigationSection, type NavigationAccent } from '@/app/navigation/erpNavigation'
 import { getRoleName } from '@/shared/security/roles'
-import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/ui/sheet'
 
@@ -25,7 +24,7 @@ export function ErpLayout() {
   const location = useLocation()
   const navigation = getErpNavigation(user?.permissionCodes)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [sidebarPinned, setSidebarPinned] = useState(false)
+  const [sidebarPinned, setSidebarPinned] = useState(true)
   const [sidebarHovered, setSidebarHovered] = useState(false)
   const roleName = getRoleName(user?.role)
   const sidebarExpanded = sidebarPinned || sidebarHovered
@@ -37,7 +36,7 @@ export function ErpLayout() {
   return <div className="min-h-dvh bg-erp-canvas font-sans text-erp-text">
     <a className="skip-link" href="#erp-content">Saltar al contenido</a>
     <header className="sticky top-0 z-30 border-b border-erp-border bg-erp-surface-raised">
-      <div className={`flex min-h-16 items-center gap-3 px-4 transition-[padding] duration-300 motion-reduce:transition-none sm:px-6 md:pr-8 ${sidebarPinned ? 'md:pl-[19rem]' : 'md:pl-24'}`}>
+      <div className={`flex min-h-19 items-center gap-3 px-4 transition-[padding] duration-300 motion-reduce:transition-none sm:px-6 md:pr-8 ${sidebarPinned ? 'md:pl-[16.25rem]' : 'md:pl-24'}`}>
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger render={<Button variant="outline" size="icon-sm" className="border-erp-border text-erp-text md:hidden" aria-label="Abrir navegación" />}><Menu aria-hidden="true" /></SheetTrigger>
           <SheetContent side="left" className="w-[min(88vw,20rem)] gap-0 bg-erp-navigation p-0 text-erp-navigation-foreground" aria-label="Navegación móvil">
@@ -47,17 +46,18 @@ export function ErpLayout() {
           </SheetContent>
         </Sheet>
         <button type="button" className="hidden size-9 place-items-center rounded-control !border-white/20 !bg-erp-navigation !p-0 !text-erp-navigation-foreground transition-colors hover:!bg-erp-navigation-hover focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-erp-focus md:grid" aria-controls="erp-sidebar-navigation" aria-label={sidebarPinned ? 'Contraer navegación' : 'Expandir navegación'} aria-expanded={sidebarPinned} onClick={() => setSidebarPinned(value => !value)}>{sidebarPinned ? <PanelLeftClose className="size-4" aria-hidden="true" /> : <PanelLeftOpen className="size-4" aria-hidden="true" />}</button>
-        <div className="min-w-0 flex-1"><nav aria-label="Ubicación actual" className="flex min-w-0 items-center gap-1.5 text-caption font-medium text-erp-text-muted"><span className="shrink-0">Área de gestión</span><ChevronRight className="size-3 shrink-0 text-erp-text-muted/60" aria-hidden="true" /><span className="truncate font-semibold text-erp-text" aria-current="page">{pageLabel}</span></nav><p className="mt-0.5 hidden truncate text-caption text-erp-text-muted sm:block">Asociación de Desarrollo Integral de Curime</p></div>
-        <div className="flex shrink-0 items-center gap-2 border-l border-erp-border pl-3 sm:gap-3 sm:pl-5"><span className="grid size-9 place-items-center rounded-full bg-erp-navigation text-label font-bold text-erp-navigation-foreground" aria-hidden="true">{getInitials(user?.fullName)}</span><div className="min-w-0 text-right"><p className="max-w-32 truncate text-navigation font-semibold text-erp-text sm:max-w-56">{user?.fullName}</p>{roleName ? <Badge variant="secondary" className="mt-0.5 bg-erp-surface-subtle text-erp-text-muted">{roleName}</Badge> : null}</div></div>
+        <div role="search" aria-label="Búsqueda no disponible" className="hidden max-w-xl flex-1 items-center gap-3 rounded-control bg-erp-surface-subtle px-4 py-3 text-body-small text-erp-text-muted lg:flex"><Search className="size-5 shrink-0 text-erp-text" aria-hidden="true" /><span>Buscar en el sistema...</span></div>
+        <div className="min-w-0 flex-1 lg:hidden"><nav aria-label="Ubicación actual" className="flex min-w-0 items-center gap-1.5 text-caption font-medium text-erp-text-muted"><span className="shrink-0">Área de gestión</span><ChevronRight className="size-3 shrink-0 text-erp-text-muted/60" aria-hidden="true" /><span className="truncate font-semibold text-erp-text" aria-current="page">{pageLabel}</span></nav></div>
+        <div className="flex shrink-0 items-center gap-3 border-l border-erp-border pl-3 sm:pl-5"><span className="grid size-9 place-items-center text-erp-text-muted" aria-hidden="true"><Bell className="size-5" /></span><span className="grid size-10 place-items-center rounded-full bg-erp-navigation text-label font-bold text-erp-navigation-foreground" aria-hidden="true">{getInitials(user?.fullName)}</span><div className="min-w-0 text-left"><p className="max-w-32 truncate text-navigation font-semibold text-erp-text sm:max-w-56">{user?.fullName}</p>{roleName ? <p className="mt-0.5 text-caption text-erp-text-muted">{roleName}</p> : null}</div><ChevronDown className="hidden size-4 text-erp-text sm:block" aria-hidden="true" /></div>
       </div>
     </header>
 
-    <aside id="erp-sidebar-navigation" onMouseEnter={() => setSidebarHovered(true)} onMouseLeave={() => setSidebarHovered(false)} onFocusCapture={() => setSidebarHovered(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget) && !sidebarPinned) setSidebarHovered(false) }} className={`fixed inset-y-0 left-0 z-40 hidden overflow-hidden border-r border-erp-navigation-hover bg-erp-navigation text-erp-navigation-foreground shadow-xl transition-[width] duration-300 motion-reduce:transition-none md:flex md:flex-col ${sidebarExpanded ? 'w-[18rem]' : 'w-20'}`}>
-      <div className="flex items-start justify-between border-b border-white/15 px-4 py-5"><div className={sidebarExpanded ? '' : 'mx-auto'}><p className="font-heading text-2xl leading-none">{sidebarExpanded ? 'SGI-Curime' : 'SGI'}</p>{sidebarExpanded ? <p className="mt-2 text-caption font-bold uppercase tracking-[0.16em] text-erp-navigation-muted">Área de gestión</p> : null}</div>{sidebarExpanded ? <button type="button" className="grid size-9 shrink-0 place-items-center rounded-control !border-white/20 !bg-erp-navigation-hover !p-0 !text-erp-navigation-foreground transition-colors hover:!bg-erp-navigation-active focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-erp-focus" aria-label={sidebarPinned ? 'Desfijar navegación expandida' : 'Fijar navegación expandida'} onClick={() => setSidebarPinned(value => !value)}>{sidebarPinned ? <PanelLeftClose className="size-4" aria-hidden="true" /> : <PanelLeftOpen className="size-4" aria-hidden="true" />}</button> : null}</div>
+    <aside id="erp-sidebar-navigation" onMouseEnter={() => setSidebarHovered(true)} onMouseLeave={() => setSidebarHovered(false)} onFocusCapture={() => setSidebarHovered(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget) && !sidebarPinned) setSidebarHovered(false) }} className={`fixed inset-y-0 left-0 z-40 hidden overflow-hidden border-r border-erp-navigation-hover bg-erp-navigation text-erp-navigation-foreground shadow-xl transition-[width] duration-300 motion-reduce:transition-none md:flex md:flex-col ${sidebarExpanded ? 'w-[15.25rem]' : 'w-20'}`}>
+      <div className="flex items-start justify-between border-b border-white/15 px-4 py-5"><div className={`flex items-center gap-3 ${sidebarExpanded ? '' : 'mx-auto'}`}><span className="grid size-10 place-items-center rounded-control bg-erp-navigation-active text-erp-navigation-foreground"><Landmark className="size-6" aria-hidden="true" /></span><div className={sidebarExpanded ? '' : 'sr-only'}><p className="font-heading text-2xl leading-none">SGI-Curime</p><p className="mt-1 text-caption font-medium text-erp-navigation-muted">ADI Curime</p></div></div>{sidebarExpanded ? <button type="button" className="grid size-9 shrink-0 place-items-center rounded-control !border-white/20 !bg-erp-navigation-hover !p-0 !text-erp-navigation-foreground transition-colors hover:!bg-erp-navigation-active focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-erp-focus" aria-label={sidebarPinned ? 'Contraer navegación' : 'Expandir navegación'} onClick={() => setSidebarPinned(value => !value)}>{sidebarPinned ? <PanelLeftClose className="size-4" aria-hidden="true" /> : <PanelLeftOpen className="size-4" aria-hidden="true" />}</button> : null}</div>
       <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-4 [scrollbar-gutter:stable]">{sidebarNavigation}</div>
       <SidebarActions compact={!sidebarExpanded} onNavigate={() => undefined} onLogout={closeSession} />
     </aside>
-    <main id="erp-content" className={`min-w-0 px-4 py-7 transition-[margin] duration-300 motion-reduce:transition-none sm:px-6 md:px-8 ${sidebarPinned ? 'md:ml-[18rem] xl:px-10 xl:py-9' : 'md:ml-20 xl:px-10 xl:py-9'}`}><div className="mx-auto w-full max-w-[1440px]"><Outlet /></div></main>
+    <main id="erp-content" className={`min-w-0 px-4 py-7 transition-[margin] duration-300 motion-reduce:transition-none sm:px-6 md:px-8 ${sidebarPinned ? 'md:ml-[15.25rem] xl:px-6 xl:py-9' : 'md:ml-20 xl:px-6 xl:py-9'}`}><div className="mx-auto w-full max-w-[1440px]"><Outlet /></div></main>
   </div>
 }
 
