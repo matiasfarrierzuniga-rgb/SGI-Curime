@@ -46,7 +46,7 @@ export function AppHomePage() {
 
   return (
     <PageContainer className={isAdministrator ? 'max-w-[1440px]' : 'max-w-[1440px] space-y-10'}>
-      {isAdministrator ? <AdminDashboard permissionCodes={user?.permissionCodes} /> : <header><h1 className="font-sans text-heading-1 font-bold text-text-primary">Dashboard</h1><p className="mt-1 text-body text-text-secondary">{isCommunityUser ? `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Desde aquí puede solicitar servicios y consultar la información de su cuenta.` : `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Consulte el resumen general de las áreas disponibles para su trabajo en SGI-Curime.`}</p></header>}
+      {isAdministrator ? <AdminDashboard permissionCodes={user?.permissionCodes} userName={user?.fullName} /> : <header><h1 className="font-sans text-heading-1 font-bold text-text-primary">Dashboard</h1><p className="mt-1 text-body text-text-secondary">{isCommunityUser ? `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Desde aquí puede solicitar servicios y consultar la información de su cuenta.` : `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Consulte el resumen general de las áreas disponibles para su trabajo en SGI-Curime.`}</p></header>}
 
       {canViewInventory && (
         <section aria-labelledby="summary-title">

@@ -21,7 +21,7 @@ const response = { metadata: { generatedAt: '2026-09-14T12:00:00.000Z', generate
 
 function renderDashboard(permissionCodes?: readonly string[]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(<MemoryRouter><QueryClientProvider client={client}><AdminDashboard permissionCodes={permissionCodes} /></QueryClientProvider></MemoryRouter>)
+  return render(<MemoryRouter><QueryClientProvider client={client}><AdminDashboard permissionCodes={permissionCodes} userName="Ana Pérez" /></QueryClientProvider></MemoryRouter>)
 }
 
 afterEach(() => vi.mocked(httpClient.get).mockReset())
@@ -37,8 +37,8 @@ describe('AdminDashboard', () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response })
     renderDashboard()
     expect((await screen.findAllByText('Reservas pendientes')).length).toBeGreaterThan(0)
-    expect(screen.getByRole('heading', { name: 'Panel administrativo' })).toBeInTheDocument()
-    expect(screen.getByText('Resumen de la gestión institucional')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Buenos días, Ana' })).toBeInTheDocument()
+    expect(screen.getByText('Aquí tiene el resumen de la gestión de la ADI Curime.')).toBeInTheDocument()
     expect(screen.getAllByText('Solicitudes de afiliación').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Reservas pendientes').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Afiliados activos').length).toBeGreaterThan(0)

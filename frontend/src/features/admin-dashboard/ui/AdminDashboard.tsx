@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowRight, CalendarCheck, Clock3, FileClock, FileText, Landmark, Package, PackageX, RefreshCw, UserPlus, Users, UsersRound, Zap } from 'lucide-react'
+import { AlertTriangle, ArrowRight, CalendarCheck, CalendarDays, Clock3, FileClock, FileText, Landmark, Package, PackageX, RefreshCw, Sun, UserPlus, Users, UsersRound, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { userRequestsService } from '@/features/user-requests'
 import { Button } from '@/shared/ui/button'
@@ -11,7 +11,7 @@ import { hasCapability, type AccessCapability } from '@/shared/security/access'
 import { useAdminDashboard } from '../hooks/useAdminDashboard'
 import type { AdminDashboardData } from '../model/adminDashboard.types'
 
-type AdminDashboardProps = { permissionCodes?: readonly string[] }
+type AdminDashboardProps = { permissionCodes?: readonly string[]; userName?: string }
 type Icon = typeof Users
 type AccountRequestStatus = { isPending: boolean; isError: boolean; total?: number }
 
@@ -26,7 +26,7 @@ const quickActions: readonly QuickAction[] = [
   { label: 'Reportes de inventario', path: '/inventory/reports', capability: 'inv.inventory.read', icon: FileText },
 ]
 
-export function AdminDashboard({ permissionCodes }: AdminDashboardProps) {
+export function AdminDashboard({ permissionCodes, userName }: AdminDashboardProps) {
   const dashboard = useAdminDashboard()
   const canReadAccountRequests = hasCapability(permissionCodes, 'usr.user-requests.read')
   const accountRequests = useQuery({
@@ -36,18 +36,18 @@ export function AdminDashboard({ permissionCodes }: AdminDashboardProps) {
     staleTime: 30_000,
   })
 
-  if (dashboard.isPending) return <section aria-busy="true"><DashboardHeading /><DashboardSkeleton /></section>
-  if (dashboard.isError) return <section><DashboardHeading /><ErrorState className="mt-5" title="No fue posible cargar los indicadores" message="Intente nuevamente para consultar el estado administrativo actual." action={<Button variant="outline" size="sm" onClick={() => void dashboard.refetch()}><RefreshCw aria-hidden="true" />Reintentar</Button>} /></section>
+  if (dashboard.isPending) return <section aria-busy="true"><InstitutionalWelcome fullName={userName} /><DashboardSkeleton /></section>
+  if (dashboard.isError) return <section><InstitutionalWelcome fullName={userName} /><ErrorState className="mt-5" title="No fue posible cargar los indicadores" message="Intente nuevamente para consultar el estado administrativo actual." action={<Button variant="outline" size="sm" onClick={() => void dashboard.refetch()}><RefreshCw aria-hidden="true" />Reintentar</Button>} /></section>
 
   const { data, metadata } = dashboard.data
-  if (!hasData(data)) return <section><DashboardHeading generatedAt={metadata.generatedAt} /><EmptyState className="mt-5" title="Aún no hay datos administrativos para mostrar." description="Los indicadores aparecerán cuando los módulos registren información." /></section>
+  if (!hasData(data)) return <section><InstitutionalWelcome fullName={userName} generatedAt={metadata.generatedAt} /><EmptyState className="mt-5" title="Aún no hay datos administrativos para mostrar." description="Los indicadores aparecerán cuando los módulos registren información." /></section>
 
   return <section className="space-y-3 sm:space-y-4">
-    <DashboardHeading generatedAt={metadata.generatedAt} />
+    <InstitutionalWelcome fullName={userName} generatedAt={metadata.generatedAt} />
     <KpiRow data={data} permissionCodes={permissionCodes} accountRequests={{ isPending: accountRequests.isPending, isError: accountRequests.isError, total: accountRequests.data?.total }} canReadAccountRequests={canReadAccountRequests} />
     <div className="grid gap-3 lg:grid-cols-[minmax(0,1.85fr)_minmax(17rem,1fr)] lg:items-stretch">
-      <InstitutionalPanorama data={data} permissionCodes={permissionCodes} />
       <AttentionPanel data={data} permissionCodes={permissionCodes} accountRequests={{ isPending: accountRequests.isPending, isError: accountRequests.isError, total: accountRequests.data?.total }} canReadAccountRequests={canReadAccountRequests} />
+      <InstitutionalPanorama data={data} permissionCodes={permissionCodes} />
     </div>
     <div className="grid gap-3 lg:grid-cols-[minmax(0,1.85fr)_minmax(17rem,1fr)] lg:items-stretch">
       <RecentActivity />
@@ -56,22 +56,24 @@ export function AdminDashboard({ permissionCodes }: AdminDashboardProps) {
   </section>
 }
 
-function DashboardHeading({ generatedAt }: { generatedAt?: string }) {
-  return <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><h1 id="admin-indicators-title" className="font-heading text-heading-1 font-bold tracking-[-0.02em] text-text-primary">Panel administrativo</h1><p className="mt-0.5 text-body text-text-secondary">Resumen de la gestión institucional</p></div>{generatedAt ? <p className="flex items-center gap-2 text-body-small text-foreground-muted"><Clock3 className="size-4 shrink-0" aria-hidden="true" /><span>Última actualización:</span><time dateTime={generatedAt}>{formatTimestamp(generatedAt)}</time></p> : null}</header>
+function InstitutionalWelcome({ fullName, generatedAt }: { fullName?: string; generatedAt?: string }) {
+  const firstName = fullName?.trim().split(/\s+/)[0]
+  const date = generatedAt ? formatDashboardDate(generatedAt) : null
+  return <header className="overflow-hidden rounded-surface border border-erp-border bg-erp-surface-subtle shadow-elevation-0"><div className="grid gap-5 px-5 py-6 sm:px-7 md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.62fr)] md:items-center md:py-7"><div className="flex min-w-0 gap-4"><span className="grid size-12 shrink-0 place-items-center rounded-full bg-status-warning-surface text-erp-accent"><Sun className="size-7" aria-hidden="true" /></span><div className="min-w-0"><p className="text-caption font-bold uppercase tracking-[0.16em] text-erp-accent">Administración</p><h1 id="admin-indicators-title" className="mt-1 font-heading text-heading-1 font-bold tracking-[-0.02em] text-erp-text">Buenos días{firstName ? `, ${firstName}` : ''}</h1><p className="mt-1 text-body text-erp-text-muted">Aquí tiene el resumen de la gestión de la ADI Curime.</p>{date ? <p className="mt-3 flex items-center gap-2 text-body-small text-erp-text-muted"><CalendarDays className="size-4 shrink-0 text-erp-navigation" aria-hidden="true" /><time dateTime={generatedAt}>{date}</time></p> : null}</div></div><aside className="rounded-overlay border border-erp-border bg-erp-surface-raised/90 px-5 py-4 text-erp-text shadow-sm"><p className="font-heading text-heading-3 italic">Una comunidad organizada construye más oportunidades.</p><p className="mt-2 text-body-small text-erp-text-muted">ADI Curime</p></aside></div></header>
 }
 
 function KpiRow({ data, permissionCodes, accountRequests, canReadAccountRequests }: { data: AdminDashboardData; permissionCodes?: readonly string[]; accountRequests: AccountRequestStatus; canReadAccountRequests: boolean }) {
   const accountValue = !canReadAccountRequests ? null : accountRequests.isPending ? '—' : accountRequests.isError ? null : accountRequests.total ?? 0
   return <section aria-labelledby="admin-indicators-title" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-    <KpiCard title="Solicitudes de cuenta" subtitle={accountValue === null ? 'Información no disponible' : 'Pendientes de revisión'} value={accountValue} icon={UserPlus} action={canReadAccountRequests && !accountRequests.isError ? { label: 'Ver solicitudes', path: '/admin/user-requests' } : undefined} />
-    <KpiCard title="Solicitudes de afiliación" subtitle="Pendientes de revisión" value={data.affiliateRequests.pending} icon={UsersRound} action={hasCapability(permissionCodes, 'adm.requests.read') ? { label: 'Ver solicitudes', path: '/app/admin/requests' } : undefined} />
-    <KpiCard title="Reservas pendientes" subtitle="Por confirmar" value={data.reservations.pending} icon={CalendarCheck} action={hasCapability(permissionCodes, 'res.reservations.read') ? { label: 'Gestionar reservas', path: '/app/reservations' } : undefined} />
-    <KpiCard title="Afiliados activos" subtitle="Registrados en el sistema" value={data.affiliates.active} icon={Users} action={hasCapability(permissionCodes, 'adm.affiliates.read') ? { label: 'Ver afiliados', path: '/app/admin/affiliates' } : undefined} />
+    <KpiCard title="Afiliados activos" subtitle="Registrados en el sistema" value={data.affiliates.active} icon={Users} tone="success" action={hasCapability(permissionCodes, 'adm.affiliates.read') ? { label: 'Ver afiliados', path: '/app/admin/affiliates' } : undefined} />
+    <KpiCard title="Reservas pendientes" subtitle="Por confirmar" value={data.reservations.pending} icon={CalendarCheck} tone="info" action={hasCapability(permissionCodes, 'res.reservations.read') ? { label: 'Gestionar reservas', path: '/app/reservations' } : undefined} />
+    <KpiCard title="Artículos en inventario" subtitle="Registrados en el sistema" value={data.inventory.totalItems} icon={Package} tone="warning" action={hasCapability(permissionCodes, 'inv.inventory.read') ? { label: 'Ver inventario', path: '/inventory' } : undefined} />
+    <KpiCard title="Solicitudes de cuenta" subtitle={accountValue === null ? 'Información no disponible' : 'Pendientes de revisión'} value={accountValue} icon={UserPlus} tone="danger" action={canReadAccountRequests && !accountRequests.isError ? { label: 'Ver solicitudes', path: '/admin/user-requests' } : undefined} />
   </section>
 }
 
-function KpiCard({ title, subtitle, value, icon: IconComponent, action }: { title: string; subtitle: string; value: number | string | null; icon: Icon; action?: { label: string; path: string; capability?: AccessCapability } }) {
-  return <article className="flex min-h-35 flex-col rounded-surface border border-border-subtle bg-surface-card p-4 shadow-elevation-0"><div className="flex items-start gap-3"><IconTile icon={IconComponent} /><div className="min-w-0"><h2 className="text-label font-bold text-text-primary">{title}</h2><p className="mt-0.5 text-body-small text-text-secondary">{subtitle}</p></div></div><p className="mt-3 text-heading-1 leading-none font-bold tabular-nums text-text-primary">{value === null ? '—' : typeof value === 'number' ? value.toLocaleString('es-CR') : value}</p>{action ? <Link to={action.path} className="mt-auto inline-flex w-fit items-center gap-2 pt-3 text-body-small font-bold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-ring">{action.label}<ArrowRight className="size-4" aria-hidden="true" /></Link> : <p className="mt-auto pt-3 text-body-small text-text-muted">Sin acceso o fuente disponible</p>}</article>
+function KpiCard({ title, subtitle, value, icon: IconComponent, tone, action }: { title: string; subtitle: string; value: number | string | null; icon: Icon; tone: 'success' | 'warning' | 'danger' | 'info'; action?: { label: string; path: string; capability?: AccessCapability } }) {
+  return <article className="flex min-h-35 flex-col rounded-surface border border-erp-border bg-erp-surface-raised p-4 shadow-elevation-0"><div className="flex items-start gap-3"><IconTile icon={IconComponent} tone={tone} /><div className="min-w-0"><h2 className="text-label font-semibold text-erp-text">{title}</h2><p className="mt-0.5 text-body-small text-erp-text-muted">{subtitle}</p></div></div><p className="mt-3 text-heading-1 leading-none font-bold tabular-nums text-erp-text">{value === null ? '—' : typeof value === 'number' ? value.toLocaleString('es-CR') : value}</p>{action ? <Link to={action.path} className="mt-auto inline-flex w-fit items-center gap-2 pt-3 text-body-small font-bold text-erp-navigation underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-erp-focus">{action.label}<ArrowRight className="size-4" aria-hidden="true" /></Link> : <p className="mt-auto pt-3 text-body-small text-erp-text-muted">Sin acceso o fuente disponible</p>}</article>
 }
 
 function InstitutionalPanorama({ data, permissionCodes }: { data: AdminDashboardData; permissionCodes?: readonly string[] }) {
@@ -122,8 +124,8 @@ function QuickAction({ action }: { action: QuickAction }) {
   return <Link to={action.path} className="group flex min-h-13 items-center gap-3 rounded-control border border-border-subtle bg-surface-muted/40 px-3 py-2.5 transition-colors hover:border-border-strong hover:bg-surface-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"><IconTile icon={IconComponent} size="sm" /><span className="min-w-0 flex-1 text-body-small font-semibold text-text-primary">{action.label}</span><ArrowRight className="size-4 shrink-0 text-text-muted transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" /></Link>
 }
 
-function IconTile({ icon: IconComponent, tone = 'brand', size = 'default' }: { icon: Icon; tone?: 'brand' | 'warning' | 'danger' | 'info'; size?: 'default' | 'sm' }) {
-  const tones = { brand: 'bg-status-success-surface text-foreground-brand', warning: 'bg-status-warning-surface text-status-warning', danger: 'bg-status-danger-surface text-status-danger', info: 'bg-status-info-surface text-status-info' }
+function IconTile({ icon: IconComponent, tone = 'brand', size = 'default' }: { icon: Icon; tone?: 'brand' | 'success' | 'warning' | 'danger' | 'info'; size?: 'default' | 'sm' }) {
+  const tones = { brand: 'bg-status-success-surface text-foreground-brand', success: 'bg-status-success-surface text-status-success', warning: 'bg-status-warning-surface text-status-warning', danger: 'bg-status-danger-surface text-status-danger', info: 'bg-status-info-surface text-status-info' }
   return <span className={`flex shrink-0 items-center justify-center rounded-control ${size === 'sm' ? 'size-8' : 'size-10'} ${tones[tone]}`}><IconComponent className={size === 'sm' ? 'size-4' : 'size-5'} aria-hidden="true" /></span>
 }
 
@@ -131,5 +133,5 @@ function DashboardSkeleton() {
   return <div className="mt-4 space-y-3" aria-label="Cargando indicadores administrativos"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-35" />)}</div><div className="grid gap-3 lg:grid-cols-[minmax(0,1.85fr)_minmax(17rem,1fr)]"><Skeleton className="h-80" /><Skeleton className="h-80" /></div></div>
 }
 
-function formatTimestamp(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleString('es-CR') }
+function formatDashboardDate(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('es-CR', { dateStyle: 'full', timeZone: 'America/Costa_Rica' }).format(date) }
 function hasData(data: AdminDashboardData) { return data.affiliates.total > 0 || data.affiliateRequests.pending > 0 || data.reservations.total > 0 || data.donations.total > 0 || data.inventory.totalItems > 0 || data.assemblies.total > 0 || data.justifications.pending > 0 }
