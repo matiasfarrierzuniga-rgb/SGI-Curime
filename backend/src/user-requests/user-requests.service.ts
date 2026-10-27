@@ -18,6 +18,7 @@ import { QueryUserRequestDto } from './dto/query-user-request.dto';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { RuntimePersonResolverService } from '../identity/runtime-person-resolver.service';
+import { InboxNotificationService } from '../modules/notifications/application/inbox-notification.service';
 import {
   IDENTITY_NORMALIZATION_VERSION,
   RECONCILIATION_DECISION_VERSION,
@@ -89,6 +90,7 @@ export class UserRequestsService {
     private readonly tokenDelivery: ActivationTokenDeliveryService,
     private readonly personResolver: RuntimePersonResolverService,
     @Optional() private readonly audit?: AuditService,
+    @Optional() private readonly inboxNotifications?: InboxNotificationService,
   ) {}
 
   async create(dto: CreateUserRequestDto, context: AuditContext = {}) {
@@ -119,7 +121,7 @@ export class UserRequestsService {
           personId = resolution.person.id;
         }
       }
-      return tx.userRequest.create({
+      const created = await tx.userRequest.create({
         data: {
           ...requestData,
           fullName: requestData.fullName,
@@ -137,6 +139,8 @@ export class UserRequestsService {
         },
         select: requestSelect,
       });
+      await this.inboxNotifications?.notifyUserRequestSubmitted(tx, created.id);
+      return created;
     });
     await this.audit?.log({
       action: AuditAction.USER_REQUEST_CREATED,

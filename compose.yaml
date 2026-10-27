@@ -22,6 +22,7 @@ services:
       start_period: 10s
 
   backend:
+    image: ${BACKEND_IMAGE:-sgi-curime-backend:latest}
     build:
       context: ./backend
 
@@ -70,8 +71,7 @@ services:
       postgres:
         condition: service_healthy
 
-    command: >
-      sh -c " npx prisma migrate deploy --config prisma.config.ts && npm run db:seed && npm run start:prod "
+    command: ["npm", "run", "start:prod"]
 
     healthcheck:
       test: [ "CMD", "node", "-e", "fetch('http://localhost:3000/').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))" ]

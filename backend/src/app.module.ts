@@ -28,6 +28,7 @@ import { InstitutionalProfileModule } from './institutional-profile/institutiona
 import { InstitutionalBoardModule } from './institutional-board/institutional-board.module';
 import { EntrepreneurshipModule } from './entrepreneurship/entrepreneurship.module';
 import { VolunteeringModule } from './volunteering/volunteering.module';
+import { InboxNotificationsModule } from './modules/notifications/inbox-notifications.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { VolunteeringModule } from './volunteering/volunteering.module';
     InstitutionalBoardModule,
     EntrepreneurshipModule,
     VolunteeringModule,
+    InboxNotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

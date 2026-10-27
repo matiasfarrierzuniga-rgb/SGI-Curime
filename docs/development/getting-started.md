@@ -1,8 +1,8 @@
 # Puesta en marcha local
 
 Estado: Vigente  
-Última revisión: 2026-09  
-Fuente primaria: `main`, `.env.example`, `compose.yaml` y scripts actuales
+Última revisión: 2026-10
+Fuente primaria: `.env.example`, `compose.yaml` y scripts actuales
 
 ## Propósito
 
@@ -44,7 +44,7 @@ Consulta `environment-variables.md` para la clasificación de variables.
 
 ## Ruta A — Docker Compose
 
-La configuración oficial integrada actualmente en `main` es:
+La configuración contenerizada actual es:
 
 ```text
 compose.yaml
@@ -61,6 +61,21 @@ Frontend React servido por Nginx
 ```
 
 Ejecuta:
+
+Antes del primer arranque de una base o de aplicar una versión que incluya migraciones, confirme el entorno objetivo, respaldo recuperable y autorización. Luego ejecute las migraciones explícitamente:
+
+```bash
+docker compose up -d postgres
+docker compose run --rm --no-deps backend npx prisma migrate deploy --config prisma.config.ts
+```
+
+El seed no es automático. Ejecútelo sólo bajo decisión controlada para el entorno identificado:
+
+```bash
+docker compose run --rm --no-deps backend npm run db:seed
+```
+
+Después levante aplicación y frontend. El backend inicia únicamente con `npm run start:prod`:
 
 ```bash
 docker compose up --build
@@ -125,15 +140,13 @@ Vite utiliza normalmente el puerto `5173`.
 
 ## Qué hace Docker al iniciar
 
-El servicio backend de `compose.yaml` espera que PostgreSQL esté healthy y después ejecuta:
+El servicio backend de `compose.yaml` espera que PostgreSQL esté healthy y después ejecuta únicamente:
 
 ```text
-prisma migrate deploy
-    ↓
-db:seed
-    ↓
 start:prod
 ```
+
+Migraciones y seed son operaciones explícitas previas, no efectos de `docker compose up`.
 
 El frontend espera que el healthcheck del backend esté saludable antes de iniciar.
 
@@ -147,7 +160,7 @@ El frontend se sirve mediante Nginx en el puerto interno `80`, publicado por def
 
 ## Configuración Docker actualmente vigente
 
-En `main` existen:
+En la configuración actual existen:
 
 ```text
 compose.yaml
@@ -156,7 +169,7 @@ frontend/Dockerfile
 frontend/nginx.conf
 ```
 
-No debe asumirse que `docker-compose.dev.yml` o Dockerfiles de desarrollo formen parte de `main` mientras no estén integrados explícitamente.
+No debe asumirse que `docker-compose.dev.yml` o Dockerfiles de desarrollo formen parte de la configuración actual mientras no estén integrados explícitamente.
 
 ## Verificación antes de desarrollar
 
