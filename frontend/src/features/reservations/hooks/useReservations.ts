@@ -6,7 +6,7 @@ export const reservationsKeys = { all: ['reservations'] as const, list: (filters
 export function useReservableResources() { return useQuery({ queryKey: reservationsKeys.resources(), queryFn: reservationsApi.resources }) }
 export function useReservationAvailability(input: Pick<CreateReservationRequest, 'resourceId' | 'startAt' | 'endAt'> | null) { return useQuery({ queryKey: reservationsKeys.availability(input?.resourceId ?? 0, input?.startAt ?? '', input?.endAt ?? ''), queryFn: () => reservationsApi.availability(input!), enabled: false }) }
 export function useCreateReservation() { return useMutation({ mutationFn: reservationsApi.create }) }
-export function useReservationsList(filters: ReservationFilters) { return useQuery({ queryKey: reservationsKeys.list(filters), queryFn: () => reservationsApi.list(filters) }) }
+export function useReservationsList(filters: ReservationFilters, enabled = true) { return useQuery({ queryKey: reservationsKeys.list(filters), queryFn: () => reservationsApi.list(filters), enabled }) }
 export function useReservationDetail(id: number | null) { return useQuery({ queryKey: reservationsKeys.detail(id ?? 0), queryFn: () => reservationsApi.detail(id!), enabled: id !== null }) }
 export function useReservationMutations() {
   const queryClient = useQueryClient()

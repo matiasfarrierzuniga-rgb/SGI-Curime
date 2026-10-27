@@ -3,7 +3,7 @@ import { assembliesApi } from '../api/assemblies.api'
 import type { AssemblyPayload } from '../model/assemblies.types'
 
 export const assembliesKeys = { all: ['assemblies'] as const, detail: (id: number) => ['assemblies', id] as const, mine: ['assemblies', 'mine'] as const, eligible: ['assemblies', 'eligible'] as const }
-export const useAssemblies = () => useQuery({ queryKey: assembliesKeys.all, queryFn: assembliesApi.list })
+export const useAssemblies = (enabled = true) => useQuery({ queryKey: assembliesKeys.all, queryFn: assembliesApi.list, enabled })
 export const useAssembly = (id: number | null) => useQuery({ queryKey: assembliesKeys.detail(id ?? 0), queryFn: () => assembliesApi.detail(id!), enabled: id !== null })
 export const useMineAssemblies = () => useQuery({ queryKey: assembliesKeys.mine, queryFn: assembliesApi.mine })
 export const useEligibleAffiliates = (enabled: boolean) => useQuery({ queryKey: assembliesKeys.eligible, queryFn: assembliesApi.eligible, enabled })
