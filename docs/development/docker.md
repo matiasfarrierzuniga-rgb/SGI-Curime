@@ -1,8 +1,8 @@
 # Docker en SGI-Curime
 
 Estado: Vigente  
-Última revisión: 2026-09  
-Fuente primaria: `compose.yaml`, Dockerfiles y configuración actual de `main`
+Última revisión: 2026-10
+Fuente primaria: `compose.yaml`, Dockerfiles y configuración actual
 
 ## Propósito
 
@@ -16,7 +16,7 @@ La configuración Docker integrada en `main` es:
 compose.yaml
 ```
 
-Actualmente no forma parte de `main` un `docker-compose.dev.yml`, por lo que no debe tratarse como flujo oficial vigente.
+Actualmente no forma parte del repositorio un `docker-compose.dev.yml`, por lo que no debe tratarse como flujo oficial vigente.
 
 ## Servicios
 
@@ -47,11 +47,7 @@ POSTGRES_PORT
 
 ### Backend
 
-El backend se construye desde:
-
-```text
-backend/Dockerfile
-```
+El backend se construye desde `backend/Dockerfile` y puede usar la imagen indicada por `BACKEND_IMAGE` (por defecto, `sgi-curime-backend:latest`).
 
 Características principales:
 
@@ -62,15 +58,13 @@ Características principales:
 - copia el cliente Prisma generado al artefacto de salida;
 - expone el puerto interno `3000`.
 
-Dentro de Compose, antes de iniciar la aplicación ejecuta:
+Dentro de Compose el proceso de aplicación ejecuta únicamente:
 
 ```text
-npx prisma migrate deploy --config prisma.config.ts
-npm run db:seed
 npm run start:prod
 ```
 
-El backend depende del healthcheck de PostgreSQL.
+El backend depende del healthcheck de PostgreSQL. No ejecuta migraciones ni seed al arrancar.
 
 Variables relevantes:
 
@@ -107,12 +101,31 @@ El frontend depende del healthcheck del backend.
 ```text
 postgres
    ↓ healthy
-backend
-   ↓ migrations + seed + app healthy
+ejecutar migraciones explícitas, cuando estén autorizadas
+   ↓
+backend (`npm run start:prod`)
+   ↓ healthy
 frontend
 ```
 
-Esto evita iniciar capas superiores antes de que su dependencia principal esté lista.
+Esto evita aplicar cambios de datos o crear información inicial por efecto de un reinicio de contenedores.
+
+## Migraciones y seed controlados
+
+Antes de modificar una base, confirme entorno objetivo, respaldo recuperable y autorización. Con PostgreSQL levantado y healthy, aplique migraciones explícitamente:
+
+```bash
+docker compose up -d postgres
+docker compose run --rm --no-deps backend npx prisma migrate deploy --config prisma.config.ts
+```
+
+El seed no forma parte del arranque. Ejecútelo solamente por decisión controlada para el entorno identificado:
+
+```bash
+docker compose run --rm --no-deps backend npm run db:seed
+```
+
+No use seed como sustituto de migraciones ni contra datos que deban preservarse.
 
 ## Comandos operativos
 
@@ -214,7 +227,7 @@ Ambas rutas deben apuntar a los mismos contratos de aplicación; Docker no repre
 
 ## Alcance actual
 
-Este documento describe únicamente lo que está integrado en `main`.
+Este documento describe únicamente la configuración versionada actual.
 
 No documenta como vigente:
 

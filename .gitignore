@@ -34,6 +34,12 @@ temp/
 *.db
 *.db-journal
 
+# PostgreSQL backups (generated locally; may contain production data)
+/backups/
+*.dump
+*.backup
+*.sql.gz
+
 # Dependencies
 node_modules/
 **/node_modules/
