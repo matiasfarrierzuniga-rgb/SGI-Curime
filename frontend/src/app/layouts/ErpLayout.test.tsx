@@ -106,6 +106,20 @@ describe('ErpLayout', () => {
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
   })
 
+  it('opens an accessible account menu with profile, security, and real logout actions', () => {
+    renderLayout()
+    const trigger = screen.getByRole('button', { name: 'Abrir menú de cuenta' })
+    fireEvent.click(trigger)
+    expect(screen.getByRole('menuitem', { name: 'Mi perfil' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Cambiar contraseña' })).toBeInTheDocument()
+    expect(screen.getAllByRole('menuitem', { name: 'Cerrar sesión' }).length).toBeGreaterThan(0)
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+    expect(screen.queryByRole('menuitem', { name: 'Mi perfil' })).not.toBeInTheDocument()
+    fireEvent.click(trigger)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Mi perfil' }))
+    expect(screen.getByRole('heading', { name: 'Mi perfil' })).toBeInTheDocument()
+  })
+
   it('keeps desktop navigation expanded by default', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
@@ -124,6 +138,21 @@ describe('ErpLayout', () => {
     expect(screen.getAllByRole('button', { name: 'Contraer navegación' })[0]).toHaveAttribute('aria-expanded', 'true')
   })
 
+  it('temporarily expands both sidebar and dashboard content on hover after collapse', () => {
+    renderLayout()
+    const sidebar = document.getElementById('erp-sidebar-navigation')!
+    const content = document.getElementById('erp-content')!
+    fireEvent.click(screen.getByRole('button', { name: 'Contraer navegación' }))
+    expect(sidebar).toHaveClass('w-20')
+    expect(content).toHaveClass('md:ml-20')
+    fireEvent.mouseEnter(sidebar)
+    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(content).toHaveClass('md:ml-[15.25rem]')
+    fireEvent.mouseLeave(sidebar)
+    expect(sidebar).toHaveClass('w-20')
+    expect(content).toHaveClass('md:ml-20')
+  })
+
   it('keeps empty mobile groups collapsed and exposes their state to keyboard users', () => {
     renderLayout()
     fireEvent.click(screen.getByRole('button', { name: 'Abrir navegación' }))
@@ -135,12 +164,10 @@ describe('ErpLayout', () => {
 
   it('renders visible, named sidebar controls instead of blank light buttons', () => {
     renderLayout()
-    const headerControl = screen.getAllByRole('button', { name: 'Contraer navegación' })[0]
-    expect(headerControl.querySelector('svg')).not.toBeNull()
-    expect(headerControl).toHaveClass('!bg-erp-navigation', '!text-erp-navigation-foreground')
-    const pinControl = screen.getAllByRole('button', { name: 'Contraer navegación' })[1]
+    expect(screen.getAllByRole('button', { name: 'Contraer navegación' })).toHaveLength(1)
+    const pinControl = screen.getByRole('button', { name: 'Contraer navegación' })
     expect(pinControl.querySelector('svg')).not.toBeNull()
-    expect(pinControl).toHaveClass('!bg-erp-navigation-hover', '!text-erp-navigation-foreground')
+    expect(pinControl).toHaveClass('!border-white/35', '!bg-transparent', '!text-erp-navigation-foreground')
     for (const label of ['Expandir Emprendimientos', 'Expandir Inventario', 'Expandir Finanzas']) {
       const control = screen.getByRole('button', { name: label })
       expect(control.querySelector('svg')).not.toBeNull()
@@ -148,7 +175,7 @@ describe('ErpLayout', () => {
     }
     const logout = screen.getAllByRole('button', { name: 'Cerrar sesión' })[0]
     expect(logout).toHaveTextContent('Cerrar sesión')
-    expect(logout).toHaveClass('!bg-erp-navigation', '!text-red-200')
+    expect(logout).toHaveClass('!border-red-300/70', '!bg-erp-navigation', '!text-red-200')
     expect(logout.querySelector('svg')).not.toBeNull()
   })
 })

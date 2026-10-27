@@ -65,7 +65,7 @@ export function ProfilePage() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-elevation-1">
+      <Card id="cambiar-contrasena" className="shadow-elevation-1">
         <CardHeader className="border-b border-border-subtle">
           <CardTitle>Cambiar contraseña</CardTitle>
           <CardDescription>Use al menos 10 caracteres e incluya mayúscula, minúscula y número.</CardDescription>

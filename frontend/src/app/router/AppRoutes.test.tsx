@@ -205,7 +205,7 @@ describe('AppRoutes capability deep links', () => {
   it('denies a dashboard deep link without its read capability', async () => {
     renderRoute('/app/dashboard', 'Tesorero')
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Dashboard' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Buenos días/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
   })
 
@@ -243,7 +243,7 @@ describe('AppRoutes capability deep links', () => {
   it('keeps Subscription_L1 outside ERP even when a permission is present', async () => {
     renderRoute('/app', 'Subscription_L1', false, ['erp.dashboard.read'])
     expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Dashboard' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Buenos días/ })).not.toBeInTheDocument()
   })
 
   it('renders profile inside the ERP shell while preserving the public profile route', async () => {
