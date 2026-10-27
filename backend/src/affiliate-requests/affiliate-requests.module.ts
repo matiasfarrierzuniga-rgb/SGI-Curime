@@ -3,10 +3,11 @@ import { AuthModule } from '../auth';
 import { AuditModule } from '../audit/audit.module';
 import { PublicRequestRateLimitModule } from '../common/rate-limit/public-request-rate-limit.module';
 import { IdentityModule } from '../identity/identity.module';
+import { InboxNotificationsModule } from '../modules/notifications/inbox-notifications.module';
 import { AffiliateRequestsController } from './affiliate-requests.controller';
 import { AffiliateRequestsService } from './affiliate-requests.service';
 @Module({
-  imports: [AuthModule, AuditModule, IdentityModule, PublicRequestRateLimitModule],
+  imports: [AuthModule, AuditModule, IdentityModule, PublicRequestRateLimitModule, InboxNotificationsModule],
   controllers: [AffiliateRequestsController],
   providers: [AffiliateRequestsService],
 })

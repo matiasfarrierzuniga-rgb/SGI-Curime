@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Bell, ChevronDown, ChevronRight, ExternalLink, LogOut, Menu, Mountain, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, ExternalLink, LogOut, Menu, Mountain, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
+import { NotificationCenter } from '@/features/notifications'
 import { getErpNavigation, type ErpNavigationItem, type ErpNavigationSection, type NavigationAccent } from '@/app/navigation/erpNavigation'
 import { getRoleName } from '@/shared/security/roles'
 import { Button } from '@/shared/ui/button'
@@ -48,7 +49,7 @@ export function ErpLayout() {
         <button type="button" className="hidden size-9 place-items-center rounded-control !border-white/20 !bg-erp-navigation !p-0 !text-erp-navigation-foreground transition-colors hover:!bg-erp-navigation-hover focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-erp-focus md:grid" aria-controls="erp-sidebar-navigation" aria-label={sidebarPinned ? 'Contraer navegación' : 'Expandir navegación'} aria-expanded={sidebarPinned} onClick={() => setSidebarPinned(value => !value)}>{sidebarPinned ? <PanelLeftClose className="size-4" aria-hidden="true" /> : <PanelLeftOpen className="size-4" aria-hidden="true" />}</button>
         <div role="search" aria-label="Búsqueda no disponible" className="hidden max-w-xl flex-1 items-center gap-3 rounded-control bg-erp-surface-subtle px-4 py-3 text-body-small text-erp-text-muted lg:flex"><Search className="size-5 shrink-0 text-erp-text" aria-hidden="true" /><span>Buscar en el sistema...</span></div>
         <div className="min-w-0 flex-1 lg:hidden"><nav aria-label="Ubicación actual" className="flex min-w-0 items-center gap-1.5 text-caption font-medium text-erp-text-muted"><span className="shrink-0">Área de gestión</span><ChevronRight className="size-3 shrink-0 text-erp-text-muted/60" aria-hidden="true" /><span className="truncate font-semibold text-erp-text" aria-current="page">{pageLabel}</span></nav></div>
-        <div className="flex shrink-0 items-center gap-3 border-l border-erp-border pl-3 sm:pl-5"><span className="grid size-9 place-items-center text-erp-text-muted" aria-hidden="true"><Bell className="size-5" /></span><span className="grid size-10 place-items-center rounded-full bg-erp-navigation text-label font-bold text-erp-navigation-foreground" aria-hidden="true">{getInitials(user?.fullName)}</span><div className="min-w-0 text-left"><p className="max-w-32 truncate text-navigation font-semibold text-erp-text sm:max-w-56">{user?.fullName}</p>{roleName ? <p className="mt-0.5 text-caption text-erp-text-muted">{roleName}</p> : null}</div><ChevronDown className="hidden size-4 text-erp-text sm:block" aria-hidden="true" /></div>
+        <div className="flex shrink-0 items-center gap-3 border-l border-erp-border pl-3 sm:pl-5"><NotificationCenter /><span className="grid size-10 place-items-center rounded-full bg-erp-navigation text-label font-bold text-erp-navigation-foreground" aria-hidden="true">{getInitials(user?.fullName)}</span><div className="min-w-0 text-left"><p className="max-w-32 truncate text-navigation font-semibold text-erp-text sm:max-w-56">{user?.fullName}</p>{roleName ? <p className="mt-0.5 text-caption text-erp-text-muted">{roleName}</p> : null}</div><ChevronDown className="hidden size-4 text-erp-text sm:block" aria-hidden="true" /></div>
       </div>
     </header>
 

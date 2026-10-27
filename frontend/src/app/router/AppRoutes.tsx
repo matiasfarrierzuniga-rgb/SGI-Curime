@@ -39,6 +39,7 @@ import { InstitutionalBoardPage } from '@/features/institutional-board'
 import { PublicVentureDetailPage, PublicVenturesPage, VenturesPage, VenturesSummaryPage } from '@/features/entrepreneurship'
 import { OpportunitiesPage } from '@/features/volunteering'
 import { getErpEntryPath } from '@/app/navigation/erpNavigation'
+import { NotificationsPage } from '@/features/notifications'
 
 function ErpEntryRedirect() {
   const { user } = useAuth()
@@ -84,6 +85,7 @@ export function AppRoutes() {
             <Route path="/app/dashboard" element={<AppHomePage />} />
           </Route>
           <Route path="/app/profile" element={<ProfilePage />} />
+          <Route path="/app/notifications" element={<NotificationsPage />} />
            <Route element={<RoleRoute capability="res.reservations.read" />}>
              <Route path="/app/reservations" element={<ReservationAdminPage />} />
            </Route>

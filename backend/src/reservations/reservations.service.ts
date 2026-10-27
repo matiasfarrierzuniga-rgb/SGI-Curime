@@ -11,6 +11,7 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { QueryReservationAvailabilityDto } from './dto/query-reservation-availability.dto';
 import { QueryReservationsDto } from './dto/query-reservations.dto';
 import { assertReservationTransition } from './reservation-transition.policy';
+import { InboxNotificationService } from '../modules/notifications/application/inbox-notification.service';
 
 const BLOCKING_STATUSES = [
   ReservationStatus.PENDING,
@@ -86,12 +87,15 @@ const adminReservationSelect = {
 
 type ReservationTransaction = Pick<
   Prisma.TransactionClient,
-  'reservableResource' | 'reservation' | 'event' | 'financialCharge'
+  'reservableResource' | 'reservation' | 'event' | 'financialCharge' | 'user' | 'notification'
 >;
 
 @Injectable()
 export class ReservationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly inboxNotifications?: InboxNotificationService,
+  ) {}
 
   findActiveResources() {
     return this.prisma.reservableResource.findMany({
@@ -127,7 +131,7 @@ export class ReservationsService {
       );
       if (conflict) throw new ConflictException('Resource is not available');
 
-      return tx.reservation.create({
+      const created = await tx.reservation.create({
         data: {
           resourceId: dto.resourceId,
           requesterUserId,
@@ -141,6 +145,8 @@ export class ReservationsService {
         },
         select: reservationSelect,
       });
+      await this.inboxNotifications?.notifyReservationSubmitted(tx, created.id);
+      return created;
     });
   }
 
@@ -196,6 +202,7 @@ export class ReservationsService {
         select: {
           id: true,
           status: true,
+          requesterUserId: true,
           resourceId: true,
           startAt: true,
           endAt: true,
@@ -279,6 +286,7 @@ export class ReservationsService {
         }
       }
 
+      await this.inboxNotifications?.notifyReservationResolved(tx, approved.id, reservation.requesterUserId, true);
       return approved;
     });
   }
@@ -287,7 +295,7 @@ export class ReservationsService {
     return this.withSerializableTransaction(async (tx) => {
       const reservation = await tx.reservation.findUnique({
         where: { id },
-        select: { id: true, status: true },
+        select: { id: true, status: true, requesterUserId: true },
       });
       if (!reservation) throw new NotFoundException('Reservation not found');
       if (reservation.status !== ReservationStatus.PENDING) {
@@ -305,10 +313,12 @@ export class ReservationsService {
         throw new ConflictException('Only pending reservations can be rejected');
       }
 
-      return tx.reservation.findUniqueOrThrow({
+      const rejected = await tx.reservation.findUniqueOrThrow({
         where: { id },
         select: adminReservationSelect,
       });
+      await this.inboxNotifications?.notifyReservationResolved(tx, rejected.id, reservation.requesterUserId, false);
+      return rejected;
     });
   }
 

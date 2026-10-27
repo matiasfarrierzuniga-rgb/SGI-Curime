@@ -5,6 +5,7 @@ import { ErpLayout } from './ErpLayout'
 
 const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }))
+vi.mock('@/features/notifications', () => ({ NotificationCenter: () => <button type="button" aria-label="Notificaciones">Notificaciones</button> }))
 
 function renderLayout(initialPath = '/app/dashboard') {
   return render(<MemoryRouter initialEntries={[initialPath]}><Routes><Route element={<ErpLayout />}><Route path="/app/dashboard" element={<h1>Área de gestión</h1>} /><Route path="/app/profile" element={<h1>Mi perfil</h1>} /><Route path="/inventory" element={<h1>Inventario</h1>} /><Route path="/inventory/items" element={<h1>Artículos</h1>} /><Route path="/app/financial" element={<h1>Finanzas</h1>} /><Route path="/app/financial/movements" element={<h1>Movimientos financieros</h1>} /><Route path="/app/financial/dinadeco" element={<h1>DINADECO</h1>} /></Route><Route path="/login" element={<h1>Iniciar sesión</h1>} /></Routes></MemoryRouter>)
@@ -21,6 +22,7 @@ describe('ErpLayout', () => {
     expect(screen.getByRole('navigation', { name: 'Ubicación actual' })).toHaveTextContent('Área de gestiónInicio')
     expect(screen.getAllByRole('link', { name: 'Ver sitio público' })[0]).toHaveAttribute('href', '/')
     expect(screen.getAllByRole('main')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Notificaciones' })).toBeInTheDocument()
   })
 
   it('opens accessible mobile navigation and closes it after navigation', () => {

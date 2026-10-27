@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth';
 import { PublicRequestRateLimitModule } from '../common/rate-limit/public-request-rate-limit.module';
 import { NotificationsModule } from '../modules/notifications/notifications.module';
+import { InboxNotificationsModule } from '../modules/notifications/inbox-notifications.module';
 import { IdentityModule } from '../identity/identity.module';
 import { ActivationTokenDeliveryService } from './activation-token-delivery.service';
 import { ActivationTokenService } from './activation-token.service';
@@ -16,6 +17,7 @@ import { UserRequestsService } from './user-requests.service';
     NotificationsModule.forRoot({
       baseUrl: publicAppUrl(),
     }),
+    InboxNotificationsModule,
   ],
   controllers: [UserRequestsController],
   providers: [

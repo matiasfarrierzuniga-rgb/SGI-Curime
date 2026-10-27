@@ -150,6 +150,7 @@ model User {
   volunteerOpportunities      VolunteerOpportunity[]
   reviewedVolunteerApps       VolunteerApplication[]   @relation("VolunteerApplicationReviewer")
   recordedVolunteerAttendance VolunteerAttendance[]
+  notifications              Notification[]
 }
 
 model Session {
@@ -183,6 +184,26 @@ model AuditLog {
   @@index([action])
   @@index([module])
   @@index([createdAt])
+}
+
+model Notification {
+  id               Int                      @id @default(autoincrement())
+  recipientUserId  Int
+  type             NotificationType
+  category         NotificationCategory
+  priority         NotificationPriority     @default(NORMAL)
+  title            String                   @db.VarChar(180)
+  body             String                   @db.VarChar(500)
+  resourceType     NotificationResourceType
+  resourceId       String                   @db.VarChar(80)
+  deduplicationKey String                   @unique @db.VarChar(255)
+  readAt           DateTime?
+  createdAt        DateTime                 @default(now())
+  expiresAt        DateTime
+  recipient        User                     @relation(fields: [recipientUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([recipientUserId, readAt, createdAt])
+  @@index([recipientUserId, expiresAt])
 }
 
 model PasswordResetToken {
@@ -1102,6 +1123,29 @@ enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum NotificationType {
+  USER_REQUEST_SUBMITTED
+  AFFILIATE_REQUEST_SUBMITTED
+  RESERVATION_SUBMITTED
+  RESERVATION_APPROVED
+  RESERVATION_REJECTED
+}
+
+enum NotificationCategory {
+  OPERATIONAL
+  INFORMATIONAL
+}
+
+enum NotificationPriority {
+  NORMAL
+}
+
+enum NotificationResourceType {
+  USER_REQUEST
+  AFFILIATE_REQUEST
+  RESERVATION
 }
 
 enum UserStatus {

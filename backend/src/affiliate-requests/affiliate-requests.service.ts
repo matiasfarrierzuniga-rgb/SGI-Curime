@@ -13,6 +13,7 @@ import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RuntimePersonResolverService } from '../identity/runtime-person-resolver.service';
+import { InboxNotificationService } from '../modules/notifications/application/inbox-notification.service';
 import { CreateAffiliateRequestDto } from './dto/create-affiliate-request.dto';
 import { QueryAffiliateRequestsDto } from './dto/query-affiliate-requests.dto';
 
@@ -59,6 +60,7 @@ export class AffiliateRequestsService {
     private readonly prisma: PrismaService,
     @Optional() private readonly audit?: AuditService,
     private readonly personResolver?: RuntimePersonResolverService,
+    private readonly inboxNotifications?: InboxNotificationService,
   ) {}
   async create(
     dto: CreateAffiliateRequestDto,
@@ -75,7 +77,7 @@ export class AffiliateRequestsService {
           data: { birthDate: dto.birthDate },
         });
       }
-      return tx.affiliateRequest.create({
+      const created = await tx.affiliateRequest.create({
         data: {
           fullName: personFullName(dto),
           identification: dto.identification,
@@ -108,6 +110,8 @@ export class AffiliateRequestsService {
         },
         select,
       });
+      await this.inboxNotifications?.notifyAffiliateRequestSubmitted(tx, created.id);
+      return created;
     });
     await this.audit?.log({
       action: AuditAction.AFFILIATE_REQUEST_CREATED,

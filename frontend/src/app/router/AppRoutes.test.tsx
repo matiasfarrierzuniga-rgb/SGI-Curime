@@ -78,6 +78,8 @@ beforeEach(() => {
     if (url === '/ventures') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 1 } })
     if (url === '/volunteering/opportunities') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/institutional-profile') return Promise.resolve({ data: emptyInstitutionalProfile() })
+    if (url === '/notifications/unread-count') return Promise.resolve({ data: { unread: 0 } })
+    if (url === '/notifications') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 5 } })
     throw new Error(`Unexpected HTTP request in AppRoutes tests: ${url}`)
   })
 })
@@ -191,13 +193,13 @@ describe('AppRoutes capability deep links', () => {
   it('redirects administrators from /app to the dashboard', async () => {
     renderRoute('/app', 'Administrador')
 
-    expect(await screen.findByRole('heading', { name: 'Dashboard' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /Buenos días/ }, { timeout: 5000 })).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Inicio' })[0]).toHaveAttribute('href', '/app/dashboard')
   })
 
   it('allows the dashboard only with its read capability', async () => {
     renderRoute('/app/dashboard', 'Administrador', true, ['erp.dashboard.read'])
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /Buenos días/ })).toBeInTheDocument()
   })
 
   it('denies a dashboard deep link without its read capability', async () => {
@@ -264,7 +266,7 @@ describe('AppRoutes capability deep links', () => {
   it('preserves the authenticated session when returning to the public portal', async () => {
     renderRoute('/app/dashboard', 'Administrador')
 
-    await screen.findByRole('heading', { name: 'Dashboard' })
+    await screen.findByRole('heading', { name: /Buenos días/ })
     fireEvent.click(screen.getAllByRole('link', { name: 'Ver sitio público' })[0])
 
     expect(await screen.findAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
@@ -273,7 +275,7 @@ describe('AppRoutes capability deep links', () => {
   it('clears the session and redirects logout to login', async () => {
     const sessionView = renderRoute('/app/dashboard', 'Administrador')
 
-    await screen.findByRole('heading', { name: 'Dashboard' })
+    await screen.findByRole('heading', { name: /Buenos días/ })
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
 
     expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()

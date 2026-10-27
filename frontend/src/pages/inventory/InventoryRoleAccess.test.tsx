@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Navigate, Outlet } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -59,10 +60,13 @@ const renderAt = (path: string, role: string | null) => {
     }
     : null
   state.value.isAuthenticated = Boolean(role)
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <AppRoutes />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[path]}>
+        <AppRoutes />
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
