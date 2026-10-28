@@ -149,6 +149,13 @@ describe('getErpNavigation', () => {
     expect(dinadecoOnly).toMatchObject({ path: '/app/financial/dinadeco', children: [expect.objectContaining({ path: '/app/financial/dinadeco' })] })
   })
 
+  it('shows treasury summary only with movement and charge read capabilities', () => {
+    const movementOnly = getErpNavigation(['fin.movements.read']).flatMap(section => section.items).find(item => item.label === 'Finanzas')
+    const complete = getErpNavigation(['fin.movements.read', 'fin.charges.read']).flatMap(section => section.items).find(item => item.label === 'Finanzas')
+    expect(movementOnly?.children?.some(item => item.path === '/app/financial')).toBe(false)
+    expect(complete?.children).toEqual(expect.arrayContaining([expect.objectContaining({ path: '/app/financial', allOfCapabilities: ['fin.movements.read', 'fin.charges.read'] })]))
+  })
+
   it('hides the entrepreneurship group and its destinations without venture read capability', () => {
     const items = getErpNavigation([]).flatMap(section => section.items)
     expect(items.find(item => item.label === 'Emprendimientos')).toBeUndefined()

@@ -17,7 +17,7 @@ function Location() {
 }
 
 function renderRoute(props: React.ComponentProps<typeof RoleRoute>) {
-  render(
+  return render(
     <MemoryRouter initialEntries={['/protected']}>
       <Routes>
         <Route element={<RoleRoute {...props} />}>
@@ -125,5 +125,16 @@ describe('RoleRoute', () => {
     auth.user = { permissionCodes: ['fin.charges.read'], canAccessErp: false }
     renderRoute({ anyOfCapabilities: ['fin.movements.read', 'fin.charges.read'] })
     expect(screen.getByText('/403')).toBeInTheDocument()
+  })
+
+  it('requires every capability in an all-of requirement', () => {
+    auth.user = { permissionCodes: ['fin.charges.read'], canAccessErp: true }
+    auth.isAuthenticated = true
+    const { unmount } = renderRoute({ allOfCapabilities: ['fin.movements.read', 'fin.charges.read'] })
+    expect(screen.getByText('/403')).toBeInTheDocument()
+    unmount()
+    auth.user = { permissionCodes: ['fin.movements.read', 'fin.charges.read'], canAccessErp: true }
+    renderRoute({ allOfCapabilities: ['fin.movements.read', 'fin.charges.read'] })
+    expect(screen.getByText('Permitido')).toBeInTheDocument()
   })
 })

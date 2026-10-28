@@ -114,7 +114,7 @@ function QuickActions({ permissionCodes, className }: { permissionCodes: readonl
   const actions = [
     hasCapability(permissionCodes, 'fin.movements.create') ? { label: 'Registrar movimiento', detail: 'Abrir registro existente', path: '/app/financial/movements', icon: Plus } : null,
     hasCapability(permissionCodes, 'fin.movements.read') ? { label: 'Consultar movimientos', detail: 'Historial financiero', path: '/app/financial/movements', icon: BarChart3 } : null,
-    hasCapability(permissionCodes, 'fin.charges.read') ? { label: hasCapability(permissionCodes, 'fin.payments.record') ? 'Cargos y pagos' : 'Consultar cargos', detail: 'Listado existente', path: '/app/financial', icon: CircleDollarSign } : null,
+    hasCapability(permissionCodes, 'fin.charges.read') ? { label: hasCapability(permissionCodes, 'fin.payments.record') ? 'Cargos y pagos' : 'Consultar cargos', detail: 'Listado existente', path: '/app/financial/charges', icon: CircleDollarSign } : null,
     hasCapability(permissionCodes, 'fin.dinadeco.read') ? { label: 'Consultar DINADECO', detail: 'Reporte anual', path: '/app/financial/dinadeco', icon: FileText } : null,
     hasCapability(permissionCodes, 'don.donations.read') ? { label: 'Consultar donaciones', detail: 'Módulo existente', path: '/app/donations', icon: ReceiptText } : null,
   ].filter((action): action is NonNullable<typeof action> => action !== null)
