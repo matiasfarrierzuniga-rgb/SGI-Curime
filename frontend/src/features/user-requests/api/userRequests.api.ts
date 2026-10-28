@@ -1,9 +1,10 @@
 import { httpClient } from '@/shared/api/httpClient'
 import type { PaginatedResponse } from '@/shared/api/api.types'
-import type { CreateUserRequest, UserRequest, UserRequestQuery } from '../model/userRequests.types'
+import type { CreateUserRequest, IdentityLookupResult, UserRequest, UserRequestQuery } from '../model/userRequests.types'
 
 export const userRequestsService = {
   async create(payload: CreateUserRequest) { return (await httpClient.post<UserRequest>('/register', payload)).data },
+  async lookupIdentity(identification: string) { return (await httpClient.get<IdentityLookupResult>(`/identity/lookup/${encodeURIComponent(identification)}`)).data },
   async list(params: UserRequestQuery) { return (await httpClient.get<PaginatedResponse<UserRequest>>('/user-requests', { params })).data },
   async get(id: number) { return (await httpClient.get<UserRequest>(`/user-requests/${id}`)).data },
   async approve(id: number, roleId: number) { return (await httpClient.patch<void>(`/user-requests/${id}/approve`, { roleId })).data },
