@@ -59,6 +59,12 @@ export class ActivateAccountUseCase {
         'Activation token has already been used',
       );
     }
+    if (activationToken.purpose !== 'LEGACY_ACCOUNT_ACTIVATION') {
+      throw new AuthApplicationError(
+        'INVALID_ACTIVATION_TOKEN',
+        'Invalid activation token',
+      );
+    }
     if (activationToken.expiresAt <= new Date()) {
       throw new AuthApplicationError(
         'ACTIVATION_TOKEN_EXPIRED',
@@ -78,6 +84,7 @@ export class ActivateAccountUseCase {
       const claimed = await tx.claimActivationToken(
         activationToken.id,
         new Date(),
+        'LEGACY_ACCOUNT_ACTIVATION',
       );
       if (!claimed) {
         throw new AuthApplicationError(

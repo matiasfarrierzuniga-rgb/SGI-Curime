@@ -8,6 +8,7 @@ export enum NotificationCategory {
 
 export enum NotificationEventType {
   ACCOUNT_ACTIVATION_REQUESTED = 'ACCOUNT_ACTIVATION_REQUESTED',
+  COMMUNITY_EMAIL_VERIFICATION = 'COMMUNITY_EMAIL_VERIFICATION',
   PASSWORD_RESET_REQUESTED = 'PASSWORD_RESET_REQUESTED',
   PASSWORD_CHANGED = 'PASSWORD_CHANGED',
   USER_REQUEST_APPROVED = 'USER_REQUEST_APPROVED',
@@ -19,6 +20,8 @@ export enum NotificationEventType {
 
 export const NOTIFICATION_EVENT_CATEGORIES = {
   [NotificationEventType.ACCOUNT_ACTIVATION_REQUESTED]:
+    NotificationCategory.SECURITY,
+  [NotificationEventType.COMMUNITY_EMAIL_VERIFICATION]:
     NotificationCategory.SECURITY,
   [NotificationEventType.PASSWORD_RESET_REQUESTED]:
     NotificationCategory.SECURITY,
@@ -45,6 +48,11 @@ interface RecipientData {
 export type NotificationIntent =
   | (RecipientData & {
       readonly type: NotificationEventType.ACCOUNT_ACTIVATION_REQUESTED;
+      readonly token: string;
+      readonly expiresAt: Date;
+    })
+  | (RecipientData & {
+      readonly type: NotificationEventType.COMMUNITY_EMAIL_VERIFICATION;
       readonly token: string;
       readonly expiresAt: Date;
     })

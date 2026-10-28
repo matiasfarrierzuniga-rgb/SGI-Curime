@@ -33,7 +33,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(fresh)
         const current = sessionStorageService.get<StoredSession>()
         if (current) sessionStorageService.set({ ...current, user: fresh })
-      }).catch(clearLocalSession)
+      }).catch(() => {
+        // A 403 reports authorization scope, not an invalid authenticated session.
+        // Invalid or expired sessions are cleared only by auth:unauthorized after refresh fails.
+      })
     }
     window.addEventListener('auth:unauthorized', unauthorized)
     window.addEventListener('auth:token-refreshed', tokenRefreshed)

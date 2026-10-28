@@ -11,8 +11,8 @@ import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProfilePage } from '@/features/profile'
-import { RegisterPage } from '@/features/user-requests'
 import { TokenPasswordPage } from '@/features/auth'
+import { CommunityEmailVerificationPage, CommunityHomePage, CommunityRegistrationPage } from '@/features/community-accounts'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
 import { UserRequestsPage } from '@/pages/admin/UserRequestsPage'
 import { UsersPage } from '@/features/users'
@@ -66,7 +66,8 @@ export function AppRoutes() {
       </Route>
       <Route element={<AccessLayout />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<CommunityRegistrationPage />} />
+        <Route path="/verify-community-email" element={<CommunityEmailVerificationPage />} />
         <Route path="/activate-account" element={<TokenPasswordPage mode="activate" />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<TokenPasswordPage mode="reset" />} />
@@ -74,6 +75,7 @@ export function AppRoutes() {
       <Route path="/403" element={<ForbiddenPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<PublicLayout />}>
+          <Route path="/mi-comunidad" element={<CommunityHomePage />} />
           <Route path="/servicios/reservas" element={<ReservationRequestPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

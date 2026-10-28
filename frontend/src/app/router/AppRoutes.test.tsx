@@ -153,6 +153,12 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.queryByText('Navegación móvil')).not.toBeInTheDocument()
   })
 
+  it('keeps a community session and redirects /app to Mi Comunidad', async () => {
+    renderRoute('/app', 'Cuenta comunitaria', false)
+    expect(await screen.findByRole('heading', { name: 'Bienvenido a Mi Comunidad' })).toBeInTheDocument()
+    expect(sessionStorage.getItem('sgi-curime-session')).not.toBeNull()
+  })
+
   it('redirects anonymous users from /admin/users to login before privileged content renders', () => {
     renderRoute('/admin/users', null)
 

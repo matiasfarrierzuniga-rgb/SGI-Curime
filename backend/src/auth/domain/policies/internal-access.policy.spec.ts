@@ -42,6 +42,15 @@ describe('canAccessErp', () => {
     ).toBe(false);
   });
 
+  it('denies a community account even after Person and Affiliate linkage', () => {
+    expect(
+      canAccessErp({
+        ...validAffiliate,
+        userRoleName: 'Cuenta comunitaria',
+      }),
+    ).toBe(false);
+  });
+
   it('denies a treasurer without an affiliate', () => {
     expect(
       canAccessErp({
