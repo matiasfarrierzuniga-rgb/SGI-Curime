@@ -23,6 +23,7 @@ export interface ActivationToken {
   usedAt: Date | null;
   expiresAt: Date;
   userStatus: string;
+  purpose: 'LEGACY_ACCOUNT_ACTIVATION' | 'COMMUNITY_EMAIL_VERIFICATION';
 }
 
 export interface ResetToken {

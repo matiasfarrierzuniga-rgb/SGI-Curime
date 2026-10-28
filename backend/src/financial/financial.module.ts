@@ -6,6 +6,7 @@ import { FinancialMovementsController } from './financial-movements.controller';
 import { FinancialService } from './financial.service';
 import { DinadecoReportsController } from './dinadeco-reports.controller';
 import { DinadecoReportsService } from './dinadeco-reports.service';
+import { FinancialTreasuryController } from './financial-treasury.controller';
 
 @Module({
   imports: [AuthModule, InstitutionalProfileModule],
@@ -13,6 +14,7 @@ import { DinadecoReportsService } from './dinadeco-reports.service';
     FinancialController,
     FinancialMovementsController,
     DinadecoReportsController,
+    FinancialTreasuryController,
   ],
   providers: [FinancialService, DinadecoReportsService],
   exports: [FinancialService],

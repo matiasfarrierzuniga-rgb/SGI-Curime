@@ -18,6 +18,10 @@ export class NotificationUrlBuilder {
     return this.withToken('/activate-account', token);
   }
 
+  communityEmailVerification(token: string): string {
+    return this.withToken('/verify-community-email', token);
+  }
+
   passwordReset(token: string): string {
     return this.withToken('/reset-password', token);
   }

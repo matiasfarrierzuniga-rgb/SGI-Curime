@@ -11,6 +11,7 @@ import {
 } from './ports/email-provider.port';
 import { NotificationUrlBuilder } from './notification-url-builder';
 import { accountActivationTemplate } from './templates/account-activation.template';
+import { communityEmailVerificationTemplate } from './templates/community-email-verification.template';
 import { passwordChangedTemplate } from './templates/password-changed.template';
 import { passwordResetTemplate } from './templates/password-reset.template';
 
@@ -42,6 +43,14 @@ export class NotificationService {
         return accountActivationTemplate({
           recipientName: intent.recipientName,
           activationUrl: this.urlBuilder.activation(intent.token),
+          expiresAt: intent.expiresAt,
+        });
+      case NotificationEventType.COMMUNITY_EMAIL_VERIFICATION:
+        return communityEmailVerificationTemplate({
+          recipientName: intent.recipientName,
+          verificationUrl: this.urlBuilder.communityEmailVerification(
+            intent.token,
+          ),
           expiresAt: intent.expiresAt,
         });
       case NotificationEventType.PASSWORD_RESET_REQUESTED:

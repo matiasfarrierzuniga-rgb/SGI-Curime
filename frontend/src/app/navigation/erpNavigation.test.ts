@@ -83,6 +83,7 @@ describe('getErpNavigation', () => {
       '/inventory/loans',
       '/inventory/alerts',
       '/inventory/reports',
+      '/app/financial/dashboard',
       '/app/financial',
       '/app/financial/movements',
       '/app/financial/dinadeco',
@@ -137,14 +138,22 @@ describe('getErpNavigation', () => {
     const noFinance = getErpNavigation([]).flatMap(section => section.items)
     const finance = getErpNavigation(['fin.movements.read']).flatMap(section => section.items).find(item => item.label === 'Finanzas')
     expect(noFinance.find(item => item.label === 'Finanzas')).toBeUndefined()
-    expect(finance).toMatchObject({ children: [expect.objectContaining({ path: '/app/financial/movements', capability: 'fin.movements.read' })] })
+    expect(finance).toMatchObject({ children: [expect.objectContaining({ path: '/app/financial/dashboard', anyOfCapabilities: ['fin.movements.read', 'fin.charges.read'] }), expect.objectContaining({ path: '/app/financial/movements', capability: 'fin.movements.read' })] })
   })
 
   it('routes a finance parent to its first visible authorized child', () => {
     const movementOnly = getErpNavigation(['fin.movements.read']).flatMap(section => section.items).find(item => item.label === 'Finanzas')
     const dinadecoOnly = getErpNavigation(['fin.dinadeco.read']).flatMap(section => section.items).find(item => item.label === 'Finanzas')
-    expect(movementOnly).toMatchObject({ path: '/app/financial/movements', children: [expect.objectContaining({ path: '/app/financial/movements' })] })
+    expect(movementOnly?.path).toBe('/app/financial/dashboard')
+    expect(movementOnly?.children).toEqual(expect.arrayContaining([expect.objectContaining({ path: '/app/financial/dashboard' })]))
     expect(dinadecoOnly).toMatchObject({ path: '/app/financial/dinadeco', children: [expect.objectContaining({ path: '/app/financial/dinadeco' })] })
+  })
+
+  it('shows treasury summary only with movement and charge read capabilities', () => {
+    const movementOnly = getErpNavigation(['fin.movements.read']).flatMap(section => section.items).find(item => item.label === 'Finanzas')
+    const complete = getErpNavigation(['fin.movements.read', 'fin.charges.read']).flatMap(section => section.items).find(item => item.label === 'Finanzas')
+    expect(movementOnly?.children?.some(item => item.path === '/app/financial')).toBe(false)
+    expect(complete?.children).toEqual(expect.arrayContaining([expect.objectContaining({ path: '/app/financial', allOfCapabilities: ['fin.movements.read', 'fin.charges.read'] })]))
   })
 
   it('hides the entrepreneurship group and its destinations without venture read capability', () => {

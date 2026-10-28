@@ -76,6 +76,31 @@ export type FinancialMovementSummary = {
   totalExpenses: string
   balance: string
 }
+export type TreasuryTotals = {
+  income: string
+  expenses: string
+  net: string
+  bySource: Partial<Record<FinancialMovementSource, { income: string; expenses: string; count: number }>>
+}
+export type TreasurySummary = {
+  currency: 'CRC'
+  period: { dateFrom: string | null; dateTo: string | null }
+  accumulated: TreasuryTotals
+  currentPeriod: TreasuryTotals
+  receivables: { pendingCharges: string; pendingChargeCount: number }
+  openingBalance: { established: false; amount: null; effectiveAt: null }
+  registeredBalance: null
+  reconciliation: {
+    reliable: false
+    reason: 'OPENING_BALANCE_NOT_ESTABLISHED' | 'INCOMPLETE_LINKED_HISTORY_AND_OPENING_BALANCE'
+    issues: string[]
+    confirmedPayments: string
+    confirmedPaymentCount: number
+    unlinkedConfirmedPayments: string
+    unlinkedConfirmedPaymentCount: number
+    unlinkedConfirmedDonationCount: number
+  }
+}
 export const FINANCIAL_MOVEMENT_TYPES: readonly FinancialMovementType[] = ['INCOME', 'EXPENSE']
 
 export type DinadecoSourceSummary = { total: string; count: number }

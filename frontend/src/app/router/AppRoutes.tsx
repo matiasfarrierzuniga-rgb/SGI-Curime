@@ -11,8 +11,8 @@ import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProfilePage } from '@/features/profile'
-import { RegisterPage } from '@/features/user-requests'
 import { TokenPasswordPage } from '@/features/auth'
+import { CommunityEmailVerificationPage, CommunityHomePage, CommunityRegistrationPage } from '@/features/community-accounts'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
 import { UserRequestsPage } from '@/pages/admin/UserRequestsPage'
 import { UsersPage } from '@/features/users'
@@ -31,7 +31,7 @@ import { LandingPage } from '@/features/public-site'
 import { AppHomePage } from '@/pages/erp/AppHomePage'
 import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
-import { DinadecoAnnualReportPage, FinancialMovementsPage, FinancialPage } from '@/features/financial'
+import { DinadecoAnnualReportPage, FinancialDashboardPage, FinancialMovementsPage, FinancialPage, TreasuryPage } from '@/features/financial'
 import { DonationsPage } from '@/features/donations'
 import { AssembliesAdminPage, AssemblyManagementPage, MineAssembliesPage } from '@/features/assemblies'
 import { InstitutionalProfilePage } from '@/features/institutional-profile'
@@ -68,7 +68,8 @@ export function AppRoutes() {
       </Route>
       <Route element={<AccessLayout />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<CommunityRegistrationPage />} />
+        <Route path="/verify-community-email" element={<CommunityEmailVerificationPage />} />
         <Route path="/activate-account" element={<TokenPasswordPage mode="activate" />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<TokenPasswordPage mode="reset" />} />
@@ -76,6 +77,7 @@ export function AppRoutes() {
       <Route path="/403" element={<ForbiddenPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<PublicLayout />}>
+          <Route path="/mi-comunidad" element={<CommunityHomePage />} />
           <Route path="/servicios/reservas" element={<ReservationRequestPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
@@ -94,8 +96,14 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="don.donations.read" />}>
             <Route path="/app/donations" element={<DonationsPage />} />
           </Route>
+          <Route element={<RoleRoute allOfCapabilities={['fin.movements.read', 'fin.charges.read']} />}>
+            <Route path="/app/financial" element={<TreasuryPage />} />
+          </Route>
           <Route element={<RoleRoute capability="fin.charges.read" />}>
-            <Route path="/app/financial" element={<FinancialPage />} />
+            <Route path="/app/financial/charges" element={<FinancialPage />} />
+          </Route>
+          <Route element={<RoleRoute anyOfCapabilities={['fin.movements.read', 'fin.charges.read']} />}>
+            <Route path="/app/financial/dashboard" element={<FinancialDashboardPage />} />
           </Route>
           <Route element={<RoleRoute capability="fin.movements.read" />}>
             <Route path="/app/financial/movements" element={<FinancialMovementsPage />} />
