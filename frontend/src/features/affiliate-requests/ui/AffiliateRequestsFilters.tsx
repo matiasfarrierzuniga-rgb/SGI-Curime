@@ -69,23 +69,23 @@ export function AffiliateRequestsFilters({
         </div>
         <p className="text-caption text-text-secondary">Presione Enter para aplicar correo.</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-start">
-      <div className="flex min-w-0 flex-col gap-1">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-12 xl:items-start">
+      <div className="flex min-w-0 flex-col gap-1 xl:col-span-3">
         <label htmlFor={searchId} className="text-label font-semibold text-text-primary">Búsqueda</label>
         <Input id={searchId} className="bg-surface-base text-text-primary" type="search" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="Nombre, identificación o correo" />
       </div>
-      <div className="flex min-w-0 flex-col gap-1">
+      <div className="flex min-w-0 flex-col gap-1 xl:col-span-3">
         <label htmlFor={emailId} className="text-label font-semibold text-text-primary">Correo electrónico</label>
         <Input id={emailId} className="bg-surface-base text-text-primary" type="email" autoComplete="email" value={email} onChange={(event) => onEmailChange(event.target.value)} onBlur={applyEmail} aria-describedby="email-filter-feedback" aria-invalid={emailIsInvalid} placeholder="correo@ejemplo.cr" />
         <span id="email-filter-feedback" className={emailIsInvalid ? 'text-caption font-medium text-danger' : 'text-caption text-text-secondary'} role={emailIsInvalid ? 'alert' : undefined}>
           {emailIsInvalid ? 'Ingrese un correo válido para aplicarlo.' : emailIsApplied ? `Aplicado: ${appliedEmail}` : 'Se aplica al salir del campo o al presionar Enter.'}
         </span>
       </div>
-      <div className="flex min-w-0 flex-col gap-1">
+      <div className="flex min-w-0 flex-col gap-1 xl:col-span-2">
         <label htmlFor={identificationId} className="text-label font-semibold text-text-primary">Identificación</label>
         <Input id={identificationId} className="bg-surface-base text-text-primary" type="text" value={identification} onChange={(event) => onIdentificationChange(event.target.value)} placeholder="Número de identificación" />
       </div>
-      <div className="flex min-w-0 flex-col gap-1">
+      <div className="flex min-w-0 flex-col gap-1 xl:col-span-2">
         <label htmlFor={statusId} className="text-label font-semibold text-text-primary">Estado</label>
         <Select id={statusId} className="bg-surface-base text-text-primary" value={status} onChange={(event) => onStatusChange(event.target.value as AffiliateRequestStatus | '')}>
           <option value="">Todas</option>
@@ -94,9 +94,12 @@ export function AffiliateRequestsFilters({
           <option value="REJECTED">Rechazada</option>
         </Select>
       </div>
-      <Button variant="outline" className="w-full self-end sm:w-auto" type="button" onClick={onClear} disabled={!hasFilterInput}>
-        Limpiar filtros
-      </Button>
+      <div className="flex min-w-0 flex-col gap-1 xl:col-span-2">
+        <span aria-hidden="true" className="hidden text-label font-semibold sm:block">Acciones</span>
+        <Button variant="outline" className="w-full sm:w-auto" type="button" onClick={onClear} disabled={!hasFilterInput}>
+          Limpiar filtros
+        </Button>
+      </div>
       </div>
       {activeFilters.length > 0 && <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border-subtle pt-3" aria-live="polite"><span className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Filtros aplicados</span>{activeFilters.map((filter) => <span key={filter} className="rounded-full bg-surface-muted px-2.5 py-1 text-caption font-medium text-text-primary">{filter}</span>)}</div>}
     </form>
