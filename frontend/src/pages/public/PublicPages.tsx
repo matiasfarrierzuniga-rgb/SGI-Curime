@@ -126,7 +126,7 @@ export function ServicesPage() {
           { label: "Iniciar sesión", to: "/login" },
           { label: "Crear una cuenta", to: "/register" },
         ],
-    volunteering: [],
+    volunteering: [{ label: isAuthenticated ? "Participar como voluntario" : "Ver oportunidades", to: "/voluntariado" }],
     entrepreneurship: [{ label: "Ver emprendimientos", to: "/ventures" }],
     donations: [],
   } as const;
@@ -148,10 +148,9 @@ export function ServicesPage() {
             <article className="flex min-h-60 flex-col rounded-surface border border-brand-sage/75 bg-card-white p-6 shadow-sm">
               <StatusBadge status="disponible" />
               <h3 className="mt-5 font-heading text-heading-2 font-normal text-brand-ink">Crear una cuenta</h3>
-              <p className="mt-3 flex-1 text-body-small leading-relaxed text-foreground-muted">Cree su cuenta para acceder a los servicios digitales disponibles.</p>
+              <p className="mt-3 flex-1 text-body-small leading-relaxed text-foreground-muted">Envíe una solicitud de cuenta. La Asociación la revisará antes de habilitar el acceso.</p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link className="inline-flex min-h-11 items-center rounded-control bg-brand-deep px-4 text-body-small font-bold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/register">Crear una cuenta</Link>
-                <Link className="inline-flex min-h-11 items-center rounded-control border border-brand-deep px-4 text-body-small font-bold text-brand-deep transition-colors hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/login">Iniciar sesión</Link>
               </div>
             </article>
           )}
