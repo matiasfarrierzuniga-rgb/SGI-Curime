@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Select } from '@/shared/ui/select'
@@ -15,22 +16,26 @@ export function AffiliateFilters({ search, status, onSearchChange, onStatusChang
   const hasFilters = Boolean(search || status)
 
   return (
-    <form className="grid gap-4 border-y border-border-default py-4 md:grid-cols-[minmax(0,1fr)_12rem_auto] md:items-end" onSubmit={(event) => event.preventDefault()}>
+    <form className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_10rem_auto] md:items-end" onSubmit={(event) => event.preventDefault()}>
       <div className="min-w-0">
-        <label htmlFor="affiliate-search" className="flex min-w-0 flex-col gap-2 text-label font-semibold text-text-primary">
+        <label htmlFor="affiliate-search" className="flex min-w-0 flex-col gap-1.5 text-label font-semibold text-text-primary">
           Búsqueda
-          <Input
-            id="affiliate-search"
-            type="search"
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Nombre, identificación o correo"
-            aria-describedby="affiliate-search-hint"
-          />
+          <span className="relative block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
+            <Input
+              id="affiliate-search"
+              className="!pl-11"
+              type="search"
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Nombre, identificación o correo"
+              aria-describedby="affiliate-search-hint"
+            />
+          </span>
         </label>
-        <span id="affiliate-search-hint" className="mt-2 block text-caption text-text-secondary">La búsqueda se aplica mientras escribe.</span>
+        <span id="affiliate-search-hint" className="sr-only">La búsqueda se aplica mientras escribe.</span>
       </div>
-      <label className="flex min-w-0 flex-col gap-2 text-label font-semibold text-text-primary">
+      <label className="flex min-w-0 flex-col gap-1.5 text-label font-semibold text-text-primary">
         Estado
         <Select
           value={status}
