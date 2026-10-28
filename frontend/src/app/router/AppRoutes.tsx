@@ -37,7 +37,7 @@ import { AssembliesAdminPage, AssemblyManagementPage, MineAssembliesPage } from 
 import { InstitutionalProfilePage } from '@/features/institutional-profile'
 import { InstitutionalBoardPage } from '@/features/institutional-board'
 import { PublicVentureDetailPage, PublicVenturesPage, VenturesPage, VenturesSummaryPage } from '@/features/entrepreneurship'
-import { OpportunitiesPage } from '@/features/volunteering'
+import { OpportunitiesPage, PublicOpportunitiesPage, PublicOpportunityDetailPage } from '@/features/volunteering'
 import { getErpEntryPath } from '@/app/navigation/erpNavigation'
 import { NotificationsPage } from '@/features/notifications'
 
@@ -59,6 +59,8 @@ export function AppRoutes() {
         <Route path="/eventos/:publicId" element={<PublicEventDetailPage />} />
         <Route path="/ventures" element={<PublicVenturesPage />} />
         <Route path="/ventures/:id" element={<PublicVentureDetailPage />} />
+        <Route path="/voluntariado" element={<PublicOpportunitiesPage />} />
+        <Route path="/voluntariado/:id" element={<PublicOpportunityDetailPage />} />
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/transparencia" element={<TransparencyPage />} />
         <Route path="/contacto" element={<ContactPage />} />
