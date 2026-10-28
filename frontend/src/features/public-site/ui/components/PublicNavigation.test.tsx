@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PublicFooter } from './PublicFooter'
 import { PublicHeader } from './PublicHeader'
@@ -12,8 +12,13 @@ const auth = vi.hoisted(() => ({
 
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }))
 
-function renderHeader() {
-  return render(<MemoryRouter><PublicHeader /></MemoryRouter>)
+function Location() {
+  const { pathname } = useLocation()
+  return <output data-testid="location">{pathname}</output>
+}
+
+function renderHeader(path = '/') {
+  return render(<MemoryRouter initialEntries={[path]}><PublicHeader /><Location /></MemoryRouter>)
 }
 
 function renderFooter() {
@@ -34,9 +39,9 @@ describe('PublicHeader authentication states', () => {
     fireEvent.click(toggle)
 
     expect(screen.getByRole('navigation', { name: 'Navegación pública' })).toContainElement(screen.getByRole('list'))
-    expect(screen.getAllByRole('listitem')).toHaveLength(9)
+    expect(within(screen.getByRole('navigation', { name: 'Navegación pública' })).getAllByRole('listitem')).toHaveLength(5)
 
-    fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.keyDown(document, { key: 'Escape' })
 
     expect(screen.getByRole('button', { name: 'Abrir menú de navegación' })).toHaveFocus()
   })
@@ -45,6 +50,7 @@ describe('PublicHeader authentication states', () => {
     renderHeader()
 
     fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Comunidad' }))
 
     expect(screen.getByRole('link', { name: 'Emprendimientos' })).toHaveAttribute('href', '/ventures')
   })
@@ -75,6 +81,100 @@ describe('PublicHeader authentication states', () => {
     expect(screen.getAllByRole('button', { name: 'Ir al panel' })).not.toHaveLength(0)
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
     expect(auth.logout).toHaveBeenCalledOnce()
+  })
+})
+
+describe('PublicHeader navigation groups', () => {
+  it('renders five main entries without duplicate desktop links', () => {
+    renderHeader()
+    const nav = screen.getByRole('navigation', { name: 'Navegación pública' })
+    expect(within(nav).getAllByRole('listitem')).toHaveLength(5)
+    expect(within(nav).getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '/')
+    expect(within(nav).getByRole('link', { name: 'Nosotros' })).toHaveAttribute('href', '/nosotros')
+    expect(within(nav).getByRole('link', { name: 'Contacto' })).toHaveAttribute('href', '/contacto')
+    expect(within(nav).getByRole('button', { name: 'Comunidad' })).toHaveAttribute('aria-expanded', 'false')
+    expect(within(nav).getByRole('button', { name: 'Servicios' })).toHaveAttribute('aria-expanded', 'false')
+    for (const route of ['/', '/nosotros', '/comunidad', '/ventures', '/noticias', '/eventos', '/servicios', '/transparencia', '/contacto']) {
+      expect(nav.querySelectorAll(`a[href="${route}"]`)).toHaveLength(1)
+    }
+  })
+
+  it.each([
+    ['Comunidad', ['Comunidad', 'Emprendimientos', 'Noticias', 'Eventos']],
+    ['Servicios', ['Servicios', 'Transparencia']],
+  ] as const)('opens and closes %s with all its destinations', (group, destinations) => {
+    renderHeader()
+    const button = screen.getByRole('button', { name: group })
+    fireEvent.click(button)
+    expect(button).toHaveAttribute('aria-expanded', 'true')
+    expect(button).toHaveAttribute('aria-controls')
+    for (const destination of destinations) expect(screen.getByRole('link', { name: destination })).toBeInTheDocument()
+    fireEvent.click(button)
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it.each([
+    ['Inicio', '/'], ['Nosotros', '/nosotros'], ['Comunidad', '/comunidad'],
+    ['Emprendimientos', '/ventures'], ['Noticias', '/noticias'], ['Eventos', '/eventos'],
+    ['Servicios', '/servicios'], ['Transparencia', '/transparencia'], ['Contacto', '/contacto'],
+  ])('navigates to %s at %s and closes the menu', (label, route) => {
+    renderHeader()
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
+    if (['Comunidad', 'Emprendimientos', 'Noticias', 'Eventos'].includes(label)) fireEvent.click(screen.getByRole('button', { name: 'Comunidad' }))
+    if (['Servicios', 'Transparencia'].includes(label)) fireEvent.click(screen.getByRole('button', { name: 'Servicios' }))
+    fireEvent.click(screen.getByRole('link', { name: label }))
+    expect(screen.getByTestId('location')).toHaveTextContent(route)
+    expect(screen.getByRole('button', { name: 'Abrir menú de navegación' })).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('closes a dropdown with Escape and restores focus to its trigger', () => {
+    renderHeader()
+    const button = screen.getByRole('button', { name: 'Comunidad' })
+    fireEvent.click(button)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    expect(button).toHaveFocus()
+  })
+
+  it('closes a dropdown after a pointer click outside the header', () => {
+    renderHeader()
+    const button = screen.getByRole('button', { name: 'Servicios' })
+    fireEvent.click(button)
+    fireEvent.pointerDown(document.body)
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('opens with ArrowDown and focuses the first link for keyboard navigation', async () => {
+    renderHeader()
+    const button = screen.getByRole('button', { name: 'Comunidad' })
+    button.focus()
+    fireEvent.keyDown(button, { key: 'ArrowDown' })
+    expect(button).toHaveAttribute('aria-expanded', 'true')
+    const firstLink = screen.getByRole('link', { name: 'Comunidad' })
+    await waitFor(() => expect(firstLink).toHaveFocus())
+    expect(screen.getByRole('link', { name: 'Emprendimientos' })).toBeInTheDocument()
+  })
+
+  it('marks nested routes and group triggers active', () => {
+    renderHeader('/noticias/nota-ejemplo')
+    const group = screen.getByRole('button', { name: 'Comunidad' })
+    expect(group).toHaveAttribute('data-active', 'true')
+    fireEvent.click(group)
+    expect(screen.getByRole('link', { name: 'Noticias' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('expands and collapses groups inside the mobile menu', () => {
+    renderHeader()
+    const toggle = screen.getByRole('button', { name: 'Abrir menú de navegación' })
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Comunidad' }))
+    expect(screen.getByRole('link', { name: 'Eventos' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Servicios' }))
+    expect(screen.getByRole('link', { name: 'Transparencia' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Comunidad' })).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(screen.getByRole('link', { name: 'Transparencia' }))
+    expect(screen.getByRole('button', { name: 'Abrir menú de navegación' })).toHaveAttribute('aria-expanded', 'false')
   })
 })
 
