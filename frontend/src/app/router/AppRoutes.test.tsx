@@ -70,6 +70,8 @@ beforeEach(() => {
     if (url === '/events') return Promise.resolve({ data: [] })
     if (url === '/public/events') return Promise.resolve({ data: [] })
     if (url === '/public/ventures') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 12 } })
+    if (url === '/public/volunteering/opportunities') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 12 } })
+    if (url === '/public/volunteering/opportunities/7') return Promise.resolve({ data: { id: 7, title: 'Limpieza comunitaria', description: null, location: 'Curime', capacity: null, applicationDeadline: null, acceptingApplications: true } })
     if (url === '/financial/charges') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
@@ -92,6 +94,20 @@ afterEach(() => {
 })
 
 describe('AppRoutes capability deep links', () => {
+  it('renders the public volunteering directory without a session', async () => {
+    renderRoute('/voluntariado', null)
+    expect(await screen.findByRole('heading', { name: 'Voluntariado' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay oportunidades publicadas')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/public/volunteering/opportunities', { params: { page: 1, limit: 12 } })
+  })
+
+  it('renders a public volunteering detail and optional account links without a session', async () => {
+    renderRoute('/voluntariado/7', null)
+    expect(await screen.findByRole('heading', { name: 'Limpieza comunitaria' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Postularme como voluntario' })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Iniciar sesión' }).some(link => link.getAttribute('href') === '/login')).toBe(true)
+  })
+
   it('renders the anonymous public ventures directory through the public layout', async () => {
     renderRoute('/ventures', null)
 

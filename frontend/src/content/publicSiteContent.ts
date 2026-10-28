@@ -33,7 +33,7 @@ export const site = {
 export const moduleAvailability = {
   affiliation: { enabled: true },
   reservations: { enabled: true },
-  volunteering: { enabled: false },
+  volunteering: { enabled: true },
    entrepreneurship: { enabled: true },
   donations: { enabled: false },
   userRegistration: { enabled: true },
@@ -53,7 +53,7 @@ export const services = [
   {
     key: "volunteering",
     title: "Voluntariado",
-    text: "Participación en iniciativas de la comunidad.",
+    text: "Conozca oportunidades de voluntariado y participe en actividades comunitarias organizadas por la Asociación.",
   },
   {
     key: "entrepreneurship",
@@ -63,7 +63,7 @@ export const services = [
   {
     key: "donations",
     title: "Donaciones",
-    text: "Canales para colaborar con proyectos autorizados.",
+    text: "Los canales autorizados para aportar a proyectos comunitarios se anunciarán cuando estén disponibles.",
   },
 ] as const;
 
