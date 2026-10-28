@@ -23,7 +23,7 @@ export function useFinancialChargesList(filters: FinancialChargeListFilters) { r
 export function useFinancialChargeDetail(id: number | null) { return useQuery({ queryKey: financialKeys.chargeDetail(id ?? 0), queryFn: () => financialApi.getCharge(id!), enabled: id !== null }) }
 export function useFinancialMovementsList(filters: FinancialMovementListFilters) { return useQuery({ queryKey: financialKeys.movementList(filters), queryFn: () => financialApi.listMovements(filters) }) }
 export function useFinancialMovementDetail(id: number | null) { return useQuery({ queryKey: financialKeys.movementDetail(id ?? 0), queryFn: () => financialApi.getMovement(id!), enabled: id !== null }) }
-export function useFinancialMovementSummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) { return useQuery({ queryKey: financialKeys.movementSummary(filters), queryFn: () => financialApi.getMovementSummary(filters) }) }
+export function useFinancialMovementSummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>, enabled = true) { return useQuery({ queryKey: financialKeys.movementSummary(filters), queryFn: () => financialApi.getMovementSummary(filters), enabled }) }
 export function useDinadecoAnnualReport(year: number) { return useQuery({ queryKey: financialKeys.dinadecoAnnual(year), queryFn: () => financialApi.getDinadecoAnnualReport(year) }) }
 export function useCreateFinancialMovement() {
   const queryClient = useQueryClient()
@@ -40,6 +40,8 @@ export function useRecordPayment() {
   const refresh = (id: number) => Promise.all([
     queryClient.invalidateQueries({ queryKey: [...financialKeys.charges(), 'list'] }),
     queryClient.invalidateQueries({ queryKey: financialKeys.chargeDetail(id) }),
+    queryClient.invalidateQueries({ queryKey: [...financialKeys.movements(), 'list'] }),
+    queryClient.invalidateQueries({ queryKey: [...financialKeys.movements(), 'summary'] }),
   ])
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: RecordPaymentInput }) => financialApi.recordPayment(id, payload),

@@ -111,4 +111,19 @@ describe('RoleRoute', () => {
 
     expect(screen.getByText('Permitido')).toBeInTheDocument()
   })
+
+  it('allows either authorized capability while preserving ERP access', () => {
+    auth.user = { permissionCodes: ['fin.charges.read'], canAccessErp: true }
+    auth.isAuthenticated = true
+
+    renderRoute({ anyOfCapabilities: ['fin.movements.read', 'fin.charges.read'] })
+
+    expect(screen.getByText('Permitido')).toBeInTheDocument()
+  })
+
+  it('denies empty any-of requirements and users without ERP access', () => {
+    auth.user = { permissionCodes: ['fin.charges.read'], canAccessErp: false }
+    renderRoute({ anyOfCapabilities: ['fin.movements.read', 'fin.charges.read'] })
+    expect(screen.getByText('/403')).toBeInTheDocument()
+  })
 })

@@ -23,7 +23,10 @@ const initialFilters: FinancialMovementListFilters = { page: 1, limit: 20 }
 export function FinancialMovementsPage() {
   const { user } = useAuth()
   const [filters, setFilters] = useState<FinancialMovementListFilters>(initialFilters)
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [selectedId, setSelectedId] = useState<number | null>(() => {
+    const id = Number(new URLSearchParams(window.location.search).get('movementId'))
+    return Number.isInteger(id) && id > 0 ? id : null
+  })
   const [creating, setCreating] = useState(false)
   const list = useFinancialMovementsList(filters)
   const summary = useFinancialMovementSummary({ dateFrom: filters.dateFrom, dateTo: filters.dateTo })
@@ -49,7 +52,7 @@ export function FinancialMovementsPage() {
     {list.data?.data.length === 0 ? <EmptyState title="No hay movimientos financieros" description={hasActiveFilters ? 'No hay movimientos que coincidan con los filtros aplicados.' : 'Registre un ingreso o egreso manual para iniciar el historial.'} action={hasActiveFilters ? <Button type="button" variant="outline" onClick={() => setFilters(initialFilters)}>Limpiar filtros</Button> : undefined} /> : null}
     {list.data?.data.length ? <><div className="overflow-x-auto rounded-surface border border-border-default" tabIndex={0} aria-label="Listado de movimientos financieros"><table className="min-w-[850px] w-full text-left text-sm"><thead className="bg-surface-muted text-foreground-muted"><tr><th className="p-3">Fecha</th><th className="p-3">Tipo</th><th className="p-3">Concepto</th><th className="p-3">Monto</th><th className="p-3">Fuente</th><th className="p-3">Registró</th><th className="p-3">Acciones</th></tr></thead><tbody>{list.data.data.map(movement => <tr key={movement.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-muted/60"><td className="p-3 whitespace-nowrap">{formatFinancialDate(movement.occurredAt)}</td><td className="p-3"><StatusBadge variant={movement.type === 'INCOME' ? 'success' : 'warning'}>{financialMovementTypeLabel(movement.type)}</StatusBadge></td><td className="p-3 max-w-sm break-words">{movement.description}</td><td className="p-3 whitespace-nowrap font-semibold">{formatFinancialCurrency(movement.amount, movement.currency)}</td><td className="p-3">{financialMovementSourceLabel(movement.source)}</td><td className="p-3">{movement.recordedById ? `Usuario #${movement.recordedById}` : 'Sin registro'}</td><td className="p-3"><Button size="sm" type="button" variant="outline" onClick={() => setSelectedId(movement.id)}>Ver detalle</Button></td></tr>)}</tbody></table></div><Pagination page={list.data.page} total={list.data.total} limit={list.data.limit} onChange={page => setFilters(current => ({ ...current, page }))} /></> : null}
     {creating ? <FinancialMovementFormModal onClose={() => setCreating(false)} /> : null}
-    {selectedId !== null ? <FinancialMovementDetailModal id={selectedId} onClose={() => setSelectedId(null)} /> : null}
+    {selectedId !== null ? <FinancialMovementDetailModal id={selectedId} onClose={() => { setSelectedId(null); const url = new URL(window.location.href); url.searchParams.delete('movementId'); window.history.replaceState(null, '', url) }} /> : null}
   </section>
 }
 
