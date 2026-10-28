@@ -8,7 +8,7 @@ vi.mock('@/features/auth', () => ({ useAuth: () => auth }))
 vi.mock('@/features/notifications', () => ({ NotificationCenter: () => <button type="button" aria-label="Notificaciones">Notificaciones</button> }))
 
 function renderLayout(initialPath = '/app/dashboard') {
-  return render(<MemoryRouter initialEntries={[initialPath]}><Routes><Route element={<ErpLayout />}><Route path="/app/dashboard" element={<h1>Área de gestión</h1>} /><Route path="/app/profile" element={<h1>Mi perfil</h1>} /><Route path="/inventory" element={<h1>Inventario</h1>} /><Route path="/inventory/items" element={<h1>Artículos</h1>} /><Route path="/app/financial" element={<h1>Finanzas</h1>} /><Route path="/app/financial/movements" element={<h1>Movimientos financieros</h1>} /><Route path="/app/financial/dinadeco" element={<h1>DINADECO</h1>} /></Route><Route path="/login" element={<h1>Iniciar sesión</h1>} /></Routes></MemoryRouter>)
+  return render(<MemoryRouter initialEntries={[initialPath]}><Routes><Route element={<ErpLayout />}><Route path="/app/dashboard" element={<h1>Área de gestión</h1>} /><Route path="/app/profile" element={<h1>Mi perfil</h1>} /><Route path="/inventory" element={<h1>Inventario</h1>} /><Route path="/inventory/items" element={<h1>Artículos</h1>} /><Route path="/app/financial/dashboard" element={<h1>Dashboard financiero</h1>} /><Route path="/app/financial" element={<h1>Finanzas</h1>} /><Route path="/app/financial/movements" element={<h1>Movimientos financieros</h1>} /><Route path="/app/financial/dinadeco" element={<h1>DINADECO</h1>} /></Route><Route path="/login" element={<h1>Iniciar sesión</h1>} /></Routes></MemoryRouter>)
 }
 
 describe('ErpLayout', () => {
@@ -60,12 +60,12 @@ describe('ErpLayout', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Finanzas' }))
 
     expect(screen.getAllByRole('button', { name: 'Contraer navegación' }).length).toBeGreaterThan(0)
-    expect(screen.getByRole('link', { name: 'Resumen' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Dashboard financiero' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Movimientos financieros' })).toBeInTheDocument()
   })
 
   it.each([
-    ['fin.movements.read', 'Movimientos financieros'],
+    ['fin.movements.read', 'Dashboard financiero'],
     ['fin.dinadeco.read', 'DINADECO'],
   ])('routes a collapsed finance group to its authorized %s child', (permissionCode, childLabel) => {
     auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: [permissionCode] }

@@ -8,7 +8,7 @@ import { hasCapability, type AccessCapability } from '@/shared/security/access'
 
 export type NavigationAccent = 'lime' | 'green' | 'cyan' | 'blue' | 'teal' | 'maize' | 'terracotta' | 'violet'
 
-export type ErpNavigationItem = { label: string; path?: string; capability?: AccessCapability; icon?: LucideIcon; children?: readonly ErpNavigationItem[] }
+export type ErpNavigationItem = { label: string; path?: string; capability?: AccessCapability; anyOfCapabilities?: readonly AccessCapability[]; allOfCapabilities?: readonly AccessCapability[]; icon?: LucideIcon; children?: readonly ErpNavigationItem[] }
 export type ErpNavigationSection = { label: string; accent: NavigationAccent; items: readonly ErpNavigationItem[] }
 
 const navigation: readonly ErpNavigationSection[] = [
@@ -43,12 +43,16 @@ const navigation: readonly ErpNavigationSection[] = [
       { label: 'Inventario', path: '/inventory', capability: 'inv.inventory.read', icon: Package, children: [{ label: 'Resumen', path: '/inventory', icon: Package }, { label: 'Artículos', path: '/inventory/items', icon: Package }, { label: 'Categorías', path: '/inventory/categories', icon: Tags }, { label: 'Movimientos', path: '/inventory/movements', icon: ArrowLeftRight }, { label: 'Préstamos', path: '/inventory/loans', icon: ContactRound }, { label: 'Alertas', path: '/inventory/alerts', icon: TriangleAlert }, { label: 'Reportes', path: '/inventory/reports', icon: ScrollText }] },
     ],
   },
-  { label: 'Finanzas', accent: 'maize', items: [{ label: 'Finanzas', path: '/app/financial', icon: Wallet, children: [{ label: 'Resumen', path: '/app/financial', capability: 'fin.charges.read', icon: Wallet }, { label: 'Movimientos financieros', path: '/app/financial/movements', capability: 'fin.movements.read', icon: ArrowLeftRight }, { label: 'DINADECO', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: ScrollText }] }, { label: 'Donaciones', path: '/app/donations', capability: 'don.donations.read', icon: HeartHandshake }] },
+  { label: 'Finanzas', accent: 'maize', items: [{ label: 'Finanzas', path: '/app/financial/dashboard', icon: Wallet, children: [{ label: 'Dashboard financiero', path: '/app/financial/dashboard', anyOfCapabilities: ['fin.movements.read', 'fin.charges.read'], icon: Wallet }, { label: 'Resumen', path: '/app/financial', allOfCapabilities: ['fin.movements.read', 'fin.charges.read'], icon: Wallet }, { label: 'Cargos y pagos', path: '/app/financial/charges', capability: 'fin.charges.read', icon: Wallet }, { label: 'Movimientos financieros', path: '/app/financial/movements', capability: 'fin.movements.read', icon: ArrowLeftRight }, { label: 'DINADECO', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: ScrollText }] }, { label: 'Donaciones', path: '/app/donations', capability: 'don.donations.read', icon: HeartHandshake }] },
   { label: 'Seguridad y auditoría', accent: 'terracotta', items: [{ label: 'Bitácora', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: ScrollText }] },
   { label: 'Mi espacio', accent: 'violet', items: [{ label: 'Mi perfil', path: '/app/profile', icon: CircleUserRound }, { label: 'Enviar justificación', path: '/app/affiliate/absence-justifications/new', icon: FilePenLine }, { label: 'Mis justificaciones', path: '/app/affiliate/justifications', icon: Files }] },
 ]
 
-function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] | null | undefined) { return item.capability === undefined || hasCapability(permissionCodes, item.capability) }
+function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] | null | undefined) {
+  return (item.capability === undefined || hasCapability(permissionCodes, item.capability))
+    && (item.anyOfCapabilities === undefined || item.anyOfCapabilities.some(capability => hasCapability(permissionCodes, capability)))
+    && (item.allOfCapabilities === undefined || item.allOfCapabilities.every(capability => hasCapability(permissionCodes, capability)))
+}
 
 export function getErpNavigation(permissionCodes: readonly string[] | null | undefined): ErpNavigationSection[] {
   return navigation.flatMap((section) => {
