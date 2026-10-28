@@ -8,6 +8,7 @@ export { ForgotPasswordPage } from './ui/ForgotPasswordPage'
 export { TokenPasswordPage } from './ui/TokenPasswordPage'
 export type {
   AuthenticatedUser,
+  ChangePasswordCredentials,
   LoginCredentials,
   LoginResponse,
   PasswordWithConfirmation,
