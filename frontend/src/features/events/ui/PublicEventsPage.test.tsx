@@ -10,6 +10,13 @@ describe('PublicEventsPage', () => {
   beforeEach(() => vi.clearAllMocks())
   const renderPage = () => render(<MemoryRouter><PublicEventsPage /></MemoryRouter>)
 
+  it('shows loading state without event content', () => {
+    vi.mocked(usePublicEvents).mockReturnValue({ isPending: true, isError: false, data: [] } as never)
+    renderPage()
+    expect(screen.getByText('Cargando eventos publicados...')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Asamblea abierta' })).not.toBeInTheDocument()
+  })
+
   it('shows empty state instead of static events', () => {
     vi.mocked(usePublicEvents).mockReturnValue({ isPending: false, isError: false, data: [] } as never)
     renderPage()
@@ -30,5 +37,11 @@ describe('PublicEventsPage', () => {
     expect(screen.getByRole('heading', { name: 'Asamblea abierta' })).toBeInTheDocument()
     expect(screen.getByText('Salón comunal')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /ver detalle de asamblea abierta/i })).toHaveAttribute('href', '/eventos/event-1')
+  })
+
+  it('communicates a scheduled event with a past date', () => {
+    vi.mocked(usePublicEvents).mockReturnValue({ isPending: false, isError: false, data: [{ publicId: 'event-1', title: 'Asamblea anterior', summary: 'Encuentro ya realizado.', description: null, startAt: '2000-01-02T10:00:00.000Z', endAt: null, location: null, status: 'SCHEDULED' }] } as never)
+    renderPage()
+    expect(screen.getByText('Fecha transcurrida')).toBeInTheDocument()
   })
 })

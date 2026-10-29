@@ -27,32 +27,30 @@ export function PublicEventsPage() {
   }, [])
 
   return (
-    <section className="bg-brand-ivory py-14 md:py-20">
+    <section className="bg-brand-ivory py-8 min-[375px]:py-10 md:py-12 lg:py-14">
       <div className="public-container">
-        <header className="max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">Agenda comunitaria</p>
-          <h1 className="mt-3 font-heading text-heading-1 font-bold text-brand-ink">Eventos</h1>
-          <p className="mt-4 text-body-large text-brand-ink/75">Consulte las actividades comunicadas oficialmente por la Asociación.</p>
+        <header className="max-w-2xl border-b border-brand-sage/70 pb-5 md:pb-6">
+          <p className="public-eyebrow text-brand-primary">Agenda comunitaria</p>
+          <h1 className="public-heading mt-2 text-brand-ink">Eventos</h1>
+          <p className="mt-3 text-body-large leading-relaxed text-foreground-muted text-pretty">Consulte las actividades comunicadas oficialmente por la Asociación.</p>
         </header>
-        <section aria-label="Eventos publicados" className="mt-10">
+        <section aria-label="Eventos publicados" className="mt-6 md:mt-8">
           {eventsQuery.isPending ? <LoadingState label="Cargando eventos publicados..." /> : null}
-          {eventsQuery.isError ? <ErrorState message={getErrorMessage(eventsQuery.error, 'No fue posible cargar los eventos publicados.')} action={<button className="min-h-11 rounded-md border border-border px-4 font-semibold" type="button" onClick={() => void eventsQuery.refetch()}>Reintentar</button>} /> : null}
+          {eventsQuery.isError ? <ErrorState message={getErrorMessage(eventsQuery.error, 'No fue posible cargar los eventos publicados.')} action={<button className="min-h-11 rounded-control border border-border-default px-4 font-semibold focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" type="button" onClick={() => void eventsQuery.refetch()}>Reintentar</button>} /> : null}
           {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length === 0 ? <EmptyState title="No hay eventos publicados en este momento" description="Cuando la Asociación publique una actividad, aparecerá en esta agenda." /> : null}
           {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length > 0 ? (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-3">
               {eventsQuery.data.map((event) => {
                 const presentation = getPublicEventPresentation(event)
-                return <article key={event.publicId} className={`flex min-w-0 flex-col rounded-xl border bg-white p-6 shadow-sm ${presentation.isPast ? 'border-brand-sage/80' : 'border-border'}`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-primary">{presentation.label}</p>
-                  </div>
-                  <h2 className="mt-4 font-heading text-heading-3 font-semibold text-brand-ink"><Link className="rounded-sm hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to={`/eventos/${event.publicId}`}>{event.title}</Link></h2>
-                  <p className="mt-3 flex-1 text-body text-brand-ink/75">{event.summary}</p>
-                  <dl className="mt-6 space-y-3 border-t border-border pt-5 text-body-small text-brand-ink/80">
-                    <div className="flex gap-3"><CalendarDays className="mt-0.5 size-4 shrink-0 text-brand-primary" aria-hidden="true" /><div><dt className="sr-only">Fecha y hora</dt><dd>{formatDate(event.startAt)}{event.endAt ? ` - ${formatDate(event.endAt)}` : ''}</dd></div></div>
-                    {event.location ? <div className="flex gap-3"><MapPin className="mt-0.5 size-4 shrink-0 text-brand-primary" aria-hidden="true" /><div><dt className="sr-only">Lugar</dt><dd>{event.location}</dd></div></div> : null}
+                return <article key={event.publicId} className={`flex min-w-0 flex-col rounded-surface border p-5 shadow-sm md:p-6 ${presentation.isPast ? 'border-brand-sage bg-surface-muted' : 'border-border-default bg-card-white'}`}>
+                  <p className={`inline-flex self-start rounded-control border px-2.5 py-1 text-caption font-bold ${presentation.isPast ? 'border-brand-sage bg-brand-ivory text-foreground-secondary' : 'border-brand-primary/30 bg-card-white text-brand-primary'}`}>{presentation.label}</p>
+                  <h2 className="mt-3 font-heading text-heading-3 font-semibold text-brand-ink text-balance break-words"><Link className="rounded-sm hover:text-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to={`/eventos/${event.publicId}`}>{event.title}</Link></h2>
+                  <p className="mt-2 text-body-small leading-relaxed text-foreground-muted text-pretty break-words">{event.summary}</p>
+                  <dl className="mt-5 space-y-2 border-t border-border-subtle pt-4 text-body-small leading-relaxed text-foreground-secondary">
+                    <div className="flex gap-2.5"><CalendarDays className="mt-0.5 size-4 shrink-0 text-brand-primary" aria-hidden="true" /><div className="min-w-0"><dt className="sr-only">Fecha y hora</dt><dd className="space-y-1 tabular-nums"><span className="block"><span className="font-semibold text-brand-ink">Inicio: </span>{formatDate(event.startAt)}</span>{event.endAt ? <span className="block"><span className="font-semibold text-brand-ink">Finalización: </span>{formatDate(event.endAt)}</span> : null}</dd></div></div>
+                    {event.location ? <div className="flex gap-2.5"><MapPin className="mt-0.5 size-4 shrink-0 text-brand-primary" aria-hidden="true" /><div className="min-w-0"><dt className="sr-only">Lugar</dt><dd className="break-words">{event.location}</dd></div></div> : null}
                   </dl>
-                  <Link aria-label={`Ver detalle de ${event.title}`} className="mt-6 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to={`/eventos/${event.publicId}`}>Ver detalle</Link>
+                  <Link aria-label={`Ver detalle de ${event.title}`} className="mt-5 inline-flex min-h-11 items-center self-start font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to={`/eventos/${event.publicId}`}>Ver detalle</Link>
                 </article>
               })}
             </div>
