@@ -13,6 +13,25 @@ export interface CreateUserRequest {
   reason: string
 }
 
+export type IdentityLookupResult =
+  | {
+      found: true
+      normalizedIdentification: string
+      identificationType: 'NATIONAL' | 'DIMEX'
+      sourceIdentificationType: string
+      nombreCompleto: string
+      suggestedNames: {
+        firstName: string
+        firstSurname: string
+        secondSurname: string
+      }
+    }
+  | {
+      found: false
+      normalizedIdentification: string
+      message: string
+    }
+
 /** Public POST /register result and administrative UserRequest read model. */
 export interface UserRequest {
   id: number

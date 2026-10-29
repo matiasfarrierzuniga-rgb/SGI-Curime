@@ -39,14 +39,14 @@ export function FinancialMovementFormModal({ onClose }: { onClose: () => void })
   }
   const field = (name: keyof MovementValues) => ({ 'aria-invalid': Boolean(form.formState.errors[name]), 'aria-describedby': form.formState.errors[name] ? `movement-${name}-error` : undefined })
   return <Modal title="Registrar movimiento financiero" onClose={close} busy={create.isPending}>
-    <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)} aria-busy={create.isPending}>
-      <fieldset disabled={create.isPending} className="space-y-4">
+    <form className="space-y-5" noValidate onSubmit={form.handleSubmit(submit)} aria-busy={create.isPending}>
+      <p className="rounded-control bg-surface-muted px-3 py-2 text-sm text-text-secondary">Registre únicamente movimientos manuales respaldados. Los importes se guardan en colones costarricenses.</p><fieldset disabled={create.isPending} className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2" htmlFor="movement-type">Tipo<select id="movement-type" {...field('type')} {...form.register('type')}><option value="">Seleccione un tipo</option>{FINANCIAL_MOVEMENT_TYPES.map(type => <option key={type} value={type}>{financialMovementTypeLabel(type)}</option>)}</select></label>
         {form.formState.errors.type ? <p id="movement-type-error" role="alert" className="field-error">{form.formState.errors.type.message}</p> : null}
         <label className="grid gap-2" htmlFor="movement-amount">Monto<input id="movement-amount" inputMode="decimal" autoFocus {...field('amount')} {...form.register('amount')} /></label>
         {form.formState.errors.amount ? <p id="movement-amount-error" role="alert" className="field-error">{form.formState.errors.amount.message}</p> : null}
-        <label className="grid gap-2" htmlFor="movement-description">Concepto o descripción<textarea id="movement-description" maxLength={1000} {...field('description')} {...form.register('description')} /></label>
-        {form.formState.errors.description ? <p id="movement-description-error" role="alert" className="field-error">{form.formState.errors.description.message}</p> : null}
+        <label className="grid gap-2 sm:col-span-2" htmlFor="movement-description">Concepto o descripción<textarea id="movement-description" maxLength={1000} {...field('description')} {...form.register('description')} /></label>
+        {form.formState.errors.description ? <p id="movement-description-error" role="alert" className="field-error sm:col-span-2">{form.formState.errors.description.message}</p> : null}
         <label className="grid gap-2" htmlFor="movement-occurred-at">Fecha y hora<input id="movement-occurred-at" type="datetime-local" {...field('occurredAt')} {...form.register('occurredAt')} /></label>
         {form.formState.errors.occurredAt ? <p id="movement-occurredAt-error" role="alert" className="field-error">{form.formState.errors.occurredAt.message}</p> : null}
         <label className="grid gap-2" htmlFor="movement-reference">Referencia (opcional)<input id="movement-reference" maxLength={255} {...field('reference')} {...form.register('reference')} /></label>

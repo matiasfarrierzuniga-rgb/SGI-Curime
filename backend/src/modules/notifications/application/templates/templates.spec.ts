@@ -1,4 +1,5 @@
 import { accountActivationTemplate } from './account-activation.template';
+import { communityEmailVerificationTemplate } from './community-email-verification.template';
 import { passwordChangedTemplate } from './password-changed.template';
 import { passwordResetTemplate } from './password-reset.template';
 
@@ -30,6 +31,21 @@ describe('notification templates', () => {
     expect(template.html).toContain('Restablecer contraseña');
     expect(template.text).toContain('/reset-password?token=reset-token');
     expect(template.subject).not.toContain('reset-token');
+  });
+
+  it('renders community verification without approval or password setup wording', () => {
+    const template = communityEmailVerificationTemplate({
+      recipientName: 'María',
+      verificationUrl:
+        'https://example.test/verify-community-email?token=verification-token',
+      expiresAt: new Date('2026-08-28T18:00:00.000Z'),
+    });
+    expect(template.html).toContain('Verificar correo');
+    expect(template.html).not.toContain('solicitud fue aprobada');
+    expect(template.html).not.toContain('contraseña');
+    expect(template.text).toContain(
+      '/verify-community-email?token=verification-token',
+    );
   });
 
   it('renders a password-changed notice without token or invented contact data', () => {

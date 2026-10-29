@@ -1,4 +1,5 @@
 export const GENERAL_ACCOUNT_ROLE = 'Subscription_L1';
+export const COMMUNITY_ACCOUNT_ROLE = 'Cuenta comunitaria';
 const ADMINISTRATOR_ROLE = 'Administrador';
 
 export interface InternalAccessContext {
@@ -16,6 +17,10 @@ export function canAccessErp(context: InternalAccessContext): boolean {
 
   if (context.userRoleName === ADMINISTRATOR_ROLE) {
     return true;
+  }
+
+  if (context.userRoleName === COMMUNITY_ACCOUNT_ROLE) {
+    return false;
   }
 
   return (

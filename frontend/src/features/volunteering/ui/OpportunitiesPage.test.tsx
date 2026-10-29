@@ -75,4 +75,20 @@ describe('OpportunitiesPage', () => {
     fireEvent.submit(form)
     await waitFor(() => expect(httpClient.patch).toHaveBeenCalledWith('/volunteering/opportunities/1', { title: 'Limpieza comunitaria', description: undefined, location: undefined, capacity: undefined, applicationDeadline: undefined }))
   })
+
+  it('opens administrative management only for an opportunity manager', async () => {
+    vi.mocked(httpClient.get).mockImplementation((url) => {
+      if (url === '/volunteering/opportunities') return Promise.resolve({ data: { data: [opportunity], total: 1, page: 1, limit: 20 } })
+      if (url === '/volunteering/opportunities/1/sessions') return Promise.resolve({ data: [] })
+      if (url === '/volunteering/opportunities/1/applications') return Promise.resolve({ data: [] })
+      throw new Error(`Unexpected HTTP request: ${url}`)
+    })
+    renderPage()
+    await screen.findAllByText('Limpieza de playa')
+    fireEvent.change(screen.getByLabelText('Gestionar convocatoria'), { target: { value: '1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Gestionar' }))
+    expect(await screen.findByRole('heading', { name: 'Gestionar Limpieza de playa' })).toBeInTheDocument()
+    expect(await screen.findByText('Sin postulaciones')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cerrar convocatoria' })).toBeInTheDocument()
+  })
 })

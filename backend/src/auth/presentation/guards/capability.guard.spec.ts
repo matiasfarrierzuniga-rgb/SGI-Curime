@@ -117,6 +117,11 @@ describe('CapabilityGuard', () => {
     expect(guard.canActivate(contextFor('Administrador', false))).toBe(false);
   });
 
+  it('denies every ERP capability to a community account', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['erp.dashboard.read']);
+    expect(guard.canActivate(contextFor('Cuenta comunitaria', false, []))).toBe(false);
+  });
+
   it('denies an unknown role and unknown capability', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')

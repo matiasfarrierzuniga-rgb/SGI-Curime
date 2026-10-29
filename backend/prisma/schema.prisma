@@ -109,7 +109,7 @@ model RolePermission {
 model User {
   id                          Int                      @id @default(autoincrement())
   fullName                    String
-  identification              String                   @unique
+  identification              String?                  @unique
   email                       String                   @unique
   phone                       String?
   address                     String?
@@ -225,6 +225,7 @@ model AccountActivationToken {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
+  purpose   AccountActivationTokenPurpose @default(LEGACY_ACCOUNT_ACTIVATION)
   userId    Int
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -1151,7 +1152,13 @@ enum NotificationResourceType {
 enum UserStatus {
   ACTIVE
   INACTIVE
+  PENDING_EMAIL_VERIFICATION
   BLOCKED
+}
+
+enum AccountActivationTokenPurpose {
+  LEGACY_ACCOUNT_ACTIVATION
+  COMMUNITY_EMAIL_VERIFICATION
 }
 
 enum AffiliateStatus {

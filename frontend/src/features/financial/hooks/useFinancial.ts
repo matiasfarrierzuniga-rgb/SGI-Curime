@@ -12,6 +12,7 @@ export const financialKeys = {
   movementList: (filters: FinancialMovementListFilters) => [...financialKeys.movements(), 'list', filters] as const,
   movementDetail: (id: number) => [...financialKeys.movements(), 'detail', id] as const,
   movementSummary: (filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) => [...financialKeys.movements(), 'summary', filters] as const,
+  treasurySummary: (filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) => [...financialKeys.all, 'treasury', 'summary', filters] as const,
   dinadecoAnnual: (year: number) => [...financialKeys.all, 'dinadeco', 'annual', year] as const,
 }
 
@@ -23,7 +24,8 @@ export function useFinancialChargesList(filters: FinancialChargeListFilters) { r
 export function useFinancialChargeDetail(id: number | null) { return useQuery({ queryKey: financialKeys.chargeDetail(id ?? 0), queryFn: () => financialApi.getCharge(id!), enabled: id !== null }) }
 export function useFinancialMovementsList(filters: FinancialMovementListFilters) { return useQuery({ queryKey: financialKeys.movementList(filters), queryFn: () => financialApi.listMovements(filters) }) }
 export function useFinancialMovementDetail(id: number | null) { return useQuery({ queryKey: financialKeys.movementDetail(id ?? 0), queryFn: () => financialApi.getMovement(id!), enabled: id !== null }) }
-export function useFinancialMovementSummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) { return useQuery({ queryKey: financialKeys.movementSummary(filters), queryFn: () => financialApi.getMovementSummary(filters) }) }
+export function useFinancialMovementSummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>, enabled = true) { return useQuery({ queryKey: financialKeys.movementSummary(filters), queryFn: () => financialApi.getMovementSummary(filters), enabled }) }
+export function useTreasurySummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) { return useQuery({ queryKey: financialKeys.treasurySummary(filters), queryFn: () => financialApi.getTreasurySummary(filters) }) }
 export function useDinadecoAnnualReport(year: number) { return useQuery({ queryKey: financialKeys.dinadecoAnnual(year), queryFn: () => financialApi.getDinadecoAnnualReport(year) }) }
 export function useCreateFinancialMovement() {
   const queryClient = useQueryClient()
@@ -32,6 +34,7 @@ export function useCreateFinancialMovement() {
     onSuccess: () => Promise.all([
       queryClient.invalidateQueries({ queryKey: [...financialKeys.movements(), 'list'] }),
       queryClient.invalidateQueries({ queryKey: [...financialKeys.movements(), 'summary'] }),
+      queryClient.invalidateQueries({ queryKey: [...financialKeys.all, 'treasury'] }),
     ]),
   })
 }
@@ -40,6 +43,9 @@ export function useRecordPayment() {
   const refresh = (id: number) => Promise.all([
     queryClient.invalidateQueries({ queryKey: [...financialKeys.charges(), 'list'] }),
     queryClient.invalidateQueries({ queryKey: financialKeys.chargeDetail(id) }),
+    queryClient.invalidateQueries({ queryKey: [...financialKeys.movements(), 'list'] }),
+    queryClient.invalidateQueries({ queryKey: [...financialKeys.movements(), 'summary'] }),
+    queryClient.invalidateQueries({ queryKey: [...financialKeys.all, 'treasury'] }),
   ])
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: RecordPaymentInput }) => financialApi.recordPayment(id, payload),

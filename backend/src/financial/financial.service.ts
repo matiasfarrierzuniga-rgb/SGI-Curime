@@ -6,8 +6,8 @@ import {
   Optional,
 } from '@nestjs/common';
 import {
+  DonationStatus,
   FinancialChargeStatus,
-  FinancialMethod,
   FinancialMovementOriginType,
   FinancialMovementSource,
   FinancialMovementStatus,
@@ -23,6 +23,7 @@ import { QueryFinancialMovementSummaryDto } from './dto/query-financial-movement
 import { QueryFinancialMovementsDto } from './dto/query-financial-movements.dto';
 import { QueryFinancialChargesDto } from './dto/query-financial-charges.dto';
 import { RecordPaymentDto } from './dto/record-payment.dto';
+import { QueryTreasurySummaryDto } from './dto/query-treasury-summary.dto';
 
 const chargeListSelect = {
   id: true,
@@ -139,16 +140,24 @@ export class FinancialService {
       });
       if (!charge) throw new NotFoundException('Financial charge not found');
       if (charge.status !== FinancialChargeStatus.PENDING) {
-        throw new ConflictException('El cargo financiero no está pendiente de pago');
+        throw new ConflictException(
+          'El cargo financiero no está pendiente de pago',
+        );
       }
       if (!charge.amount.greaterThan(0)) {
-        throw new ConflictException('El cargo financiero no tiene un balance pendiente mayor que cero');
+        throw new ConflictException(
+          'El cargo financiero no tiene un balance pendiente mayor que cero',
+        );
       }
       if (charge.currency !== 'CRC') {
-        throw new ConflictException('La moneda del cargo financiero no está soportada');
+        throw new ConflictException(
+          'La moneda del cargo financiero no está soportada',
+        );
       }
       if (!amount.equals(charge.amount)) {
-        throw new ConflictException('El monto del pago debe ser exactamente igual al balance pendiente');
+        throw new ConflictException(
+          'El monto del pago debe ser exactamente igual al balance pendiente',
+        );
       }
 
       const paidAt = new Date();
@@ -158,7 +167,7 @@ export class FinancialService {
           amount,
           status: PaymentStatus.CONFIRMED,
           legacyMethod: dto.method,
-          financialMethod: dto.method as FinancialMethod,
+          financialMethod: dto.method,
           reference,
           paidAt,
           recordedById: actorId,
@@ -297,6 +306,108 @@ export class FinancialService {
     };
   }
 
+  async summarizeTreasury(query: QueryTreasurySummaryDto) {
+    const periodWhere = this.treasuryMovementWhere(query);
+    const allWhere = this.treasuryMovementWhere({});
+    const [
+      accumulatedGroups,
+      periodGroups,
+      pendingCharges,
+      confirmedPayments,
+      unlinkedPayments,
+      unlinkedDonations,
+    ] = await this.prisma.$transaction([
+      this.prisma.financialMovement.groupBy({
+        by: ['type', 'legacySource'],
+        where: allWhere,
+        orderBy: [{ type: 'asc' }, { legacySource: 'asc' }],
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.financialMovement.groupBy({
+        by: ['type', 'legacySource'],
+        where: periodWhere,
+        orderBy: [{ type: 'asc' }, { legacySource: 'asc' }],
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.financialCharge.aggregate({
+        where: { status: FinancialChargeStatus.PENDING, currency: 'CRC' },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: {
+          status: PaymentStatus.CONFIRMED,
+          charge: { currency: 'CRC' },
+        },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: {
+          status: PaymentStatus.CONFIRMED,
+          movementId: null,
+          charge: { currency: 'CRC' },
+        },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.donation.count({
+        where: {
+          status: DonationStatus.CONFIRMED,
+          originalMovementId: null,
+          currency: 'CRC',
+        },
+      }),
+    ]);
+
+    const accumulated = this.treasuryTotals(accumulatedGroups);
+    const period = this.treasuryTotals(periodGroups);
+    const missingPaymentAmount =
+      unlinkedPayments._sum.amount ?? new Prisma.Decimal(0);
+    const issues = [
+      unlinkedPayments._count._all > 0
+        ? `${unlinkedPayments._count._all} pago(s) confirmado(s) sin movimiento enlazado`
+        : null,
+      unlinkedDonations > 0
+        ? `${unlinkedDonations} donación(es) confirmada(s) sin movimiento enlazado`
+        : null,
+    ].filter((issue): issue is string => issue !== null);
+
+    return {
+      currency: 'CRC',
+      period: {
+        dateFrom: query.dateFrom ?? null,
+        dateTo: query.dateTo ?? null,
+      },
+      accumulated,
+      currentPeriod: period,
+      receivables: {
+        pendingCharges: (
+          pendingCharges._sum.amount ?? new Prisma.Decimal(0)
+        ).toFixed(2),
+        pendingChargeCount: pendingCharges._count._all,
+      },
+      openingBalance: { established: false, amount: null, effectiveAt: null },
+      registeredBalance: null,
+      reconciliation: {
+        reliable: false,
+        reason: issues.length
+          ? 'INCOMPLETE_LINKED_HISTORY_AND_OPENING_BALANCE'
+          : 'OPENING_BALANCE_NOT_ESTABLISHED',
+        issues,
+        confirmedPayments: (
+          confirmedPayments._sum.amount ?? new Prisma.Decimal(0)
+        ).toFixed(2),
+        confirmedPaymentCount: confirmedPayments._count._all,
+        unlinkedConfirmedPayments: missingPaymentAmount.toFixed(2),
+        unlinkedConfirmedPaymentCount: unlinkedPayments._count._all,
+        unlinkedConfirmedDonationCount: unlinkedDonations,
+      },
+    };
+  }
+
   private movementWhere(query: {
     type?: FinancialMovementType;
     dateFrom?: string;
@@ -314,9 +425,74 @@ export class FinancialService {
     };
   }
 
-  private serializeMovement<T extends { amount: Prisma.Decimal }>(
-    movement: T,
+  private treasuryMovementWhere(query: {
+    dateFrom?: string;
+    dateTo?: string;
+  }): Prisma.FinancialMovementWhereInput {
+    return {
+      currency: 'CRC',
+      voidedAt: null,
+      OR: [{ status: FinancialMovementStatus.POSTED }, { status: null }],
+      occurredAt:
+        query.dateFrom || query.dateTo
+          ? {
+              gte: query.dateFrom ? new Date(query.dateFrom) : undefined,
+              lte: query.dateTo ? new Date(query.dateTo) : undefined,
+            }
+          : undefined,
+    };
+  }
+
+  private treasuryTotals(
+    groups: Array<{
+      type: FinancialMovementType;
+      legacySource: FinancialMovementSource;
+      _sum?: { amount?: Prisma.Decimal | null };
+      _count?: true | { _all?: number };
+    }>,
   ) {
+    let income = new Prisma.Decimal(0);
+    let expenses = new Prisma.Decimal(0);
+    const bySource: Record<
+      string,
+      { income: string; expenses: string; count: number }
+    > = {};
+    for (const group of groups) {
+      const amount = group._sum?.amount ?? new Prisma.Decimal(0);
+      if (group.type === FinancialMovementType.INCOME)
+        income = income.plus(amount);
+      if (group.type === FinancialMovementType.EXPENSE)
+        expenses = expenses.plus(amount);
+      const current = bySource[group.legacySource] ?? {
+        income: '0.00',
+        expenses: '0.00',
+        count: 0,
+      };
+      const sourceIncome = new Prisma.Decimal(current.income);
+      const sourceExpenses = new Prisma.Decimal(current.expenses);
+      bySource[group.legacySource] = {
+        income: (group.type === FinancialMovementType.INCOME
+          ? sourceIncome.plus(amount)
+          : sourceIncome
+        ).toFixed(2),
+        expenses: (group.type === FinancialMovementType.EXPENSE
+          ? sourceExpenses.plus(amount)
+          : sourceExpenses
+        ).toFixed(2),
+        count:
+          current.count +
+          (typeof group._count === 'object' ? (group._count._all ?? 0) : 0),
+      };
+    }
+    return {
+      income: income.toFixed(2),
+      expenses: expenses.toFixed(2),
+      net: income.minus(expenses).toFixed(2),
+      bySource,
+    };
+  }
+
+  private serializeMovement<T extends { amount: Prisma.Decimal }>(movement: T) {
     const { legacySource, legacySourceId, ...rest } = movement as T & {
       legacySource?: FinancialMovementSource;
       legacySourceId?: number | null;

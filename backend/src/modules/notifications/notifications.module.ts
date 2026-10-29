@@ -14,6 +14,7 @@ import {
 } from './infrastructure/config/email.config';
 import { FakeEmailProvider } from './infrastructure/fake-email.provider';
 import { GmailAppPasswordEmailProvider } from './infrastructure/gmail-app-password-email.provider';
+import { ResendEmailProvider } from './infrastructure/resend-email.provider';
 
 export interface NotificationsModuleOptions extends NotificationUrlConfig {
   readonly environment?: NotificationEnvironment;
@@ -43,7 +44,7 @@ export class NotificationsModule {
         NotificationUrlBuilder,
         NotificationService,
       ],
-      exports: [NotificationService, EMAIL_PROVIDER],
+      exports: [NotificationService, EMAIL_PROVIDER, FakeEmailProvider],
     };
   }
 }
@@ -54,6 +55,17 @@ function createEmailProvider(
 ) {
   if (!config.sendEnabled || config.provider === 'fake') {
     return fakeProvider;
+  }
+
+  if (config.provider === 'resend') {
+    return new ResendEmailProvider({
+      from: requireConfigured(config.from, 'EMAIL_FROM'),
+      fromName: config.fromName,
+      replyTo: config.replyTo,
+      apiKey: requireConfigured(config.resendApiKey, 'RESEND_API_KEY'),
+      qaAllowedRecipient: config.resendQaAllowedRecipient,
+      timeoutMs: config.resendTimeoutMs,
+    });
   }
 
   return new GmailAppPasswordEmailProvider({

@@ -1,11 +1,12 @@
-import { FileText, HandCoins, Wallet } from 'lucide-react'
+import { FileText, HandCoins, Landmark, Wallet } from 'lucide-react'
 import { NavLink, useInRouterContext } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { cn } from '@/shared/lib/utils'
 import { hasCapability, type AccessCapability } from '@/shared/security/access'
 
-const links: ReadonlyArray<{ label: string; description: string; to: string; capability: AccessCapability; icon: typeof Wallet }> = [
-  { label: 'Cargos', description: 'Reservas y pagos', to: '/app/financial', capability: 'fin.charges.read', icon: Wallet },
+const links: ReadonlyArray<{ label: string; description: string; to: string; capability: AccessCapability; alsoRequires?: AccessCapability; icon: typeof Wallet }> = [
+  { label: 'Resumen', description: 'Tesorería institucional', to: '/app/financial', capability: 'fin.charges.read', alsoRequires: 'fin.movements.read', icon: Landmark },
+  { label: 'Cargos', description: 'Reservas y pagos', to: '/app/financial/charges', capability: 'fin.charges.read', icon: Wallet },
   { label: 'Movimientos', description: 'Ingresos y egresos', to: '/app/financial/movements', capability: 'fin.movements.read', icon: HandCoins },
   { label: 'DINADECO', description: 'Preparación anual', to: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: FileText },
 ]
@@ -13,12 +14,12 @@ const links: ReadonlyArray<{ label: string; description: string; to: string; cap
 export function FinancialSectionNav() {
   const { user } = useAuth()
   const inRouterContext = useInRouterContext()
-  const availableLinks = links.filter((link) => hasCapability(user?.permissionCodes, link.capability))
+  const availableLinks = links.filter((link) => hasCapability(user?.permissionCodes, link.capability) && (!link.alsoRequires || hasCapability(user?.permissionCodes, link.alsoRequires)))
 
   if (!inRouterContext || availableLinks.length < 2) return null
 
   return (
-    <nav aria-label="Secciones de gestión financiera" className="grid gap-2 border-b border-border-default pb-5 sm:grid-cols-3">
+    <nav aria-label="Secciones de gestión financiera" className="grid gap-2 border-b border-border-default pb-5 sm:grid-cols-2 xl:grid-cols-4">
       {availableLinks.map(({ label, description, to, icon: Icon }) => (
         <NavLink
           key={to}

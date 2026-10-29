@@ -54,19 +54,48 @@ describe('portal público', () => {
     expect(within(reservations).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
     expect(within(reservations).getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
 
-    expect(screen.getByRole('heading', { name: 'Crear una cuenta' })).toBeVisible()
-    expect(screen.getByText('Cree su cuenta para acceder a los servicios digitales disponibles.')).toBeVisible()
-    expect(screen.getAllByText('Próximamente')).toHaveLength(2)
+    const entrepreneurship = screen.getByRole('heading', { name: 'Emprendimientos' }).closest('article')!
+    expect(within(entrepreneurship).getByText('Disponible')).toBeVisible()
+    expect(within(entrepreneurship).getByRole('link', { name: 'Ver emprendimientos' })).toHaveAttribute('href', '/ventures')
+
+    const volunteering = screen.getByRole('heading', { name: 'Voluntariado' }).closest('article')!
+    expect(within(volunteering).getByText('Disponible')).toBeVisible()
+    expect(within(volunteering).getByText(/participe en actividades comunitarias/)).toBeVisible()
+    expect(within(volunteering).getByRole('link', { name: 'Ver oportunidades' })).toHaveAttribute('href', '/voluntariado')
+
+    const donations = screen.getByRole('heading', { name: 'Donaciones' }).closest('article')!
+    expect(within(donations).getByText('Próximamente')).toBeVisible()
+    expect(within(donations).getByText(/canales autorizados para aportar/)).toBeVisible()
+    expect(within(donations).queryByRole('link')).not.toBeInTheDocument()
+
+    const registration = screen.getByRole('heading', { name: 'Crear una cuenta' }).closest('article')!
+    expect(within(registration).getByText('Disponible')).toBeVisible()
+    expect(within(registration).getByText('Envíe una solicitud de cuenta. La Asociación la revisará antes de habilitar el acceso.')).toBeVisible()
+    expect(within(registration).getAllByRole('link')).toHaveLength(1)
+    expect(within(registration).getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
+    expect(within(registration).queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('main')).getAllByRole('article')).toHaveLength(6)
+    expect(screen.getAllByText('Próximamente')).toHaveLength(1)
   })
 
   it('permite reservar y oculta la creación de cuenta cuando hay sesión', () => {
     authState.isAuthenticated = true
     renderPublic('/servicios')
 
+    const affiliation = screen.getByRole('heading', { name: 'Afiliación' }).closest('article')!
+    expect(within(affiliation).getByRole('link', { name: 'Solicitar afiliación' })).toHaveAttribute('href', '/afiliacion')
+    const reservations = screen.getByRole('heading', { name: 'Reservas' }).closest('article')!
+    expect(within(reservations).getAllByRole('link')).toHaveLength(1)
     expect(screen.getByRole('link', { name: 'Solicitar una reserva' })).toHaveAttribute('href', '/servicios/reservas')
+    const entrepreneurship = screen.getByRole('heading', { name: 'Emprendimientos' }).closest('article')!
+    expect(within(entrepreneurship).getByRole('link', { name: 'Ver emprendimientos' })).toHaveAttribute('href', '/ventures')
+    const volunteering = screen.getByRole('heading', { name: 'Voluntariado' }).closest('article')!
+    expect(within(volunteering).getByText('Disponible')).toBeVisible()
+    expect(within(volunteering).getByRole('link', { name: 'Participar como voluntario' })).toHaveAttribute('href', '/voluntariado')
     expect(screen.queryByRole('heading', { name: 'Crear una cuenta' })).not.toBeInTheDocument()
-    expect(screen.queryByText('Cree su cuenta para acceder a los servicios digitales disponibles.')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Próximamente')).toHaveLength(2)
+    expect(screen.queryByText('Envíe una solicitud de cuenta. La Asociación la revisará antes de habilitar el acceso.')).not.toBeInTheDocument()
+    expect(within(screen.getByRole('main')).getAllByRole('article')).toHaveLength(5)
+    expect(screen.getAllByText('Próximamente')).toHaveLength(1)
   })
 
   it('muestra la landing y navega al inicio de sesión', () => {
@@ -108,7 +137,7 @@ describe('portal público', () => {
     fireEvent.click(menuButton)
     expect(menuButton).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('navigation', { name: /navegación pública/i })).toBeVisible()
-    fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.keyDown(document, { key: 'Escape' })
     expect(menuButton).toHaveAttribute('aria-expanded', 'false')
     expect(menuButton).toHaveFocus()
   })
@@ -155,6 +184,14 @@ describe('portal público', () => {
       'Un espacio para encontrarnos',
       'Información pública para la comunidad',
     ])
+  })
+
+  it('muestra el placeholder institucional de About sin fotografías provisionales', () => {
+    const { container } = renderPublic()
+
+    expect(screen.getByText('Imagen institucional pendiente de autorización.')).toBeVisible()
+    expect(screen.getByText('La imagen se incorporará cuando cuente con autorización de publicación.')).toBeVisible()
+    expect(container.querySelector('img[src*="Pictures"]')).toBeNull()
   })
 
   it('muestra accesos comunitarios y noticias con rutas existentes', () => {

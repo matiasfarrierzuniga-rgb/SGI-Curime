@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { site } from '@/content/publicSiteContent'
 import { CurimeBrandAccent } from '@/shared/ui/brand/CurimeBrandAccent'
+import { CurimeGrecaPattern } from '@/shared/ui/brand/CurimeGrecaPattern'
+import { aboutVisual } from './aboutVisual'
 
 export function AboutSection() {
   return (
@@ -30,13 +32,45 @@ export function AboutSection() {
               Conozca la Asociación
             </Link>
           </div>
-          <figure className="relative aspect-[5/4] overflow-hidden rounded-surface border border-brand-sage/80 bg-background-subtle shadow-sm md:aspect-[3/2] lg:aspect-[5/6]">
-            <figcaption className="absolute inset-x-0 bottom-0 border-t border-brand-sage/80 bg-brand-ivory/95 p-4 text-body-small leading-relaxed text-brand-ink/75">
-              Fotografía institucional pendiente de autorización.
-            </figcaption>
-          </figure>
+          <AboutVisual />
         </div>
       </div>
     </section>
+  )
+}
+
+function AboutVisual() {
+  if (aboutVisual.kind === 'authorized') {
+    return (
+      <figure className="relative aspect-[5/4] overflow-hidden rounded-surface border border-brand-sage/80 bg-background-subtle shadow-sm md:aspect-[3/2] lg:aspect-[5/6]">
+        <picture className="block size-full">
+          <source media="(min-width: 1024px)" srcSet={aboutVisual.sources.portraitAvif} type="image/avif" />
+          <source media="(min-width: 1024px)" srcSet={aboutVisual.sources.portraitWebp} type="image/webp" />
+          <source media="(min-width: 1024px)" srcSet={aboutVisual.sources.portraitJpeg} />
+          <source srcSet={aboutVisual.sources.wideAvif} type="image/avif" />
+          <source srcSet={aboutVisual.sources.wideWebp} type="image/webp" />
+          <img
+            src={aboutVisual.sources.wideJpeg}
+            alt={aboutVisual.alt}
+            width={aboutVisual.dimensions.wide.width}
+            height={aboutVisual.dimensions.wide.height}
+            loading="lazy"
+            className="size-full object-cover"
+          />
+        </picture>
+        {aboutVisual.credit ? <figcaption className="absolute inset-x-0 bottom-0 border-t border-brand-sage/80 bg-brand-ivory/95 p-4 text-body-small leading-relaxed text-brand-ink/75">{aboutVisual.credit}</figcaption> : null}
+      </figure>
+    )
+  }
+
+  return (
+    <figure className="relative isolate flex aspect-[5/4] overflow-hidden rounded-surface border border-brand-sage/80 bg-brand-ivory shadow-sm md:aspect-[3/2] lg:aspect-[5/6]" aria-labelledby="about-visual-status">
+      <CurimeGrecaPattern className="absolute inset-y-0 right-0 w-[78%] opacity-[0.08]" />
+      <CurimeBrandAccent className="absolute -bottom-5 -left-5 size-32 opacity-20" />
+      <div className="relative z-10 mt-auto border-t border-brand-sage/80 bg-brand-ivory/95 p-4 text-body-small leading-relaxed text-brand-ink/75">
+        <p id="about-visual-status" className="font-semibold text-brand-ink">{aboutVisual.message}</p>
+        <p className="mt-1 text-pretty">La imagen se incorporará cuando cuente con autorización de publicación.</p>
+      </div>
+    </figure>
   )
 }
