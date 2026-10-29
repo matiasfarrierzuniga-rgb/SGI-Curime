@@ -1,0 +1,124 @@
+name: sgi-curime-prod
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL:?Set DIRECT_URL}
+      FRONTEND_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN}
+      APP_PUBLIC_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-2592000}
+      REFRESH_COOKIE_NAME: ${REFRESH_COOKIE_NAME:-sgi_refresh}
+      REFRESH_COOKIE_SAME_SITE: lax
+      ACTIVATION_TOKEN_TTL_HOURS: ${ACTIVATION_TOKEN_TTL_HOURS:-24}
+      PASSWORD_RESET_TOKEN_TTL_MINUTES: ${PASSWORD_RESET_TOKEN_TTL_MINUTES:-30}
+      MAX_LOGIN_ATTEMPTS: ${MAX_LOGIN_ATTEMPTS:-5}
+      ACCOUNT_LOCKOUT_MINUTES: ${ACCOUNT_LOCKOUT_MINUTES:-15}
+      PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS: ${PUBLIC_REQUEST_RATE_LIMIT_TTL_SECONDS:-60}
+      PUBLIC_REQUEST_RATE_LIMIT_MAX: ${PUBLIC_REQUEST_RATE_LIMIT_MAX:-5}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-fake}
+      EMAIL_SEND_ENABLED: ${EMAIL_SEND_ENABLED:-false}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_TIMEOUT_MS: ${RESEND_TIMEOUT_MS:-}
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    networks:
+      - data
+      - web
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health/ready').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    extends:
+      service: backend
+    profiles: ["tools"]
+    build:
+      context: ./backend
+      target: migration
+    restart: "no"
+    healthcheck:
+      disable: true
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set SITE_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - web
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+
+networks:
+  data:
+    internal: true
+  web:
+
+volumes:
+  postgres_data:
+  uploads:
+  caddy_data:
+  caddy_config:

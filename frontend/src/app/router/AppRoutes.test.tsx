@@ -135,7 +135,7 @@ describe('AppRoutes capability deep links', () => {
   it('shows services and logout, but no panel or account request, to a general account', async () => {
     renderRoute('/servicios', 'Subscription_L1', false)
 
-    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Servicios para la comunidad' })).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Ver servicios' })).not.toHaveLength(0)
     expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
@@ -145,7 +145,7 @@ describe('AppRoutes capability deep links', () => {
   it('logs out a general account from the mobile public menu', async () => {
     renderRoute('/servicios', 'Subscription_L1', false)
 
-    await screen.findByRole('heading', { name: 'Servicios' })
+    await screen.findByRole('heading', { name: 'Servicios para la comunidad' })
     fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
 
@@ -164,7 +164,7 @@ describe('AppRoutes capability deep links', () => {
   it('redirects a general account deep link to services without rendering internal navigation', async () => {
     renderRoute('/app/admin/affiliates', 'Subscription_L1', false)
 
-    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Servicios para la comunidad' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
     expect(screen.queryByText('Navegación móvil')).not.toBeInTheDocument()
   })
@@ -265,7 +265,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('keeps Subscription_L1 outside ERP even when a permission is present', async () => {
     renderRoute('/app', 'Subscription_L1', false, ['erp.dashboard.read'])
-    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Servicios para la comunidad' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Buenos días/ })).not.toBeInTheDocument()
   })
 
