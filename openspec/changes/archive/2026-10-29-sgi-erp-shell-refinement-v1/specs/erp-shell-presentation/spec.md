@@ -29,11 +29,11 @@ El sistema SHALL mostrar navegación persistente expandida o colapsable cuando h
 - **THEN** cada control SHALL conservar nombre accesible, objetivo táctil adecuado y medio no visual para identificar su destino
 
 ### Requirement: Header session and operational controls
-El sistema SHALL presentar contexto de ubicación, búsqueda solo como estado no disponible mientras no exista contrato funcional, notificaciones reales y menú de cuenta con acciones existentes.
+El sistema SHALL presentar contexto de ubicación, notificaciones reales y menú de cuenta con acciones existentes. El Header SHALL NOT mostrar búsqueda global mientras no exista contrato funcional aprobado.
 
-#### Scenario: Search remains non-functional by contract
+#### Scenario: Search is absent without a functional contract
 - **WHEN** la búsqueda global no tenga endpoint ni comportamiento aprobado
-- **THEN** el Header SHALL comunicar que no está disponible y SHALL NOT aparentar aceptar o ejecutar búsquedas
+- **THEN** el Header SHALL NOT mostrar una superficie, input ni resultados de búsqueda
 
 #### Scenario: Notification states remain truthful
 - **WHEN** se abre el control de notificaciones

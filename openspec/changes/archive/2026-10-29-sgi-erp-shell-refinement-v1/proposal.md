@@ -6,8 +6,8 @@ El shell ERP actual ya compone navegación filtrada por capacidades, sesión y n
 
 ## What Changes
 
-- Refinar presentación del Sidebar expandido, colapsado y móvil: marca, secciones, ítems, estados, ilustración institucional, scroll y acciones globales.
-- Refinar presentación del Header: búsqueda no funcional explícitamente indicada, ubicación móvil, notificaciones existentes y menú de cuenta.
+- Refinar presentación del Sidebar expandido, colapsado y móvil: marca, secciones, ítems, estados, scroll y acciones globales.
+- Refinar presentación del Header: sin búsqueda global hasta contrato funcional aprobado, contexto de ubicación, notificaciones existentes y menú de cuenta.
 - Mantener agrupación institucional, navegación filtrada por `permissionCodes`, guards de rutas y autorización de API como fuentes separadas y vigentes.
 - Definir medidas, estados responsive y criterios verificables para 320×568, 375×667, 768×1024, 1024×768, 1440×900 y alturas reducidas.
 - Ampliar pruebas focalizadas del shell para preservar semántica, teclado, foco, navegación autorizada, drawer y estados existentes de notificaciones.
