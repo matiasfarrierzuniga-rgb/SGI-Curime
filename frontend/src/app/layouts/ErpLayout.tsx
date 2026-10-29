@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, ChevronRight, ExternalLink, KeyRound, LogOut, Menu, Mountain, PanelLeftClose, PanelLeftOpen, UserRound } from 'lucide-react'
+import { ChevronDown, ChevronRight, ExternalLink, KeyRound, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound } from 'lucide-react'
 import { Menu as MenuPrimitive } from '@base-ui/react/menu'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
@@ -42,7 +42,7 @@ export function ErpLayout() {
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger render={<Button variant="outline" size="icon-sm" className="border-erp-border text-erp-text md:hidden" aria-label="Abrir navegación" />}><Menu aria-hidden="true" /></SheetTrigger>
           <SheetContent side="left" className="w-[min(88vw,20rem)] gap-0 bg-erp-navigation p-0 text-erp-navigation-foreground" aria-label="Navegación móvil">
-            <SheetHeader className="border-b border-white/15 px-5 py-5"><SheetTitle className="sr-only">Navegación móvil</SheetTitle><p className="font-heading text-xl text-erp-navigation-foreground">SGI-Curime</p><SheetDescription className="text-erp-navigation-muted">Área de gestión</SheetDescription></SheetHeader>
+            <SheetHeader className="border-b border-white/15 px-5 py-5"><SheetTitle className="sr-only">Navegación móvil</SheetTitle><div className="flex items-center gap-3"><span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-ivory shadow-[0_4px_12px_rgba(0,0,0,0.16)]"><img src="/brand/adi-curime-mark-color.png" alt="" width="1254" height="1254" className="block size-full scale-[1.15] object-contain" /></span><div><p className="font-heading text-xl text-erp-navigation-foreground">SGI-Curime</p><SheetDescription className="text-erp-navigation-muted">Área de gestión</SheetDescription></div></div></SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4"><ErpNavigation id="mobile" currentPath={location.pathname} navigation={navigation} onNavigate={() => setMobileOpen(false)} onLogout={closeSession} showActions={false} /></div>
             <SidebarActions onNavigate={() => setMobileOpen(false)} onLogout={closeSession} />
           </SheetContent>
@@ -55,7 +55,7 @@ export function ErpLayout() {
     <aside id="erp-sidebar-navigation" className={`fixed inset-y-0 left-0 z-40 hidden overflow-hidden border-r border-black/15 bg-[linear-gradient(160deg,#075442_0%,#043d31_52%,#023126_100%)] text-erp-navigation-foreground shadow-xl transition-[width] duration-200 motion-reduce:transition-none md:flex md:flex-col ${sidebarExpanded ? 'w-64' : 'w-20'}`}>
       <div className={`relative flex border-b border-white/12 ${sidebarExpanded ? 'items-center justify-between px-4 py-4' : 'flex-col items-center gap-3 px-2 py-4'}`}>
         <div className={`flex min-w-0 items-center ${sidebarExpanded ? 'gap-3' : 'mx-auto'}`}>
-          <span className={`relative grid place-items-center overflow-hidden rounded-xl border border-white/15 bg-white/[0.08] text-[#e7c477] shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_8px_18px_rgba(0,0,0,0.12)] ${sidebarExpanded ? 'size-13' : 'size-12'}`}><Mountain className={sidebarExpanded ? 'size-7' : 'size-6'} aria-hidden="true" /><span aria-hidden="true" className={`absolute rounded-full bg-[#8fc7b8] ${sidebarExpanded ? 'bottom-2 h-1.5 w-7' : 'bottom-1.5 h-1 w-6'}`} /></span>
+          <span className={`grid place-items-center overflow-hidden rounded-xl bg-brand-ivory shadow-[0_4px_12px_rgba(0,0,0,0.16)] ${sidebarExpanded ? 'size-13' : 'size-12'}`}><img src="/brand/adi-curime-mark-color.png" alt="" width="1254" height="1254" className="block size-full scale-[1.15] object-contain" /></span>
           <div className={sidebarExpanded ? 'min-w-0' : 'sr-only'}><p className="truncate text-label font-bold tracking-[-0.01em] text-white">SGI-Curime</p><p className="mt-0.5 text-caption font-semibold tracking-[0.08em] text-erp-navigation-muted">ADI Curime</p></div>
         </div>
         <button type="button" className={`grid shrink-0 place-items-center !rounded-control !border-white/15 !bg-white/[0.04] !p-0 !text-erp-navigation-foreground transition-colors hover:!bg-white/[0.12] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-erp-focus ${sidebarExpanded ? 'size-12' : 'size-11'}`} aria-controls="erp-sidebar-navigation" aria-label={sidebarPinned ? 'Contraer navegación' : 'Expandir navegación'} aria-expanded={sidebarExpanded} onClick={toggleSidebar}>{sidebarPinned ? <PanelLeftClose className="size-5" aria-hidden="true" /> : <PanelLeftOpen className="size-5" aria-hidden="true" />}</button>
