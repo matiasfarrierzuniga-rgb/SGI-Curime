@@ -122,6 +122,14 @@ Add more under demand only.
 
 **Incorrect**: `shared/ui/UserTable`, `shared/ui/LoginForm` — these belong to features.
 
+## Design System V1 — pending decisions
+
+Buttons, forms, inputs, tables, iconography, DatePicker, DateRangePicker, CalendarView, toasts, dialogs, notifications, localization, and component-level accessibility contracts remain proposed until a dedicated Design System change specifies them. This list does not imply that shared implementations or definitive APIs already exist.
+
+### Provisional calendar and date-control policy
+
+Until Design System V1 defines shared date controls, a feature may use only patterns and dependencies already approved by the project and required by its authoritative backend contract. Date controls MUST retain visible labels, keyboard use, focus management, error association, responsive behavior, and locale formatting only where the product contract defines it. Do not introduce a shared DatePicker, DateRangePicker, CalendarView, date format, or calendar dependency through an unrelated feature.
+
 ## Zod
 
 - Installed and available for runtime validation.
