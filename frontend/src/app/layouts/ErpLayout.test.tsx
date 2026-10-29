@@ -123,22 +123,22 @@ describe('ErpLayout', () => {
   it('keeps desktop navigation expanded by default', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
-    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(sidebar).toHaveClass('w-64')
     fireEvent.mouseEnter(sidebar)
-    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(sidebar).toHaveClass('w-64')
     fireEvent.mouseLeave(sidebar)
-    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(sidebar).toHaveClass('w-64')
   })
 
   it('keeps the navigation expanded after pointer leaves', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
     fireEvent.mouseLeave(sidebar)
-    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(sidebar).toHaveClass('w-64')
     expect(screen.getAllByRole('button', { name: 'Contraer navegación' })[0]).toHaveAttribute('aria-expanded', 'true')
   })
 
-  it('temporarily expands both sidebar and dashboard content on hover after collapse', () => {
+  it('does not expand a collapsed sidebar on hover or focus', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
     const content = document.getElementById('erp-content')!
@@ -146,11 +146,19 @@ describe('ErpLayout', () => {
     expect(sidebar).toHaveClass('w-20')
     expect(content).toHaveClass('md:ml-20')
     fireEvent.mouseEnter(sidebar)
-    expect(sidebar).toHaveClass('w-[15.25rem]')
-    expect(content).toHaveClass('md:ml-[15.25rem]')
-    fireEvent.mouseLeave(sidebar)
+    fireEvent.focusIn(sidebar)
     expect(sidebar).toHaveClass('w-20')
     expect(content).toHaveClass('md:ml-20')
+    expect(screen.getByRole('button', { name: 'Expandir navegación' })).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('expands a collapsed sidebar only through its explicit control', () => {
+    renderLayout()
+    const sidebar = document.getElementById('erp-sidebar-navigation')!
+    fireEvent.click(screen.getByRole('button', { name: 'Contraer navegación' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir navegación' }))
+    expect(sidebar).toHaveClass('w-64')
+    expect(document.getElementById('erp-content')).toHaveClass('md:ml-64')
   })
 
   it('keeps empty mobile groups collapsed and exposes their state to keyboard users', () => {
