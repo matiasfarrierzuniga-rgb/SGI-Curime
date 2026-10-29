@@ -8,6 +8,7 @@ Esta configuración es independiente de `compose.yaml` y no inicia ni modifica e
 - Solo Caddy publica puertos. `frontend` y `backend` están en la red `web` sin puertos del host. PostgreSQL está en la red interna `data`, compartida solo con `backend`.
 - Caddy gestiona y renueva automáticamente certificados válidos y redirige HTTP a HTTPS. Sus datos en `caddy_data` deben persistir.
 - `postgres_data` y `uploads` son volúmenes persistentes. `UPLOAD_DIR=/app/uploads`; el servicio existente escribe en `/app/uploads/justifications`. El proxy no sirve ese directorio. Las descargas siguen pasando por los endpoints autorizados.
+- El backend final ejecuta Node como usuario `node` e incluye solo dependencias de producción. La imagen separada `migrate`, del perfil `tools`, conserva la CLI Prisma y los archivos de migración. En volúmenes de adjuntos preexistentes, verificar que el UID del contenedor pueda escribir sin alterar ni borrar archivos; los volúmenes nuevos heredan los permisos preparados en la imagen.
 - El contenedor backend arranca con `NODE_ENV=production`. La cookie de refresh es `HttpOnly`, `Secure` y `SameSite=lax`. `FRONTEND_URL` y `APP_PUBLIC_URL` son `https://SITE_DOMAIN`; CORS acepta solo ese origen. Express confía exactamente en el salto de Caddy para IP del cliente y límites de solicitudes; no se debe publicar el puerto del backend ni añadir un proxy adicional sin revisar esa configuración.
 - El frontend se compila con `VITE_API_URL=/api`. Esa variable es visible en el navegador y no debe incluir secretos. La API no usa prefijo propio; Caddy lo elimina al reenviar.
 
@@ -25,15 +26,15 @@ Desde la raíz del repositorio en el VPS, con la configuración privada ya prepa
 
 ```sh
 docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env config --quiet
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env build
+docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env --profile tools build
 docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env up -d postgres
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env run --rm backend npx prisma migrate status --config prisma.config.ts
+docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env run --rm migrate npx prisma migrate status --config prisma.config.ts
 ```
 
 Revisar el resultado de `migrate status` y las migraciones pendientes antes de continuar. En una instalación con datos previos, tomar respaldo restaurable y probarlo en aislamiento. Aplicar solo migraciones revisadas y aditivas:
 
 ```sh
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env run --rm backend npx prisma migrate deploy --config prisma.config.ts
+docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env run --rm migrate npx prisma migrate deploy --config prisma.config.ts
 docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env up -d
 docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env ps
 curl -fsS https://SU_DOMINIO/ >/dev/null

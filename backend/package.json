@@ -5,6 +5,9 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "overrides": {
+    "multer": "^2.5.0"
+  },
   "scripts": {
     "prebuild": "prisma generate --config prisma.config.ts",
     "build": "nest build",
@@ -54,7 +57,7 @@
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.6.1",
-    "nodemailer": "^9.0.6",
+    "nodemailer": "^10.3.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.23.0",

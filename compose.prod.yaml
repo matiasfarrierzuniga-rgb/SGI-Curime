@@ -80,6 +80,17 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    extends:
+      service: backend
+    profiles: ["tools"]
+    build:
+      context: ./backend
+      target: migration
+    restart: "no"
+    healthcheck:
+      disable: true
+
   proxy:
     image: caddy:2-alpine
     restart: unless-stopped
