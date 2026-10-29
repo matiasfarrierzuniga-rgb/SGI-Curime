@@ -186,6 +186,14 @@ describe('portal público', () => {
     ])
   })
 
+  it('muestra el placeholder institucional de About sin fotografías provisionales', () => {
+    const { container } = renderPublic()
+
+    expect(screen.getByText('Imagen institucional pendiente de autorización.')).toBeVisible()
+    expect(screen.getByText('La imagen se incorporará cuando cuente con autorización de publicación.')).toBeVisible()
+    expect(container.querySelector('img[src*="Pictures"]')).toBeNull()
+  })
+
   it('muestra accesos comunitarios y noticias con rutas existentes', () => {
     renderPublic()
     expect(screen.getByRole('heading', { name: /encuentre lo que necesita/i })).toBeInTheDocument()
