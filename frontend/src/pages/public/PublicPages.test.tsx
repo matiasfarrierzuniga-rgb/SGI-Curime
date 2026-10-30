@@ -58,6 +58,7 @@ describe('portal público', () => {
       expect(main.getByRole('heading', { name: title })).toBeVisible()
     }
     expect(main.getAllByText('Información en preparación')).toHaveLength(7)
+    expect(main.getByText('Informes de gestión y resultados de la Asociación.')).toBeVisible()
     expect(main.getAllByRole('article')).toHaveLength(7)
     expect(main.getAllByRole('link')).toHaveLength(1) // Solo la ruta de Inicio del breadcrumb.
   })
@@ -100,7 +101,9 @@ describe('portal público', () => {
     expect(main.getByRole('heading', { name: 'Conozca nuestra Asociación' })).toBeVisible()
     expect(main.getByRole('img', { name: 'Paisaje rural de Curime, Guanacaste.' })).toHaveAttribute('src', '/images/public/home/hero-curime-fallback.jpg')
     expect(main.getByRole('heading', { name: 'Quiénes somos' })).toBeVisible()
+    expect(main.getByText('Personas unidas por un propósito común.')).toBeVisible()
     expect(main.getByRole('heading', { name: 'Misión' })).toBeVisible()
+    expect(main.getByText('Textos propuestos, pendientes de validación institucional.')).toBeVisible()
     expect(main.getByRole('heading', { name: 'Visión' })).toBeVisible()
     expect(main.getByRole('heading', { name: 'Objetivos' })).toBeVisible()
     expect(main.getByRole('heading', { name: 'Nuestra historia' })).toBeVisible()
@@ -136,6 +139,7 @@ describe('portal público', () => {
 
     const reservations = screen.getByRole('heading', { name: 'Reservas' }).closest('article')!
     expect(within(reservations).getByText('Disponible')).toBeVisible()
+    expect(within(reservations).getByText('Consulte disponibilidad')).toBeVisible()
     expect(within(reservations).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
     expect(within(reservations).getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
 
