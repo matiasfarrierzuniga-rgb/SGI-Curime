@@ -2,28 +2,26 @@
 
 ## Canonical integration policy
 
-`development` is the shared integration branch. `main` is the stable promotion branch. Direct feature, fix, refactor, documentation, test, or configuration work must not be developed directly on either branch.
+`main` is the shared integration branch. Direct feature, fix, refactor, documentation, test, or configuration work must not be developed directly on it.
 
 This is repository policy. It does not assert that GitHub branch protections or Rulesets are active; verify remote configuration separately before reporting it as enabled.
 
 All new work follows this lifecycle:
 
 ```text
-development
-  │
-  └── topic branch
-       │
-       ├── work
-       ├── tests / verification
-       ├── commit
-       ├── push
-       └── Pull Request → development
-              │
-              ├── review
-              ├── QA / required checks
-              └── merge → development
-
-development ── reviewed promotion Pull Request ──▶ main
+main
+ │
+ └── topic branch
+      │
+      ├── work
+      ├── tests / verification
+      ├── commit
+      ├── push
+      └── Pull Request → main
+             │
+             ├── review
+             ├── QA / required checks
+             └── merge → main
 ```
 
 ## 1. Start from shared integration baseline
@@ -31,8 +29,8 @@ development ── reviewed promotion Pull Request ──▶ main
 Before creating a branch, use the approved shared baseline:
 
 ```bash
-git switch development
-git pull --ff-only origin development
+git switch main
+git pull --ff-only origin main
 git status
 git rev-parse HEAD
 ```
@@ -113,11 +111,11 @@ Do not mix unrelated cleanup with the intended change.
 git push -u origin <branch-name>
 ```
 
-Direct pushes to `development` and `main` are prohibited by project policy.
+Direct pushes to `main` are prohibited by project policy.
 
-## 6. Open an integration Pull Request into development
+## 6. Open an integration Pull Request into main
 
-Every shared integration into `development` must use a Pull Request. The PR must include:
+Every shared integration into `main` must use a Pull Request. The PR must include:
 
 - purpose and scope;
 - explicit out-of-scope items;
@@ -132,7 +130,7 @@ Draft PRs are encouraged while work is incomplete. A PR should be marked ready o
 
 A PR is mergeable only when:
 
-1. the branch is up to date enough to evaluate safely against `development`;
+1. the branch is up to date enough to evaluate safely against `main`;
 2. required automated status checks pass;
 3. at least one approving review is present when branch protection requires it;
 4. requested changes and unresolved review conversations are addressed;
@@ -148,22 +146,22 @@ Merge an integration PR only through GitHub after the review/QA gate passes. Do 
 Use the repository's approved merge strategy consistently. After merge:
 
 ```bash
-git switch development
-git pull --ff-only origin development
+git switch main
+git pull --ff-only origin main
 git branch -d <branch-name>
 ```
 
 Delete the remote branch when it is no longer needed.
 
-Promote `development` to stable `main` through a separate reviewed Pull Request. Record verification evidence appropriate to the promotion and do not claim a Ruleset, approval requirement, or protection is active without current remote evidence.
+Record verification evidence appropriate to each reviewed Pull Request and do not claim a Ruleset, approval requirement, or protection is active without current remote evidence.
 
 ## 9. Emergency exception
 
-A direct change to `development` or `main` is reserved for exceptional repository recovery only. Any exception must be documented with reason, scope and verification evidence. Normal feature delivery, fixes, refactors and documentation changes do not qualify.
+A direct change to `main` is reserved for exceptional repository recovery only. Any exception must be documented with reason, scope and verification evidence. Normal feature delivery, fixes, refactors and documentation changes do not qualify.
 
 ## Protection target
 
-GitHub protections or Rulesets for `development` and `main` should enforce the following project policy when configured:
+GitHub protections or Rulesets for `main` should enforce the following project policy when configured:
 
 - require a Pull Request before merging;
 - require at least 1 approval;
