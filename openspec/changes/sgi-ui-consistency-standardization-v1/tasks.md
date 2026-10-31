@@ -17,6 +17,8 @@
 - [x] 2.4 Normalizar filtro, textarea y acciones de `pages/admin/UserRequestsPage.tsx`, preservando revisión, rol, rechazo, loading, permisos y ruta `/admin/user-requests`; verificar que no haya request inválido ni doble submit.
 - [ ] 2.5 Corregir composición de iconos de búsqueda, alturas, padding, radios, hover, focus-visible, disabled y loading en las cuatro superficies P0; verificar manualmente 320/375/768/1024/1440 px, navegación de teclado y comprensión de la acción sin tooltip.
 - [ ] 2.6 Añadir o actualizar pruebas de regresión P0 para nombres accesibles, errores asociados, foco, estados vacíos/error/loading y rutas directas protegidas; verificar con Vitest focalizado y `git diff --check`.
+- [x] 2.7 Definir y aplicar la composición compartida de listado administrativo en Afiliados, Usuarios, Solicitudes de registro y Solicitudes de afiliación; preservar filtros, tablas, acciones, rutas y contratos, y verificar con pruebas focalizadas, arquitectura y `git diff --check`.
+- [ ] 2.8 Ejecutar QA visual/manual del lote de composición en 320/375/768/1024/1440 px, teclado, lector de pantalla y contraste; registrar hallazgos sin marcarlo completo sin evidencia.
 
 ## 3. PBI UI-STD-03 — P1 tablas y estados de Personas y solicitudes
 

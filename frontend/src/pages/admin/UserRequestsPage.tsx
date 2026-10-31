@@ -8,6 +8,7 @@ import type { RoleOption } from "@/features/users";
 import { getErrorMessage } from "@/shared/lib/errors";
 import { hasCapability } from "@/shared/security/access";
 import { Button } from "@/shared/ui/button";
+import { AdministrativeListLayout, AdministrativeListResults } from "@/shared/ui/AdministrativeListLayout";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from "@/shared/ui/DataTable";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -104,37 +105,26 @@ export function UserRequestsPage() {
   };
 
   return (
-    <section className="space-y-8">
-      <PageHeader context="Administración · Cuentas" title="Solicitudes de registro" description="Revise las solicitudes de acceso al sistema y gestione su resolución institucional." />
-
-      <section className="rounded-surface border border-border-default bg-surface-card p-4 shadow-sm sm:p-5" aria-labelledby="account-request-filters-heading">
-        <div className="mb-4 border-b border-border-subtle pb-4">
-          <h2 id="account-request-filters-heading" className="text-heading-3 font-semibold text-text-primary">Filtrar solicitudes</h2>
-          <p className="mt-1 text-body-small text-text-secondary">Seleccione un estado para actualizar el listado.</p>
-        </div>
+    <AdministrativeListLayout
+      header={<PageHeader className="gap-4 pb-5" context="Administración · Cuentas" title="Solicitudes de registro" description="Revise las solicitudes de acceso al sistema y gestione su resolución institucional." />}
+      filters={<section className="border-y border-border-default py-4" aria-label="Filtrar solicitudes de registro">
         <SearchFilterBar className="sm:max-w-xs" label="Filtrar solicitudes de registro">
           <FormField id="user-request-status" label="Estado">
-          <Select value={status} onChange={(event) => { setPage(1); setStatus(event.target.value as RequestStatus | ""); }}>
-            <option value="">Todos los estados</option>
-            <option value="PENDING">Pendiente</option>
-            <option value="APPROVED">Aprobada</option>
-            <option value="REJECTED">Rechazada</option>
-          </Select>
+            <Select value={status} onChange={(event) => { setPage(1); setStatus(event.target.value as RequestStatus | ""); }}>
+              <option value="">Todos los estados</option>
+              <option value="PENDING">Pendiente</option>
+              <option value="APPROVED">Aprobada</option>
+              <option value="REJECTED">Rechazada</option>
+            </Select>
           </FormField>
         </SearchFilterBar>
-      </section>
+      </section>}
+    >
 
       {error ? <ErrorState message={error} action={<Button type="button" variant="outline" onClick={() => void load()}>Reintentar</Button>} /> : null}
       {loading ? <LoadingState label="Cargando solicitudes de registro..." /> : null}
       {!loading && !error && items.length === 0 ? <EmptyState title="No hay solicitudes para mostrar" description="Las solicitudes de registro recibidas aparecerán en este listado." /> : null}
-      {!loading && !error && items.length > 0 ? <section className="space-y-4" aria-labelledby="account-request-results-heading">
-        <div className="flex flex-col gap-1 border-b border-border-subtle pb-3 sm:flex-row sm:items-baseline sm:justify-between">
-          <div>
-            <h2 id="account-request-results-heading" className="text-heading-2 font-bold text-text-primary">Resultados</h2>
-            <p className="text-body-small text-text-secondary" aria-live="polite">{total} {total === 1 ? "solicitud encontrada" : "solicitudes encontradas"}</p>
-          </div>
-          <p className="text-caption text-text-secondary">Seleccione una solicitud para revisar sus datos.</p>
-        </div>
+      {!loading && !error && items.length > 0 ? <AdministrativeListResults count={`${total} ${total === 1 ? "solicitud encontrada" : "solicitudes encontradas"}`} actions="Seleccione una solicitud para revisar sus datos.">
         <DataTable className="min-w-[44rem]" scrollLabel="En pantallas estrechas, desplaza horizontalmente para ver más columnas de solicitudes de registro">
             <caption className="sr-only">Listado de solicitudes de registro</caption>
             <DataTableHeader>
@@ -165,7 +155,7 @@ export function UserRequestsPage() {
             </DataTableBody>
         </DataTable>
         <Pagination page={page} total={total} limit={limit} onChange={setPage} />
-      </section> : null}
+      </AdministrativeListResults> : null}
 
       {selected && !action ? <Modal title={`Solicitud de ${selected.fullName}`} onClose={() => setSelected(null)}>
         <dl className="grid gap-5 sm:grid-cols-2">
@@ -191,7 +181,7 @@ export function UserRequestsPage() {
         <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border-subtle pt-5 sm:flex-row sm:justify-end"><Button type="button" variant="outline" onClick={() => setAction(null)}>Cancelar</Button><Button type="button" variant="danger" disabled={!reason.trim()} onClick={() => setAction("rejectConfirm")}>Continuar</Button></div>
       </Modal> : null}
       {action === "rejectConfirm" ? <ConfirmDialog title="Confirmar rechazo" message="¿Confirmas el rechazo de esta solicitud con el motivo indicado?" confirmLabel="Rechazar solicitud" danger busy={busy} onClose={() => setAction("reject")} onConfirm={() => void run()} /> : null}
-    </section>
+    </AdministrativeListLayout>
   );
 }
 

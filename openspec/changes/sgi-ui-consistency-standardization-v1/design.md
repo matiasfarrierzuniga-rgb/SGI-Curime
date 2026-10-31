@@ -198,6 +198,16 @@ Los iconos de búsqueda y acciones deben quedar en composición estable (`relati
 
 Cada lote tendrá pruebas focalizadas y revisión manual en 320/375/768/1024/1440 px, teclado, foco, lector de pantalla, contraste y overflow. `npm run verify` no se ejecuta en Explore; queda reservado para APPLY/VERIFY autorizado. Ninguna observación visual se marca como PASSED sin evidencia.
 
+### 7. Composición de listados administrativos
+
+`AdministrativeListLayout` compone superficies operativas ya basadas en `PageHeader`, filtros, `DataTable` y `Pagination`; no sustituye ninguna primitive ni introduce lógica de dominio. Sus consumidores iniciales son Afiliados, Usuarios y ambas solicitudes.
+
+- **Jerarquía y espaciado:** encabezado compacto primero; filtros inmediatamente después; resultados, tabla y paginación forman una misma unidad con `space-y-4`. El layout separa sus unidades con `space-y-6`, evitando sumar encabezados narrativos locales y `space-y-8` antes de la primera fila.
+- **Filtros:** etiquetas de campos y el nombre accesible del formulario preservan su responsabilidad. Los filtros simples usan una franja delimitada; filtros con aplicación diferida o filtros activos pueden conservar su panel propio cuando ese feedback es necesario.
+- **Resultados:** una `h2` semántica nombra la región para lectores de pantalla; el conteo visible, con anuncio `aria-live`, queda junto a la tabla. Las instrucciones de acción se muestran solo si orientan la siguiente acción; no se repite una explicación de columnas cuyo propietario accesible es `DataTable`.
+- **Scroll horizontal:** `DataTable` es único propietario de la región desplazable y focusable. Ningún consumidor de este patrón añade un segundo wrapper de overflow horizontal o `tabIndex` alrededor de la tabla.
+- **Taxonomía:** listados operativos usan este contrato. Dashboards pueden priorizar indicadores; detalles y formularios conservan jerarquía por tarea; reportes densos, Junta Directiva y Asambleas son excepciones hasta contar con evidencia y alcance propios.
+
 ## Migration Plan
 
 ```text
