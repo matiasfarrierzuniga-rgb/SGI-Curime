@@ -11,19 +11,19 @@
 
 ## 2. PBI UI-STD-02 — P0 controles y filtros de Personas y solicitudes
 
-- [ ] 2.1 Migrar `features/users/ui/UserFilters.tsx` y superficies de filtros de usuarios al contrato común, conservando búsqueda, estado, rol, reset, submit y query state; verificar filtros y limpieza con pruebas existentes/focalizadas.
-- [ ] 2.2 Normalizar filtros de `features/affiliates/ui/AffiliateFilters.tsx` y campos de `EditAffiliateModal.tsx` sin cambiar validación, payload, capability ni cache invalidation; verificar asociación label/control, error, disabled y submit.
-- [ ] 2.3 Normalizar `features/affiliate-requests/ui/AffiliateRequestsFilters.tsx` y `AffiliateRequestDetail.tsx`, preservando aplicación diferida de correo, feedback, aprobación/rechazo y contrato de `affiliate-requests`; verificar escenarios de filtros, teclado, error y acción única.
-- [ ] 2.4 Normalizar filtro, textarea y acciones de `pages/admin/UserRequestsPage.tsx`, preservando revisión, rol, rechazo, loading, permisos y ruta `/admin/user-requests`; verificar que no haya request inválido ni doble submit.
+- [x] 2.1 Migrar `features/users/ui/UserFilters.tsx` y superficies de filtros de usuarios al contrato común, conservando búsqueda, estado, rol, reset, submit y query state; verificar filtros y limpieza con pruebas existentes/focalizadas.
+- [x] 2.2 Normalizar filtros de `features/affiliates/ui/AffiliateFilters.tsx` y campos de `EditAffiliateModal.tsx` sin cambiar validación, payload, capability ni cache invalidation; verificar asociación label/control, error, disabled y submit.
+- [x] 2.3 Normalizar `features/affiliate-requests/ui/AffiliateRequestsFilters.tsx` y `AffiliateRequestDetail.tsx`, preservando aplicación diferida de correo, feedback, aprobación/rechazo y contrato de `affiliate-requests`; verificar escenarios de filtros, teclado, error y acción única.
+- [x] 2.4 Normalizar filtro, textarea y acciones de `pages/admin/UserRequestsPage.tsx`, preservando revisión, rol, rechazo, loading, permisos y ruta `/admin/user-requests`; verificar que no haya request inválido ni doble submit.
 - [ ] 2.5 Corregir composición de iconos de búsqueda, alturas, padding, radios, hover, focus-visible, disabled y loading en las cuatro superficies P0; verificar manualmente 320/375/768/1024/1440 px, navegación de teclado y comprensión de la acción sin tooltip.
 - [ ] 2.6 Añadir o actualizar pruebas de regresión P0 para nombres accesibles, errores asociados, foco, estados vacíos/error/loading y rutas directas protegidas; verificar con Vitest focalizado y `git diff --check`.
 
 ## 3. PBI UI-STD-03 — P1 tablas y estados de Personas y solicitudes
 
-- [ ] 3.1 Alinear `features/users/ui/UsersTable.tsx` al contrato común usando `DataTable` como baseline, sin alterar menú de acciones, focus restoration, role/lifecycle actions ni capabilities; verificar acciones de fila y Escape con pruebas.
-- [ ] 3.2 Migrar `features/affiliates/ui/AffiliatesTable.tsx` a estructura de tabla equivalente al baseline, preservando campos, status y detalle; verificar encabezados, overflow, hover/focus-within y acción accesible.
-- [ ] 3.3 Migrar `features/affiliate-requests/ui/AffiliateRequestsTable.tsx` y la tabla de `UserRequestsPage.tsx`, manteniendo separados ambos workflows y sus contratos; verificar estado textual, acciones y paginación.
-- [ ] 3.4 Uniformar loading, empty, error, retry, status badge y pagination de las cuatro pantallas P0; verificar que ningún estado muestre datos obsoletos como actuales.
+- [x] 3.1 Alinear `features/users/ui/UsersTable.tsx` al contrato común usando `DataTable` como baseline, sin alterar menú de acciones, focus restoration, role/lifecycle actions ni capabilities; verificar acciones de fila y Escape con pruebas.
+- [x] 3.2 Migrar `features/affiliates/ui/AffiliatesTable.tsx` a estructura de tabla equivalente al baseline, preservando campos, status y detalle; verificar encabezados, overflow, hover/focus-within y acción accesible.
+- [x] 3.3 Migrar `features/affiliate-requests/ui/AffiliateRequestsTable.tsx` y la tabla de `UserRequestsPage.tsx`, manteniendo separados ambos workflows y sus contratos; verificar estado textual, acciones y paginación.
+- [x] 3.4 Uniformar loading, empty, error, retry, status badge y pagination de las cuatro pantallas P0; verificar que ningún estado muestre datos obsoletos como actuales.
 - [ ] 3.5 Ejecutar revisión manual P1 en desktop/tablet/mobile, incluyendo overflow horizontal y lectura por teclado; registrar hallazgos no bloqueantes como backlog separado, sin ampliar alcance.
 - [ ] 3.6 Validar que cada tabla P0 permita a una persona nueva identificar contexto, estado, resultado y siguiente acción sin depender de hover, color o conocimiento de permisos; verificar con checklist de aceptación UX y evidencia de teclado.
 
@@ -56,3 +56,10 @@
 - Mantener DS-F2, UserRequests V2 y demás modificaciones preexistentes fuera de cualquier limpieza o reversión.
 - Ejecutar VERIFY únicamente después de autorización explícita para salir de Explore.
 - Archivar solo cuando implementación y verificación estén completas y aprobadas; no hacer Archive en esta fase.
+
+## Evidencia incremental
+
+- **P0-A (controles y filtros):** `SearchFilterBar`, `FormField`, `Input`, `Select`, `Textarea` y `Button` aplicados a Usuarios, Afiliados, Solicitudes de cuenta y Solicitudes de afiliación. `SearchInput` usa regiones grid separadas para icono e input nativo; no depende de padding para evitar superposición.
+- **P0-B (tablas y estados):** `UsersTable`, `AffiliatesTable`, `AffiliateRequestsTable` y tabla de `UserRequestsPage` usan `DataTable`. Se preservan `StatusBadge`, acciones existentes, overflow identificado y `Pagination` compartida.
+- **Verificación automatizada:** Vitest focalizado para SearchFilterBar y las cuatro pantallas; `git diff --check`; `npm run check:architecture` pasó para este lote.
+- **Pendiente:** 2.5, 2.6, 3.5 y 3.6 requieren QA visual/manual, teclado de pantalla completa y/o rutas directas protegidas. No se marcan como completas sin esa evidencia.

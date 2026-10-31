@@ -9,6 +9,7 @@ import { getErrorMessage } from "@/shared/lib/errors";
 import { hasCapability } from "@/shared/security/access";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from "@/shared/ui/DataTable";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ErrorState } from "@/shared/ui/ErrorState";
 import { FormField } from "@/shared/ui/FormField";
@@ -144,37 +145,35 @@ export function UserRequestsPage() {
           </div>
           <p className="text-caption text-text-secondary">Seleccione una solicitud para revisar sus datos.</p>
         </div>
-        <div className="overflow-x-auto rounded-surface border border-border-default bg-surface-card" tabIndex={0} aria-label="Tabla de solicitudes de registro, desplazable horizontalmente">
-          <table className="min-w-[44rem] w-full text-left text-body-small">
+        <DataTable className="min-w-[44rem]" scrollLabel="En pantallas estrechas, desplaza horizontalmente para ver más columnas de solicitudes de registro">
             <caption className="sr-only">Listado de solicitudes de registro</caption>
-            <thead className="bg-surface-muted text-caption uppercase tracking-wide text-text-secondary">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-semibold">Persona solicitante</th>
-                <th scope="col" className="px-4 py-3 font-semibold">Correo</th>
-                <th scope="col" className="px-4 py-3 font-semibold">Estado</th>
-                <th scope="col" className="whitespace-nowrap px-4 py-3 font-semibold">Recibida</th>
-                <th scope="col" className="px-4 py-3 font-semibold"><span className="sr-only">Acciones</span></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-default bg-surface-card text-text-primary">
+            <DataTableHeader>
+              <DataTableRow className="hover:bg-surface-muted">
+                <DataTableHead>Persona solicitante</DataTableHead>
+                <DataTableHead>Correo</DataTableHead>
+                <DataTableHead>Estado</DataTableHead>
+                <DataTableHead className="whitespace-nowrap">Recibida</DataTableHead>
+                <DataTableHead className="text-right"><span className="sr-only">Acciones</span></DataTableHead>
+              </DataTableRow>
+            </DataTableHeader>
+            <DataTableBody>
               {items.map((item) => {
                 const presentation = statusPresentation[item.status];
-                return <tr key={item.id} className="transition-colors hover:bg-surface-muted/60 focus-within:bg-surface-muted/80">
-                  <td className="px-4 py-3.5">
+                return <DataTableRow key={item.id} className="focus-within:bg-surface-muted/80">
+                  <DataTableCell>
                     <div className="flex min-w-52 items-center gap-3">
                       <span className={`grid size-10 shrink-0 place-items-center rounded-full text-label font-bold ${getAvatarTone(item.fullName)}`} aria-hidden="true">{getInitials(item.fullName)}</span>
                       <span className="min-w-0 break-words font-semibold text-text-primary">{item.fullName}</span>
                     </div>
-                  </td>
-                  <td className="px-4 py-3.5 break-all text-text-secondary">{item.email}</td>
-                  <td className="px-4 py-3.5"><StatusBadge variant={presentation.variant}>{presentation.label}</StatusBadge></td>
-                  <td className="whitespace-nowrap px-4 py-3.5 text-text-secondary">{formatDate(item.createdAt)}</td>
-                  <td className="px-4 py-3.5 text-right"><Button size="sm" variant="outline" type="button" onClick={() => { setSelected(item); setRoleId(""); setReason(""); }}>Ver detalle</Button></td>
-                </tr>;
+                  </DataTableCell>
+                  <DataTableCell className="break-all text-text-secondary">{item.email}</DataTableCell>
+                  <DataTableCell><StatusBadge variant={presentation.variant}>{presentation.label}</StatusBadge></DataTableCell>
+                  <DataTableCell className="whitespace-nowrap text-text-secondary">{formatDate(item.createdAt)}</DataTableCell>
+                  <DataTableCell className="text-right"><Button size="sm" variant="outline" type="button" onClick={() => { setSelected(item); setRoleId(""); setReason(""); }}>Ver detalle</Button></DataTableCell>
+                </DataTableRow>;
               })}
-            </tbody>
-          </table>
-        </div>
+            </DataTableBody>
+        </DataTable>
         <Pagination page={page} total={total} limit={limit} onChange={setPage} />
       </section> : null}
 

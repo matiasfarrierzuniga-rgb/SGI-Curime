@@ -181,6 +181,20 @@ describe('UsersPage', () => {
     expect(screen.getByLabelText('Nuevo rol de cuenta')).toHaveValue('1')
   })
 
+  it('closes account actions with Escape and restores focus to its trigger', async () => {
+    page()
+    await screen.findByText('Ana Pérez')
+
+    const trigger = screen.getByRole('button', { name: 'Más acciones para Ana Pérez' })
+    fireEvent.click(trigger)
+    expect(screen.getByRole('menu', { name: 'Acciones de cuenta para Ana Pérez' })).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(screen.queryByRole('menu', { name: 'Acciones de cuenta para Ana Pérez' })).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
+
   it('uses numeric access ID for eligible profile edits and invalidates Person-root users cache', async () => {
     const editable = { ...personWithAccountAndAffiliation, actions: { ...personWithAccountAndAffiliation.actions, update: true } }
     vi.mocked(usersService.list).mockResolvedValue({ data: [editable] as never, total: 1, page: 1, limit: 10 })
