@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 
 import { AdministrativeListLayout, AdministrativeListResults } from '@/shared/ui/AdministrativeListLayout'
+import { Button } from '@/shared/ui/button'
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
@@ -69,7 +70,7 @@ export function AuditLogsPage() {
         <label>Módulo<input maxLength={100} value={form.module} onChange={(event) => setForm({ ...form, module: event.target.value })} /></label>
         <label>Desde<input type="date" value={form.dateFrom} onChange={(event) => setForm({ ...form, dateFrom: event.target.value })} /></label>
         <label>Hasta<input type="date" value={form.dateTo} onChange={(event) => setForm({ ...form, dateTo: event.target.value })} /></label>
-        <div className="actions"><button className="primary">Aplicar filtros</button></div>
+        <div className="actions"><Button type="submit">Aplicar filtros</Button></div>
       </form>
       {error ? <ErrorState message={error} /> : loading ? <LoadingState label="Cargando bitácora…" /> : logs.length === 0 ? (
         <EmptyState title="Sin eventos" description="No hay eventos que coincidan con los filtros." />
@@ -86,7 +87,7 @@ export function AuditLogsPage() {
                   <DataTableCell>{log.user ? `${log.user.fullName} (${log.user.email})` : 'Sistema / sin usuario'}</DataTableCell>
                   <DataTableCell>{log.action}</DataTableCell>
                   <DataTableCell>{log.module}</DataTableCell>
-                  <DataTableCell><button onClick={() => void detail(log.id)}>Ver detalle</button></DataTableCell>
+                  <DataTableCell><Button type="button" variant="outline" size="sm" onClick={() => void detail(log.id)}>Ver detalle</Button></DataTableCell>
                 </DataTableRow>
               ))}
             </DataTableBody>

@@ -1,4 +1,5 @@
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { Button } from '@/shared/ui/button'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { useAuth } from '@/features/auth'
@@ -123,7 +124,7 @@ export function InventoryMovementsPage() {
         )}
         <label>Desde<input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} /></label>
         <label>Hasta<input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} /></label>
-        <div className="actions"><button className="primary">Aplicar filtros</button></div>
+        <div className="actions"><Button type="submit">Aplicar filtros</Button></div>
       </form>
       {error && <ErrorState message={error} />}
       {loading ? (

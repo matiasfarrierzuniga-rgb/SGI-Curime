@@ -1,4 +1,5 @@
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { Button } from '@/shared/ui/button'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
@@ -119,7 +120,7 @@ export function InventoryCategoriesPage() {
           <option value="true">Activas</option>
           <option value="false">Inactivas</option>
         </select></label>
-        <div className="actions"><button className="primary">Buscar</button><button type="button" onClick={openCreate}>Nueva categoría</button></div>
+        <div className="actions"><Button type="submit">Buscar</Button><Button type="button" variant="outline" onClick={openCreate}>Nueva categoría</Button></div>
       </form>
       {error && <ErrorState message={error} />}
       {loading ? (
@@ -140,10 +141,10 @@ export function InventoryCategoriesPage() {
                     <DataTableCell><span className={`badge ${c.isActive ? 'success' : 'neutral'}`}>{c.isActive ? 'Activa' : 'Inactiva'}</span></DataTableCell>
                     <DataTableCell>
                       <div className="actions">
-                        <button onClick={() => openEdit(c)}>Editar</button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => openEdit(c)}>Editar</Button>
                         {c.isActive
-                          ? <button onClick={() => setConfirm({ category: c, action: 'deactivate' })}>Inactivar</button>
-                          : <button onClick={() => setConfirm({ category: c, action: 'activate' })}>Activar</button>}
+                          ? <Button type="button" variant="danger" size="sm" onClick={() => setConfirm({ category: c, action: 'deactivate' })}>Inactivar</Button>
+                          : <Button type="button" size="sm" onClick={() => setConfirm({ category: c, action: 'activate' })}>Activar</Button>}
                       </div>
                     </DataTableCell>
                   </DataTableRow>
@@ -158,7 +159,7 @@ export function InventoryCategoriesPage() {
           <form className="form-grid" onSubmit={(e) => void submit(e)}>
             <label>Nombre<input maxLength={100} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
             <label>Descripción<textarea maxLength={500} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-            <div className="actions"><button className="primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy}>{busy ? 'Guardando…' : 'Guardar'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       )}

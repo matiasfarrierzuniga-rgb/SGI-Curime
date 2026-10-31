@@ -1,4 +1,5 @@
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { Button } from '@/shared/ui/button'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
@@ -106,7 +107,7 @@ export function InventoryReportsPage() {
           <option value="EXIT">Salida</option>
           <option value="ADJUSTMENT">Ajuste</option>
         </select></label>
-        <div className="actions"><button className="primary">Aplicar filtros</button></div>
+        <div className="actions"><Button type="submit">Aplicar filtros</Button></div>
       </form>
       {error && <ErrorState message={error} />}
       {loading ? (

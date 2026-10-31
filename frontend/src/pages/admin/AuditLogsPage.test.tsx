@@ -27,6 +27,8 @@ describe('AuditLogsPage', () => {
   it('filters, requests GET detail and renders details as text', async () => {
     page()
     await screen.findByText('LOGIN')
+    expect(screen.getByRole('button', { name: 'Aplicar filtros' })).toHaveClass('bg-interaction-primary-default')
+    expect(screen.getByRole('button', { name: 'Ver detalle' })).toHaveClass('border-primary', 'bg-transparent', 'text-primary', 'h-9')
     fireEvent.change(screen.getByLabelText('Acción'), { target: { value: 'LOGIN' } })
     fireEvent.change(screen.getByLabelText('Módulo'), { target: { value: 'AUTH' } })
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }))

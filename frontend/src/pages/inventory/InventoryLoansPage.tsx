@@ -1,4 +1,5 @@
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { Button } from '@/shared/ui/button'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
@@ -243,7 +244,7 @@ export function InventoryLoansPage() {
         <label className="checkbox-inline"><input type="checkbox" checked={form.overdue} onChange={(e) => setForm({ ...form, overdue: e.target.checked })} />Solo vencidos</label>
         <label>Desde<input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} /></label>
         <label>Hasta<input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} /></label>
-        <div className="actions"><button className="primary">Aplicar filtros</button><button type="button" onClick={openCreate}>Nuevo préstamo</button></div>
+        <div className="actions"><Button type="submit">Aplicar filtros</Button><Button type="button" variant="outline" onClick={openCreate}>Nuevo préstamo</Button></div>
       </form>
       {error && <ErrorState message={error} />}
       {loading ? (
@@ -267,8 +268,8 @@ export function InventoryLoansPage() {
                     <DataTableCell><span className={`badge ${statusTone(loan)}`}>{loanStatusLabels[loan.status]}{loan.isOverdue ? ' · Vencido' : ''}</span></DataTableCell>
                     <DataTableCell>
                       <div className="actions">
-                        <button onClick={() => void openDetail(loan.id)}>Ver detalle</button>
-                        {loan.status === 'ACTIVE' && <button onClick={() => openReturn(loan)}>Devolver</button>}
+                        <Button type="button" variant="outline" size="sm" onClick={() => void openDetail(loan.id)}>Ver detalle</Button>
+                        {loan.status === 'ACTIVE' && <Button type="button" size="sm" onClick={() => openReturn(loan)}>Devolver</Button>}
                       </div>
                     </DataTableCell>
                   </DataTableRow>
@@ -294,7 +295,7 @@ export function InventoryLoansPage() {
                 <label>Buscar afiliado
                   <div className="filters">
                     <input placeholder="Nombre o cédula" value={affiliateSearch} onChange={(e) => setAffiliateSearch(e.target.value)} />
-                    <button type="button" disabled={busy} onClick={() => void searchAffiliates()}>Buscar</button>
+                    <Button type="button" variant="outline" disabled={busy} onClick={() => void searchAffiliates()}>Buscar</Button>
                   </div>
                 </label>
                 <label>Afiliado<select value={loanForm.affiliateId} onChange={(e) => setLoanForm({ ...loanForm, affiliateId: e.target.value })}>
@@ -307,7 +308,7 @@ export function InventoryLoansPage() {
             <label>Fecha de préstamo (opcional)<input type="date" value={loanForm.loanDate} onChange={(e) => setLoanForm({ ...loanForm, loanDate: e.target.value })} /></label>
             <label>Devolución esperada<input type="date" required value={loanForm.expectedReturnDate} onChange={(e) => setLoanForm({ ...loanForm, expectedReturnDate: e.target.value })} /></label>
             <label>Notas (opcionales)<textarea maxLength={1000} value={loanForm.notes} onChange={(e) => setLoanForm({ ...loanForm, notes: e.target.value })} /></label>
-            <div className="actions"><button className="primary" disabled={busy}>{busy ? 'Creando…' : 'Crear préstamo'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy}>{busy ? 'Creando…' : 'Crear préstamo'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       )}
@@ -329,8 +330,8 @@ export function InventoryLoansPage() {
           </dl>
           {selected.status === 'ACTIVE' && (
             <div className="actions">
-              <button onClick={() => openReturn(selected)}>Devolver</button>
-              <button onClick={() => { setConfirmCancel(selected); setMode(null) }}>Cancelar</button>
+              <Button type="button" onClick={() => openReturn(selected)}>Devolver</Button>
+              <Button type="button" variant="danger" onClick={() => { setConfirmCancel(selected); setMode(null) }}>Cancelar</Button>
             </div>
           )}
         </Modal>
@@ -346,7 +347,7 @@ export function InventoryLoansPage() {
               <option value="DAMAGED">Dañado</option>
               <option value="UNDER_REPAIR">En reparación</option>
             </select></label>
-            <div className="actions"><button className="primary" disabled={busy}>{busy ? 'Devolviendo…' : 'Confirmar devolución'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy}>{busy ? 'Devolviendo…' : 'Confirmar devolución'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       )}

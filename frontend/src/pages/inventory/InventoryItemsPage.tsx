@@ -1,4 +1,5 @@
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { Button } from '@/shared/ui/button'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
@@ -348,7 +349,7 @@ export function InventoryItemsPage() {
           <option value="INACTIVE">Inactivo</option>
         </select></label>
         <label className="checkbox-inline"><input type="checkbox" checked={lowStockFilter} onChange={(e) => { setPage(1); setLowStockFilter(e.target.checked) }} />Solo stock bajo</label>
-        <div className="actions"><button className="primary">Buscar</button><button type="button" onClick={openCreate}>Nuevo artículo</button></div>
+        <div className="actions"><Button type="submit">Buscar</Button><Button type="button" variant="outline" onClick={openCreate}>Nuevo artículo</Button></div>
       </form>
       {error && <ErrorState message={error} />}
       {loading ? (
@@ -376,9 +377,9 @@ export function InventoryItemsPage() {
                     <DataTableCell>{conditionLabels[item.condition]}</DataTableCell>
                     <DataTableCell>
                       <div className="actions">
-                        <button onClick={() => void openDetail(item.id)}>Ver detalle</button>
-                        <button onClick={() => { setSelected(item); openMovement('entry') }}>Entrada</button>
-                        <button onClick={() => { setSelected(item); openMovement('exit') }}>Salida</button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => void openDetail(item.id)}>Ver detalle</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => { setSelected(item); openMovement('entry') }}>Entrada</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => { setSelected(item); openMovement('exit') }}>Salida</Button>
                       </div>
                     </DataTableCell>
                   </DataTableRow>
@@ -403,14 +404,14 @@ export function InventoryItemsPage() {
             <div><dt>Descripción</dt><dd>{selected.description || '—'}</dd></div>
           </dl>
           <div className="actions">
-            <button onClick={() => openEdit(selected)}>Editar</button>
-            <button onClick={() => openMovement('entry')}>Registrar entrada</button>
-            <button onClick={() => openMovement('exit')}>Registrar salida</button>
-            <button onClick={() => openMovement('adjustment')}>Realizar ajuste</button>
-            <button onClick={() => void openMovements(selected)}>Ver movimientos</button>
+            <Button type="button" variant="outline" onClick={() => openEdit(selected)}>Editar</Button>
+            <Button type="button" onClick={() => openMovement('entry')}>Registrar entrada</Button>
+            <Button type="button" onClick={() => openMovement('exit')}>Registrar salida</Button>
+            <Button type="button" variant="outline" onClick={() => openMovement('adjustment')}>Realizar ajuste</Button>
+            <Button type="button" variant="outline" onClick={() => void openMovements(selected)}>Ver movimientos</Button>
             {selected.status === 'ACTIVE'
-              ? <button onClick={() => setConfirm({ item: selected, action: 'deactivate' })}>Inactivar</button>
-              : <button onClick={() => setConfirm({ item: selected, action: 'activate' })}>Activar</button>}
+              ? <Button type="button" variant="danger" onClick={() => setConfirm({ item: selected, action: 'deactivate' })}>Inactivar</Button>
+              : <Button type="button" onClick={() => setConfirm({ item: selected, action: 'activate' })}>Activar</Button>}
           </div>
         </Modal>
       )}
@@ -436,7 +437,7 @@ export function InventoryItemsPage() {
               <option value="UNDER_REPAIR">En reparación</option>
             </select></label>
             {mode === 'create' && <p className="muted">Si es mayor que cero, se registra como entrada inicial para conservar su trazabilidad.</p>}
-            <div className="actions"><button className="primary" disabled={busy || categories.length === 0}>{busy ? 'Guardando…' : 'Guardar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy || categories.length === 0}>{busy ? 'Guardando…' : 'Guardar'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       ) : null}
@@ -451,7 +452,7 @@ export function InventoryItemsPage() {
             <label>Motivo<input maxLength={500} required value={movementForm.reason} onChange={(e) => setMovementForm({ ...movementForm, reason: e.target.value })} /></label>
             <label>Referencia (opcional)<input maxLength={200} value={movementForm.reference} onChange={(e) => setMovementForm({ ...movementForm, reference: e.target.value })} /></label>
             <label>Notas (opcionales)<textarea maxLength={1000} value={movementForm.notes} onChange={(e) => setMovementForm({ ...movementForm, notes: e.target.value })} /></label>
-            <div className="actions"><button className="primary" disabled={busy}>{busy ? 'Registrando…' : 'Registrar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy}>{busy ? 'Registrando…' : 'Registrar'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       ) : null}
@@ -463,7 +464,7 @@ export function InventoryItemsPage() {
             <label>Nueva cantidad<input type="number" min={0} step={1} required value={adjustmentForm.newQuantity} onChange={(e) => setAdjustmentForm({ ...adjustmentForm, newQuantity: e.target.value })} /></label>
             <label>Motivo<input maxLength={500} required value={adjustmentForm.reason} onChange={(e) => setAdjustmentForm({ ...adjustmentForm, reason: e.target.value })} /></label>
             <label>Notas (opcionales)<textarea maxLength={1000} value={adjustmentForm.notes} onChange={(e) => setAdjustmentForm({ ...adjustmentForm, notes: e.target.value })} /></label>
-            <div className="actions"><button className="primary" disabled={busy}>{busy ? 'Ajustando…' : 'Ajustar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy}>{busy ? 'Ajustando…' : 'Ajustar'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       ) : null}
