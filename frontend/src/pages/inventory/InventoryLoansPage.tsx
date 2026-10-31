@@ -14,7 +14,9 @@ import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { InventoryPageLayout } from './InventoryPageLayout'
+import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 10
 
@@ -225,8 +227,8 @@ export function InventoryLoansPage() {
   const formatDate = (value: string) => new Date(value).toLocaleDateString('es-CR')
 
   return (
-    <InventoryPageLayout title="Préstamos" description="Gestione entregas, devoluciones y vencimientos de artículos prestados.">
-      <div className="space-y-5">
+    <InventoryPageContainer>
+      <AdministrativeListLayout header={<PageHeader context="Inventario" title="Préstamos" description="Gestione entregas, devoluciones y vencimientos de artículos prestados." />}>
       <form className="filters card" onSubmit={submit}>
         <label>Artículo<select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
           <option value="">Todos</option>
@@ -250,8 +252,7 @@ export function InventoryLoansPage() {
         <EmptyState title="Sin préstamos" description="No hay préstamos que coincidan con los filtros." />
       ) : (
         <>
-          <div className="table-wrap" tabIndex={0} aria-label="Tabla de préstamos, desplazable horizontalmente">
-            <DataTable>
+            <DataTable scrollLabel="Tabla de préstamos, desplazable horizontalmente">
               <DataTableHeader>
                 <DataTableRow><DataTableHead>Artículo</DataTableHead><DataTableHead>Cantidad</DataTableHead><DataTableHead>Prestatario</DataTableHead><DataTableHead>Fecha de préstamo</DataTableHead><DataTableHead>Devolución esperada</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead><span className="sr-only">Acciones</span></DataTableHead></DataTableRow>
               </DataTableHeader>
@@ -274,7 +275,6 @@ export function InventoryLoansPage() {
                 ))}
               </DataTableBody>
             </DataTable>
-          </div>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
@@ -362,7 +362,7 @@ export function InventoryLoansPage() {
           onClose={() => setConfirmCancel(null)}
         />
       )}
-      </div>
-    </InventoryPageLayout>
+      </AdministrativeListLayout>
+    </InventoryPageContainer>
   )
 }

@@ -10,7 +10,9 @@ import { getErrorMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { InventoryPageLayout } from './InventoryPageLayout'
+import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 10
 
@@ -108,8 +110,8 @@ export function InventoryCategoriesPage() {
   }
 
   return (
-    <InventoryPageLayout title="Categorías" description="Organice artículos por categorías activas para una consulta y gestión consistente.">
-      <div className="space-y-5">
+    <InventoryPageContainer>
+      <AdministrativeListLayout header={<PageHeader context="Inventario" title="Categorías" description="Organice artículos por categorías activas para una consulta y gestión consistente." />}>
       <form className="filters card" onSubmit={(e) => { e.preventDefault(); setPage(1); void load() }}>
         <label>Búsqueda por nombre<input maxLength={100} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
         <label>Estado<select value={activeFilter} onChange={(e) => { setPage(1); setActiveFilter(e.target.value as 'true' | 'false' | '') }}>
@@ -126,8 +128,7 @@ export function InventoryCategoriesPage() {
         <EmptyState title="Sin categorías" description="No hay categorías que coincidan con los filtros." />
       ) : (
         <>
-          <div className="table-wrap" tabIndex={0} aria-label="Tabla de categorías, desplazable horizontalmente">
-            <DataTable>
+            <DataTable scrollLabel="Tabla de categorías, desplazable horizontalmente">
               <DataTableHeader>
                 <DataTableRow><DataTableHead>Nombre</DataTableHead><DataTableHead>Descripción</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead><span className="sr-only">Acciones</span></DataTableHead></DataTableRow>
               </DataTableHeader>
@@ -149,7 +150,6 @@ export function InventoryCategoriesPage() {
                 ))}
               </DataTableBody>
             </DataTable>
-          </div>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
@@ -175,7 +175,7 @@ export function InventoryCategoriesPage() {
           onClose={() => setConfirm(null)}
         />
       )}
-      </div>
-    </InventoryPageLayout>
+      </AdministrativeListLayout>
+    </InventoryPageContainer>
   )
 }

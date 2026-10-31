@@ -11,7 +11,9 @@ import { getErrorMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { InventoryPageLayout } from './InventoryPageLayout'
+import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 20
 
@@ -100,8 +102,8 @@ export function InventoryMovementsPage() {
   }
 
   return (
-    <InventoryPageLayout title="Movimientos" description="Historial inmutable de entradas, salidas y ajustes de inventario.">
-      <div className="space-y-5">
+    <InventoryPageContainer>
+      <AdministrativeListLayout header={<PageHeader context="Inventario" title="Movimientos" description="Historial inmutable de entradas, salidas y ajustes de inventario." />}>
       <form className="filters card" onSubmit={submit}>
         <label>Artículo<select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
           <option value="">Todos</option>
@@ -130,8 +132,7 @@ export function InventoryMovementsPage() {
         <EmptyState title="Sin movimientos" description="No hay movimientos que coincidan con los filtros." />
       ) : (
         <>
-          <div className="table-wrap" tabIndex={0} aria-label="Tabla de movimientos, desplazable horizontalmente">
-            <DataTable>
+            <DataTable scrollLabel="Tabla de movimientos, desplazable horizontalmente">
               <DataTableHeader>
                 <DataTableRow><DataTableHead>Fecha</DataTableHead><DataTableHead>Artículo</DataTableHead><DataTableHead>Tipo</DataTableHead><DataTableHead>Cantidad</DataTableHead><DataTableHead>Motivo</DataTableHead><DataTableHead>Referencia</DataTableHead><DataTableHead>Registrado por</DataTableHead></DataTableRow>
               </DataTableHeader>
@@ -149,11 +150,10 @@ export function InventoryMovementsPage() {
                 ))}
               </DataTableBody>
             </DataTable>
-          </div>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
-      </div>
-    </InventoryPageLayout>
+      </AdministrativeListLayout>
+    </InventoryPageContainer>
   )
 }

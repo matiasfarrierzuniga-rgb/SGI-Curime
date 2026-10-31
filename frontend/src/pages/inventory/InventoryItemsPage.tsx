@@ -18,7 +18,9 @@ import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { InventoryPageLayout } from './InventoryPageLayout'
+import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 10
 
@@ -332,8 +334,8 @@ export function InventoryItemsPage() {
   const hasFilters = Boolean(search || categoryFilter || statusFilter || lowStockFilter)
 
   return (
-    <InventoryPageLayout title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo.">
-      <div aria-busy={loading} className="space-y-5">
+    <InventoryPageContainer>
+      <AdministrativeListLayout header={<PageHeader context="Inventario" title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo." />}>
       <form className="filters card" onSubmit={applyFilters}>
         <label>Búsqueda (nombre o código)<input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
         <label>Categoría<select value={categoryFilter} onChange={(e) => { setPage(1); setCategoryFilter(e.target.value) }}>
@@ -355,8 +357,7 @@ export function InventoryItemsPage() {
         <EmptyState title={hasFilters ? 'Sin resultados' : 'Sin artículos registrados'} description={hasFilters ? 'No hay artículos que coincidan con los filtros.' : 'No hay bienes registrados en el inventario.'} />
       ) : (
         <>
-          <div className="table-wrap" tabIndex={0} aria-label="Tabla de artículos, desplazable horizontalmente">
-            <DataTable>
+            <DataTable scrollLabel="Tabla de artículos, desplazable horizontalmente">
               <caption className="sr-only">Listado de bienes registrados en el inventario</caption>
               <DataTableHeader>
                 <DataTableRow><DataTableHead>Código</DataTableHead><DataTableHead>Nombre</DataTableHead><DataTableHead>Categoría</DataTableHead><DataTableHead>Existencia</DataTableHead><DataTableHead>Mínimo</DataTableHead><DataTableHead>Unidad</DataTableHead><DataTableHead>Ubicación</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead>Condición</DataTableHead><DataTableHead><span className="sr-only">Acciones</span></DataTableHead></DataTableRow>
@@ -384,7 +385,6 @@ export function InventoryItemsPage() {
                 ))}
               </DataTableBody>
             </DataTable>
-          </div>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
@@ -476,8 +476,7 @@ export function InventoryItemsPage() {
             <p>Este artículo no tiene movimientos registrados.</p>
           ) : (
             <>
-              <div className="table-wrap" tabIndex={0} aria-label="Tabla de movimientos del artículo, desplazable horizontalmente">
-                <DataTable>
+                <DataTable scrollLabel="Tabla de movimientos del artículo, desplazable horizontalmente">
                   <DataTableHeader>
                     <DataTableRow><DataTableHead>Fecha</DataTableHead><DataTableHead>Tipo</DataTableHead><DataTableHead>Cantidad</DataTableHead><DataTableHead>Motivo</DataTableHead><DataTableHead>Referencia</DataTableHead><DataTableHead>Registrado por</DataTableHead></DataTableRow>
                   </DataTableHeader>
@@ -494,7 +493,6 @@ export function InventoryItemsPage() {
                     ))}
                   </DataTableBody>
                 </DataTable>
-              </div>
               <Pagination page={movementPage} total={movementTotal} limit={20} onChange={(p) => { setMovementPage(p); void loadItemMovements(selected.id, p) }} />
             </>
           )}
@@ -514,7 +512,7 @@ export function InventoryItemsPage() {
           onClose={() => setConfirm(null)}
         />
       )}
-      </div>
-    </InventoryPageLayout>
+      </AdministrativeListLayout>
+    </InventoryPageContainer>
   )
 }
