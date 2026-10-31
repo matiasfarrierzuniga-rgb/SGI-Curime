@@ -23,6 +23,7 @@ describe("DataTable", () => {
 
     expect(screen.getByRole("region", { name: "Desplaza horizontalmente para ver todas las columnas" })).toHaveClass("overflow-x-auto")
     expect(screen.getByRole("columnheader", { name: "Persona" })).toHaveAttribute("scope", "col")
+    expect(screen.getByRole("columnheader", { name: "Persona" })).toHaveClass("bg-surface-muted", "border-border", "text-foreground")
     expect(screen.getByRole("row", { name: "Ver detalle" })).toHaveClass("hover:bg-surface-muted/60", "focus-within:bg-surface-muted/80")
   })
 
