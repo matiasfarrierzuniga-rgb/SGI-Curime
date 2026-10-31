@@ -1,11 +1,12 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PublicLayout } from '@/app/layouts/PublicLayout'
 import { LandingPage } from '@/features/public-site'
 import { PublicEventsPage } from '@/features/events'
-import { ContactPage, NewsPage, ServicesPage } from './PublicPages'
+import { publicContentService } from '../../services/publicContentService'
+import { AboutPage, CommunityPage, ContactPage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from './PublicPages'
 
 const authState = vi.hoisted(() => ({
   isAuthenticated: false,
@@ -24,8 +25,12 @@ function renderPublic(path = '/') {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<LandingPage />} />
             <Route path="/servicios" element={<ServicesPage />} />
+            <Route path="/nosotros" element={<AboutPage />} />
+            <Route path="/comunidad" element={<CommunityPage />} />
             <Route path="/contacto" element={<ContactPage />} />
             <Route path="/noticias" element={<NewsPage />} />
+            <Route path="/noticias/:slug" element={<NewsDetailPage />} />
+            <Route path="/transparencia" element={<TransparencyPage />} />
             <Route path="/eventos" element={<PublicEventsPage />} />
           </Route>
           <Route path="/login" element={<p>Login</p>} />
@@ -42,15 +47,99 @@ describe('portal público', () => {
     vi.stubGlobal('scrollTo', vi.fn())
   })
 
+  afterEach(() => vi.restoreAllMocks())
+
+  it('muestra las siete áreas de Transparencia sin descargas ficticias', () => {
+    renderPublic('/transparencia')
+    const main = within(screen.getByRole('main'))
+    expect(main.getByRole('heading', { name: 'Transparencia', level: 1 })).toBeVisible()
+    expect(main.getByRole('img', { name: 'Paisaje rural de Curime, Guanacaste.' })).toHaveAttribute('src', '/images/public/home/hero-curime-fallback.jpg')
+    for (const title of ['Documentos públicos', 'Informes', 'Proyectos', 'Rendición de cuentas', 'Reportes administrativos', 'Reportes financieros autorizados', 'Información relacionada con DINADECO']) {
+      expect(main.getByRole('heading', { name: title })).toBeVisible()
+    }
+    expect(main.getAllByText('Información en preparación')).toHaveLength(7)
+    expect(main.getByText('Informes de gestión y resultados de la Asociación.')).toBeVisible()
+    expect(main.getAllByRole('article')).toHaveLength(7)
+    expect(main.getAllByRole('link')).toHaveLength(1) // Solo la ruta de Inicio del breadcrumb.
+  })
+
+  it('mantiene fuera del listado las noticias pendientes y muestra el estado vacío', () => {
+    renderPublic('/noticias')
+    const main = within(screen.getByRole('main'))
+    expect(main.getByRole('heading', { name: 'Noticias', level: 1 })).toBeVisible()
+    expect(main.getByRole('heading', { name: 'No hay noticias verificadas publicadas' })).toBeVisible()
+    expect(main.queryByRole('link', { name: /Canal informativo de ADI Curime/ })).not.toBeInTheDocument()
+  })
+
+  it('no presenta una noticia pendiente como comunicado oficial en su ruta directa', () => {
+    renderPublic('/noticias/canal-informativo-en-preparacion')
+    const main = within(screen.getByRole('main'))
+    expect(main.getByRole('heading', { name: 'Esta noticia está en preparación' })).toBeVisible()
+    expect(main.queryByRole('heading', { name: 'Canal informativo de ADI Curime' })).not.toBeInTheDocument()
+    expect(document.title).toContain('Noticia en preparación')
+    expect(main.getByRole('link', { name: 'Volver a noticias' })).toHaveAttribute('href', '/noticias')
+  })
+
+  it('muestra tarjetas y detalles solo cuando existe contenido verificado', () => {
+    const verified = { slug: 'comunicado-de-prueba', category: 'Comunidad', date: '20/10/2026', title: 'Comunicado de prueba', excerpt: 'Resumen de prueba.', body: 'Contenido de prueba.' }
+    vi.spyOn(publicContentService, 'listNews').mockReturnValue([verified] as unknown as ReturnType<typeof publicContentService.listNews>)
+    const { unmount } = renderPublic('/noticias')
+    const card = screen.getByRole('heading', { name: 'Comunicado de prueba' }).closest('article')!
+    expect(within(card).getByText('Comunidad · 20/10/2026')).toBeVisible()
+    expect(within(card).getByRole('link', { name: 'Comunicado de prueba' })).toHaveAttribute('href', '/noticias/comunicado-de-prueba')
+    unmount()
+
+    vi.spyOn(publicContentService, 'getNews').mockReturnValue(verified as unknown as ReturnType<typeof publicContentService.getNews>)
+    renderPublic('/noticias/comunicado-de-prueba')
+    expect(screen.getByRole('heading', { name: 'Comunicado de prueba', level: 1 })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Volver a noticias' })).toHaveAttribute('href', '/noticias')
+  })
+
+  it('presenta Nosotros sin publicar historia ni Junta Directiva sin validar', () => {
+    renderPublic('/nosotros')
+    const main = within(screen.getByRole('main'))
+    expect(main.getByRole('heading', { name: 'Conozca nuestra Asociación' })).toBeVisible()
+    expect(main.getByRole('img', { name: 'Paisaje rural de Curime, Guanacaste.' })).toHaveAttribute('src', '/images/public/home/hero-curime-fallback.jpg')
+    expect(main.getByRole('heading', { name: 'Quiénes somos' })).toBeVisible()
+    expect(main.getByText('Personas unidas por un propósito común.')).toBeVisible()
+    expect(main.getByRole('heading', { name: 'Misión' })).toBeVisible()
+    expect(main.getByText('Textos propuestos, pendientes de validación institucional.')).toBeVisible()
+    expect(main.getByRole('heading', { name: 'Visión' })).toBeVisible()
+    expect(main.getByRole('heading', { name: 'Objetivos' })).toBeVisible()
+    expect(main.getByRole('heading', { name: 'Nuestra historia' })).toBeVisible()
+    expect(main.getAllByRole('listitem')).toHaveLength(4)
+    expect(main.getByRole('heading', { name: 'Junta Directiva' })).toBeVisible()
+    expect(main.getByText(/Integrantes, cargos y período pendientes de validación/)).toBeVisible()
+    expect(main.queryByText('2001')).not.toBeInTheDocument()
+  })
+
+  it('presenta Comunidad con accesos a los módulos existentes', () => {
+    renderPublic('/comunidad')
+    const main = within(screen.getByRole('main'))
+    expect(main.getByRole('heading', { name: 'Un espacio para encontrarnos' })).toBeVisible()
+    expect(main.getByRole('img', { name: 'Actividad comunitaria en la cancha de la comunidad.' })).toHaveAttribute('src', '/images/public/home/community-curime-fallback.jpg')
+    expect(main.getByRole('link', { name: 'Contáctenos' })).toHaveAttribute('href', '/contacto')
+    expect(main.getByRole('link', { name: 'Ver oportunidades de voluntariado' })).toHaveAttribute('href', '/voluntariado')
+    expect(main.getByRole('link', { name: 'Ver emprendimientos' })).toHaveAttribute('href', '/ventures')
+    expect(main.getByRole('link', { name: 'Ver eventos' })).toHaveAttribute('href', '/eventos')
+    expect(main.getByRole('heading', { name: 'Iniciativas y proyectos' })).toBeVisible()
+  })
+
   it('muestra servicios disponibles y orienta a visitantes antes de reservar', () => {
     renderPublic('/servicios')
+
+    expect(screen.getByRole('heading', { name: 'Servicios para la comunidad' })).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Paisaje rural de Curime, Guanacaste.' })).toHaveAttribute('src', '/images/public/home/hero-curime-fallback.jpg')
+    expect(screen.getByRole('heading', { name: 'Gestiones que puede iniciar en línea' })).toBeVisible()
 
     const affiliation = screen.getByRole('heading', { name: 'Afiliación' }).closest('article')!
     expect(within(affiliation).getByText('Disponible')).toBeVisible()
     expect(within(affiliation).getByRole('link', { name: 'Solicitar afiliación' })).toHaveAttribute('href', '/afiliacion')
+    expect(within(affiliation).getAllByRole('listitem')).toHaveLength(3)
 
     const reservations = screen.getByRole('heading', { name: 'Reservas' }).closest('article')!
     expect(within(reservations).getByText('Disponible')).toBeVisible()
+    expect(within(reservations).getByText('Consulte disponibilidad')).toBeVisible()
     expect(within(reservations).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
     expect(within(reservations).getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
 
@@ -60,22 +149,21 @@ describe('portal público', () => {
 
     const volunteering = screen.getByRole('heading', { name: 'Voluntariado' }).closest('article')!
     expect(within(volunteering).getByText('Disponible')).toBeVisible()
-    expect(within(volunteering).getByText(/participe en actividades comunitarias/)).toBeVisible()
+    expect(within(volunteering).getByText(/postúlese a las actividades/)).toBeVisible()
     expect(within(volunteering).getByRole('link', { name: 'Ver oportunidades' })).toHaveAttribute('href', '/voluntariado')
 
     const donations = screen.getByRole('heading', { name: 'Donaciones' }).closest('article')!
     expect(within(donations).getByText('Próximamente')).toBeVisible()
-    expect(within(donations).getByText(/canales autorizados para aportar/)).toBeVisible()
+    expect(within(donations).getByText(/todavía no recibe donaciones/)).toBeVisible()
     expect(within(donations).queryByRole('link')).not.toBeInTheDocument()
 
-    const registration = screen.getByRole('heading', { name: 'Crear una cuenta' }).closest('article')!
-    expect(within(registration).getByText('Disponible')).toBeVisible()
-    expect(within(registration).getByText('Envíe una solicitud de cuenta. La Asociación la revisará antes de habilitar el acceso.')).toBeVisible()
-    expect(within(registration).getAllByRole('link')).toHaveLength(1)
+    const registration = screen.getByRole('heading', { name: 'Crear una cuenta' }).closest('section')!
+    expect(within(registration).getByText(/verifique su correo/)).toBeVisible()
+    expect(within(registration).getAllByRole('link')).toHaveLength(2)
     expect(within(registration).getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
-    expect(within(registration).queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
-    expect(within(screen.getByRole('main')).getAllByRole('article')).toHaveLength(6)
-    expect(screen.getAllByText('Próximamente')).toHaveLength(1)
+    expect(within(registration).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
+    expect(within(screen.getByRole('main')).getAllByRole('article')).toHaveLength(5)
+    expect(screen.getByRole('heading', { name: 'Más formas de participar' })).toBeVisible()
   })
 
   it('permite reservar y oculta la creación de cuenta cuando hay sesión', () => {
@@ -93,9 +181,9 @@ describe('portal público', () => {
     expect(within(volunteering).getByText('Disponible')).toBeVisible()
     expect(within(volunteering).getByRole('link', { name: 'Participar como voluntario' })).toHaveAttribute('href', '/voluntariado')
     expect(screen.queryByRole('heading', { name: 'Crear una cuenta' })).not.toBeInTheDocument()
-    expect(screen.queryByText('Envíe una solicitud de cuenta. La Asociación la revisará antes de habilitar el acceso.')).not.toBeInTheDocument()
+    expect(screen.queryByText(/verifique su correo para acceder/)).not.toBeInTheDocument()
     expect(within(screen.getByRole('main')).getAllByRole('article')).toHaveLength(5)
-    expect(screen.getAllByText('Próximamente')).toHaveLength(1)
+    expect(within(screen.getByRole('heading', { name: 'Donaciones' }).closest('article')!).getByText('Próximamente')).toBeVisible()
   })
 
   it('muestra la landing y navega al inicio de sesión', () => {

@@ -29,6 +29,7 @@ import { InstitutionalBoardModule } from './institutional-board/institutional-bo
 import { EntrepreneurshipModule } from './entrepreneurship/entrepreneurship.module';
 import { VolunteeringModule } from './volunteering/volunteering.module';
 import { InboxNotificationsModule } from './modules/notifications/inbox-notifications.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -61,7 +62,7 @@ import { InboxNotificationsModule } from './modules/notifications/inbox-notifica
     VolunteeringModule,
     InboxNotificationsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}
