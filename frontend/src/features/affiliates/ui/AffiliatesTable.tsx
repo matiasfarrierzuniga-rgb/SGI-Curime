@@ -1,6 +1,7 @@
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { Button } from '@/shared/ui/button'
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { PersonAvatar } from '@/shared/ui/PersonAvatar'
 import { affiliateStatusLabel } from '../model/affiliateStatus'
 import type { Affiliate } from '../model/affiliates.types'
 
@@ -18,7 +19,7 @@ export function AffiliatesTable({ affiliates, onOpen }: AffiliatesTableProps) {
     <DataTable className="min-w-[56.25rem]" scrollLabel="En pantallas estrechas, desplaza horizontalmente para ver más columnas de afiliados">
       <caption className="sr-only">Listado de afiliados</caption>
       <DataTableHeader>
-        <DataTableRow className="hover:bg-surface-muted">
+        <DataTableRow>
           <DataTableHead>Nombre</DataTableHead>
           <DataTableHead>Identificación</DataTableHead>
           <DataTableHead>Contacto</DataTableHead>
@@ -30,8 +31,13 @@ export function AffiliatesTable({ affiliates, onOpen }: AffiliatesTableProps) {
       </DataTableHeader>
       <DataTableBody>
           {affiliates.map((affiliate) => (
-            <DataTableRow key={affiliate.id} className="focus-within:bg-surface-muted/80">
-              <DataTableCell className="font-semibold text-text-primary">{affiliate.fullName}</DataTableCell>
+            <DataTableRow key={affiliate.id}>
+              <DataTableCell>
+                <div className="flex min-w-48 items-center gap-3">
+                  <PersonAvatar name={affiliate.fullName} />
+                  <span className="min-w-0 break-words font-semibold text-text-primary">{affiliate.fullName}</span>
+                </div>
+              </DataTableCell>
               <DataTableCell className="whitespace-nowrap font-medium tabular-nums">{affiliate.identification}</DataTableCell>
               <DataTableCell>
                 {affiliate.email || affiliate.phone ? (

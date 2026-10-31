@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
@@ -126,28 +127,28 @@ export function InventoryCategoriesPage() {
       ) : (
         <>
           <div className="table-wrap" tabIndex={0} aria-label="Tabla de categorías, desplazable horizontalmente">
-            <table>
-              <thead>
-                <tr><th>Nombre</th><th>Descripción</th><th>Estado</th><th><span className="sr-only">Acciones</span></th></tr>
-              </thead>
-              <tbody>
+            <DataTable>
+              <DataTableHeader>
+                <DataTableRow><DataTableHead>Nombre</DataTableHead><DataTableHead>Descripción</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead><span className="sr-only">Acciones</span></DataTableHead></DataTableRow>
+              </DataTableHeader>
+              <DataTableBody>
                 {categories.map((c) => (
-                  <tr key={c.id}>
-                    <td>{c.name}</td>
-                    <td>{c.description || '—'}</td>
-                    <td><span className={`badge ${c.isActive ? 'success' : 'neutral'}`}>{c.isActive ? 'Activa' : 'Inactiva'}</span></td>
-                    <td>
+                  <DataTableRow key={c.id}>
+                    <DataTableCell>{c.name}</DataTableCell>
+                    <DataTableCell>{c.description || '—'}</DataTableCell>
+                    <DataTableCell><span className={`badge ${c.isActive ? 'success' : 'neutral'}`}>{c.isActive ? 'Activa' : 'Inactiva'}</span></DataTableCell>
+                    <DataTableCell>
                       <div className="actions">
                         <button onClick={() => openEdit(c)}>Editar</button>
                         {c.isActive
                           ? <button onClick={() => setConfirm({ category: c, action: 'deactivate' })}>Inactivar</button>
                           : <button onClick={() => setConfirm({ category: c, action: 'activate' })}>Activar</button>}
                       </div>
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
+              </DataTableBody>
+            </DataTable>
           </div>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>

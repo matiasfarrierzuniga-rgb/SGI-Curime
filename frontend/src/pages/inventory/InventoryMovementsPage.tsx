@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { useAuth } from '@/features/auth'
@@ -130,24 +131,24 @@ export function InventoryMovementsPage() {
       ) : (
         <>
           <div className="table-wrap" tabIndex={0} aria-label="Tabla de movimientos, desplazable horizontalmente">
-            <table>
-              <thead>
-                <tr><th>Fecha</th><th>Artículo</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Referencia</th><th>Registrado por</th></tr>
-              </thead>
-              <tbody>
+            <DataTable>
+              <DataTableHeader>
+                <DataTableRow><DataTableHead>Fecha</DataTableHead><DataTableHead>Artículo</DataTableHead><DataTableHead>Tipo</DataTableHead><DataTableHead>Cantidad</DataTableHead><DataTableHead>Motivo</DataTableHead><DataTableHead>Referencia</DataTableHead><DataTableHead>Registrado por</DataTableHead></DataTableRow>
+              </DataTableHeader>
+              <DataTableBody>
                 {movements.map((m) => (
-                  <tr key={m.id}>
-                    <td>{new Date(m.createdAt).toLocaleString('es-CR')}</td>
-                    <td>{m.item.name}</td>
-                    <td><span className="badge">{movementTypeLabels[m.type]}</span></td>
-                    <td>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</td>
-                    <td>{m.reason}</td>
-                    <td>{m.reference || '—'}</td>
-                    <td>{m.createdBy?.fullName ?? '—'}</td>
-                  </tr>
+                  <DataTableRow key={m.id}>
+                    <DataTableCell>{new Date(m.createdAt).toLocaleString('es-CR')}</DataTableCell>
+                    <DataTableCell>{m.item.name}</DataTableCell>
+                    <DataTableCell><span className="badge">{movementTypeLabels[m.type]}</span></DataTableCell>
+                    <DataTableCell>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</DataTableCell>
+                    <DataTableCell>{m.reason}</DataTableCell>
+                    <DataTableCell>{m.reference || '—'}</DataTableCell>
+                    <DataTableCell>{m.createdBy?.fullName ?? '—'}</DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
+              </DataTableBody>
+            </DataTable>
           </div>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>

@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { useEffect, useState } from 'react'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
@@ -73,43 +74,43 @@ export function AffiliateJustificationsPage() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-border-default bg-surface-card shadow-sm">
           <div className="overflow-x-auto">
-            <table aria-label="Historial de justificaciones" className="min-w-full text-left text-sm">
-              <thead className="bg-surface-muted text-text-secondary">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Asamblea</th>
-                  <th className="px-4 py-3 font-semibold">Fecha de envío</th>
-                  <th className="px-4 py-3 font-semibold">Motivo</th>
-                  <th className="px-4 py-3 font-semibold">Estado</th>
-                  <th className="px-4 py-3 font-semibold">Observación</th>
-                </tr>
-              </thead>
-              <tbody>
+            <DataTable aria-label="Historial de justificaciones" className="min-w-full text-left text-sm">
+              <DataTableHeader className="bg-surface-muted text-text-secondary">
+                <DataTableRow>
+                  <DataTableHead className="px-4 py-3 font-semibold">Asamblea</DataTableHead>
+                  <DataTableHead className="px-4 py-3 font-semibold">Fecha de envío</DataTableHead>
+                  <DataTableHead className="px-4 py-3 font-semibold">Motivo</DataTableHead>
+                  <DataTableHead className="px-4 py-3 font-semibold">Estado</DataTableHead>
+                  <DataTableHead className="px-4 py-3 font-semibold">Observación</DataTableHead>
+                </DataTableRow>
+              </DataTableHeader>
+              <DataTableBody>
                 {items.map((item) => (
-                  <tr key={item.id} className="border-t border-border-default align-top">
-                    <td className="px-4 py-4">
+                  <DataTableRow key={item.id} className="border-t border-border-default align-top">
+                    <DataTableCell className="px-4 py-4">
                       <div className="font-medium text-text-primary">{item.assembly?.title ?? 'Asamblea sin registro'}</div>
                       <div className="text-xs text-text-secondary">{item.assembly?.date ? new Date(item.assembly.date).toLocaleDateString('es-CR', { dateStyle: 'medium' }) : 'Fecha sin registro'}</div>
-                    </td>
-                    <td className="px-4 py-4 text-text-secondary">
+                    </DataTableCell>
+                    <DataTableCell className="px-4 py-4 text-text-secondary">
                       {new Date(item.createdAt).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' })}
-                    </td>
-                    <td className="px-4 py-4">
+                    </DataTableCell>
+                    <DataTableCell className="px-4 py-4">
                       <div className="max-w-md whitespace-pre-line text-text-secondary">{item.reason}</div>
-                    </td>
-                    <td className="px-4 py-4">
+                    </DataTableCell>
+                    <DataTableCell className="px-4 py-4">
                       <span className="rounded-full bg-brand-soft/20 px-2.5 py-1 text-xs font-semibold text-brand-deep">
                         {statusLabels[item.status]}
                       </span>
-                    </td>
-                    <td className="px-4 py-4">
+                    </DataTableCell>
+                    <DataTableCell className="px-4 py-4">
                       <div className="max-w-md whitespace-pre-line text-text-secondary">
                         {item.decisionNote || item.rejectionReason || 'Sin observación registrada.'}
                       </div>
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
+              </DataTableBody>
+            </DataTable>
           </div>
         </div>
       )}

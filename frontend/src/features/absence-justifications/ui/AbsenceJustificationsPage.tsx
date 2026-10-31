@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { useState } from 'react'
 import { Eye, ShieldAlert } from 'lucide-react'
 import { toast } from 'sonner'
@@ -153,34 +154,34 @@ export function AbsenceJustificationsPage() {
         <>
           <div className="overflow-hidden rounded-xl border border-border-default bg-surface-card shadow-sm">
             <div className="overflow-x-auto">
-              <table aria-label="Listado de justificaciones" className="min-w-[860px] text-left text-sm">
-                <thead className="bg-surface-muted text-text-secondary">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">Persona afiliada</th>
-                    <th className="px-4 py-3 font-semibold">Asamblea</th>
-                    <th className="px-4 py-3 font-semibold">Motivo</th>
-                    <th className="px-4 py-3 font-semibold">Evidencia</th>
-                    <th className="px-4 py-3 font-semibold">Estado</th>
-                    <th className="px-4 py-3 font-semibold text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <DataTable aria-label="Listado de justificaciones" className="min-w-[860px] text-left text-sm">
+                <DataTableHeader className="bg-surface-muted text-text-secondary">
+                  <DataTableRow>
+                    <DataTableHead className="px-4 py-3 font-semibold">Persona afiliada</DataTableHead>
+                    <DataTableHead className="px-4 py-3 font-semibold">Asamblea</DataTableHead>
+                    <DataTableHead className="px-4 py-3 font-semibold">Motivo</DataTableHead>
+                    <DataTableHead className="px-4 py-3 font-semibold">Evidencia</DataTableHead>
+                    <DataTableHead className="px-4 py-3 font-semibold">Estado</DataTableHead>
+                    <DataTableHead className="px-4 py-3 font-semibold text-right">Acciones</DataTableHead>
+                  </DataTableRow>
+                </DataTableHeader>
+                <DataTableBody>
                   {items.map((item) => (
-                    <tr key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-muted/60">
-                      <td className="px-4 py-4">
+                    <DataTableRow key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-muted/60">
+                      <DataTableCell className="px-4 py-4">
                         <div className="font-semibold text-text-primary">{item.affiliate?.fullName ?? 'Persona sin registro'}</div>
                         <div className="text-xs text-text-secondary">{item.affiliate?.identification ?? 'Identificación sin registro'}</div>
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell className="px-4 py-4">
                         <div className="font-medium text-text-primary">{item.assembly?.title ?? 'Asamblea sin registro'}</div>
                         <div className="text-xs text-text-secondary">
                           {item.assembly?.date ? new Date(item.assembly.date).toLocaleDateString('es-CR', { dateStyle: 'medium' }) : 'Fecha sin registro'}
                         </div>
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell className="px-4 py-4">
                         <div className="max-w-md whitespace-pre-line text-text-secondary">{item.reason}</div>
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell className="px-4 py-4">
                         {item.attachmentOriginalName ? (
                           <div className="space-y-1">
                             <div className="font-medium text-text-primary">{item.attachmentOriginalName}</div>
@@ -200,11 +201,11 @@ export function AbsenceJustificationsPage() {
                         ) : (
                           <span className="text-xs text-text-secondary">Sin archivo</span>
                         )}
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell className="px-4 py-4">
                         <StatusBadge variant={statusVariant[item.status]}>{statusLabels[item.status]}</StatusBadge>
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell className="px-4 py-4">
                         {item.status === 'PENDING' && (mayApprove || mayReject) ? (
                           <div className="flex flex-col items-end gap-2">
                             {mayApprove ? <Button
@@ -236,11 +237,11 @@ export function AbsenceJustificationsPage() {
                         ) : (
                           <span className="text-xs text-text-secondary">Revisión cerrada</span>
                         )}
-                      </td>
-                    </tr>
+                      </DataTableCell>
+                    </DataTableRow>
                   ))}
-                </tbody>
-              </table>
+                </DataTableBody>
+              </DataTable>
             </div>
           </div>
 

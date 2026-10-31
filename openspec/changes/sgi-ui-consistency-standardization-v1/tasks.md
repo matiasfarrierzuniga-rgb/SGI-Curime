@@ -2,11 +2,11 @@
 
 ## 1. PBI UI-STD-01 — Baseline y contrato reusable
 
-- [ ] 1.1 Congelar inventario de 24 tablas, 67 archivos de superficie administrativa/internal y conteos de controles documentados en `design.md`; verificar que el baseline se pueda repetir con búsqueda estática sin modificar código.
+- [x] 1.1 Congelar inventario de 24 tablas, 67 archivos de superficie administrativa/internal y conteos de controles documentados en `design.md`; verificar que el baseline se pueda repetir con búsqueda estática sin modificar código.
 - [ ] 1.2 Convertir requisitos de `design-system/ui-consistency` en matriz de aceptación para controles, filtros, tablas, estados, badges, iconos y paginación; verificar cada requisito contra un escenario testeable.
-- [ ] 1.3 Extender solo primitives compartidas necesarias en `frontend/src/shared/ui/` sin crear componentes de dominio; verificar imports respetan `app -> features -> shared` mediante `npm run check:architecture`.
+- [x] 1.3 Extender solo primitives compartidas necesarias en `frontend/src/shared/ui/` sin crear componentes de dominio; verificar imports respetan `app -> features -> shared` mediante `npm run check:architecture`.
 - [ ] 1.4 Añadir pruebas focalizadas de `Input`, `Select`, `Textarea`, `FormField`, `Button`, `StatusBadge`, `Pagination` y composición de tabla para foco, disabled, invalid, loading, labels, teclado y objetivos táctiles; verificar con Vitest focalizado y axe donde aplique.
-- [ ] 1.5 Registrar excepciones de tabla accesible financiera, reportes densos, avatar local y overflow en documentación del cambio; verificar que cada excepción tenga consumidor, razón y criterio de salida.
+- [x] 1.5 Registrar excepciones de tabla accesible financiera, reportes densos, avatar local y overflow en documentación del cambio; verificar que cada excepción tenga consumidor, razón y criterio de salida.
 - [ ] 1.6 Definir vocabulario de acciones y mensajes para usuarios con poca familiaridad informática, manteniendo verbos consistentes entre botón, confirmación, busy, éxito, vacío y error; verificarlo contra la matriz UX de `design.md` sin agregar copy técnico.
 
 ## 2. PBI UI-STD-02 — P0 controles y filtros de Personas y solicitudes
@@ -31,7 +31,7 @@
 
 - [ ] 4.1 Inventariar clases y estados legacy de `pages/inventory/InventoryCategoriesPage.tsx`, `InventoryItemsPage.tsx`, `InventoryLoansPage.tsx`, `InventoryMovementsPage.tsx` y `InventoryReportsPage.tsx`; verificar que cada filtro/formulario/tabla tenga mapeo a primitive o excepción.
 - [ ] 4.2 Migrar primero filtros y acciones de inventario desde `<input>`, `<select>`, `<textarea>`, `.filters`, `.card` y `.actions` a primitives compartidas, sin cambiar servicios ni payloads; verificar CRUD, validación y estados busy con pruebas focalizadas.
-- [ ] 4.3 Migrar tablas/listados de inventario al contrato común respetando detalle, activación, movimientos, préstamos, reportes y responsive; verificar columnas, acciones, overflow y estados vacíos/error.
+- [x] 4.3 Migrar tablas/listados de inventario al contrato común respetando detalle, activación, movimientos, préstamos, reportes y responsive; verificar columnas, acciones, overflow y estados vacíos/error.
 - [ ] 4.4 Alinear `FinancialDashboardPage`, `FinancialMovementsPage`, `FinancialPage`, `FinancialPaymentModal`, `FinancialMovementFormModal` y `DinadecoAnnualReportPage`; verificar capabilities `fin.*`, pagos condicionados, reportes y tabla auxiliar accesible.
 - [ ] 4.5 Añadir pruebas focalizadas de formularios, filtros, pagos, estados financieros y tablas accesibles; verificar con comandos de frontend permitidos durante VERIFY y registrar resultados sin afirmar PASS no ejecutado.
 

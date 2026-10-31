@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
@@ -250,29 +251,29 @@ export function InventoryLoansPage() {
       ) : (
         <>
           <div className="table-wrap" tabIndex={0} aria-label="Tabla de préstamos, desplazable horizontalmente">
-            <table>
-              <thead>
-                <tr><th>Artículo</th><th>Cantidad</th><th>Prestatario</th><th>Fecha de préstamo</th><th>Devolución esperada</th><th>Estado</th><th><span className="sr-only">Acciones</span></th></tr>
-              </thead>
-              <tbody>
+            <DataTable>
+              <DataTableHeader>
+                <DataTableRow><DataTableHead>Artículo</DataTableHead><DataTableHead>Cantidad</DataTableHead><DataTableHead>Prestatario</DataTableHead><DataTableHead>Fecha de préstamo</DataTableHead><DataTableHead>Devolución esperada</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead><span className="sr-only">Acciones</span></DataTableHead></DataTableRow>
+              </DataTableHeader>
+              <DataTableBody>
                 {loans.map((loan) => (
-                  <tr key={loan.id}>
-                    <td>{loan.item.name}</td>
-                    <td>{loan.quantity}</td>
-                    <td>{loan.affiliate ? `${loan.borrowerName} (afiliado)` : loan.borrowerName}</td>
-                    <td>{formatDate(loan.loanDate)}</td>
-                    <td>{formatDate(loan.expectedReturnDate)}</td>
-                    <td><span className={`badge ${statusTone(loan)}`}>{loanStatusLabels[loan.status]}{loan.isOverdue ? ' · Vencido' : ''}</span></td>
-                    <td>
+                  <DataTableRow key={loan.id}>
+                    <DataTableCell>{loan.item.name}</DataTableCell>
+                    <DataTableCell>{loan.quantity}</DataTableCell>
+                    <DataTableCell>{loan.affiliate ? `${loan.borrowerName} (afiliado)` : loan.borrowerName}</DataTableCell>
+                    <DataTableCell>{formatDate(loan.loanDate)}</DataTableCell>
+                    <DataTableCell>{formatDate(loan.expectedReturnDate)}</DataTableCell>
+                    <DataTableCell><span className={`badge ${statusTone(loan)}`}>{loanStatusLabels[loan.status]}{loan.isOverdue ? ' · Vencido' : ''}</span></DataTableCell>
+                    <DataTableCell>
                       <div className="actions">
                         <button onClick={() => void openDetail(loan.id)}>Ver detalle</button>
                         {loan.status === 'ACTIVE' && <button onClick={() => openReturn(loan)}>Devolver</button>}
                       </div>
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
+              </DataTableBody>
+            </DataTable>
           </div>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>

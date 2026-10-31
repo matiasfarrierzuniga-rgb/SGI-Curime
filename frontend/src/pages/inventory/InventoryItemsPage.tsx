@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
@@ -355,34 +356,34 @@ export function InventoryItemsPage() {
       ) : (
         <>
           <div className="table-wrap" tabIndex={0} aria-label="Tabla de artículos, desplazable horizontalmente">
-            <table>
+            <DataTable>
               <caption className="sr-only">Listado de bienes registrados en el inventario</caption>
-              <thead>
-                <tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Existencia</th><th>Mínimo</th><th>Unidad</th><th>Ubicación</th><th>Estado</th><th>Condición</th><th><span className="sr-only">Acciones</span></th></tr>
-              </thead>
-              <tbody>
+              <DataTableHeader>
+                <DataTableRow><DataTableHead>Código</DataTableHead><DataTableHead>Nombre</DataTableHead><DataTableHead>Categoría</DataTableHead><DataTableHead>Existencia</DataTableHead><DataTableHead>Mínimo</DataTableHead><DataTableHead>Unidad</DataTableHead><DataTableHead>Ubicación</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead>Condición</DataTableHead><DataTableHead><span className="sr-only">Acciones</span></DataTableHead></DataTableRow>
+              </DataTableHeader>
+              <DataTableBody>
                 {items.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.code}</td>
-                    <td>{item.name}</td>
-                    <td>{item.category.name}</td>
-                    <td><span className={`badge ${quantityTone(item)}`}>{item.currentQuantity}</span></td>
-                    <td>{item.minimumQuantity}</td>
-                    <td>{item.unit}</td>
-                    <td>{item.location || '—'}</td>
-                    <td><span className={`badge ${statusTone(item.status)}`}>{itemStatusLabels[item.status]}</span></td>
-                    <td>{conditionLabels[item.condition]}</td>
-                    <td>
+                  <DataTableRow key={item.id}>
+                    <DataTableCell>{item.code}</DataTableCell>
+                    <DataTableCell>{item.name}</DataTableCell>
+                    <DataTableCell>{item.category.name}</DataTableCell>
+                    <DataTableCell><span className={`badge ${quantityTone(item)}`}>{item.currentQuantity}</span></DataTableCell>
+                    <DataTableCell>{item.minimumQuantity}</DataTableCell>
+                    <DataTableCell>{item.unit}</DataTableCell>
+                    <DataTableCell>{item.location || '—'}</DataTableCell>
+                    <DataTableCell><span className={`badge ${statusTone(item.status)}`}>{itemStatusLabels[item.status]}</span></DataTableCell>
+                    <DataTableCell>{conditionLabels[item.condition]}</DataTableCell>
+                    <DataTableCell>
                       <div className="actions">
                         <button onClick={() => void openDetail(item.id)}>Ver detalle</button>
                         <button onClick={() => { setSelected(item); openMovement('entry') }}>Entrada</button>
                         <button onClick={() => { setSelected(item); openMovement('exit') }}>Salida</button>
                       </div>
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
+              </DataTableBody>
+            </DataTable>
           </div>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
@@ -476,23 +477,23 @@ export function InventoryItemsPage() {
           ) : (
             <>
               <div className="table-wrap" tabIndex={0} aria-label="Tabla de movimientos del artículo, desplazable horizontalmente">
-                <table>
-                  <thead>
-                    <tr><th>Fecha</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Referencia</th><th>Registrado por</th></tr>
-                  </thead>
-                  <tbody>
+                <DataTable>
+                  <DataTableHeader>
+                    <DataTableRow><DataTableHead>Fecha</DataTableHead><DataTableHead>Tipo</DataTableHead><DataTableHead>Cantidad</DataTableHead><DataTableHead>Motivo</DataTableHead><DataTableHead>Referencia</DataTableHead><DataTableHead>Registrado por</DataTableHead></DataTableRow>
+                  </DataTableHeader>
+                  <DataTableBody>
                     {itemMovements.map((m) => (
-                      <tr key={m.id}>
-                        <td>{new Date(m.createdAt).toLocaleString('es-CR')}</td>
-                        <td><span className="badge">{movementTypeLabels[m.type]}</span></td>
-                        <td>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</td>
-                        <td>{m.reason}</td>
-                        <td>{m.reference || '—'}</td>
-                        <td>{m.createdBy?.fullName ?? '—'}</td>
-                      </tr>
+                      <DataTableRow key={m.id}>
+                        <DataTableCell>{new Date(m.createdAt).toLocaleString('es-CR')}</DataTableCell>
+                        <DataTableCell><span className="badge">{movementTypeLabels[m.type]}</span></DataTableCell>
+                        <DataTableCell>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</DataTableCell>
+                        <DataTableCell>{m.reason}</DataTableCell>
+                        <DataTableCell>{m.reference || '—'}</DataTableCell>
+                        <DataTableCell>{m.createdBy?.fullName ?? '—'}</DataTableCell>
+                      </DataTableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </DataTableBody>
+                </DataTable>
               </div>
               <Pagination page={movementPage} total={movementTotal} limit={20} onChange={(p) => { setMovementPage(p); void loadItemMovements(selected.id, p) }} />
             </>

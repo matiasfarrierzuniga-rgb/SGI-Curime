@@ -17,6 +17,7 @@ import { LoadingState } from "@/shared/ui/LoadingState";
 import { Modal } from "@/shared/ui/Modal";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { Pagination } from "@/shared/ui/Pagination";
+import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import { Select } from "@/shared/ui/select";
 import { SearchFilterBar } from "@/shared/ui/SearchFilterBar";
 import { StatusBadge } from "@/shared/ui/StatusBadge";
@@ -31,8 +32,6 @@ const statusPresentation: Record<RequestStatus, { label: string; variant: "warni
   REJECTED: { label: "Rechazada", variant: "danger" },
 };
 
-const avatarTones = ["bg-status-info-surface text-status-info", "bg-status-success-surface text-status-success", "bg-status-warning-surface text-status-warning", "bg-status-neutral-surface text-status-neutral"];
-
 function reviewRequiredMessage(error: unknown) {
   const message = axios.isAxiosError(error)
     ? error.response?.data && typeof error.response.data === "object" && "message" in error.response.data
@@ -43,15 +42,6 @@ function reviewRequiredMessage(error: unknown) {
     return "La solicitud sigue pendiente: la identidad requiere revisión institucional antes de aprobarla.";
   }
   return getErrorMessage(error);
-}
-
-function getInitials(fullName: string) {
-  return fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((name) => name[0]).join("").toUpperCase() || "SR";
-}
-
-function getAvatarTone(fullName: string) {
-  const hash = Array.from(fullName).reduce((sum, character) => sum + character.charCodeAt(0), 0);
-  return avatarTones[hash % avatarTones.length];
 }
 
 function formatDate(value: string) {
@@ -148,7 +138,7 @@ export function UserRequestsPage() {
         <DataTable className="min-w-[44rem]" scrollLabel="En pantallas estrechas, desplaza horizontalmente para ver más columnas de solicitudes de registro">
             <caption className="sr-only">Listado de solicitudes de registro</caption>
             <DataTableHeader>
-              <DataTableRow className="hover:bg-surface-muted">
+              <DataTableRow>
                 <DataTableHead>Persona solicitante</DataTableHead>
                 <DataTableHead>Correo</DataTableHead>
                 <DataTableHead>Estado</DataTableHead>
@@ -159,10 +149,10 @@ export function UserRequestsPage() {
             <DataTableBody>
               {items.map((item) => {
                 const presentation = statusPresentation[item.status];
-                return <DataTableRow key={item.id} className="focus-within:bg-surface-muted/80">
+                return <DataTableRow key={item.id}>
                   <DataTableCell>
                     <div className="flex min-w-52 items-center gap-3">
-                      <span className={`grid size-10 shrink-0 place-items-center rounded-full text-label font-bold ${getAvatarTone(item.fullName)}`} aria-hidden="true">{getInitials(item.fullName)}</span>
+                      <PersonAvatar name={item.fullName} />
                       <span className="min-w-0 break-words font-semibold text-text-primary">{item.fullName}</span>
                     </div>
                   </DataTableCell>
