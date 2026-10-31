@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import axios from "axios";
 import { rolesService } from "@/features/roles";
 import { userRequestsService } from "@/features/user-requests";
@@ -11,12 +11,15 @@ import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ErrorState } from "@/shared/ui/ErrorState";
+import { FormField } from "@/shared/ui/FormField";
 import { LoadingState } from "@/shared/ui/LoadingState";
 import { Modal } from "@/shared/ui/Modal";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { Select } from "@/shared/ui/select";
+import { SearchFilterBar } from "@/shared/ui/SearchFilterBar";
 import { StatusBadge } from "@/shared/ui/StatusBadge";
+import { Textarea } from "@/shared/ui/textarea";
 import { useToast } from "@/shared/ui/Toast";
 
 const limit = 10;
@@ -57,7 +60,6 @@ function formatDate(value: string) {
 export function UserRequestsPage() {
   const { notify } = useToast();
   const { user } = useAuth();
-  const statusId = useId();
   const canReview = hasCapability(user?.permissionCodes, "usr.user-requests.review");
   const [items, setItems] = useState<UserRequest[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
@@ -119,15 +121,16 @@ export function UserRequestsPage() {
           <h2 id="account-request-filters-heading" className="text-heading-3 font-semibold text-text-primary">Filtrar solicitudes</h2>
           <p className="mt-1 text-body-small text-text-secondary">Seleccione un estado para actualizar el listado.</p>
         </div>
-        <div className="flex flex-col gap-1 sm:max-w-xs">
-          <label htmlFor={statusId} className="text-label font-semibold text-text-primary">Estado</label>
-          <Select id={statusId} className="bg-surface-base text-text-primary" value={status} onChange={(event) => { setPage(1); setStatus(event.target.value as RequestStatus | ""); }}>
+        <SearchFilterBar className="sm:max-w-xs" label="Filtrar solicitudes de registro">
+          <FormField id="user-request-status" label="Estado">
+          <Select value={status} onChange={(event) => { setPage(1); setStatus(event.target.value as RequestStatus | ""); }}>
             <option value="">Todos los estados</option>
             <option value="PENDING">Pendiente</option>
             <option value="APPROVED">Aprobada</option>
             <option value="REJECTED">Rechazada</option>
           </Select>
-        </div>
+          </FormField>
+        </SearchFilterBar>
       </section>
 
       {error ? <ErrorState message={error} action={<Button type="button" variant="outline" onClick={() => void load()}>Reintentar</Button>} /> : null}
@@ -193,10 +196,9 @@ export function UserRequestsPage() {
         <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border-subtle pt-5 sm:flex-row sm:justify-end"><Button type="button" variant="outline" onClick={() => setAction(null)} disabled={busy}>Cancelar</Button><Button type="button" loading={busy} disabled={!roleId || busy} onClick={() => void run()}>{busy ? "Aprobando…" : "Aprobar solicitud"}</Button></div>
       </Modal> : null}
       {action === "reject" ? <Modal title="Rechazar solicitud" onClose={() => setAction(null)}>
-        <label className="flex flex-col gap-1 text-label font-semibold text-text-primary">Motivo del rechazo
-          <textarea required maxLength={500} className="min-h-28 w-full rounded-control border border-border bg-control px-(--spacing-control-x) py-(--spacing-control-y) text-body text-foreground outline-none transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50" value={reason} onChange={(event) => setReason(event.target.value)} />
-        </label>
-        <p className="mt-2 text-caption text-text-secondary">El motivo es obligatorio.</p>
+        <FormField id="user-request-rejection-reason" label="Motivo del rechazo" description="El motivo es obligatorio.">
+          <Textarea required maxLength={500} value={reason} onChange={(event) => setReason(event.target.value)} />
+        </FormField>
         <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border-subtle pt-5 sm:flex-row sm:justify-end"><Button type="button" variant="outline" onClick={() => setAction(null)}>Cancelar</Button><Button type="button" variant="danger" disabled={!reason.trim()} onClick={() => setAction("rejectConfirm")}>Continuar</Button></div>
       </Modal> : null}
       {action === "rejectConfirm" ? <ConfirmDialog title="Confirmar rechazo" message="¿Confirmas el rechazo de esta solicitud con el motivo indicado?" confirmLabel="Rechazar solicitud" danger busy={busy} onClose={() => setAction("reject")} onConfirm={() => void run()} /> : null}
