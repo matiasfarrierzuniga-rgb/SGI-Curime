@@ -1,9 +1,11 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { CheckCircle2, Pencil } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import { useForm, type UseFormRegisterReturn } from 'react-hook-form'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { useAuth } from '@/features/auth'
 import { hasCapability } from '@/shared/security/access'
-import { emailError, normalizeEmail, normalizeText } from '@/shared/lib/formValidation'
+import { normalizeEmail, normalizeText } from '@/shared/lib/formValidation'
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -13,15 +15,15 @@ import { FormSection } from '@/shared/ui/FormSection'
 import { FormStepper, type FormStepperStep } from '@/shared/ui/FormStepper'
 import { Input } from '@/shared/ui/input'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { PageContainer } from '@/shared/ui/PageContainer'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Select } from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
 import { useInstitutionalProfile, useUpdateInstitutionalProfile } from '../hooks/institutionalProfile.queries'
-import type { InstitutionalOrganizationType, UpdateInstitutionalProfileInput } from '../model/institutionalProfile.types'
+import { institutionalProfileSchema, type InstitutionalProfileFormValues } from '../model/institutionalProfile.schema'
+import type { UpdateInstitutionalProfileInput } from '../model/institutionalProfile.types'
 
 type TextField = Exclude<keyof UpdateInstitutionalProfileInput, 'organizationType'>
-type FormState = Record<TextField, string> & { organizationType: '' | InstitutionalOrganizationType }
+type FormState = InstitutionalProfileFormValues
 type SaveState = 'DEFAULT' | 'SUBMITTING' | 'SUCCESS' | 'ERROR'
 const emptyForm: FormState = { legalName: '', legalIdentification: '', dinadecoRegistrationCode: '', dinadecoRegion: '', organizationType: '', province: '', canton: '', district: '', locality: '', correspondenceAddress: '', phone: '', telefax: '', email: '' }
 const formSteps: readonly FormStepperStep[] = [
@@ -47,8 +49,14 @@ export function InstitutionalProfilePage() {
   const { user } = useAuth()
   const canUpdate = hasCapability(user?.permissionCodes, 'adm.institutional-profile.update')
   const update = useUpdateInstitutionalProfile()
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [emailMessage, setEmailMessage] = useState('')
+  const form = useForm<FormState>({
+    defaultValues: emptyForm,
+    resolver: zodResolver(institutionalProfileSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
+    shouldFocusError: true,
+  })
+  const { errors } = form.formState
   const [requestError, setRequestError] = useState('')
   const [success, setSuccess] = useState('')
   const [isEditing, setIsEditing] = useState(false)
@@ -56,28 +64,22 @@ export function InstitutionalProfilePage() {
   const [visitedSteps, setVisitedSteps] = useState<ReadonlySet<number>>(() => new Set([0]))
   const saveState: SaveState = update.isPending ? 'SUBMITTING' : requestError ? 'ERROR' : success ? 'SUCCESS' : 'DEFAULT'
 
-  useEffect(() => { if (profile.data) setForm(toForm(profile.data)) }, [profile.data])
-  const setField = (field: keyof FormState, value: string) => { setForm(current => ({ ...current, [field]: value })); setSuccess(''); setRequestError('') }
+  useEffect(() => { if (profile.data) form.reset(toForm(profile.data)) }, [form, profile.data])
   const cancel = () => {
-    if (profile.data) setForm(toForm(profile.data))
-    setEmailMessage('')
+    if (profile.data) form.reset(toForm(profile.data))
     setRequestError('')
     setSuccess('')
     setActiveStep(0)
     setVisitedSteps(new Set([0]))
     setIsEditing(false)
   }
-  const submit = async (event: FormEvent) => {
-    event.preventDefault()
+  const submit = async (values: FormState) => {
     if (!canUpdate || update.isPending) return
-    const nextEmailError = form.email ? emailError(form.email) : ''
-    setEmailMessage(nextEmailError)
-    if (nextEmailError) return
     setRequestError('')
     setSuccess('')
     try {
-      const saved = await update.mutateAsync(toPayload(form))
-      setForm(toForm(saved))
+      const saved = await update.mutateAsync(toPayload(values))
+      form.reset(toForm(saved))
       setSuccess('Perfil institucional guardado correctamente.')
       setActiveStep(0)
       setVisitedSteps(new Set([0]))
@@ -87,7 +89,7 @@ export function InstitutionalProfilePage() {
     }
   }
 
-  return <PageContainer className="space-y-6 lg:space-y-8">
+  return <div className="space-y-6 lg:space-y-8">
     <PageHeader context="Gestión administrativa" title="Perfil institucional" description="Administre la fuente canónica de los datos legales e institucionales de la Asociación." />
     {profile.isPending ? <LoadingState label="Cargando perfil institucional..." /> : null}
     {profile.isError ? <ErrorState title="No fue posible cargar el perfil institucional" message={getErrorMessage(profile.error)} action={<Button type="button" variant="outline" onClick={() => void profile.refetch()}>Reintentar</Button>} /> : null}
@@ -98,51 +100,51 @@ export function InstitutionalProfilePage() {
             <CardTitle>Datos institucionales</CardTitle>
             <CardDescription>Todos los campos son opcionales. Un campo vacío indica que el dato todavía no ha sido validado o cargado por la Asociación.</CardDescription>
           </div>
-          {canUpdate && !isEditing ? <Button type="button" variant="outline" onClick={() => { setSuccess(''); setRequestError(''); setEmailMessage(''); setActiveStep(0); setVisitedSteps(new Set([0])); setIsEditing(true) }}><Pencil aria-hidden="true" />Editar perfil</Button> : null}
+          {canUpdate && !isEditing ? <Button type="button" variant="outline" onClick={() => { setSuccess(''); setRequestError(''); setActiveStep(0); setVisitedSteps(new Set([0])); setIsEditing(true) }}><Pencil aria-hidden="true" />Editar perfil</Button> : null}
         </div>
       </CardHeader>
       <CardContent className="pt-6 sm:pt-8">
         {saveState === 'SUCCESS' ? <Alert className="mb-6 border-status-success-border bg-status-success-surface text-status-success" role="status"><CheckCircle2 aria-hidden="true" /><AlertTitle>Datos guardados</AlertTitle><AlertDescription className="text-status-success">{success}</AlertDescription></Alert> : null}
-        {!isEditing ? <ProfileDetails profile={profile.data} /> : <form className="space-y-8" onSubmit={submit} noValidate>
+        {!isEditing ? <ProfileDetails profile={profile.data} /> : <form className="space-y-8" onSubmit={form.handleSubmit(submit)} noValidate>
            {saveState === 'ERROR' ? <ErrorState title="No fue posible guardar los cambios" message={requestError} /> : null}
            <FormStepper steps={formSteps} activeStep={activeStep} visitedSteps={visitedSteps} onStepChange={step => setActiveStep(step)} />
            <fieldset className="space-y-8" disabled={saveState === 'SUBMITTING'}>
             <legend className="sr-only">Editar información institucional</legend>
               {activeStep === 0 ? <FormSection className="gap-6" title="Identificación legal" description="Datos que identifican formalmente a la Asociación ante entidades y registros.">
               <FormField id="legalName" label={<><span>Nombre legal</span> <Optional /></>}>
-                <Input maxLength={200} value={form.legalName} onChange={event => setField('legalName', event.target.value)} placeholder="Sin validar o cargar" autoComplete="organization" />
-              </FormField>
-              <div className="grid gap-5 md:grid-cols-2">
-                <TextFieldControl id="legalIdentification" label="Cédula jurídica" value={form.legalIdentification} maxLength={80} onChange={value => setField('legalIdentification', value)} />
-                <FormField id="organizationType" label={<><span>Tipo de asociación</span> <Optional /></>}>
-                  <Select value={form.organizationType} onChange={event => setField('organizationType', event.target.value)}><option value="">Sin validar o cargar</option><option value="INTEGRAL">Integral</option><option value="SPECIFIC">Específica</option></Select>
-                </FormField>
+                 <Input {...form.register('legalName')} maxLength={200} placeholder="Sin validar o cargar" autoComplete="organization" />
+               </FormField>
+               <div className="grid gap-5 md:grid-cols-2">
+                 <TextFieldControl id="legalIdentification" label="Cédula jurídica" registration={form.register('legalIdentification')} maxLength={80} error={errors.legalIdentification?.message} />
+                 <FormField id="organizationType" label={<><span>Tipo de asociación</span> <Optional /></>}>
+                   <Select {...form.register('organizationType')}><option value="">Sin validar o cargar</option><option value="INTEGRAL">Integral</option><option value="SPECIFIC">Específica</option></Select>
+                 </FormField>
               </div>
              </FormSection> : null}
               {activeStep === 1 ? <FormSection className="gap-6" title="Registro DINADECO" description="Información de inscripción y referencia administrativa vigente.">
               <div className="grid gap-5 md:grid-cols-2">
-                <TextFieldControl id="dinadecoRegistrationCode" label="Código o registro DINADECO" value={form.dinadecoRegistrationCode} maxLength={80} onChange={value => setField('dinadecoRegistrationCode', value)} />
-                <TextFieldControl id="dinadecoRegion" label="Región o Dirección Regional" value={form.dinadecoRegion} maxLength={150} onChange={value => setField('dinadecoRegion', value)} />
+                 <TextFieldControl id="dinadecoRegistrationCode" label="Código o registro DINADECO" registration={form.register('dinadecoRegistrationCode')} maxLength={80} error={errors.dinadecoRegistrationCode?.message} />
+                 <TextFieldControl id="dinadecoRegion" label="Región o Dirección Regional" registration={form.register('dinadecoRegion')} maxLength={150} error={errors.dinadecoRegion?.message} />
               </div>
              </FormSection> : null}
               {activeStep === 2 ? <FormSection className="gap-6" title="Ubicación" description="Referencia territorial y dirección usada para la correspondencia institucional.">
               <div className="grid gap-5 md:grid-cols-2">
-                <TextFieldControl id="province" label="Provincia" value={form.province} maxLength={100} onChange={value => setField('province', value)} />
-                <TextFieldControl id="canton" label="Cantón" value={form.canton} maxLength={100} onChange={value => setField('canton', value)} />
-                <TextFieldControl id="district" label="Distrito" value={form.district} maxLength={100} onChange={value => setField('district', value)} />
-                <TextFieldControl id="locality" label="Localidad" value={form.locality} maxLength={150} onChange={value => setField('locality', value)} />
-              </div>
-              <FormField id="correspondenceAddress" label={<><span>Dirección de correspondencia</span> <Optional /></>}>
-                <Textarea maxLength={500} value={form.correspondenceAddress} onChange={event => setField('correspondenceAddress', event.target.value)} placeholder="Sin validar o cargar" autoComplete="street-address" />
+                 <TextFieldControl id="province" label="Provincia" registration={form.register('province')} maxLength={100} error={errors.province?.message} />
+                 <TextFieldControl id="canton" label="Cantón" registration={form.register('canton')} maxLength={100} error={errors.canton?.message} />
+                 <TextFieldControl id="district" label="Distrito" registration={form.register('district')} maxLength={100} error={errors.district?.message} />
+                 <TextFieldControl id="locality" label="Localidad" registration={form.register('locality')} maxLength={150} error={errors.locality?.message} />
+               </div>
+               <FormField id="correspondenceAddress" label={<><span>Dirección de correspondencia</span> <Optional /></>}>
+                 <Textarea {...form.register('correspondenceAddress')} maxLength={500} placeholder="Sin validar o cargar" autoComplete="street-address" />
               </FormField>
              </FormSection> : null}
               {activeStep === 3 ? <FormSection className="gap-6" title="Contacto institucional" description="Canales oficiales para la comunicación con la Asociación.">
               <div className="grid gap-5 md:grid-cols-2">
-                <TextFieldControl id="phone" label="Teléfono" value={form.phone} maxLength={50} onChange={value => setField('phone', value)} inputMode="tel" autoComplete="tel" />
-                <TextFieldControl id="telefax" label="Telefax" value={form.telefax} maxLength={50} onChange={value => setField('telefax', value)} inputMode="tel" />
-              </div>
-              <FormField id="email" label={<><span>Correo institucional</span> <Optional /></>} description="Use correo oficial de la Asociación." error={emailMessage}>
-                <Input type="email" autoComplete="email" maxLength={254} value={form.email} onChange={event => setField('email', event.target.value)} placeholder="Sin validar o cargar" />
+                 <TextFieldControl id="phone" label="Teléfono" registration={form.register('phone')} maxLength={50} error={errors.phone?.message} inputMode="tel" autoComplete="tel" />
+                 <TextFieldControl id="telefax" label="Telefax" registration={form.register('telefax')} maxLength={50} error={errors.telefax?.message} inputMode="tel" autoComplete="tel" />
+               </div>
+               <FormField id="email" label={<><span>Correo institucional</span> <Optional /></>} description="Use correo oficial de la Asociación." error={errors.email?.message}>
+                 <Input {...form.register('email')} type="email" autoComplete="email" maxLength={254} placeholder="Sin validar o cargar" />
               </FormField>
              </FormSection> : null}
            </fieldset>
@@ -154,13 +156,13 @@ export function InstitutionalProfilePage() {
         </form>}
       </CardContent>
     </Card> : null}
-  </PageContainer>
+  </div>
 }
 
 function Optional() { return <span className="font-normal text-foreground-muted">(opcional)</span> }
-function TextFieldControl({ id, label, value, maxLength, onChange, inputMode, autoComplete }: { id: TextField; label: string; value: string; maxLength: number; onChange: (value: string) => void; inputMode?: 'tel'; autoComplete?: string }) {
-  return <FormField id={id} label={<><span>{label}</span> <Optional /></>}>
-    <Input maxLength={maxLength} value={value} onChange={event => onChange(event.target.value)} placeholder="Sin validar o cargar" inputMode={inputMode} autoComplete={autoComplete} />
+function TextFieldControl({ id, label, registration, maxLength, error, inputMode, autoComplete }: { id: TextField; label: string; registration: UseFormRegisterReturn<TextField>; maxLength: number; error?: string; inputMode?: 'tel'; autoComplete?: string }) {
+  return <FormField id={id} label={<><span>{label}</span> <Optional /></>} error={error}>
+    <Input {...registration} maxLength={maxLength} placeholder="Sin validar o cargar" inputMode={inputMode} autoComplete={autoComplete} />
   </FormField>
 }
 
