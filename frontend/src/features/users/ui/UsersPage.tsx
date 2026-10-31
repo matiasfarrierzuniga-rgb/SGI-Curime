@@ -5,7 +5,6 @@ import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ErrorState } from "@/shared/ui/ErrorState";
 import { LoadingState } from "@/shared/ui/LoadingState";
-import { PageContainer } from "@/shared/ui/PageContainer";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import type { User, UserStatus, UserUpdate } from "../model/users.types";
 import { getErrorMessage } from "@/shared/lib/errors";
@@ -91,7 +90,7 @@ export function UsersPage() {
   const hasActiveFilters = Boolean(query || status || roleId);
 
   return (
-    <PageContainer className="space-y-6">
+    <div className="space-y-6">
       <PageHeader
         context="Administración"
         title="Usuarios"
@@ -165,6 +164,6 @@ export function UsersPage() {
         onChangeRole={(roleId) => management && mutation.mutate({ action: "role", user: management.user, payload: roleId })}
         onLifecycle={(action) => management && mutation.mutate({ action, user: management.user })}
       />
-    </PageContainer>
+    </div>
   );
 }
