@@ -7,7 +7,6 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { FormField } from '@/shared/ui/FormField'
 import { Input } from '@/shared/ui/input'
-import { PageContainer } from '@/shared/ui/PageContainer'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { useToast } from '@/shared/ui/Toast'
@@ -45,7 +44,7 @@ export function ProfilePage() {
   }
 
   return (
-    <PageContainer className="space-y-6 lg:space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       <PageHeader context="Cuenta" title="Mi perfil" description="Consulte los datos asociados a su cuenta y actualice su contraseña." />
 
       <Card className="shadow-elevation-1">
@@ -90,7 +89,7 @@ export function ProfilePage() {
           </form>
         </CardContent>
       </Card>
-    </PageContainer>
+    </div>
   )
 }
 
