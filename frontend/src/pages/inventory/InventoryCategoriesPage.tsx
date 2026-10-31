@@ -12,7 +12,12 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { FormField } from '@/shared/ui/FormField'
+import { Input } from '@/shared/ui/input'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { SearchFilterBar } from '@/shared/ui/SearchFilterBar'
+import { Select } from '@/shared/ui/select'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 10
@@ -112,16 +117,28 @@ export function InventoryCategoriesPage() {
 
   return (
     <InventoryPageContainer>
-      <AdministrativeListLayout header={<PageHeader context="Inventario" title="Categorías" description="Organice artículos por categorías activas para una consulta y gestión consistente." />}>
-      <form className="filters card" onSubmit={(e) => { e.preventDefault(); setPage(1); void load() }}>
-        <label>Búsqueda por nombre<input maxLength={100} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
-        <label>Estado<select value={activeFilter} onChange={(e) => { setPage(1); setActiveFilter(e.target.value as 'true' | 'false' | '') }}>
-          <option value="">Todos</option>
-          <option value="true">Activas</option>
-          <option value="false">Inactivas</option>
-        </select></label>
-        <div className="actions"><Button type="submit">Buscar</Button><Button type="button" variant="outline" onClick={openCreate}>Nueva categoría</Button></div>
-      </form>
+      <AdministrativeListLayout
+        header={<PageHeader context="Inventario" title="Categorías" description="Organice artículos por categorías activas para una consulta y gestión consistente." />}
+        filters={
+          <SearchFilterBar
+            label="Buscar y filtrar categorías"
+            controlsClassName="md:grid-cols-[minmax(0,1fr)_12rem]"
+            onSubmit={(e) => { e.preventDefault(); setPage(1); void load() }}
+            actions={<><Button type="submit">Buscar</Button><Button type="button" variant="outline" onClick={openCreate}>Nueva categoría</Button></>}
+          >
+            <FormField id="inventory-category-search" label="Búsqueda por nombre">
+              <Input maxLength={100} value={search} onChange={(e) => setSearch(e.target.value)} />
+            </FormField>
+            <FormField id="inventory-category-status" label="Estado">
+              <Select value={activeFilter} onChange={(e) => { setPage(1); setActiveFilter(e.target.value as 'true' | 'false' | '') }}>
+                <option value="">Todos</option>
+                <option value="true">Activas</option>
+                <option value="false">Inactivas</option>
+              </Select>
+            </FormField>
+          </SearchFilterBar>
+        }
+      >
       {error && <ErrorState message={error} />}
       {loading ? (
         <LoadingState label="Cargando categorías…" />
@@ -138,7 +155,7 @@ export function InventoryCategoriesPage() {
                   <DataTableRow key={c.id}>
                     <DataTableCell>{c.name}</DataTableCell>
                     <DataTableCell>{c.description || '—'}</DataTableCell>
-                    <DataTableCell><span className={`badge ${c.isActive ? 'success' : 'neutral'}`}>{c.isActive ? 'Activa' : 'Inactiva'}</span></DataTableCell>
+                    <DataTableCell><StatusBadge variant={c.isActive ? 'success' : 'neutral'}>{c.isActive ? 'Activa' : 'Inactiva'}</StatusBadge></DataTableCell>
                     <DataTableCell>
                       <div className="actions">
                         <Button type="button" variant="outline" size="sm" onClick={() => openEdit(c)}>Editar</Button>

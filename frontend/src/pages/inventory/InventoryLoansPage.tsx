@@ -16,7 +16,12 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { FormField } from '@/shared/ui/FormField'
+import { Input } from '@/shared/ui/input'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { SearchFilterBar } from '@/shared/ui/SearchFilterBar'
+import { Select } from '@/shared/ui/select'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 10
@@ -229,23 +234,45 @@ export function InventoryLoansPage() {
 
   return (
     <InventoryPageContainer>
-      <AdministrativeListLayout header={<PageHeader context="Inventario" title="Préstamos" description="Gestione entregas, devoluciones y vencimientos de artículos prestados." />}>
-      <form className="filters card" onSubmit={submit}>
-        <label>Artículo<select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
-          <option value="">Todos</option>
-          {items.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.code})</option>)}
-        </select></label>
-        <label>Estado<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-          <option value="">Todos</option>
-          <option value="ACTIVE">Activo</option>
-          <option value="RETURNED">Devuelto</option>
-          <option value="CANCELLED">Cancelado</option>
-        </select></label>
-        <label className="checkbox-inline"><input type="checkbox" checked={form.overdue} onChange={(e) => setForm({ ...form, overdue: e.target.checked })} />Solo vencidos</label>
-        <label>Desde<input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} /></label>
-        <label>Hasta<input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} /></label>
-        <div className="actions"><Button type="submit">Aplicar filtros</Button><Button type="button" variant="outline" onClick={openCreate}>Nuevo préstamo</Button></div>
-      </form>
+      <AdministrativeListLayout
+        header={<PageHeader context="Inventario" title="Préstamos" description="Gestione entregas, devoluciones y vencimientos de artículos prestados." />}
+        filters={
+          <SearchFilterBar
+            label="Filtrar préstamos"
+            controlsClassName="md:grid-cols-2 xl:grid-cols-[minmax(15rem,2fr)_minmax(10rem,1fr)_10rem_10rem_10rem]"
+            onSubmit={submit}
+            actions={<><Button type="submit">Aplicar filtros</Button><Button type="button" variant="outline" onClick={openCreate}>Nuevo préstamo</Button></>}
+          >
+            <FormField id="inventory-loan-item" label="Artículo">
+              <Select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
+                <option value="">Todos</option>
+                {items.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.code})</option>)}
+              </Select>
+            </FormField>
+            <FormField id="inventory-loan-status" label="Estado">
+              <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                <option value="">Todos</option>
+                <option value="ACTIVE">Activo</option>
+                <option value="RETURNED">Devuelto</option>
+                <option value="CANCELLED">Cancelado</option>
+              </Select>
+            </FormField>
+            <div className="grid gap-1.5">
+              <span className="text-label font-semibold text-foreground">Vencimiento</span>
+              <label className="flex h-(--size-control) items-center gap-2 text-sm text-foreground" htmlFor="inventory-loan-overdue-checkbox">
+                <input id="inventory-loan-overdue-checkbox" type="checkbox" checked={form.overdue} onChange={(e) => setForm({ ...form, overdue: e.target.checked })} />
+                Solo vencidos
+              </label>
+            </div>
+            <FormField id="inventory-loan-date-from" label="Desde">
+              <Input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} />
+            </FormField>
+            <FormField id="inventory-loan-date-to" label="Hasta">
+              <Input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} />
+            </FormField>
+          </SearchFilterBar>
+        }
+      >
       {error && <ErrorState message={error} />}
       {loading ? (
         <LoadingState label="Cargando préstamos…" />
@@ -265,7 +292,7 @@ export function InventoryLoansPage() {
                     <DataTableCell>{loan.affiliate ? `${loan.borrowerName} (afiliado)` : loan.borrowerName}</DataTableCell>
                     <DataTableCell>{formatDate(loan.loanDate)}</DataTableCell>
                     <DataTableCell>{formatDate(loan.expectedReturnDate)}</DataTableCell>
-                    <DataTableCell><span className={`badge ${statusTone(loan)}`}>{loanStatusLabels[loan.status]}{loan.isOverdue ? ' · Vencido' : ''}</span></DataTableCell>
+                    <DataTableCell><StatusBadge variant={statusTone(loan)}>{loanStatusLabels[loan.status]}{loan.isOverdue ? ' · Vencido' : ''}</StatusBadge></DataTableCell>
                     <DataTableCell>
                       <div className="actions">
                         <Button type="button" variant="outline" size="sm" onClick={() => void openDetail(loan.id)}>Ver detalle</Button>
@@ -322,7 +349,7 @@ export function InventoryLoansPage() {
             <div><dt>Afiliado</dt><dd>{selected.affiliate ? `${selected.affiliate.fullName} — ${selected.affiliate.identification}` : '—'}</dd></div>
             <div><dt>Fecha de préstamo</dt><dd>{formatDate(selected.loanDate)}</dd></div>
             <div><dt>Devolución esperada</dt><dd>{formatDate(selected.expectedReturnDate)}</dd></div>
-            <div><dt>Estado</dt><dd><span className={`badge ${statusTone(selected)}`}>{loanStatusLabels[selected.status]}{selected.isOverdue ? ' · Vencido' : ''}</span></dd></div>
+            <div><dt>Estado</dt><dd><StatusBadge variant={statusTone(selected)}>{loanStatusLabels[selected.status]}{selected.isOverdue ? ' · Vencido' : ''}</StatusBadge></dd></div>
             {selected.returnedAt && <div><dt>Devuelto el</dt><dd>{formatDate(selected.returnedAt)}</dd></div>}
             <div><dt>Notas</dt><dd>{selected.notes || '—'}</dd></div>
             <div><dt>Registrado por</dt><dd>{selected.createdBy?.fullName ?? '—'}</dd></div>

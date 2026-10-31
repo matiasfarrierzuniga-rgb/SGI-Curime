@@ -20,7 +20,12 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { FormField } from '@/shared/ui/FormField'
+import { Input } from '@/shared/ui/input'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { SearchFilterBar } from '@/shared/ui/SearchFilterBar'
+import { Select } from '@/shared/ui/select'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 10
@@ -336,21 +341,41 @@ export function InventoryItemsPage() {
 
   return (
     <InventoryPageContainer>
-      <AdministrativeListLayout header={<PageHeader context="Inventario" title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo." />}>
-      <form className="filters card" onSubmit={applyFilters}>
-        <label>Búsqueda (nombre o código)<input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
-        <label>Categoría<select value={categoryFilter} onChange={(e) => { setPage(1); setCategoryFilter(e.target.value) }}>
-          <option value="">Todas</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select></label>
-        <label>Estado<select value={statusFilter} onChange={(e) => { setPage(1); setStatusFilter(e.target.value as InventoryItemStatus | '') }}>
-          <option value="">Todos</option>
-          <option value="ACTIVE">Activo</option>
-          <option value="INACTIVE">Inactivo</option>
-        </select></label>
-        <label className="checkbox-inline"><input type="checkbox" checked={lowStockFilter} onChange={(e) => { setPage(1); setLowStockFilter(e.target.checked) }} />Solo stock bajo</label>
-        <div className="actions"><Button type="submit">Buscar</Button><Button type="button" variant="outline" onClick={openCreate}>Nuevo artículo</Button></div>
-      </form>
+      <AdministrativeListLayout
+        header={<PageHeader context="Inventario" title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo." />}
+        filters={
+          <SearchFilterBar
+            label="Buscar y filtrar artículos"
+            controlsClassName="md:grid-cols-2 xl:grid-cols-[minmax(16rem,2fr)_minmax(12rem,1fr)_10rem_11rem]"
+            onSubmit={applyFilters}
+            actions={<><Button type="submit">Buscar</Button><Button type="button" variant="outline" onClick={openCreate}>Nuevo artículo</Button></>}
+          >
+            <FormField id="inventory-item-search" label="Búsqueda (nombre o código)">
+              <Input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} />
+            </FormField>
+            <FormField id="inventory-item-category" label="Categoría">
+              <Select value={categoryFilter} onChange={(e) => { setPage(1); setCategoryFilter(e.target.value) }}>
+                <option value="">Todas</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            </FormField>
+            <FormField id="inventory-item-status" label="Estado">
+              <Select value={statusFilter} onChange={(e) => { setPage(1); setStatusFilter(e.target.value as InventoryItemStatus | '') }}>
+                <option value="">Todos</option>
+                <option value="ACTIVE">Activo</option>
+                <option value="INACTIVE">Inactivo</option>
+              </Select>
+            </FormField>
+            <div className="grid gap-1.5">
+              <span className="text-label font-semibold text-foreground">Existencia</span>
+              <label className="flex h-(--size-control) items-center gap-2 text-sm text-foreground" htmlFor="inventory-item-low-stock-checkbox">
+                <input id="inventory-item-low-stock-checkbox" type="checkbox" checked={lowStockFilter} onChange={(e) => { setPage(1); setLowStockFilter(e.target.checked) }} />
+                Solo stock bajo
+              </label>
+            </div>
+          </SearchFilterBar>
+        }
+      >
       {error && <ErrorState message={error} />}
       {loading ? (
         <LoadingState label="Cargando artículos…" />
@@ -369,11 +394,11 @@ export function InventoryItemsPage() {
                     <DataTableCell>{item.code}</DataTableCell>
                     <DataTableCell>{item.name}</DataTableCell>
                     <DataTableCell>{item.category.name}</DataTableCell>
-                    <DataTableCell><span className={`badge ${quantityTone(item)}`}>{item.currentQuantity}</span></DataTableCell>
+                    <DataTableCell><StatusBadge variant={quantityTone(item)}>{item.currentQuantity}</StatusBadge></DataTableCell>
                     <DataTableCell>{item.minimumQuantity}</DataTableCell>
                     <DataTableCell>{item.unit}</DataTableCell>
                     <DataTableCell>{item.location || '—'}</DataTableCell>
-                    <DataTableCell><span className={`badge ${statusTone(item.status)}`}>{itemStatusLabels[item.status]}</span></DataTableCell>
+                    <DataTableCell><StatusBadge variant={statusTone(item.status)}>{itemStatusLabels[item.status]}</StatusBadge></DataTableCell>
                     <DataTableCell>{conditionLabels[item.condition]}</DataTableCell>
                     <DataTableCell>
                       <div className="actions">
@@ -399,7 +424,7 @@ export function InventoryItemsPage() {
             <div><dt>Cantidad mínima</dt><dd>{selected.minimumQuantity} {selected.unit}</dd></div>
             <div><dt>Unidad</dt><dd>{selected.unit}</dd></div>
             <div><dt>Ubicación</dt><dd>{selected.location || '—'}</dd></div>
-            <div><dt>Estado</dt><dd><span className={`badge ${statusTone(selected.status)}`}>{itemStatusLabels[selected.status]}</span></dd></div>
+            <div><dt>Estado</dt><dd><StatusBadge variant={statusTone(selected.status)}>{itemStatusLabels[selected.status]}</StatusBadge></dd></div>
             <div><dt>Condición</dt><dd>{conditionLabels[selected.condition]}</dd></div>
             <div><dt>Descripción</dt><dd>{selected.description || '—'}</dd></div>
           </dl>
@@ -485,7 +510,7 @@ export function InventoryItemsPage() {
                     {itemMovements.map((m) => (
                       <DataTableRow key={m.id}>
                         <DataTableCell>{new Date(m.createdAt).toLocaleString('es-CR')}</DataTableCell>
-                        <DataTableCell><span className="badge">{movementTypeLabels[m.type]}</span></DataTableCell>
+                        <DataTableCell><StatusBadge variant={m.type === 'ENTRY' ? 'success' : m.type === 'EXIT' ? 'warning' : 'info'}>{movementTypeLabels[m.type]}</StatusBadge></DataTableCell>
                         <DataTableCell>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</DataTableCell>
                         <DataTableCell>{m.reason}</DataTableCell>
                         <DataTableCell>{m.reference || '—'}</DataTableCell>

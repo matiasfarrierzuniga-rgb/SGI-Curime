@@ -17,6 +17,7 @@ import { conditionLabels, itemStatusLabels, movementTypeLabels } from '../../typ
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { InventoryPageLayout } from './InventoryPageLayout'
 
 const stockLimit = 20
@@ -177,7 +178,7 @@ export function InventoryReportsPage() {
                           <DataTableCell>{row.minimumQuantity}</DataTableCell>
                           <DataTableCell>{row.unit}</DataTableCell>
                           <DataTableCell>{row.location || '—'}</DataTableCell>
-                          <DataTableCell><span className={`badge ${row.status === 'ACTIVE' ? 'success' : 'neutral'}`}>{itemStatusLabels[row.status]}</span></DataTableCell>
+                          <DataTableCell><StatusBadge variant={row.status === 'ACTIVE' ? 'success' : 'neutral'}>{itemStatusLabels[row.status]}</StatusBadge></DataTableCell>
                           <DataTableCell>{conditionLabels[row.condition]}</DataTableCell>
                         </DataTableRow>
                       ))}
