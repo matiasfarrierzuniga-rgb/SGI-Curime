@@ -14,18 +14,36 @@ This file defines shared guidance, precedence and constraints. It does not requi
 
 ## Sources of truth
 
-Use the following precedence for repository work:
+Resolve instructions in this order:
 
-1. The user's explicit task and scope.
-2. Authoritative backend contracts, domain rules and capability rules.
-3. This `AGENTS.md` for skill orchestration.
-4. `frontend/CONVENTIONS.md` for the existing frontend architecture, tooling, design tokens and implementation conventions.
-5. Relevant local SGI skills under `.agents/skills/`.
-6. External/global skills as specialists or reviewers when available.
+1. Explicit user task and approved scope.
+2. Current authoritative backend contracts, domain rules and capability rules.
+3. This root `AGENTS.md`.
+4. Applicable directory-local `AGENTS.md`.
+5. Current tracked technical standards, including `frontend/CONVENTIONS.md` and `CONTRIBUTING.md`.
+6. Relevant local SGI skills under `.agents/skills/` and `.opencode/skills/`.
+7. External, generic, or provider-specific skills.
+8. OpenSpec, CU catalogs, operational snapshots, and historical documentation according to their documented status.
 
-When two instructions conflict, prefer the source with higher authority and preserve the narrower explicit task contract.
+When instructions conflict, prefer the higher authority and preserve the narrower approved task contract. Current Git, code, tests, and configuration outrank stale operational snapshots. Report contradictions; never repair them silently.
 
 Do not invent backend endpoints, domain states, capabilities, business rules, routes or fields.
+
+---
+
+## Skill selection
+
+Select the minimum skills whose specialty matches the task. Local SGI skills constrain generic skills; they do not require delegation or loading every installed skill.
+
+- General implementation, refactor, integration, testing: `sgi-development-foundation`.
+- Frontend structure: `sgi-frontend-architecture`.
+- Visual UI: `sgi-frontend-design`; add visual specialists only when relevant.
+- Forms and data entry: `sgi-forms-validation`.
+- Dashboard, AppShell, or authenticated navigation: `sgi-dashboard-ux`.
+- Responsive behavior and accessibility: `sgi-responsive-accessibility`.
+- Persistence: applicable backend contracts and a relevant Prisma skill, only within authorized backend scope.
+
+Equivalent skill copies installed for OpenCode, Claude, Continue, Junie, Kiro, CodeBuddy, or another provider are mirrors, not cumulative authorities. Use one accessible copy unless contents materially differ; report material drift instead of merging instructions automatically.
 
 ---
 
@@ -295,6 +313,10 @@ Engineering correctness alone is not sufficient for a visual task.
 
 Follow `sgi-development-foundation` and `frontend/CONVENTIONS.md` for relevant quality gates.
 
+Choose validation proportional to changed behavior and risk. Documentation-only work validates references, contradictions, artifact structure, OpenSpec, formatting, and Git scope. Runtime work adds focused tests and affected project gates. Database, migration, deployment, and destructive checks require explicit authorization and a safe identified environment.
+
+Report each applicable check as `PASSED`, `FAILED`, `NOT_EXECUTED`, or `NOT_APPLICABLE`, with evidence. Never claim a check passed when it was not executed.
+
 When the user explicitly states that they will execute tests themselves, do not run the project test suites automatically. Instead, identify the focused tests and verification commands they should execute.
 
 Do not expand a visual task into unrelated fixes merely because validation reveals pre-existing debt. Report unrelated findings separately unless they block correctness of the requested change.
@@ -313,13 +335,21 @@ The default goal is:
 
 ---
 
+## Design System V1 — future decisions
+
+The following remain proposed or pending until a dedicated Design System change specifies and implements them: button hierarchy; forms and inputs; tables; iconography; DatePicker, DateRangePicker, and CalendarView; toasts, dialogs, and notifications; localization; and component-level accessibility details.
+
+Current tokens, responsive rules, WCAG baseline, and existing shared primitives remain authoritative. Do not present this future list as implemented components or definitive APIs.
+
+---
+
 ## Alcance para cualquier agente o compañero
 
 - Trabaja con **un agente ejecutor por tarea**. No delegues automáticamente en Terra, Atlas, Forge, Pixel, Sentinel ni otros agentes históricos. Los archivos `backend/AGENTS.md` y `frontend/AGENTS.md` son **reglas por directorio**, no otros agentes.
 - No nombres una rama, worktree, commit, permiso o estado de despliegue como vigente sin verificar Git, código y configuración actuales. `PROJECT-STATE.md` es evidencia operativa que puede estar desactualizada: si contradice Git, informa la discrepancia sin corregirla silenciosamente.
 - Respeta `CONTRIBUTING.md`: los cambios compartidos entran por rama dedicada, revisión y Pull Request hacia `main`, no por push directo.
-- Cuando el árbol contiene modificaciones o untracked ajenos, no los sobrescribas, limpies, muevas ni incorpores al cambio. No uses `reset --hard`, `clean`, `stash`, `rebase`, `merge` ni `switch` para resolver el bloqueo sin instrucción expresa y plan de preservación. Puede hacerse análisis de solo lectura aun si el árbol está sucio.
-- Las fases son **EXPLORE** (inspección sin cambios), **PROPOSE** (especificación en workspace aprobado), **APPLY** (código solo con autorización expresa), **VERIFY** (evidencia de pruebas) y **ARCHIVE** (cerrar especificaciones solo cuando corresponda). No infieras permiso para APPLY a partir de una solicitud de análisis.
+- Cuando el árbol contiene modificaciones o untracked ajenos, no los sobrescribas, limpies, muevas ni incorpores al cambio. No crees worktrees ni cambies de rama sin autorización explícita. No uses `reset --hard`, `clean`, `stash`, `rebase`, `merge`, `switch`, commit, push o archive sin autorización explícita o contrato activo que nombre esa operación. Puede hacerse análisis de solo lectura aun si el árbol está sucio.
+- Las fases son **EXPLORE** (inspección sin cambios), **PROPOSE** (especificación), **APPLY** (código o documentación solo con autorización expresa), **VERIFY** (evidencia de pruebas) y **ARCHIVE** (cerrar especificaciones). Cada fase requiere autorización independiente; no infieras permiso para una fase posterior. ARCHIVE exige implementación completa, evidencia requerida y solicitud explícita.
 - Diferencia en cada informe `IMPLEMENTED`, `PROPOSED`, `PARTIAL`, `BLOCKED` y `NOT_VERIFIED`; nunca marques pruebas `PASSED` sin ejecutarlas ni afirmes que una tabla equivale a un proceso funcional completo.
 - Documenta cada incremento con objetivo, alcance, exclusiones, archivos afectados, contratos API/DB, migración/rollback si aplica, pruebas y riesgos. Evita correcciones fuera de alcance.
 - Nunca ejecutes migraciones, seeds, resets, backfills o suites destructivas contra datos reales sin autorización expresa, copia restaurable y entorno identificado. No imprimas datos personales, secretos, contraseñas ni tokens completos.
@@ -329,11 +359,13 @@ The default goal is:
 ## Autoridad y documentación
 
 1. Instrucciones explícitas y alcance aprobado por el responsable del proyecto.
-2. Evidencia actual de código, restricciones de base de datos, pruebas y configuración verificadas en la rama de trabajo (y `main` como referencia de integración).
-3. Decisiones arquitectónicas y reglas institucionales expresamente aprobadas.
-4. Este `AGENTS.md` y sus reglas especializadas en `backend/` y `frontend/`.
-5. `frontend/CONVENTIONS.md`, `CONTRIBUTING.md` y documentación técnica vigente, siempre cotejadas con el código.
-6. OpenSpec, especificaciones de casos de uso y documentación histórica, con su estado documental explícito.
+2. Contratos backend, reglas de dominio y capabilities vigentes.
+3. Este `AGENTS.md` y el `AGENTS.md` local aplicable.
+4. Evidencia actual de código, restricciones de base de datos, pruebas y configuración verificadas en la rama de trabajo; `main` permanece referencia estable de promoción cuando corresponda.
+5. Decisiones arquitectónicas y reglas institucionales expresamente aprobadas.
+6. `frontend/CONVENTIONS.md`, `CONTRIBUTING.md` y documentación técnica vigente, siempre cotejadas con el código.
+7. Skills locales SGI; después, skills externas o del proveedor.
+8. OpenSpec, especificaciones de casos de uso y documentación histórica, con su estado documental explícito.
 
 Una propuesta de OpenSpec no sustituye un contrato implementado ni modifica decisiones institucionales por sí misma. El catálogo de **155 casos de uso V2** corresponde a la especificación documental V2, no a 155 funcionalidades implementadas en V1. Preserva los identificadores CU y no mezcla estados de ambos repositorios.
 

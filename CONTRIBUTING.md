@@ -2,14 +2,16 @@
 
 ## Canonical integration policy
 
-`main` is the canonical integration branch. Direct feature, fix, refactor, documentation, test, or configuration work must not be developed directly on `main`.
+`main` is the shared integration branch. Direct feature, fix, refactor, documentation, test, or configuration work must not be developed directly on it.
+
+This is repository policy. It does not assert that GitHub branch protections or Rulesets are active; verify remote configuration separately before reporting it as enabled.
 
 All new work follows this lifecycle:
 
 ```text
 main
  │
- └── new branch
+ └── topic branch
       │
       ├── work
       ├── tests / verification
@@ -22,9 +24,9 @@ main
              └── merge → main
 ```
 
-## 1. Start from canonical main
+## 1. Start from shared integration baseline
 
-Before creating a branch:
+Before creating a branch, use the approved shared baseline:
 
 ```bash
 git switch main
@@ -33,7 +35,7 @@ git status
 git rev-parse HEAD
 ```
 
-The working tree must be clean before branching.
+The working tree must be clean before branching. Do not create a worktree or change branches to bypass existing work without explicit authorization and a preservation plan.
 
 ## 2. Create a dedicated branch
 
@@ -111,9 +113,9 @@ git push -u origin <branch-name>
 
 Direct pushes to `main` are prohibited by project policy.
 
-## 6. Open a Pull Request into main
+## 6. Open an integration Pull Request into main
 
-Every integration into `main` must use a Pull Request. The PR must include:
+Every shared integration into `main` must use a Pull Request. The PR must include:
 
 - purpose and scope;
 - explicit out-of-scope items;
@@ -137,9 +139,9 @@ A PR is mergeable only when:
 
 A green deployment status alone does not replace application tests, architecture checks, or backend E2E verification when those areas are affected.
 
-## 8. Merge
+## 8. Merge and promote
 
-Merge only through GitHub after the review/QA gate passes. Do not bypass branch protection for normal development.
+Merge an integration PR only through GitHub after the review/QA gate passes. Do not bypass configured protections for normal development.
 
 Use the repository's approved merge strategy consistently. After merge:
 
@@ -151,13 +153,15 @@ git branch -d <branch-name>
 
 Delete the remote branch when it is no longer needed.
 
+Record verification evidence appropriate to each reviewed Pull Request and do not claim a Ruleset, approval requirement, or protection is active without current remote evidence.
+
 ## 9. Emergency exception
 
 A direct change to `main` is reserved for exceptional repository recovery only. Any exception must be documented with reason, scope and verification evidence. Normal feature delivery, fixes, refactors and documentation changes do not qualify.
 
-## Main protection target
+## Protection target
 
-GitHub protection/ruleset for `main` should enforce the following project policy:
+GitHub protections or Rulesets for `main` should enforce the following project policy when configured:
 
 - require a Pull Request before merging;
 - require at least 1 approval;
@@ -169,4 +173,4 @@ GitHub protection/ruleset for `main` should enforce the following project policy
 - block branch deletion;
 - apply protections to administrators/maintainers where the repository plan and permissions allow it.
 
-Until CI workflows exist, local QA evidence remains mandatory and must be recorded in each PR.
+Until CI workflows exist, local QA evidence remains mandatory and must be recorded in each PR. This target is not evidence that remote enforcement currently exists.
