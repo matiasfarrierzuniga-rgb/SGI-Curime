@@ -31,8 +31,10 @@ export function UserFilters({
 }: UserFiltersProps) {
   return (
     <SearchFilterBar
-      className="gap-4 py-1"
+      className="py-1"
+      controlsClassName="sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(16rem,2fr)_minmax(9rem,1fr)_minmax(10rem,1fr)]"
       label="Buscar y filtrar usuarios"
+      role="search"
       onSubmit={(e: FormEvent) => {
         e.preventDefault();
         onSubmit();
@@ -45,37 +47,34 @@ export function UserFilters({
         </>
       }
     >
-      <FormField id="user-search" label="Buscar por nombre">
+      <FormField id="user-search" label="Buscar por nombre" className="min-w-0 md:col-span-2 xl:col-span-1">
         <SearchInput
           value={name}
           placeholder="Nombre de la persona"
           onChange={(e) => onNameChange(e.target.value)}
         />
       </FormField>
-      <fieldset className="flex min-w-0 flex-wrap gap-3 border-0 p-0">
-        <legend className="sr-only">Filtros de usuarios</legend>
-        <FormField id="user-status" label="Estado" className="min-w-36 flex-1">
-          <Select
-            value={status}
-            onChange={(e) => onStatusChange(e.target.value as UserStatus | "")}
-          >
-            <option value="">Todos</option>
-            <option value="ACTIVE">Activo</option>
-            <option value="INACTIVE">Inactivo</option>
-            <option value="BLOCKED">Bloqueado administrativo</option>
-          </Select>
-        </FormField>
-        <FormField id="user-role" label="Rol" className="min-w-40 flex-1">
-          <Select value={roleId} onChange={(e) => onRoleIdChange(e.target.value)}>
-            <option value="">Todos</option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </Select>
-        </FormField>
-      </fieldset>
+      <FormField id="user-status" label="Estado" className="min-w-0">
+        <Select
+          value={status}
+          onChange={(e) => onStatusChange(e.target.value as UserStatus | "")}
+        >
+          <option value="">Todos</option>
+          <option value="ACTIVE">Activo</option>
+          <option value="INACTIVE">Inactivo</option>
+          <option value="BLOCKED">Bloqueado administrativo</option>
+        </Select>
+      </FormField>
+      <FormField id="user-role" label="Rol" className="min-w-0">
+        <Select value={roleId} onChange={(e) => onRoleIdChange(e.target.value)}>
+          <option value="">Todos</option>
+          {roles.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </Select>
+      </FormField>
     </SearchFilterBar>
   );
 }

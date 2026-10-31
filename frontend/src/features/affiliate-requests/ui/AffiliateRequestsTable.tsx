@@ -1,5 +1,6 @@
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { Button } from '@/shared/ui/button'
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import type { AffiliateRequest, AffiliateRequestStatus } from '../model/affiliateRequests.types'
 
 type AffiliateRequestsTableProps = {
@@ -24,39 +25,37 @@ function formatPhone(phoneCountryCode: string | null, phoneNationalNumber: strin
 
 export function AffiliateRequestsTable({ requests, onView }: AffiliateRequestsTableProps) {
   return (
-    <div className="overflow-x-auto rounded-surface border border-border-default bg-surface-card" tabIndex={0} aria-label="Tabla de solicitudes de afiliación, desplazable horizontalmente">
-      <table className="min-w-[48rem] w-full text-left text-body-small">
-        <caption className="sr-only">Listado de solicitudes de afiliación</caption>
-        <thead className="bg-surface-muted text-caption uppercase tracking-wide text-text-secondary">
-          <tr>
-            <th scope="col" className="px-4 py-3 font-semibold">Persona solicitante</th>
-            <th scope="col" className="px-4 py-3 font-semibold">Identificación</th>
-            <th scope="col" className="px-4 py-3 font-semibold">Contacto</th>
-            <th scope="col" className="whitespace-nowrap px-4 py-3 font-semibold">Recibida</th>
-            <th scope="col" className="px-4 py-3 font-semibold">Estado</th>
-            <th scope="col" className="px-4 py-3 font-semibold"><span className="sr-only">Acciones</span></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border-default bg-surface-card text-text-primary">
+    <DataTable className="min-w-[48rem]" scrollLabel="En pantallas estrechas, desplaza horizontalmente para ver más columnas de solicitudes de afiliación">
+      <caption className="sr-only">Listado de solicitudes de afiliación</caption>
+      <DataTableHeader>
+        <DataTableRow className="hover:bg-surface-muted">
+          <DataTableHead>Persona solicitante</DataTableHead>
+          <DataTableHead>Identificación</DataTableHead>
+          <DataTableHead>Contacto</DataTableHead>
+          <DataTableHead className="whitespace-nowrap">Recibida</DataTableHead>
+          <DataTableHead>Estado</DataTableHead>
+          <DataTableHead className="text-right"><span className="sr-only">Acciones</span></DataTableHead>
+        </DataTableRow>
+      </DataTableHeader>
+      <DataTableBody>
           {requests.map((request) => {
             const status = statusPresentation[request.status]
             const phone = formatPhone(request.phoneCountryCode, request.phoneNationalNumber, request.phone)
 
             return (
-              <tr key={request.id} className="transition-colors hover:bg-surface-muted/60 focus-within:bg-surface-muted/80">
-                <td className="px-4 py-3.5 font-semibold text-text-primary">{request.fullName}</td>
-                <td className="px-4 py-3.5 tabular-nums text-text-secondary">{request.identification}</td>
-                <td className="px-4 py-3.5 text-text-secondary">
+              <DataTableRow key={request.id} className="focus-within:bg-surface-muted/80">
+                <DataTableCell className="font-semibold text-text-primary">{request.fullName}</DataTableCell>
+                <DataTableCell className="tabular-nums text-text-secondary">{request.identification}</DataTableCell>
+                <DataTableCell className="text-text-secondary">
                   {request.email || phone ? <div className="space-y-0.5 break-words"><p>{request.email}</p><p>{phone}</p></div> : 'Sin contacto'}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-text-secondary">{formatDate(request.createdAt)}</td>
-                <td className="px-4 py-3.5"><StatusBadge variant={status.variant}>{status.label}</StatusBadge></td>
-                <td className="px-4 py-3.5 text-right"><Button size="sm" variant="outline" type="button" aria-label={`Ver solicitud de ${request.fullName}`} onClick={() => onView(request.id)}>Ver</Button></td>
-              </tr>
+                </DataTableCell>
+                <DataTableCell className="whitespace-nowrap text-text-secondary">{formatDate(request.createdAt)}</DataTableCell>
+                <DataTableCell><StatusBadge variant={status.variant}>{status.label}</StatusBadge></DataTableCell>
+                <DataTableCell className="text-right"><Button size="sm" variant="outline" type="button" aria-label={`Ver solicitud de ${request.fullName}`} onClick={() => onView(request.id)}>Ver</Button></DataTableCell>
+              </DataTableRow>
             )
           })}
-        </tbody>
-      </table>
-    </div>
+      </DataTableBody>
+    </DataTable>
   )
 }

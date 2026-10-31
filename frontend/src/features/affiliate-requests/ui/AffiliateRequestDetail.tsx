@@ -3,11 +3,13 @@ import { useEffect, useRef, useState } from 'react'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { ErrorState } from '@/shared/ui/ErrorState'
+import { FormField } from '@/shared/ui/FormField'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { Modal } from '@/shared/ui/Modal'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { Button } from '@/shared/ui/button'
+import { Textarea } from '@/shared/ui/textarea'
 import { useAffiliateRequestDetail, useAffiliateRequestMutations } from '../hooks/useAffiliateRequestsQueries'
 import type { AffiliateRequestStatus } from '../model/affiliateRequests.types'
 
@@ -164,7 +166,7 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
   }
 
   if (dialog === 'reject-reason') {
-    return <Modal title="Rechazar solicitud" onClose={returnToDetail} busy={busy}><div className="space-y-4"><div><label className="font-semibold text-text-primary" htmlFor="rejection-reason">Motivo de rechazo</label><textarea id="rejection-reason" className="mt-2 min-h-28 w-full rounded-control border border-border-default p-3 text-text-primary" value={rejectionReason} onChange={(event) => { setRejectionReason(event.target.value); setReasonError('') }} aria-describedby={reasonError ? 'rejection-reason-error' : undefined} aria-invalid={Boolean(reasonError)} /></div>{reasonError && <p id="rejection-reason-error" role="alert">{reasonError}</p>}<div className="flex flex-wrap justify-end gap-3"><button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={returnToDetail} disabled={busy}>Cancelar</button><button className="min-h-10 rounded-control bg-danger px-4 font-semibold text-white" type="button" onClick={continueReject} disabled={busy}>Continuar</button></div></div></Modal>
+    return <Modal title="Rechazar solicitud" onClose={returnToDetail} busy={busy}><div className="space-y-4"><FormField id="rejection-reason" label="Motivo de rechazo" error={reasonError || undefined}><Textarea value={rejectionReason} onChange={(event) => { setRejectionReason(event.target.value); setReasonError('') }} /></FormField><div className="flex flex-wrap justify-end gap-3"><Button variant="outline" type="button" onClick={returnToDetail} disabled={busy}>Cancelar</Button><Button variant="danger" type="button" onClick={continueReject} disabled={busy}>Continuar</Button></div></div></Modal>
   }
 
   return (
@@ -173,7 +175,7 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
         {detailQuery.isPending ? (
           <LoadingState label="Cargando detalle de solicitud..." />
         ) : detailQuery.isError ? (
-          <ErrorState title="No fue posible cargar la solicitud" message={getErrorMessage(detailQuery.error, 'Intente nuevamente.')} action={<button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={() => void detailQuery.refetch()}>Reintentar</button>} />
+          <ErrorState title="No fue posible cargar la solicitud" message={getErrorMessage(detailQuery.error, 'Intente nuevamente.')} action={<Button variant="outline" type="button" onClick={() => void detailQuery.refetch()}>Reintentar</Button>} />
         ) : request ? (
             <div className="space-y-7">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-default pb-4">
