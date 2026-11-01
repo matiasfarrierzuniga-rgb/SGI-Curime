@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { useState, type FormEvent } from 'react'
 import { CalendarDays, Pencil, Plus, UsersRound } from 'lucide-react'
 import { useAuth } from '@/features/auth'
@@ -159,10 +160,10 @@ export function InstitutionalBoardPage() {
         <Card>
           <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between"><div><CardTitle>Nombramientos</CardTitle><CardDescription className="mt-1">Período del {dateOnly(selected!.startsOn)} al {dateOnly(selected!.endsOn)}.</CardDescription></div>{canManage ? <Button type="button" variant="outline" size="sm" onClick={beginTermEdit}><Pencil aria-hidden="true" /> Editar período</Button> : null}</CardHeader>
           <CardContent>{selected!.appointments.length === 0 ? <EmptyState title="Sin nombramientos" description={canManage ? 'Agregue un nombramiento cuando disponga de la información confirmada.' : 'Este período no tiene nombramientos disponibles.'} /> : <div className="overflow-x-auto rounded-control border border-border-default">
-            <table className="min-w-[42rem] w-full text-left text-body-small">
-              <thead className="bg-surface-subtle text-text-secondary"><tr><th scope="col" className="p-3 font-semibold">Cargo</th><th scope="col" className="p-3 font-semibold">Persona</th><th scope="col" className="p-3 font-semibold">Plaza</th><th scope="col" className="p-3 font-semibold">Vigencia</th>{canManage ? <th scope="col" className="p-3"><span className="sr-only">Acciones</span></th> : null}</tr></thead>
-              <tbody>{selected!.appointments.map(item => <tr key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-subtle/70"><td className="p-3 font-semibold text-text-primary">{BOARD_POSITION_LABELS[item.position]}</td><td className="p-3 text-text-primary">{personName(item)}</td><td className="p-3 text-text-secondary">{item.seatNumber ?? '—'}</td><td className="p-3 whitespace-nowrap text-text-secondary">{dateOnly(item.startsOn)} — {dateOnly(item.endsOn)}</td>{canManage ? <td className="p-3 text-right"><Button type="button" size="sm" variant="outline" onClick={() => edit(item)}><Pencil aria-hidden="true" /> Editar</Button></td> : null}</tr>)}</tbody>
-            </table>
+            <DataTable className="min-w-[42rem] w-full text-left text-body-small">
+              <DataTableHeader className="bg-surface-subtle text-text-secondary"><DataTableRow><DataTableHead scope="col" className="p-3 font-semibold">Cargo</DataTableHead><DataTableHead scope="col" className="p-3 font-semibold">Persona</DataTableHead><DataTableHead scope="col" className="p-3 font-semibold">Plaza</DataTableHead><DataTableHead scope="col" className="p-3 font-semibold">Vigencia</DataTableHead>{canManage ? <DataTableHead scope="col" className="p-3"><span className="sr-only">Acciones</span></DataTableHead> : null}</DataTableRow></DataTableHeader>
+              <DataTableBody>{selected!.appointments.map(item => <DataTableRow key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-subtle/70"><DataTableCell className="p-3 font-semibold text-text-primary">{BOARD_POSITION_LABELS[item.position]}</DataTableCell><DataTableCell className="p-3 text-text-primary">{personName(item)}</DataTableCell><DataTableCell className="p-3 text-text-secondary">{item.seatNumber ?? '—'}</DataTableCell><DataTableCell className="p-3 whitespace-nowrap text-text-secondary">{dateOnly(item.startsOn)} — {dateOnly(item.endsOn)}</DataTableCell>{canManage ? <DataTableCell className="p-3 text-right"><Button type="button" size="sm" variant="outline" onClick={() => edit(item)}><Pencil aria-hidden="true" /> Editar</Button></DataTableCell> : null}</DataTableRow>)}</DataTableBody>
+            </DataTable>
           </div>}</CardContent>
         </Card>
 

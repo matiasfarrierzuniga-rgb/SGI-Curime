@@ -1,3 +1,5 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { Button } from '@/shared/ui/button'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { useAuth } from '@/features/auth'
@@ -10,7 +12,14 @@ import { getErrorMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { InventoryPageLayout } from './InventoryPageLayout'
+import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { FormField } from '@/shared/ui/FormField'
+import { Input } from '@/shared/ui/input'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { SearchFilterBar } from '@/shared/ui/SearchFilterBar'
+import { Select } from '@/shared/ui/select'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 20
 
@@ -99,29 +108,45 @@ export function InventoryMovementsPage() {
   }
 
   return (
-    <InventoryPageLayout title="Movimientos" description="Historial inmutable de entradas, salidas y ajustes de inventario.">
-      <div className="space-y-5">
-      <form className="filters card" onSubmit={submit}>
-        <label>Artículo<select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
-          <option value="">Todos</option>
-          {items.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.code})</option>)}
-        </select></label>
-        <label>Tipo<select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-          <option value="">Todos</option>
-          <option value="ENTRY">Entrada</option>
-          <option value="EXIT">Salida</option>
-          <option value="ADJUSTMENT">Ajuste</option>
-        </select></label>
-        {isAdmin && (
-          <label>Registrado por<select value={form.userId} onChange={(e) => setForm({ ...form, userId: e.target.value })}>
-            <option value="">Todos</option>
-            {users.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
-          </select></label>
-        )}
-        <label>Desde<input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} /></label>
-        <label>Hasta<input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} /></label>
-        <div className="actions"><button className="primary">Aplicar filtros</button></div>
-      </form>
+    <InventoryPageContainer>
+      <AdministrativeListLayout
+        header={<PageHeader className="gap-4 pb-5" context="Inventario" title="Movimientos" description="Historial inmutable de entradas, salidas y ajustes de inventario." />}
+        filters={
+          <SearchFilterBar
+            label="Filtrar movimientos"
+            controlsClassName={isAdmin ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-2 xl:grid-cols-4'}
+            onSubmit={submit}
+            actions={<Button type="submit">Aplicar filtros</Button>}
+          >
+            <FormField id="inventory-movement-item" label="Artículo">
+              <Select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
+                <option value="">Todos</option>
+                {items.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.code})</option>)}
+              </Select>
+            </FormField>
+            <FormField id="inventory-movement-type" label="Tipo">
+              <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                <option value="">Todos</option>
+                <option value="ENTRY">Entrada</option>
+                <option value="EXIT">Salida</option>
+                <option value="ADJUSTMENT">Ajuste</option>
+              </Select>
+            </FormField>
+            {isAdmin && <FormField id="inventory-movement-user" label="Registrado por">
+              <Select value={form.userId} onChange={(e) => setForm({ ...form, userId: e.target.value })}>
+                <option value="">Todos</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
+              </Select>
+            </FormField>}
+            <FormField id="inventory-movement-date-from" label="Desde">
+              <Input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} />
+            </FormField>
+            <FormField id="inventory-movement-date-to" label="Hasta">
+              <Input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} />
+            </FormField>
+          </SearchFilterBar>
+        }
+      >
       {error && <ErrorState message={error} />}
       {loading ? (
         <LoadingState label="Cargando movimientos…" />
@@ -129,30 +154,28 @@ export function InventoryMovementsPage() {
         <EmptyState title="Sin movimientos" description="No hay movimientos que coincidan con los filtros." />
       ) : (
         <>
-          <div className="table-wrap" tabIndex={0} aria-label="Tabla de movimientos, desplazable horizontalmente">
-            <table>
-              <thead>
-                <tr><th>Fecha</th><th>Artículo</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Referencia</th><th>Registrado por</th></tr>
-              </thead>
-              <tbody>
+            <DataTable scrollLabel="Tabla de movimientos, desplazable horizontalmente">
+              <DataTableHeader>
+                <DataTableRow><DataTableHead>Fecha</DataTableHead><DataTableHead>Artículo</DataTableHead><DataTableHead>Tipo</DataTableHead><DataTableHead>Cantidad</DataTableHead><DataTableHead>Motivo</DataTableHead><DataTableHead>Referencia</DataTableHead><DataTableHead>Registrado por</DataTableHead></DataTableRow>
+              </DataTableHeader>
+              <DataTableBody>
                 {movements.map((m) => (
-                  <tr key={m.id}>
-                    <td>{new Date(m.createdAt).toLocaleString('es-CR')}</td>
-                    <td>{m.item.name}</td>
-                    <td><span className="badge">{movementTypeLabels[m.type]}</span></td>
-                    <td>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</td>
-                    <td>{m.reason}</td>
-                    <td>{m.reference || '—'}</td>
-                    <td>{m.createdBy?.fullName ?? '—'}</td>
-                  </tr>
+                  <DataTableRow key={m.id}>
+                    <DataTableCell>{new Date(m.createdAt).toLocaleString('es-CR')}</DataTableCell>
+                    <DataTableCell>{m.item.name}</DataTableCell>
+                    <DataTableCell><StatusBadge variant={m.type === 'ENTRY' ? 'success' : m.type === 'EXIT' ? 'warning' : 'info'}>{movementTypeLabels[m.type]}</StatusBadge></DataTableCell>
+                    <DataTableCell>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</DataTableCell>
+                    <DataTableCell>{m.reason}</DataTableCell>
+                    <DataTableCell>{m.reference || '—'}</DataTableCell>
+                    <DataTableCell>{m.createdBy?.fullName ?? '—'}</DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </DataTableBody>
+            </DataTable>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
-      </div>
-    </InventoryPageLayout>
+      </AdministrativeListLayout>
+    </InventoryPageContainer>
   )
 }

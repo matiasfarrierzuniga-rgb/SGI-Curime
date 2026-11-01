@@ -28,7 +28,7 @@ function DataTable({
 
   return (
     <div data-slot="data-table-layout" className="grid gap-4">
-      <div data-slot="data-table-container" className={cn("w-full overflow-x-auto rounded-surface border border-border bg-surface", containerClassName)} tabIndex={0} aria-label={scrollLabel}>
+      <div data-slot="data-table-container" className={cn("w-full overflow-x-auto rounded-surface border border-border bg-surface", containerClassName)} role="region" tabIndex={0} aria-label={scrollLabel}>
         <table data-slot="data-table" className={cn("w-full min-w-full border-collapse text-body-small", className)} {...props}>
           {state ? (
             <tbody>
@@ -63,7 +63,7 @@ function DataTableCell({ className, ...props }: ComponentProps<"td">) {
 }
 
 function DataTableRow({ className, ...props }: ComponentProps<"tr">) {
-  return <tr data-slot="data-table-row" className={cn("transition-colors hover:bg-surface-muted/60", className)} {...props} />
+  return <tr data-slot="data-table-row" className={cn("transition-colors hover:bg-surface-muted/60 focus-within:bg-surface-muted/80", className)} {...props} />
 }
 
 export { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow }

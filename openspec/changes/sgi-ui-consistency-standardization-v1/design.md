@@ -111,6 +111,35 @@ Esta matriz convierte la intención UX en evidencia de Apply/Verify, con priorid
 
 Nota: `DataTable` itself is shared infrastructure, not an additional consumer row. La cuenta administrativa es 23 de 24 tablas; el historial personal se conserva como excepción hasta que exista PBI explícito.
 
+### Reconciliación DataTable institucional V1
+
+La implementación global migra toda declaración local de tabla al contrato `DataTable` con `DataTableHeader`, `DataTableBody`, `DataTableRow`, `DataTableHead` y `DataTableCell`. La búsqueda estática posterior no encuentra `<table>` fuera de `shared/ui/DataTable.tsx`. Se conservan tarjetas móviles, alternativas de lectura y lógica de cada módulo; no son tablas paralelas.
+
+| Módulo | Archivo | Anterior | Nuevo | Estado | Excepción |
+|---|---|---|---|---|---|
+| Usuarios | `features/users/ui/UsersTable.tsx` | DataTable | DataTable + PersonAvatar | Migrada | Ninguna |
+| Afiliados | `features/affiliates/ui/AffiliatesTable.tsx` | HTML local | DataTable + PersonAvatar | Migrada | Ninguna |
+| Solicitudes de cuenta | `pages/admin/UserRequestsPage.tsx` | HTML local | DataTable + PersonAvatar | Migrada | Referencia aprobada |
+| Solicitudes de afiliación | `features/affiliate-requests/ui/AffiliateRequestsTable.tsx` | HTML local | DataTable + PersonAvatar | Migrada | Ninguna |
+| Reservas | `features/reservations/ui/ReservationAdminPage.tsx` | DataTable | DataTable | Compatible | Tarjetas móviles conservadas |
+| Justificaciones admin | `features/absence-justifications/ui/AbsenceJustificationsPage.tsx` | HTML local | DataTable | Migrada | Ninguna |
+| Historial personal | `features/absence-justifications/ui/AffiliateJustificationsPage.tsx` | HTML local | DataTable | Migrada | Historial personal, no avatar |
+| Donaciones | `features/donations/ui/DonationsPage.tsx` | HTML local | DataTable | Migrada | Tarjetas móviles conservadas |
+| Emprendimientos | `features/entrepreneurship/ui/VenturesPage.tsx` | HTML local | DataTable | Migrada | Tarjetas móviles conservadas |
+| Eventos | `features/events/ui/EventsManagementPage.tsx` | HTML local | DataTable | Migrada | Ninguna |
+| Oportunidades | `features/volunteering/ui/OpportunitiesPage.tsx` | HTML local | DataTable | Migrada | Tarjetas móviles conservadas |
+| Junta Directiva | `features/institutional-board/ui/InstitutionalBoardPage.tsx` | HTML local | DataTable | Migrada | Reglas person-first preservadas |
+| Cargos/pagos | `features/financial/ui/FinancialPage.tsx` | HTML local | DataTable | Migrada | Columnas progresivas |
+| Movimientos financieros | `features/financial/ui/FinancialMovementsPage.tsx` | HTML local | DataTable | Migrada | Columnas progresivas |
+| Dashboard financiero | `features/financial/ui/FinancialDashboardPage.tsx` | 2 HTML locales | 2 DataTable | Migrada | Tabla de valores del gráfico conserva propósito accesible |
+| Reporte DINADECO | `features/financial/ui/DinadecoAnnualReportPage.tsx` | HTML local | DataTable | Migrada | Reporte denso |
+| Bitácora | `pages/admin/AuditLogsPage.tsx` | HTML local | DataTable | Migrada | Ninguna |
+| Inventario categorías | `pages/inventory/InventoryCategoriesPage.tsx` | HTML local | DataTable | Migrada | Ninguna |
+| Inventario artículos | `pages/inventory/InventoryItemsPage.tsx` | 2 HTML locales | 2 DataTable | Migrada | Detalle de movimientos en modal |
+| Inventario préstamos | `pages/inventory/InventoryLoansPage.tsx` | HTML local | DataTable | Migrada | Ninguna |
+| Inventario movimientos | `pages/inventory/InventoryMovementsPage.tsx` | HTML local | DataTable | Migrada | Ninguna |
+| Inventario reportes | `pages/inventory/InventoryReportsPage.tsx` | HTML local | DataTable | Migrada | Reporte denso |
+
 ### Control and duplication map
 
 | Patrón | Compartido existente | Duplicación observada | Riesgo visible |
@@ -168,6 +197,16 @@ Los iconos de búsqueda y acciones deben quedar en composición estable (`relati
 ### 6. Validación por evidencia y por viewport
 
 Cada lote tendrá pruebas focalizadas y revisión manual en 320/375/768/1024/1440 px, teclado, foco, lector de pantalla, contraste y overflow. `npm run verify` no se ejecuta en Explore; queda reservado para APPLY/VERIFY autorizado. Ninguna observación visual se marca como PASSED sin evidencia.
+
+### 7. Composición de listados administrativos
+
+`AdministrativeListLayout` compone superficies operativas ya basadas en `PageHeader`, filtros, `DataTable` y `Pagination`; no sustituye ninguna primitive ni introduce lógica de dominio. Sus consumidores iniciales son Afiliados, Usuarios y ambas solicitudes.
+
+- **Jerarquía y espaciado:** encabezado compacto primero; filtros inmediatamente después; resultados, tabla y paginación forman una misma unidad con `space-y-4`. El layout separa sus unidades con `space-y-6`, evitando sumar encabezados narrativos locales y `space-y-8` antes de la primera fila.
+- **Filtros:** etiquetas de campos y el nombre accesible del formulario preservan su responsabilidad. Los filtros simples usan una franja delimitada; filtros con aplicación diferida o filtros activos pueden conservar su panel propio cuando ese feedback es necesario.
+- **Resultados:** una `h2` semántica nombra la región para lectores de pantalla; el conteo visible, con anuncio `aria-live`, queda junto a la tabla. Las instrucciones de acción se muestran solo si orientan la siguiente acción; no se repite una explicación de columnas cuyo propietario accesible es `DataTable`.
+- **Scroll horizontal:** `DataTable` es único propietario de la región desplazable y focusable. Ningún consumidor de este patrón añade un segundo wrapper de overflow horizontal o `tabIndex` alrededor de la tabla.
+- **Taxonomía:** listados operativos usan este contrato. Dashboards pueden priorizar indicadores; detalles y formularios conservan jerarquía por tarea; reportes densos, Junta Directiva y Asambleas son excepciones hasta contar con evidencia y alcance propios.
 
 ## Migration Plan
 

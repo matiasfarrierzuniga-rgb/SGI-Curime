@@ -1,6 +1,7 @@
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { Button } from '@/shared/ui/button'
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { PersonAvatar } from '@/shared/ui/PersonAvatar'
 import type { AffiliateRequest, AffiliateRequestStatus } from '../model/affiliateRequests.types'
 
 type AffiliateRequestsTableProps = {
@@ -28,7 +29,7 @@ export function AffiliateRequestsTable({ requests, onView }: AffiliateRequestsTa
     <DataTable className="min-w-[48rem]" scrollLabel="En pantallas estrechas, desplaza horizontalmente para ver más columnas de solicitudes de afiliación">
       <caption className="sr-only">Listado de solicitudes de afiliación</caption>
       <DataTableHeader>
-        <DataTableRow className="hover:bg-surface-muted">
+        <DataTableRow>
           <DataTableHead>Persona solicitante</DataTableHead>
           <DataTableHead>Identificación</DataTableHead>
           <DataTableHead>Contacto</DataTableHead>
@@ -43,8 +44,13 @@ export function AffiliateRequestsTable({ requests, onView }: AffiliateRequestsTa
             const phone = formatPhone(request.phoneCountryCode, request.phoneNationalNumber, request.phone)
 
             return (
-              <DataTableRow key={request.id} className="focus-within:bg-surface-muted/80">
-                <DataTableCell className="font-semibold text-text-primary">{request.fullName}</DataTableCell>
+              <DataTableRow key={request.id}>
+                <DataTableCell>
+                  <div className="flex min-w-48 items-center gap-3">
+                    <PersonAvatar name={request.fullName} />
+                    <span className="min-w-0 break-words font-semibold text-text-primary">{request.fullName}</span>
+                  </div>
+                </DataTableCell>
                 <DataTableCell className="tabular-nums text-text-secondary">{request.identification}</DataTableCell>
                 <DataTableCell className="text-text-secondary">
                   {request.email || phone ? <div className="space-y-0.5 break-words"><p>{request.email}</p><p>{phone}</p></div> : 'Sin contacto'}

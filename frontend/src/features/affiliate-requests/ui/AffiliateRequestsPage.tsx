@@ -3,6 +3,7 @@ import { getErrorMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
+import { AdministrativeListLayout, AdministrativeListResults } from '@/shared/ui/AdministrativeListLayout'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Button } from '@/shared/ui/button'
@@ -41,10 +42,9 @@ export function AffiliateRequestsPage() {
   }
 
   return (
-    <section className="space-y-8">
-      <PageHeader context="Administración · Afiliaciones" title="Solicitudes de afiliación" description="Revise, filtre y gestione las solicitudes recibidas." />
-      <section aria-labelledby="affiliate-request-filters-heading">
-        <AffiliateRequestsFilters
+    <AdministrativeListLayout
+      header={<PageHeader className="gap-4 pb-5" context="Administración · Afiliaciones" title="Solicitudes de afiliación" description="Revise, filtre y gestione las solicitudes recibidas." />}
+      filters={<AffiliateRequestsFilters
           search={search}
           email={emailDraft}
           appliedEmail={email}
@@ -59,8 +59,8 @@ export function AffiliateRequestsPage() {
           onIdentificationChange={(value) => updateFilter(() => setIdentification(value))}
           onStatusChange={(value) => updateFilter(() => setStatus(value))}
           onClear={clearFilters}
-        />
-      </section>
+        />}
+    >
       {listQuery.isPending ? (
         <LoadingState label="Cargando solicitudes de afiliación..." />
       ) : listQuery.isError ? (
@@ -72,19 +72,12 @@ export function AffiliateRequestsPage() {
           action={hasFilters ? <Button type="button" variant="outline" onClick={clearFilters}>Limpiar filtros</Button> : undefined}
         />
       ) : (
-        <section className="space-y-4" aria-labelledby="affiliate-request-results-heading">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-            <div>
-              <h2 id="affiliate-request-results-heading" className="text-heading-2 font-bold text-text-primary">Resultados</h2>
-              <p className="text-body-small text-text-secondary" aria-live="polite">{total} {total === 1 ? 'solicitud encontrada' : 'solicitudes encontradas'}</p>
-            </div>
-            <p className="text-caption text-text-secondary">Seleccione una solicitud para revisar sus datos.</p>
-          </div>
+        <AdministrativeListResults count={`${total} ${total === 1 ? 'solicitud encontrada' : 'solicitudes encontradas'}`} actions="Seleccione una solicitud para revisar sus datos.">
           <AffiliateRequestsTable requests={requests} onView={setSelectedRequestId} />
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
-        </section>
+        </AdministrativeListResults>
       )}
       {selectedRequestId !== null && <AffiliateRequestDetail key={selectedRequestId} requestId={selectedRequestId} onClose={() => setSelectedRequestId(null)} />}
-    </section>
+    </AdministrativeListLayout>
   )
 }

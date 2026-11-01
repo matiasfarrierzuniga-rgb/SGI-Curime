@@ -5,6 +5,7 @@ import { statusLabel } from "../model/userStatus";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from "@/shared/ui/DataTable";
+import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 
 type ManagementAction = "edit" | "role" | "activate" | "deactivate" | "unlock";
 
@@ -97,7 +98,7 @@ export function UsersTable({ users, onOpen, onManage }: UsersTableProps) {
   return (
     <DataTable className="min-w-[980px]" scrollLabel="En pantallas estrechas, desplaza horizontalmente para ver más columnas de usuarios">
       <DataTableHeader>
-        <DataTableRow className="hover:bg-surface-muted">
+        <DataTableRow>
           <DataTableHead>Persona</DataTableHead>
           <DataTableHead>Contacto personal</DataTableHead>
           <DataTableHead>Cuenta SGI</DataTableHead>
@@ -109,7 +110,12 @@ export function UsersTable({ users, onOpen, onManage }: UsersTableProps) {
       <DataTableBody>
         {users.map((user) => (
           <DataTableRow key={user.id}>
-            <DataTableCell className="min-w-48 font-semibold text-text-primary">{user.fullName || "Persona sin nombre registrado"}</DataTableCell>
+            <DataTableCell>
+              <div className="flex min-w-48 items-center gap-3">
+                <PersonAvatar name={user.fullName} />
+                <span className="min-w-0 break-words font-semibold text-text-primary">{user.fullName || "Persona sin nombre registrado"}</span>
+              </div>
+            </DataTableCell>
             <DataTableCell className="w-56 max-w-56 overflow-hidden text-ellipsis whitespace-nowrap text-text-secondary">{user.person.contactEmail || "Sin correo de contacto"}</DataTableCell>
             <DataTableCell className="w-56 max-w-56">
               {user.access ? <div className="grid gap-1"><Badge variant={user.access.isBlocked ? "warning" : user.access.status === "ACTIVE" ? "success" : "neutral"}>{statusLabel(user.access)}</Badge><span className="overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text-secondary">{user.access.email}</span></div> : <span className="text-text-secondary">Sin cuenta SGI</span>}

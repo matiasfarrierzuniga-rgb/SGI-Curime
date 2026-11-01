@@ -5,6 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ErrorState } from "@/shared/ui/ErrorState";
 import { LoadingState } from "@/shared/ui/LoadingState";
+import { AdministrativeListLayout, AdministrativeListResults } from "@/shared/ui/AdministrativeListLayout";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import type { User, UserStatus, UserUpdate } from "../model/users.types";
 import { getErrorMessage } from "@/shared/lib/errors";
@@ -90,13 +91,14 @@ export function UsersPage() {
   const hasActiveFilters = Boolean(query || status || roleId);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <AdministrativeListLayout
+      header={<PageHeader
+        className="gap-4 pb-5"
         context="Administración"
         title="Usuarios"
         description="Consulte personas, sus cuentas SGI y la afiliación disponible."
-      />
-      <UserFilters
+      />}
+      filters={<UserFilters
         name={name}
         onNameChange={setName}
         status={status}
@@ -115,13 +117,8 @@ export function UsersPage() {
           setQuery(name.trim());
         }}
         onClear={clearFilters}
-      />
-      <div className="flex flex-col gap-1 border-b border-border-subtle pb-3 sm:flex-row sm:items-baseline sm:justify-between">
-        <p className="text-body-small font-semibold text-text-primary">
-          {loading ? "Cargando resultados…" : `${total} ${total === 1 ? "persona encontrada" : "personas encontradas"}`}
-        </p>
-        <p className="text-body-small text-text-secondary">Desplácese horizontalmente para ver todas las columnas.</p>
-      </div>
+      />}
+    >
       {error ? <ErrorState message={error} action={<Button type="button" variant="outline" onClick={() => { void listQuery.refetch(); void rolesQuery.refetch(); }}>Reintentar</Button>} /> : null}
       {!error && loading ? (
         <LoadingState label="Cargando usuarios…" />
@@ -132,15 +129,15 @@ export function UsersPage() {
           action={hasActiveFilters ? <Button type="button" variant="outline" onClick={clearFilters}>Limpiar filtros</Button> : undefined}
         />
       ) : (
-        <>
-           <UsersTable users={users} onOpen={setSelectedId} onManage={(user, action) => setManagement({ user, action })} />
+        <AdministrativeListResults count={loading ? "Cargando resultados…" : `${total} ${total === 1 ? "persona encontrada" : "personas encontradas"}`}>
+          <UsersTable users={users} onOpen={setSelectedId} onManage={(user, action) => setManagement({ user, action })} />
           <Pagination
             page={page}
             total={total}
             limit={limit}
             onChange={setPage}
           />
-        </>
+        </AdministrativeListResults>
       )}
       {selectedId !== null && (
         <UserDetailsModal
@@ -164,6 +161,6 @@ export function UsersPage() {
         onChangeRole={(roleId) => management && mutation.mutate({ action: "role", user: management.user, payload: roleId })}
         onLifecycle={(action) => management && mutation.mutate({ action, user: management.user })}
       />
-    </div>
+    </AdministrativeListLayout>
   );
 }
