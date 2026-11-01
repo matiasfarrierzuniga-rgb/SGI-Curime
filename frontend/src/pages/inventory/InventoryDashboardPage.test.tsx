@@ -3,10 +3,16 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { InventoryDashboardPage } from './InventoryDashboardPage'
 import { inventoryReportsService } from '../../services/inventoryReportsService'
+import { inventoryAlertsService } from '../../services/inventoryAlertsService'
+import { inventoryLoansService } from '../../services/inventoryLoansService'
+import { inventoryMovementsService } from '../../services/inventoryMovementsService'
 
 vi.mock('../../services/inventoryReportsService', () => ({
-  inventoryReportsService: { summary: vi.fn() },
+  inventoryReportsService: { summary: vi.fn(), stock: vi.fn(), movements: vi.fn(), loans: vi.fn() },
 }))
+vi.mock('../../services/inventoryAlertsService', () => ({ inventoryAlertsService: { get: vi.fn() } }))
+vi.mock('../../services/inventoryLoansService', () => ({ inventoryLoansService: { list: vi.fn() } }))
+vi.mock('../../services/inventoryMovementsService', () => ({ inventoryMovementsService: { list: vi.fn() } }))
 
 const summary = {
   totalItems: 10,
@@ -30,6 +36,12 @@ describe('InventoryDashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(inventoryReportsService.summary).mockResolvedValue(summary)
+    vi.mocked(inventoryReportsService.stock).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100 })
+    vi.mocked(inventoryReportsService.movements).mockResolvedValue({ period: { dateFrom: null, dateTo: null }, summary: { entries: { count: 0, quantity: 0 }, exits: { count: 0, quantity: 0 }, adjustments: { count: 0, quantity: 0 } } })
+    vi.mocked(inventoryReportsService.loans).mockResolvedValue({ period: { dateFrom: null, dateTo: null }, summary: { active: 0, returned: 0, cancelled: 0, overdue: 0, total: 0 } })
+    vi.mocked(inventoryAlertsService.get).mockResolvedValue({ summary: { lowStock: 0, outOfStock: 0, overdueLoans: 0, inactiveItems: 0, damagedItems: 0 }, lowStock: [], outOfStock: [], overdueLoans: [], inactiveItems: [], damagedItems: [] })
+    vi.mocked(inventoryMovementsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 5 })
+    vi.mocked(inventoryLoansService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 5 })
   })
 
   it('shows loading and then the summary cards', async () => {
