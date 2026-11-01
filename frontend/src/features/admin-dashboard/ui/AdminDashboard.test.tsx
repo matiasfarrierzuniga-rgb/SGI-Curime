@@ -43,7 +43,6 @@ describe('AdminDashboard', () => {
     expect(screen.getByRole('heading', { name: 'Accesos rápidos' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Calendario institucional' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Resumen por módulo' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Estado de procesos' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Próximas actividades' })).toBeInTheDocument()
     expect(screen.getAllByText('Reservas pendientes').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Afiliados activos').length).toBeGreaterThan(0)
@@ -71,6 +70,19 @@ describe('AdminDashboard', () => {
     expect(within(navigation).getByRole('link', { name: 'Inventario' })).toHaveAttribute('href', '/inventory')
     expect(within(navigation).getByRole('link', { name: 'Ver reportes' })).toHaveAttribute('href', '/inventory/reports')
     expect(within(navigation).queryByRole('link', { name: 'Administrar usuarios' })).not.toBeInTheDocument()
+  })
+
+  it('shows recent audit activity only with its authorized capability', async () => {
+    vi.mocked(httpClient.get).mockImplementation((url: string) => {
+      if (url === '/admin-reports/dashboard') return Promise.resolve({ data: response })
+      if (url === '/audit-logs') return Promise.resolve({ data: { data: [{ id: 3, action: 'UPDATE', module: 'AFFILIATES', createdAt: '2026-09-14T11:30:00.000Z', user: { id: 2, fullName: 'María López', email: 'maria@example.test' } }], total: 1, page: 1, limit: 5 } })
+      return Promise.reject(new Error('unexpected endpoint'))
+    })
+    renderDashboard(['aud.logs.read'])
+    expect(await screen.findByRole('heading', { name: 'Actividad reciente' })).toBeInTheDocument()
+    expect(screen.getByText('María López', { exact: false })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Ver bitácora/ })).toHaveAttribute('href', '/admin/audit-logs')
+    expect(httpClient.get).toHaveBeenCalledWith('/audit-logs', { params: { page: 1, limit: 5 } })
   })
 
   it('marks real authorized reservations, assemblies and public events by category on the same Costa Rica day', async () => {

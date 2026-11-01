@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowRight, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, FileClock, FileText, Heart, Package, PackageX, RefreshCw, Sun, UserPlus, Users, UsersRound } from 'lucide-react'
+import { AlertTriangle, ArrowRight, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, ClipboardList, FileClock, FileText, Heart, History, Package, PackageX, RefreshCw, Sun, UserPlus, Users, UsersRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { usePublicEvents } from '@/features/events'
 import type { PublicEvent } from '@/features/events'
@@ -15,8 +15,8 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { hasCapability, type AccessCapability } from '@/shared/security/access'
-import { useAdminDashboard } from '../hooks/useAdminDashboard'
-import type { AdminDashboardData } from '../model/adminDashboard.types'
+import { useAdminDashboard, useRecentAdminActivity } from '../hooks/useAdminDashboard'
+import type { AdminDashboardData, RecentAuditActivity } from '../model/adminDashboard.types'
 
 type AdminDashboardProps = { permissionCodes?: readonly string[]; userName?: string }
 type Icon = typeof Users
@@ -42,9 +42,11 @@ export function AdminDashboard({ permissionCodes, userName }: AdminDashboardProp
   const canReadAccountRequests = hasCapability(permissionCodes, 'usr.user-requests.read')
   const canReadReservations = hasCapability(permissionCodes, 'res.reservations.read')
   const canReadAssemblies = hasCapability(permissionCodes, 'adm.assemblies.read')
+  const canReadAuditLogs = hasCapability(permissionCodes, 'aud.logs.read')
   const reservationCalendar = useReservationsList(calendarMonthFilters(calendarMonth), canReadReservations)
   const assembliesCalendar = useAssemblies(canReadAssemblies)
   const accountRequests = useQuery({ queryKey: ['user-requests', 'dashboard', 'pending'], queryFn: () => userRequestsService.list({ page: 1, limit: 1, status: 'PENDING' }), enabled: canReadAccountRequests, staleTime: 30_000 })
+  const recentActivity = useRecentAdminActivity(canReadAuditLogs)
 
   if (dashboard.isPending) return <section aria-busy="true"><InstitutionalWelcome fullName={userName} /><DashboardSkeleton /></section>
   if (dashboard.isError) return <section><InstitutionalWelcome fullName={userName} /><ErrorState className="mt-5" title="No fue posible cargar los indicadores" message="Intente nuevamente para consultar el estado administrativo actual." action={<Button variant="outline" size="sm" onClick={() => void dashboard.refetch()}><RefreshCw aria-hidden="true" />Reintentar</Button>} /></section>
@@ -61,9 +63,9 @@ export function AdminDashboard({ permissionCodes, userName }: AdminDashboardProp
       <QuickActions actions={quickActions.filter(action => hasCapability(permissionCodes, action.capability))} />
       <InstitutionalCalendar month={calendarMonth} onMonthChange={setCalendarMonth} events={events.data} reservations={reservationCalendar.data?.data} assemblies={assembliesCalendar.data} includeReservations={canReadReservations} includeAssemblies={canReadAssemblies} isPending={events.isPending || (canReadReservations && reservationCalendar.isPending) || (canReadAssemblies && assembliesCalendar.isPending)} isError={events.isError || (canReadReservations && reservationCalendar.isError) || (canReadAssemblies && assembliesCalendar.isError)} onRetry={() => { void events.refetch(); if (canReadReservations) void reservationCalendar.refetch(); if (canReadAssemblies) void assembliesCalendar.refetch() }} />
     </div>
-    <div className="grid min-w-0 gap-3 min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,1.12fr)] min-[1200px]:items-stretch">
+    <div className={`grid min-w-0 gap-3 min-[1200px]:items-stretch ${canReadAuditLogs ? 'min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(0,1.12fr)_minmax(0,1.12fr)]' : 'min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(0,1.12fr)]'}`}>
       <ModuleSummary data={data} permissionCodes={permissionCodes} />
-      <ProcessStatus />
+      {canReadAuditLogs ? <RecentActivity activity={recentActivity} /> : null}
       <UpcomingActivities events={events.data} isPending={events.isPending} isError={events.isError} onRetry={() => void events.refetch()} />
     </div>
   </section>
@@ -147,7 +149,11 @@ function ModuleSummary({ data, permissionCodes }: { data: AdminDashboardData; pe
 }
 function ModuleRow({ module, allowed }: { module: { title: string; value: string; icon: Icon; tone: Tone; path: string }; allowed: boolean }) { const IconComponent = module.icon; const content = <><IconTile icon={IconComponent} tone={module.tone} size="sm" /><span className="min-w-0 flex-1 text-body-small font-semibold text-erp-text">{module.title}</span><span className="text-caption text-erp-text-muted">{module.value}</span>{allowed ? <ChevronRight className="size-4 shrink-0 text-erp-text-muted" aria-hidden="true" /> : null}</>; return allowed ? <Link to={module.path} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0 hover:bg-erp-surface-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus">{content}</Link> : <div className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">{content}</div> }
 
-function ProcessStatus() { return <section aria-labelledby="admin-process-title"><DashboardCard title="Estado de procesos" icon={CircleAlert} tone="warning"><div className="flex min-h-36 items-center gap-4 rounded-control border border-dashed border-erp-border bg-erp-surface-subtle/50 px-4 py-4"><div className="grid size-20 shrink-0 place-items-center rounded-full border-8 border-dashed border-erp-border bg-erp-surface-raised text-center"><div><p className="text-heading-3 font-bold leading-none text-erp-text">—</p><p className="mt-1 text-caption text-erp-text-muted">Sin cálculo</p></div></div><div><div className="flex items-center gap-2 text-body-small font-bold text-erp-text"><CircleAlert className="size-4 text-erp-accent" aria-hidden="true" />Información no disponible</div><p className="mt-1.5 text-caption leading-relaxed text-erp-text-muted">No existe una definición institucional verificable para calcular un porcentaje global de procesos.</p></div></div></DashboardCard></section> }
+function RecentActivity({ activity }: { activity: ReturnType<typeof useRecentAdminActivity> }) {
+  const entries = activity.data?.data ?? []
+  return <section aria-labelledby="admin-recent-activity-title"><DashboardCard title="Actividad reciente" description="Registros más recientes de la bitácora" icon={History} tone="info">{activity.isPending ? <Skeleton className="h-52" /> : activity.isError ? <InlineRetry message="No fue posible cargar la actividad reciente." onRetry={() => void activity.refetch()} /> : entries.length ? <div className="divide-y divide-erp-border">{entries.map(entry => <RecentActivityRow key={entry.id} entry={entry} />)}</div> : <EmptyState className="py-8" title="No hay actividad reciente." description="Los registros de la bitácora aparecerán aquí." />}<Link to="/admin/audit-logs" className="mt-4 inline-flex min-h-10 items-center gap-1 text-body-small font-bold text-erp-navigation underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-erp-focus">Ver bitácora <ArrowRight className="size-4" aria-hidden="true" /></Link></DashboardCard></section>
+}
+function RecentActivityRow({ entry }: { entry: RecentAuditActivity }) { return <div className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"><span className="grid size-9 shrink-0 place-items-center rounded-control bg-status-info-surface text-status-info"><History className="size-4" aria-hidden="true" /></span><div className="min-w-0 flex-1"><p className="truncate text-body-small font-bold text-erp-text">{entry.action}</p><p className="mt-0.5 truncate text-caption text-erp-text-muted">{entry.module} · {entry.user?.fullName ?? 'Sistema'}</p></div><time dateTime={entry.createdAt} className="shrink-0 text-caption text-erp-text-muted">{formatActivityDate(entry.createdAt)}</time></div> }
 
 function UpcomingActivities({ events, isPending, isError, onRetry }: { events?: PublicEvent[]; isPending: boolean; isError: boolean; onRetry: () => void }) {
   const upcoming = useMemo(() => (Array.isArray(events) ? events : []).filter(event => event.status === 'SCHEDULED' && new Date(event.startAt).getTime() >= startOfToday().getTime()).sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()).slice(0, 4), [events])
@@ -181,4 +187,5 @@ function startOfToday() { const now = new Date(); return new Date(now.getFullYea
 function displayCount(value: number | string | null) { return value === null ? '—' : typeof value === 'number' ? value.toLocaleString('es-CR') : value }
 function formatDashboardDate(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('es-CR', { dateStyle: 'full', timeZone: 'America/Costa_Rica' }).format(date) }
 function formatEventTime(value: string) { const date = new Date(value); return new Intl.DateTimeFormat('es-CR', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Costa_Rica' }).format(date) }
+function formatActivityDate(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('es-CR', { dateStyle: 'short', timeStyle: 'short', timeZone: COSTA_RICA_TIME_ZONE }).format(date) }
 function hasData(data: AdminDashboardData) { return data.affiliates.total > 0 || data.affiliateRequests.pending > 0 || data.reservations.total > 0 || data.donations.total > 0 || data.inventory.totalItems > 0 || data.assemblies.total > 0 || data.justifications.pending > 0 }

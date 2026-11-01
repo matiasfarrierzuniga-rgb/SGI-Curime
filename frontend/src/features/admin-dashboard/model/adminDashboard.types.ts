@@ -45,3 +45,11 @@ export type AdminDashboardResponse = {
   }
   data: AdminDashboardData
 }
+
+export type RecentAuditActivity = {
+  id: number
+  action: string
+  module: string
+  createdAt: string
+  user: { id: number; fullName: string; email: string } | null
+}
