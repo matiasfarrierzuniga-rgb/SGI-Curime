@@ -4,11 +4,11 @@ import { useAuth } from '@/features/auth'
 import { cn } from '@/shared/lib/utils'
 import { hasCapability, type AccessCapability } from '@/shared/security/access'
 
-const links: ReadonlyArray<{ label: string; description: string; to: string; capability: AccessCapability; alsoRequires?: AccessCapability; icon: typeof Wallet }> = [
-  { label: 'Resumen', description: 'Tesorería institucional', to: '/app/financial', capability: 'fin.charges.read', alsoRequires: 'fin.movements.read', icon: Landmark },
-  { label: 'Cargos', description: 'Reservas y pagos', to: '/app/financial/charges', capability: 'fin.charges.read', icon: Wallet },
-  { label: 'Movimientos', description: 'Ingresos y egresos', to: '/app/financial/movements', capability: 'fin.movements.read', icon: HandCoins },
-  { label: 'DINADECO', description: 'Preparación anual', to: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: FileText },
+const links: ReadonlyArray<{ label: string; to: string; capability: AccessCapability; alsoRequires?: AccessCapability; icon: typeof Wallet }> = [
+  { label: 'Resumen', to: '/app/financial', capability: 'fin.charges.read', alsoRequires: 'fin.movements.read', icon: Landmark },
+  { label: 'Cargos y pagos', to: '/app/financial/charges', capability: 'fin.charges.read', icon: Wallet },
+  { label: 'Movimientos', to: '/app/financial/movements', capability: 'fin.movements.read', icon: HandCoins },
+  { label: 'DINADECO', to: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: FileText },
 ]
 
 export function FinancialSectionNav() {
@@ -19,23 +19,24 @@ export function FinancialSectionNav() {
   if (!inRouterContext || availableLinks.length < 2) return null
 
   return (
-    <nav aria-label="Secciones de gestión financiera" className="grid gap-2 border-b border-border-default pb-5 sm:grid-cols-2 xl:grid-cols-4">
-      {availableLinks.map(({ label, description, to, icon: Icon }) => (
+    <nav aria-label="Secciones de gestión financiera" className="overflow-x-auto border-b border-border-default pb-4">
+      <div className="inline-flex min-w-full items-center gap-1 rounded-control border border-border-default bg-surface-muted p-1 sm:min-w-0">
+      {availableLinks.map(({ label, to, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
           end={to === '/app/financial'}
           className={({ isActive }) => cn(
-            'group flex min-h-16 items-center gap-3 rounded-control border px-3 py-2.5 transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+            'group inline-flex min-h-10 shrink-0 items-center gap-2 rounded-[0.375rem] px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
             isActive
-              ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-              : 'border-border-default bg-surface-card text-text-primary hover:border-border-strong hover:bg-surface-muted',
+              ? 'bg-surface-card text-brand-primary shadow-sm ring-1 ring-border-default'
+              : 'text-text-secondary hover:bg-surface-card/75 hover:text-text-primary',
           )}
         >
-          <Icon aria-hidden="true" className="size-5 shrink-0" />
-          <span className="min-w-0"><span className="block text-sm font-bold">{label}</span><span className="block text-xs opacity-75">{description}</span></span>
+          <Icon aria-hidden="true" className="size-4 shrink-0" />
+          <span>{label}</span>
         </NavLink>
-      ))}
+      ))}</div>
     </nav>
   )
 }

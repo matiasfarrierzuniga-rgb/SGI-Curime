@@ -1,50 +1,74 @@
-import { ArrowDownRight, ArrowUpRight, CircleDollarSign, Clock3, Landmark, Scale, TriangleAlert } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, ChartNoAxesCombined, CircleDollarSign, Landmark, Scale, TriangleAlert } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import { Button } from '@/shared/ui/button'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { MetricCard } from '@/shared/ui/MetricCard'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { useTreasurySummary } from '../hooks/useFinancial'
-import { currentFinancialMonth, financialMonthInterval } from '../model/financialDashboard'
-import type { FinancialMovementSource, TreasuryTotals } from '../model/financial.types'
+import { chartValue, currentFinancialMonth, financialMonthInterval } from '../model/financialDashboard'
+import type { FinancialMovementSource, TreasurySummary, TreasuryTotals } from '../model/financial.types'
 import { FinancialSectionNav } from './FinancialSectionNav'
 import { financialMovementSourceLabel, formatFinancialCurrency } from './financialPresentation'
 
+const PASTEL_YELLOW = '#e7c477'
+const sourceOrder: FinancialMovementSource[] = ['RESERVATION_PAYMENT', 'DONATION', 'MANUAL']
+const sourceAccent: Record<FinancialMovementSource, string> = { RESERVATION_PAYMENT: 'bg-brand-primary', DONATION: 'bg-status-success', MANUAL: 'bg-[#e7c477]' }
+
 export function TreasuryPage() {
-  const month = currentFinancialMonth()
+  const [month, setMonth] = useState(currentFinancialMonth)
   const interval = financialMonthInterval(month)
   const summary = useTreasurySummary({ dateFrom: interval.dateFrom, dateTo: interval.dateTo })
 
   return <section className="space-y-6">
-    <PageHeader context="Gestión financiera" title="Tesorería institucional" description="Composición registrada del fondo único institucional en colones costarricenses." actions={<Link to="/app/financial/movements"><Button type="button" variant="outline">Ver historial</Button></Link>} />
+    <PageHeader context="Gestión financiera · Vista analítica" title="Tesorería institucional" description="Análisis del fondo registrado, sus fuentes y trazabilidad financiera." actions={<div className="flex flex-wrap items-end gap-2"><label className="grid gap-1 text-sm font-semibold text-text-primary" htmlFor="treasury-month">Período de análisis<input className="min-h-11 rounded-control border border-border-default bg-control px-3 font-normal focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30" id="treasury-month" type="month" value={month} onChange={event => setMonth(event.target.value)} /></label><Link to="/app/financial/movements"><Button type="button" variant="outline">Ver movimientos</Button></Link></div>} />
     <FinancialSectionNav />
     {summary.isPending ? <LoadingState label="Calculando resumen de tesorería..." /> : null}
     {summary.isError ? <ErrorState title="No fue posible cargar Tesorería" message="Los datos financieros no pudieron consolidarse." action={<Button type="button" variant="outline" onClick={() => void summary.refetch()}>Reintentar</Button>} /> : null}
-    {summary.data ? <>
-      <div className="rounded-surface border border-status-warning/30 bg-status-warning-surface p-4 text-sm text-text-primary"><div className="flex items-start gap-3"><TriangleAlert className="mt-0.5 size-5 shrink-0 text-status-warning" aria-hidden="true" /><div><strong className="block">Saldo inicial no establecido</strong><p className="mt-1 text-text-secondary">El resultado neto proviene del historial registrado. No se presenta como saldo disponible ni bancario conciliado.</p></div></div></div>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Resumen acumulado de tesorería">
-        <MetricCard label="Saldo registrado" value="No establecido" icon={<Landmark />} state="warning" stateLabel="Requiere saldo inicial válido" />
-        <MetricCard label="Ingresos acumulados" value={formatFinancialCurrency(summary.data.accumulated.income)} icon={<ArrowUpRight />} state="success" stateLabel="Todo el historial aplicable" />
-        <MetricCard label="Egresos acumulados" value={formatFinancialCurrency(summary.data.accumulated.expenses)} icon={<ArrowDownRight />} state="warning" stateLabel="Todo el historial aplicable" />
-        <MetricCard label="Neto acumulado registrado" value={formatFinancialCurrency(summary.data.accumulated.net)} icon={<Scale />} supportingText="Ingresos menos egresos; no equivale a saldo conciliado." />
-      </section>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={`Indicadores de ${interval.label}`}>
-        <MetricCard label="Ingresos del período" value={formatFinancialCurrency(summary.data.currentPeriod.income)} icon={<ArrowUpRight />} state="success" stateLabel={interval.label} />
-        <MetricCard label="Egresos del período" value={formatFinancialCurrency(summary.data.currentPeriod.expenses)} icon={<ArrowDownRight />} state="warning" stateLabel={interval.label} />
-        <MetricCard label="Resultado neto del período" value={formatFinancialCurrency(summary.data.currentPeriod.net)} icon={<CircleDollarSign />} state="neutral" stateLabel={interval.label} />
-        <MetricCard label="Cuentas por cobrar" value={formatFinancialCurrency(summary.data.receivables.pendingCharges)} icon={<Clock3 />} state="warning" stateLabel={`${summary.data.receivables.pendingChargeCount} cargo(s) pendiente(s)`} supportingText="No representa efectivo recibido." />
-      </section>
-      <section className="grid gap-4 lg:grid-cols-2">
-        <Breakdown title="Composición acumulada" totals={summary.data.accumulated} />
-        <Breakdown title={`Composición de ${interval.label}`} totals={summary.data.currentPeriod} />
-      </section>
-      <section className="rounded-surface border border-border-default bg-surface-card p-5 shadow-surface" aria-labelledby="treasury-integrity-title"><h2 className="text-heading-3 font-semibold text-text-primary" id="treasury-integrity-title">Trazabilidad del fondo</h2><p className="mt-1 text-sm text-text-secondary">Pagos confirmados registrados: {formatFinancialCurrency(summary.data.reconciliation.confirmedPayments)}.</p>{summary.data.reconciliation.issues.length ? <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-status-warning">{summary.data.reconciliation.issues.map(issue => <li key={issue}>{issue}</li>)}</ul> : <p className="mt-3 text-sm text-status-success">No se detectaron enlaces faltantes entre pagos, donaciones y movimientos.</p>}<Link className="mt-4 inline-flex text-sm font-semibold text-primary underline-offset-4 hover:underline" to="/app/financial/movements">Consultar movimientos que respaldan los importes</Link></section>
-    </> : null}
+    {summary.data ? <TreasuryAnalysis interval={interval} summary={summary.data} /> : null}
   </section>
 }
 
-function Breakdown({ title, totals }: { title: string; totals: TreasuryTotals }) {
-  const rows = Object.entries(totals.bySource) as Array<[FinancialMovementSource, { income: string; expenses: string; count: number }]>
-  return <section className="rounded-surface border border-border-default bg-surface-card p-5 shadow-surface"><h2 className="text-heading-3 font-semibold text-text-primary">{title}</h2>{rows.length ? <ul className="mt-4 divide-y divide-border-default">{rows.map(([source, values]) => <li className="grid gap-2 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center" key={source}><span><strong className="block text-sm text-text-primary">{financialMovementSourceLabel(source)}</strong><span className="text-xs text-text-secondary">{values.count} movimiento(s)</span></span><span className="text-sm tabular-nums text-status-success">+ {formatFinancialCurrency(values.income)}</span><span className="text-sm tabular-nums text-status-danger">− {formatFinancialCurrency(values.expenses)}</span></li>)}</ul> : <p className="mt-4 text-sm text-text-secondary">Sin movimientos registrados en este alcance temporal.</p>}</section>
+function TreasuryAnalysis({ interval, summary }: { interval: ReturnType<typeof financialMonthInterval>; summary: TreasurySummary }) {
+  return <>
+    <section className="overflow-hidden rounded-surface border border-brand-primary/25 bg-surface-card shadow-surface" aria-labelledby="treasury-analysis-title">
+      <div className="grid gap-6 bg-brand-primary/[0.08] px-5 py-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-7">
+        <div className="flex items-start gap-4"><span className="grid size-12 shrink-0 place-items-center rounded-control bg-brand-primary text-primary-foreground"><Landmark className="size-6" aria-hidden="true" /></span><div><p className="text-caption font-bold uppercase tracking-[0.14em] text-brand-primary">Fondo institucional</p><h2 className="mt-1 text-heading-2 font-bold text-text-primary" id="treasury-analysis-title">Lectura acumulada y del período</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">La composición usa movimientos registrados por su origen operativo. El resultado neto no equivale a saldo bancario disponible ni conciliado.</p></div></div>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-l-0 border-brand-primary/20 pt-1 text-sm lg:border-l lg:pl-6"><MetricDatum label="Ingresos acumulados" value={formatFinancialCurrency(summary.accumulated.income)} tone="success" /><MetricDatum label="Egresos acumulados" value={formatFinancialCurrency(summary.accumulated.expenses)} tone="warning" /><MetricDatum label="Neto registrado" value={formatFinancialCurrency(summary.accumulated.net)} /><MetricDatum label="Cargos pendientes" value={String(summary.receivables.pendingChargeCount)} /></dl>
+      </div>
+      <dl className="grid divide-y divide-border-default border-t border-border-default sm:grid-cols-3 sm:divide-x sm:divide-y-0"><MetricDatum className="px-5 py-4" label="Saldo registrado" value="No establecido" note="Requiere saldo inicial válido." /><MetricDatum className="px-5 py-4" label="Pagos confirmados" value={formatFinancialCurrency(summary.reconciliation.confirmedPayments)} note="Pagos vinculados en historial." /><MetricDatum className="px-5 py-4" label="Cuentas por cobrar" value={formatFinancialCurrency(summary.receivables.pendingCharges)} note="No representa efectivo recibido." /></dl>
+    </section>
+
+    <aside aria-label="Advertencia sobre conciliación" className="flex gap-3 rounded-surface border border-status-warning-border bg-status-warning-surface p-4 text-sm text-status-warning-foreground"><TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" /><div><strong className="block">Saldo inicial no establecido</strong><p className="mt-1">Los valores provienen del historial registrado y permanecen sin conciliación bancaria. Verifique documentos de respaldo antes de usarlos como saldo disponible.</p></div></aside>
+
+    <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(19rem,0.8fr)]">
+      <SourceComposition totals={summary.accumulated} />
+      <PeriodComparison interval={interval} totals={summary.currentPeriod} />
+    </section>
+
+    <SourceLedger totals={summary.accumulated} />
+
+    <section className="rounded-surface border border-brand-primary/20 bg-surface-card shadow-surface" aria-labelledby="treasury-integrity-title"><div className="flex flex-wrap items-start justify-between gap-4 border-b border-border-default bg-brand-primary/[0.05] px-5 py-4"><div className="flex gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-primary/10 text-brand-primary"><CircleDollarSign className="size-5" aria-hidden="true" /></span><div><h2 className="text-heading-3 font-semibold text-text-primary" id="treasury-integrity-title">Trazabilidad del fondo</h2><p className="mt-1 text-sm text-text-secondary">Alertas y evidencia registrada que respaldan esta lectura.</p></div></div><Link className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" to="/app/financial/movements">Ver detalle de movimientos</Link></div><div className="p-5">{summary.reconciliation.issues.length ? <ul className="grid gap-3 text-sm text-status-warning-foreground">{summary.reconciliation.issues.map(issue => <li className="flex gap-2 rounded-control border border-status-warning-border bg-status-warning-surface p-3" key={issue}><TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />{issue}</li>)}</ul> : <p className="rounded-control border border-status-success-border bg-status-success-surface p-3 text-sm text-status-success">No se detectaron enlaces faltantes entre pagos, donaciones y movimientos.</p>}</div></section>
+  </>
 }
+
+function SourceComposition({ totals }: { totals: TreasuryTotals }) {
+  const data = sourceOrder.filter(source => totals.bySource[source]).map(source => ({ source: financialMovementSourceLabel(source), income: chartValue(totals.bySource[source]!.income), expenses: chartValue(totals.bySource[source]!.expenses), incomeText: totals.bySource[source]!.income, expensesText: totals.bySource[source]!.expenses }))
+  const valid = data.every(item => item.income !== null && item.expenses !== null)
+  return <section className="min-w-0 rounded-surface border border-border-default bg-surface-card p-5 shadow-surface" aria-labelledby="source-composition-title"><div className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-primary/10 text-brand-primary"><ChartNoAxesCombined className="size-5" aria-hidden="true" /></span><div><h2 className="text-heading-3 font-semibold text-text-primary" id="source-composition-title">Composición acumulada</h2><p className="mt-1 text-sm text-text-secondary">Ingresos y egresos agrupados por fuente real.</p></div></div>{data.length && valid ? <div className="mt-5 h-72" role="img" aria-label="Comparación acumulada de ingresos y egresos por fuente"><ResponsiveContainer width="100%" height="100%"><BarChart data={data} layout="vertical" margin={{ top: 6, right: 12, bottom: 4, left: 10 }} barGap={7}><CartesianGrid horizontal={false} stroke="var(--color-border-subtle)" strokeDasharray="3 3" /><XAxis type="number" tickLine={false} axisLine={false} tickFormatter={formatCompactCrc} /><YAxis type="category" dataKey="source" width={112} tickLine={false} axisLine={false} /><Tooltip cursor={{ fill: 'var(--color-surface-muted)' }} contentStyle={{ borderColor: 'var(--color-border-default)', borderRadius: 'var(--radius-control)', boxShadow: 'var(--shadow-elevation-2)' }} formatter={(_value, name, item) => [formatFinancialCurrency(name === 'Ingresos' ? item.payload.incomeText : item.payload.expensesText), name]} /><Legend iconType="circle" iconSize={9} wrapperStyle={{ paddingTop: 10 }} /><Bar dataKey="income" name="Ingresos" fill="var(--color-status-success)" radius={[0, 4, 4, 0]} /><Bar dataKey="expenses" name="Egresos" fill={PASTEL_YELLOW} radius={[0, 4, 4, 0]} /></BarChart></ResponsiveContainer></div> : <p className="mt-5 rounded-control bg-surface-muted p-4 text-sm text-text-secondary">No hay valores seguros disponibles para representar esta composición. Consulte el historial para los importes exactos.</p>}<SourceTable rows={data} /></section>
+}
+
+function PeriodComparison({ interval, totals }: { interval: ReturnType<typeof financialMonthInterval>; totals: TreasuryTotals }) {
+  return <section className="rounded-surface border border-border-default bg-surface-card p-5 shadow-surface" aria-labelledby="period-comparison-title"><p className="text-caption font-bold uppercase tracking-[0.12em] text-brand-primary">Período seleccionado</p><h2 className="mt-1 text-heading-3 font-semibold text-text-primary" id="period-comparison-title">{interval.label}</h2><div className="mt-5 space-y-5"><ComparisonRow icon={<ArrowUpRight />} label="Ingresos del período" value={totals.income} tone="income" /><ComparisonRow icon={<ArrowDownRight />} label="Egresos del período" value={totals.expenses} tone="expense" /><div className="border-t border-border-default pt-5"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-semibold text-text-primary">Resultado neto registrado</p><p className="mt-1 text-xs leading-5 text-text-secondary">Ingresos menos egresos; no representa saldo disponible.</p></div><Scale className="size-5 shrink-0 text-brand-primary" aria-hidden="true" /></div><p className="mt-3 text-heading-2 font-bold tabular-nums text-text-primary">{formatFinancialCurrency(totals.net)}</p></div></div></section>
+}
+
+function SourceLedger({ totals }: { totals: TreasuryTotals }) {
+  const rows = sourceOrder.flatMap(source => { const values = totals.bySource[source]; return values ? [{ source, values }] : [] })
+  return <section className="rounded-surface border border-[#e7c477] bg-[#fff8df] p-5 shadow-surface" aria-labelledby="source-ledger-title"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-caption font-bold uppercase tracking-[0.12em] text-brand-ink">Composición por fuente</p><h2 className="mt-1 text-heading-3 font-semibold text-text-primary" id="source-ledger-title">Lectura acumulada de ingresos y egresos</h2></div><p className="max-w-sm text-sm text-text-secondary">Cada fuente conserva su origen operativo; no se reclasifica como cuenta contable.</p></div>{rows.length ? <div className="mt-5 grid divide-y divide-[#e7c477]/70 border border-[#e7c477]/70 bg-surface-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">{rows.map(({ source, values }) => <article className="p-4" key={source}><div className="flex items-center gap-2"><span className={`size-2.5 rounded-full ${sourceAccent[source]}`} aria-hidden="true" /><h3 className="font-semibold text-text-primary">{financialMovementSourceLabel(source)}</h3></div><p className="mt-1 text-xs text-text-secondary">{values.count} movimiento(s) registrado(s)</p><dl className="mt-4 space-y-2 text-sm"><div className="flex justify-between gap-3"><dt className="text-text-secondary">Ingresos</dt><dd className="font-semibold tabular-nums text-status-success">{formatFinancialCurrency(values.income)}</dd></div><div className="flex justify-between gap-3"><dt className="text-text-secondary">Egresos</dt><dd className="font-semibold tabular-nums text-text-primary">{formatFinancialCurrency(values.expenses)}</dd></div></dl></article>)}</div> : <p className="mt-4 text-sm text-text-secondary">Sin fuentes registradas en el historial disponible.</p>}</section>
+}
+
+function MetricDatum({ label, value, note, tone, className }: { label: string; value: string; note?: string; tone?: 'success' | 'warning'; className?: string }) { return <div className={className}><dt className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{label}</dt><dd className={`mt-1 text-lg font-bold tabular-nums ${tone === 'success' ? 'text-status-success' : tone === 'warning' ? 'text-text-primary' : 'text-text-primary'}`}>{value}</dd>{note ? <p className="mt-1 text-xs leading-5 text-text-secondary">{note}</p> : null}</div> }
+function ComparisonRow({ icon, label, value, tone }: { icon: ReactNode; label: string; value: string; tone: 'income' | 'expense' }) { return <div className="flex items-start gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-control ${tone === 'income' ? 'bg-status-success-surface text-status-success' : 'bg-[#fff0c9] text-brand-ink'}`} aria-hidden="true">{icon}</span><div className="min-w-0 flex-1"><p className="text-sm text-text-secondary">{label}</p><p className="mt-1 text-heading-3 font-bold tabular-nums text-text-primary">{formatFinancialCurrency(value)}</p></div></div> }
+function SourceTable({ rows }: { rows: { source: string; income: number | null; expenses: number | null; incomeText: string; expensesText: string }[] }) { return <table className="sr-only"><caption>Valores acumulados por fuente</caption><thead><tr><th>Fuente</th><th>Ingresos</th><th>Egresos</th></tr></thead><tbody>{rows.map(row => <tr key={row.source}><th>{row.source}</th><td>{row.incomeText}</td><td>{row.expensesText}</td></tr>)}</tbody></table> }
+function formatCompactCrc(value: number) { return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', notation: 'compact', maximumFractionDigits: 1 }).format(value) }

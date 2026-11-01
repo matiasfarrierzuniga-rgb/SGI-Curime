@@ -1,5 +1,5 @@
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
-import { Building2, CalendarDays, FileText, Landmark, Pencil, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
+import { Building2, CalendarDays, ClipboardList, FileText, Landmark, Pencil, ShieldCheck, TriangleAlert, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -9,7 +9,6 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { MetricCard } from '@/shared/ui/MetricCard'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { useDinadecoAnnualReport } from '../hooks/useFinancial'
 import { FinancialSectionNav } from './FinancialSectionNav'
@@ -28,13 +27,13 @@ export function DinadecoAnnualReportPage() {
   return (
     <div className="space-y-7">
       <PageHeader
-        context="Gestión financiera"
+        context="Gestión financiera · Informe anual institucional"
         title="Informe Económico DINADECO"
         description="Resumen anual de movimientos financieros para apoyar la preparación del Informe Económico de la asociación."
         actions={
           <label className="grid min-w-36 gap-1 text-sm font-semibold" htmlFor="dinadeco-year">
             Año
-            <select id="dinadeco-year" value={year} onChange={(event) => setYear(Number(event.target.value))}>
+            <select className="min-h-11 rounded-control border border-border-default bg-control px-3 font-normal focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30" id="dinadeco-year" value={year} onChange={(event) => setYear(Number(event.target.value))}>
               {availableYears.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
@@ -62,38 +61,32 @@ function ReportContent({ report, mayEditInstitutionalProfile }: { report: NonNul
   const { data, metadata } = report
   return (
     <>
-      <section aria-labelledby="dinadeco-summary-title">
-        <h2 id="dinadeco-summary-title" className="sr-only">Resumen económico anual</h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Saldo anterior" value={formatFinancialCurrency(data.openingBalance)} icon={<Wallet />} supportingText="Calculado del historial registrado antes del período." />
-          <MetricCard label="Entradas" value={formatFinancialCurrency(data.income.total)} icon={<TrendingUp />} state="success" stateLabel={`${data.income.count} movimientos`} />
-          <MetricCard label="Salidas" value={formatFinancialCurrency(data.expenses.total)} icon={<TrendingDown />} state="warning" stateLabel={`${data.expenses.count} movimientos`} />
-          <MetricCard label="Saldo final" value={formatFinancialCurrency(data.closingBalance)} icon={<Landmark />} supportingText={`${data.movementCount} movimientos en el período`} />
-        </div>
+      <section aria-labelledby="dinadeco-summary-title" className="overflow-hidden rounded-surface border border-brand-primary/25 bg-surface-card shadow-surface">
+        <div className="flex flex-wrap items-start justify-between gap-4 bg-brand-primary px-5 py-5 text-primary-foreground sm:px-6"><div><p className="text-caption font-bold uppercase tracking-[0.14em] text-brand-sage">Expediente económico anual · {data.year}</p><h2 id="dinadeco-summary-title" className="mt-1 text-heading-2 font-bold">Resumen económico registrado</h2><p className="mt-2 max-w-2xl text-sm text-primary-foreground/80">Documento de trabajo para revisar movimientos y preparar el Informe Económico DINADECO.</p></div><div className="flex items-center gap-2 rounded-control border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold"><ShieldCheck className="size-4" aria-hidden="true" />{data.movementCount} movimientos</div></div>
+        <dl className="grid divide-y divide-border-default sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
+          <EconomicDatum icon={<Wallet />} label="Saldo anterior" value={formatFinancialCurrency(data.openingBalance)} note="Derivado del historial previo" />
+          <EconomicDatum icon={<TrendingUp />} label="Entradas" value={formatFinancialCurrency(data.income.total)} note={`${data.income.count} movimientos`} tone="success" />
+          <EconomicDatum icon={<TrendingDown />} label="Salidas" value={formatFinancialCurrency(data.expenses.total)} note={`${data.expenses.count} movimientos`} tone="warning" />
+          <EconomicDatum icon={<Landmark />} label="Saldo final" value={formatFinancialCurrency(data.closingBalance)} note="Derivado; no conciliado" />
+        </dl>
+        <dl className="grid gap-4 border-t border-border-default bg-surface-muted/55 px-5 py-4 text-sm sm:grid-cols-3 sm:px-6">
+          <ReportDatum icon={<CalendarDays />} label="Período" value={`${formatPeriodDate(metadata.period.from)} – ${formatPeriodEnd(metadata.period.to)}`} />
+          <ReportDatum icon={<FileText />} label="Generado" value={formatFinancialDate(metadata.generatedAt)} />
+          <ReportDatum icon={<Wallet />} label="Responsable de consulta" value={metadata.generatedBy?.fullName ?? 'Usuario no disponible'} />
+        </dl>
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <section aria-labelledby="source-summary-title"><DocumentSectionHeading number="01" title="Composición del período" description="Desglose por fuente operativa registrada; no corresponde a cuentas contables DINADECO." id="source-summary-title" /><div className="mt-4 grid gap-5 lg:grid-cols-2">
         <SourceBreakdown title="Entradas del período" sources={data.income.bySource} />
         <SourceBreakdown title="Salidas del período" sources={data.expenses.bySource} />
-      </div>
+      </div></section>
 
       <InstitutionalProfileCard profile={data.institutionalProfile} mayEdit={mayEditInstitutionalProfile} />
 
-      <Card>
-        <CardHeader><CardTitle>Información del reporte</CardTitle><CardDescription>Datos de generación y alcance temporal.</CardDescription></CardHeader>
-        <CardContent>
-          <dl className="grid gap-4 text-sm sm:grid-cols-3">
-            <ReportDatum icon={<CalendarDays />} label="Período" value={`${formatPeriodDate(metadata.period.from)} – ${formatPeriodEnd(metadata.period.to)}`} />
-            <ReportDatum icon={<FileText />} label="Fecha de generación" value={formatFinancialDate(metadata.generatedAt)} />
-            <ReportDatum icon={<Wallet />} label="Generado por" value={metadata.generatedBy?.fullName ?? 'Usuario no disponible'} />
-          </dl>
-        </CardContent>
-      </Card>
-
       <section aria-labelledby="fie-preparation-title" className="space-y-5">
-        <h2 id="fie-preparation-title">Preparación del FIE</h2>
-        <Card>
-          <CardHeader><CardTitle>Resumen FIE</CardTitle><CardDescription>Datos para completar el FIE a partir del historial registrado.</CardDescription></CardHeader>
+        <DocumentSectionHeading number="03" title="Preparación del FIE" description="Valores y movimientos disponibles para transcribir y revisar en el formulario correspondiente." id="fie-preparation-title" />
+        <Card className="border-brand-primary/20">
+          <CardHeader className="border-b border-border-default bg-brand-primary/[0.05]"><CardTitle><span className="flex items-center gap-2"><ClipboardList className="size-5 text-brand-primary" aria-hidden="true" />Resumen FIE</span></CardTitle><CardDescription>Comprobación aritmética derivada del historial registrado.</CardDescription></CardHeader>
           <CardContent>
             <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[
@@ -107,14 +100,13 @@ function ReportContent({ report, mayEditInstitutionalProfile }: { report: NonNul
             </dl>
           </CardContent>
         </Card>
-        <p className="text-sm text-foreground-muted">El formulario FIE dispone de 15 espacios para entradas y 15 para salidas. SGI-Curime no consolida ni omite movimientos automáticamente.</p>
-        <FieMovements title="Entradas" lines={data.fie.entries} count={data.fie.capacity.entryCount} capacity={data.fie.capacity.entryCapacity} overflow={data.fie.capacity.entryOverflow} direction="entrada" />
-        <FieMovements title="Salidas" lines={data.fie.exits} count={data.fie.capacity.exitCount} capacity={data.fie.capacity.exitCapacity} overflow={data.fie.capacity.exitOverflow} direction="salida" />
+        <p className="rounded-control border border-status-info-border bg-status-info-surface p-3 text-sm text-status-info-foreground">El formulario FIE dispone de 15 espacios para entradas y 15 para salidas. SGI-Curime conserva el detalle y no consolida ni omite movimientos automáticamente.</p>
+        <div className="grid min-w-0 gap-5 xl:grid-cols-2"><FieMovements title="Entradas" lines={data.fie.entries} count={data.fie.capacity.entryCount} capacity={data.fie.capacity.entryCapacity} overflow={data.fie.capacity.entryOverflow} direction="entrada" /><FieMovements title="Salidas" lines={data.fie.exits} count={data.fie.capacity.exitCount} capacity={data.fie.capacity.exitCapacity} overflow={data.fie.capacity.exitOverflow} direction="salida" /></div>
       </section>
 
-      <Card>
-        <CardHeader><CardTitle>Documentación complementaria</CardTitle></CardHeader>
-        <CardContent className="space-y-3 text-sm text-foreground-muted">
+      <Card className="border-[#e7c477] bg-[#fff8df]">
+        <CardHeader className="border-b border-[#e7c477]"><CardTitle><span className="flex items-center gap-2"><TriangleAlert className="size-5 text-brand-ink" aria-hidden="true" />Documentación complementaria y límites</span></CardTitle><CardDescription>Verificaciones requeridas antes de preparar o presentar documentación oficial.</CardDescription></CardHeader>
+        <CardContent className="grid gap-3 text-sm text-foreground-muted lg:grid-cols-2">
           <p>El saldo inicial y el saldo final son derivados del historial disponible en SGI-Curime. No existe conciliación bancaria en este incremento ni se distingue automáticamente caja física de cuentas bancarias; estos valores no son saldos oficiales conciliados.</p>
           <p>Los datos institucionales mostrados provienen del Perfil institucional. Los campos marcados como “Pendiente de cargar” aún requieren captura o validación por la Asociación.</p>
           <p>La presidencia y tesorería legal, las firmas, el sello, los anexos bancarios y la recepción por DINADECO continúan fuera del alcance de esta preparación.</p>
@@ -145,11 +137,12 @@ function InstitutionalProfileCard({ profile, mayEdit }: { profile: DinadecoInsti
 
   return (
     <section aria-labelledby="institutional-profile-title">
-      <Card>
-        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4">
+      <DocumentSectionHeading number="02" title="Información institucional" description="Identidad oficial disponible en el Perfil institucional de la Asociación." id="institutional-profile-title" />
+      <Card className="mt-4 border-brand-primary/20">
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 border-b border-border-default bg-brand-primary/[0.05]">
           <div>
-            <CardTitle><h2 id="institutional-profile-title" className="flex items-center gap-2"><Building2 aria-hidden="true" />Información institucional</h2></CardTitle>
-            <CardDescription>Identidad de la Asociación utilizada para preparar el reporte DINADECO.</CardDescription>
+            <CardTitle><span className="flex items-center gap-2"><Building2 className="size-5 text-brand-primary" aria-hidden="true" />Perfil utilizado en este expediente</span></CardTitle>
+            <CardDescription>Campos pendientes requieren captura o validación institucional.</CardDescription>
           </div>
           {mayEdit && <Button nativeButton={false} render={<Link to="/app/admin/institutional-profile" />} variant="outline" size="sm"><Pencil aria-hidden="true" />Editar perfil institucional</Button>}
         </CardHeader>
@@ -175,13 +168,13 @@ function organizationTypeLabel(value: DinadecoInstitutionalProfile['organization
 
 function FieMovements({ title, lines, count, capacity, overflow, direction }: { title: string; lines: DinadecoFieLine[]; count: number; capacity: number; overflow: boolean; direction: string }) {
   return (
-    <Card>
-      <CardHeader><CardTitle>{title}</CardTitle><CardDescription>{count} de {capacity} movimientos de {direction}</CardDescription></CardHeader>
+    <Card className="min-w-0">
+      <CardHeader className="border-b border-border-default"><CardTitle>{title}</CardTitle><CardDescription>{count} de {capacity} movimientos de {direction}</CardDescription></CardHeader>
       <CardContent className="space-y-3">
         {overflow && <p role="alert" className="text-sm font-semibold text-status-warning">El formulario oficial no tiene espacio suficiente para representar individualmente todos los movimientos de {direction}. Se conserva el detalle completo; la estrategia de consolidación requiere validación con la ADI.</p>}
         {lines.length === 0 ? <p className="text-sm text-foreground-muted">No se registraron movimientos de {direction} en el período.</p> : (
           <div className="overflow-x-auto" tabIndex={0} aria-label={`Detalle de ${title.toLowerCase()} para preparar el FIE`}>
-            <DataTable className="w-full text-sm">
+            <DataTable className="w-full min-w-[34rem] text-sm">
               <caption className="sr-only">Detalle de {title.toLowerCase()} para preparar el FIE</caption>
               <DataTableHeader><DataTableRow>{['Fecha', 'Descripción', 'Fuente', 'Monto'].map((label) => <DataTableHead key={label} scope="col" className="p-3 text-left">{label}</DataTableHead>)}</DataTableRow></DataTableHeader>
               <DataTableBody>{lines.map((line) => <DataTableRow key={line.id} className="border-t border-border-default"><DataTableCell className="p-3 whitespace-nowrap">{formatFinancialDate(line.occurredAt)}</DataTableCell><DataTableCell className="p-3 break-words">{line.description}</DataTableCell><DataTableCell className="p-3">{financialMovementSourceLabel(line.source)}</DataTableCell><DataTableCell className="p-3 text-right whitespace-nowrap tabular-nums">{formatFinancialCurrency(line.amount)}</DataTableCell></DataTableRow>)}</DataTableBody>
@@ -216,6 +209,15 @@ function SourceBreakdown({ title, sources }: { title: string; sources: Partial<R
 
 function ReportDatum({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return <div className="flex gap-3"><span className="mt-0.5 text-brand-primary" aria-hidden="true">{icon}</span><div><dt className="font-semibold text-text-primary">{label}</dt><dd className="mt-1 text-text-secondary">{value}</dd></div></div>
+}
+
+function EconomicDatum({ icon, label, value, note, tone }: { icon: ReactNode; label: string; value: string; note: string; tone?: 'success' | 'warning' }) {
+  const iconClass = tone === 'success' ? 'bg-status-success-surface text-status-success' : tone === 'warning' ? 'bg-[#fff0c9] text-brand-ink' : 'bg-brand-primary/10 text-brand-primary'
+  return <div className="flex gap-3 p-5"><span className={`grid size-10 shrink-0 place-items-center rounded-control ${iconClass}`} aria-hidden="true">{icon}</span><div><dt className="text-sm text-text-secondary">{label}</dt><dd className="mt-1 text-heading-3 font-bold tabular-nums text-text-primary">{value}</dd><p className="mt-1 text-xs text-text-muted">{note}</p></div></div>
+}
+
+function DocumentSectionHeading({ number, title, description, id }: { number: string; title: string; description: string; id: string }) {
+  return <div className="flex items-start gap-3 border-b border-border-default pb-3"><span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-primary text-xs font-bold text-primary-foreground" aria-hidden="true">{number}</span><div><h2 className="text-heading-3 font-semibold text-text-primary" id={id}>{title}</h2><p className="mt-1 text-sm text-text-secondary">{description}</p></div></div>
 }
 
 function formatPeriodDate(value: string) {
