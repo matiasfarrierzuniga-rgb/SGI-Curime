@@ -15,6 +15,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAssemblyDto, UpdateAssemblyDto } from './dto/assembly.dto';
 import { QueryAssembliesDto } from './dto/query-assemblies.dto';
 import { RecordAttendanceDto } from './dto/record-attendance.dto';
+import { AssemblyCallDto } from './dto/update-assembly-calls.dto';
 
 const select = {
   id: true,
@@ -39,6 +40,15 @@ const convocationSelect = {
   convenedAt: true,
   affiliate: { select: { id: true, fullName: true, status: true } },
 } satisfies Prisma.AssemblyConvocationSelect;
+const callSelect = {
+  id: true,
+  assemblyId: true,
+  callNumber: true,
+  scheduledAt: true,
+  quorumType: true,
+  quorumValue: true,
+  startedAt: true,
+} satisfies Prisma.AssemblyCallSelect;
 
 export function calculateRequiredCount(
   convokedCount: number,
@@ -214,12 +224,13 @@ export class AssembliesService {
 
   async detail(id: number) {
     const assembly = await this.findOne(id);
-    const [convocations, quorum, attendance] = await Promise.all([
+    const [convocations, calls, quorum, attendance] = await Promise.all([
       this.getConvocations(id),
+      this.getCalls(id),
       this.getQuorum(id),
       this.getAttendance(id),
     ]);
-    return { ...assembly, convocations, quorum, attendance };
+    return { ...assembly, convocations, calls, quorum, attendance };
   }
 
   async update(
@@ -305,6 +316,58 @@ export class AssembliesService {
       orderBy: { affiliate: { fullName: 'asc' } },
     });
     return items.map((item) => this.serializeConvocation(item));
+  }
+
+  async getCalls(assemblyId: number) {
+    await this.findOne(assemblyId);
+    return this.prisma.assemblyCall.findMany({
+      where: { assemblyId },
+      select: callSelect,
+      orderBy: { callNumber: 'asc' },
+    });
+  }
+
+  async replaceCalls(
+    assemblyId: number,
+    calls: AssemblyCallDto[],
+    actorId: number,
+    context: AuditContext = {},
+  ) {
+    const assembly = await this.findOne(assemblyId);
+    if (assembly.convocationsLockedAt || assembly.status !== 'SCHEDULED')
+      throw new BadRequestException('Call rounds are locked for this assembly');
+    if (calls.length === 0)
+      throw new BadRequestException('At least one call round is required');
+    if (new Set(calls.map((call) => call.callNumber)).size !== calls.length)
+      throw new BadRequestException('Duplicate call numbers are not allowed');
+    if (
+      new Set(calls.map((call) => call.scheduledAt.getTime())).size !== calls.length
+    )
+      throw new BadRequestException('Duplicate call times are not allowed');
+    for (const call of calls) this.validateQuorum(call.quorumType, call.quorumValue);
+    return this.prisma.$transaction(async (tx) => {
+      await tx.assemblyCall.deleteMany({ where: { assemblyId } });
+      await tx.assemblyCall.createMany({
+        data: calls.map((call) => ({ ...call, assemblyId })),
+      });
+      await this.audit.log(
+        {
+          userId: actorId,
+          action: AuditAction.ASSEMBLY_CALLS_UPDATED,
+          module: 'ASSEMBLIES',
+          entityType: 'Assembly',
+          entityId: assemblyId,
+          details: { count: calls.length },
+          ...context,
+        },
+        tx,
+      );
+      return tx.assemblyCall.findMany({
+        where: { assemblyId },
+        select: callSelect,
+        orderBy: { callNumber: 'asc' },
+      });
+    });
   }
 
   async replaceConvocations(

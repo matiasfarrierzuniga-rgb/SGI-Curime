@@ -327,6 +327,13 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.queryByRole('heading', { name: 'Afiliados' })).not.toBeInTheDocument()
   })
 
+  it('keeps assembly authorization errors separate from render-error recovery', async () => {
+    renderRoute('/app/admin/assemblies/1', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Algo no salió como esperábamos' })).not.toBeInTheDocument()
+  })
+
   it('redirects anonymous users from /app/admin/affiliates to login', () => {
     renderRoute('/app/admin/affiliates', null)
 

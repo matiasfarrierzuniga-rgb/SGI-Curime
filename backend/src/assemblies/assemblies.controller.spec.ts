@@ -25,6 +25,7 @@ describe('AssembliesController contracts', () => {
       'complete',
       'remove',
       'record',
+      'replaceCalls',
     ] as const) {
       expect(
         Reflect.getMetadata(
@@ -42,6 +43,7 @@ describe('AssembliesController contracts', () => {
       'convocations',
       'quorum',
       'attendance',
+      'calls',
     ] as const) {
       expect(
         Reflect.getMetadata(

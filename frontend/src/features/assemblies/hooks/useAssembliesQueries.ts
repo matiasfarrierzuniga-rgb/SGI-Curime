@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { assembliesApi } from '../api/assemblies.api'
-import type { AssemblyPayload } from '../model/assemblies.types'
+import type { AssemblyCallPayload, AssemblyPayload } from '../model/assemblies.types'
 
 export const assembliesKeys = { all: ['assemblies'] as const, detail: (id: number) => ['assemblies', id] as const, mine: ['assemblies', 'mine'] as const, eligible: ['assemblies', 'eligible'] as const }
 export const useAssemblies = (enabled = true) => useQuery({ queryKey: assembliesKeys.all, queryFn: assembliesApi.list, enabled })
@@ -14,6 +14,7 @@ export function useAssemblyMutations() {
     create: useMutation({ mutationFn: (payload: AssemblyPayload) => assembliesApi.create(payload), onSuccess: refresh }),
     update: useMutation({ mutationFn: ({ id, payload }: { id: number; payload: Partial<AssemblyPayload> & { status?: string } }) => assembliesApi.update(id, payload), onSuccess: refresh }),
     convocations: useMutation({ mutationFn: ({ id, affiliateIds }: { id: number; affiliateIds: number[] }) => assembliesApi.replaceConvocations(id, affiliateIds), onSuccess: refresh }),
+    calls: useMutation({ mutationFn: ({ id, calls }: { id: number; calls: AssemblyCallPayload[] }) => assembliesApi.replaceCalls(id, calls), onSuccess: refresh }),
     start: useMutation({ mutationFn: assembliesApi.start, onSuccess: refresh }),
     complete: useMutation({ mutationFn: assembliesApi.complete, onSuccess: refresh }),
     remove: useMutation({ mutationFn: assembliesApi.remove, onSuccess: refresh }),
