@@ -19,6 +19,20 @@ type DatePickerProps = {
   'aria-invalid'?: boolean
 }
 
+type DateRangePickerProps = {
+  startId?: string
+  endId?: string
+  startValue: string
+  endValue: string
+  onStartChange: (value: string) => void
+  onEndChange: (value: string) => void
+  startLabel?: string
+  endLabel?: string
+  min?: string
+  max?: string
+  disabled?: boolean
+}
+
 const monthNames = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -295,4 +309,10 @@ export function DatePicker({
   )
 }
 
-export type { DatePickerProps }
+export function DateRangePicker({ startId, endId, startValue, endValue, onStartChange, onEndChange, startLabel = 'Desde', endLabel = 'Hasta', min, max, disabled = false }: DateRangePickerProps) {
+  const effectiveStartMax = endValue || max
+  const effectiveEndMin = startValue || min
+  return <div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1 text-label font-semibold text-text-primary" htmlFor={startId}>{startLabel}<DatePicker id={startId} value={startValue} onChange={onStartChange} min={min} max={effectiveStartMax} disabled={disabled} /></label><label className="grid gap-1 text-label font-semibold text-text-primary" htmlFor={endId}>{endLabel}<DatePicker id={endId} value={endValue} onChange={onEndChange} min={effectiveEndMin} max={max} disabled={disabled} /></label></div>
+}
+
+export type { DatePickerProps, DateRangePickerProps }

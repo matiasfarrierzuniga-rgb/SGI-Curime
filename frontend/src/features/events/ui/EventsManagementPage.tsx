@@ -16,6 +16,7 @@ import { Select } from '@/shared/ui/select'
 import { useAdminEvents, useEventMutations } from '../hooks/useEventsQueries'
 import type { AdminEvent, EventStatus, PublicationStatus } from '../model/events.types'
 import { EventForm } from './EventForm'
+import { InstitutionalAgenda } from './InstitutionalAgenda'
 
 const publicationLabels: Record<PublicationStatus, string> = { INTERNAL: 'Interno', DRAFT: 'Borrador', REVIEW: 'En revisión', PUBLISHED: 'Publicado', ARCHIVED: 'Archivado' }
 const statusLabels: Record<EventStatus, string> = { SCHEDULED: 'Programado', CANCELLED: 'Cancelado', COMPLETED: 'Finalizado' }
@@ -88,14 +89,15 @@ export function EventsManagementPage() {
     {eventsQuery.isPending ? <LoadingState label="Cargando eventos..." /> : null}
     {eventsQuery.isError ? <ErrorState message={getErrorMessage(eventsQuery.error, 'No fue posible cargar los eventos.')} action={<Button variant="outline" type="button" onClick={() => void eventsQuery.refetch()}>Reintentar</Button>} /> : null}
     {!eventsQuery.isPending && !eventsQuery.isError ? <>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-3" aria-label="Resumen de eventos cargados">
+       <div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-3" aria-label="Resumen de eventos cargados">
         <div className="rounded-overlay border border-border bg-surface px-4 py-3 shadow-sm"><p className="text-caption font-medium text-foreground-muted">Cargados</p><p className="mt-1 text-heading-2 font-semibold tabular-nums text-brand-ink">{events.length}</p></div>
         <div className="rounded-overlay border border-border bg-surface px-4 py-3 shadow-sm"><p className="text-caption font-medium text-foreground-muted">Borradores</p><p className="mt-1 text-heading-2 font-semibold tabular-nums text-brand-ink">{events.filter(event => event.publicationStatus === 'DRAFT').length}</p></div>
         <div className={`rounded-overlay border px-4 py-3 shadow-sm ${events.filter(event => event.publicationStatus === 'REVIEW').length ? 'border-accent bg-accent/10' : 'border-border bg-surface'}`}><p className="text-caption font-medium text-foreground-muted">En revisión</p><p className="mt-1 text-heading-2 font-semibold tabular-nums text-brand-ink">{events.filter(event => event.publicationStatus === 'REVIEW').length}</p></div>
         <div className="rounded-overlay border border-border bg-surface px-4 py-3 shadow-sm"><p className="text-caption font-medium text-foreground-muted">Publicados</p><p className="mt-1 text-heading-2 font-semibold tabular-nums text-brand-ink">{events.filter(event => event.publicationStatus === 'PUBLISHED').length}</p></div>
         <div className="rounded-overlay border border-border bg-surface px-4 py-3 shadow-sm"><p className="text-caption font-medium text-foreground-muted">Próximos</p><p className="mt-1 text-heading-2 font-semibold tabular-nums text-brand-ink">{upcomingEvents.length}</p></div>
-      </div>
-      {events.length === 0 ? <EmptyState title="No hay eventos registrados" description="Cree el primer evento cuando cuente con información confirmada por la Asociación." action={mayManage ? <Button type="button" onClick={() => setCreating(true)}>Crear evento</Button> : undefined} /> : <>
+       </div>
+       <InstitutionalAgenda events={filteredEvents} />
+       {events.length === 0 ? <EmptyState title="No hay eventos registrados" description="Cree el primer evento cuando cuente con información confirmada por la Asociación." action={mayManage ? <Button type="button" onClick={() => setCreating(true)}>Crear evento</Button> : undefined} /> : <>
         <div className="grid gap-3 border-y border-border py-4 lg:grid-cols-[minmax(0,1fr)_11rem_11rem_auto] lg:items-end">
           <div className="grid gap-1.5"><Label htmlFor="event-search" className="text-caption font-semibold text-foreground-muted">Buscar eventos</Label><Input id="event-search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Título, resumen o lugar" /></div>
           <div className="grid gap-1.5"><Label htmlFor="publication-filter" className="text-caption font-semibold text-foreground-muted">Publicación</Label><Select id="publication-filter" value={publicationStatus} onChange={event => setPublicationStatus(event.target.value as 'ALL' | PublicationStatus)}><option value="ALL">Todos los estados</option>{Object.entries(publicationLabels).map(([value, name]) => <option key={value} value={value}>{name}</option>)}</Select></div>
