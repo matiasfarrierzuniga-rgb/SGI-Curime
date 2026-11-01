@@ -184,10 +184,10 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
     expect(tx.affiliate.create.mock.calls[0][0].data).not.toHaveProperty('roleId');
   });
 
-  it('rejects resolved request and records reason and review metadata', async () => {
+  it('rejects pending request and records audit in the same transaction', async () => {
     await service.reject(10, 'No cumple requisitos', 99, {});
 
-    expect(prisma.affiliateRequest.updateMany).toHaveBeenCalledWith({
+    expect(tx.affiliateRequest.updateMany).toHaveBeenCalledWith({
       where: { id: 10, status: 'PENDING' },
       data: expect.objectContaining({
         status: 'REJECTED',
@@ -197,6 +197,59 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
       }),
     });
     expect(tx.affiliate.create).not.toHaveBeenCalled();
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'AFFILIATE_REQUEST_REJECTED',
+        entityId: 10,
+        userId: 99,
+      }),
+      tx,
+    );
+  });
+
+  it('rolls back rejection when audit persistence fails', async () => {
+    const persistedRequest = { ...request };
+    tx.affiliateRequest.findUnique.mockImplementation(async () => persistedRequest);
+    tx.affiliateRequest.updateMany.mockImplementation(async ({ data }) => {
+      Object.assign(persistedRequest, data);
+      return { count: 1 };
+    });
+    tx.affiliateRequest.findUniqueOrThrow.mockImplementation(async () => persistedRequest);
+    audit.log.mockRejectedValueOnce(new Error('Audit persistence failed'));
+    prisma.$transaction.mockImplementationOnce(async (work) => {
+      const snapshot = { ...persistedRequest };
+      try {
+        return await (work as (client: typeof tx) => unknown)(tx);
+      } catch (error) {
+        Object.assign(persistedRequest, snapshot);
+        throw error;
+      }
+    });
+
+    await expect(service.reject(10, 'No cumple requisitos', 99, {})).rejects.toThrow(
+      'Audit persistence failed',
+    );
+
+    expect(persistedRequest).toMatchObject({
+      status: 'PENDING',
+      rejectionReason: null,
+      reviewedAt: null,
+      reviewedById: null,
+    });
+  });
+
+  it('rejects an already resolved request without modifying data', async () => {
+    tx.affiliateRequest.findUnique.mockResolvedValue({
+      ...request,
+      status: 'APPROVED',
+    });
+
+    await expect(service.reject(10, 'No cumple requisitos', 99, {})).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+
+    expect(tx.affiliateRequest.updateMany).not.toHaveBeenCalled();
+    expect(audit.log).not.toHaveBeenCalled();
   });
 
   it('rejects approval when request is no longer PENDING', async () => {
