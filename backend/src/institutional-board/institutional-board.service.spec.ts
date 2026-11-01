@@ -126,4 +126,104 @@ describe('InstitutionalBoardService', () => {
       ),
     ).rejects.toThrow(NotFoundException);
   });
+
+  it('atomically closes an appointment and creates its replacement', async () => {
+    tx.governanceMembership.findUnique.mockResolvedValue({
+      id: 3,
+      termId: 4,
+      legacyPersonId: 9,
+      legacyPosition: BoardPosition.PRESIDENT,
+      seatNumber: null,
+      startedAt: null,
+      endedAt: null,
+      term: {
+        legacyInstitutionalProfileId: 1,
+        startDate: new Date('2026-01-01'),
+        endDate: new Date('2027-12-31'),
+      },
+    });
+    tx.person.findUnique.mockResolvedValue({ id: 10 });
+    tx.governanceMembership.update.mockResolvedValue({
+      id: 3,
+      termId: 4,
+      legacyPersonId: 9,
+      legacyPosition: BoardPosition.PRESIDENT,
+      seatNumber: null,
+      startedAt: null,
+      endedAt: new Date('2026-12-31'),
+    });
+    tx.governanceMembership.create.mockResolvedValue({
+      id: 4,
+      termId: 4,
+      legacyPersonId: 10,
+      legacyPosition: BoardPosition.PRESIDENT,
+      seatNumber: null,
+      startedAt: new Date('2027-01-01'),
+      endedAt: null,
+    });
+
+    const result = await service.replaceAppointment(
+      3,
+      {
+        personId: 10,
+        position: BoardPosition.PRESIDENT,
+        startsOn: '2027-01-01',
+        endsOn: null,
+        replacedEndsOn: '2026-12-31',
+      },
+      2,
+      {},
+    );
+
+    expect(tx.governanceMembership.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { endedAt: new Date('2026-12-31') } }),
+    );
+    expect(tx.governanceMembership.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ termId: 4, legacyPersonId: 10 }),
+      }),
+    );
+    expect(result.successor.personId).toBe(10);
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'BOARD_APPOINTMENT_UPDATED' }),
+      tx,
+    );
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'BOARD_APPOINTMENT_CREATED' }),
+      tx,
+    );
+  });
+
+  it('does not close an appointment when its replacement person is missing', async () => {
+    tx.governanceMembership.findUnique.mockResolvedValue({
+      id: 3,
+      termId: 4,
+      legacyPersonId: 9,
+      legacyPosition: BoardPosition.PRESIDENT,
+      seatNumber: null,
+      startedAt: null,
+      endedAt: null,
+      term: {
+        legacyInstitutionalProfileId: 1,
+        startDate: new Date('2026-01-01'),
+        endDate: new Date('2027-12-31'),
+      },
+    });
+    tx.person.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.replaceAppointment(
+        3,
+        {
+          personId: 999,
+          position: BoardPosition.PRESIDENT,
+          replacedEndsOn: '2026-12-31',
+        },
+        2,
+        {},
+      ),
+    ).rejects.toThrow(NotFoundException);
+    expect(tx.governanceMembership.update).not.toHaveBeenCalled();
+    expect(tx.governanceMembership.create).not.toHaveBeenCalled();
+  });
 });
