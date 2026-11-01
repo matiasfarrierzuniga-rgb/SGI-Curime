@@ -37,6 +37,11 @@ function prismaMock(overrides: Record<string, unknown> = {}) {
       findMany: jest.fn().mockResolvedValue([]),
       count: jest.fn().mockResolvedValue(0),
     },
+    assemblyCall: {
+      deleteMany: jest.fn(),
+      createMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     assemblyAttendance: { count: jest.fn().mockResolvedValue(0) },
     absenceJustification: { count: jest.fn().mockResolvedValue(0) },
   };
@@ -60,6 +65,7 @@ function prismaMock(overrides: Record<string, unknown> = {}) {
       upsert: jest.fn(),
     },
     absenceJustification: { count: jest.fn().mockResolvedValue(0) },
+    assemblyCall: { findMany: jest.fn().mockResolvedValue([]) },
     $transaction: jest.fn(async (value: unknown) =>
       typeof value === 'function'
         ? (value as (client: typeof tx) => unknown)(tx)
@@ -394,6 +400,39 @@ describe('Assembly convocations', () => {
         data: { convocationsLockedAt: expect.any(Date) },
       }),
     );
+  });
+});
+
+describe('Assembly call rounds', () => {
+  const calls = [
+    { callNumber: 1, scheduledAt: new Date('2026-10-01T18:00:00Z'), quorumType: 'FIXED' as const, quorumValue: 5 },
+    { callNumber: 2, scheduledAt: new Date('2026-10-01T18:30:00Z'), quorumType: 'PERCENTAGE' as const, quorumValue: 50 },
+  ];
+
+  it('atomically replaces configured call rounds and audits the change', async () => {
+    const { prisma, tx } = prismaMock();
+    tx.assemblyCall.findMany.mockResolvedValue(calls);
+    await expect(serviceFor(prisma).replaceCalls(1, calls, 9)).resolves.toEqual(calls);
+    expect(tx.assemblyCall.deleteMany).toHaveBeenCalledWith({ where: { assemblyId: 1 } });
+    expect(tx.assemblyCall.createMany).toHaveBeenCalledWith({ data: calls.map(call => ({ ...call, assemblyId: 1 })) });
+    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ userId: 9, action: 'ASSEMBLY_CALLS_UPDATED' }), tx);
+  });
+
+  it.each([
+    [[calls[0], { ...calls[1], callNumber: 1 }]],
+    [[calls[0], { ...calls[1], scheduledAt: calls[0].scheduledAt }]],
+    [[{ ...calls[0], quorumType: 'PERCENTAGE' as const, quorumValue: 101 }]],
+  ])('rejects invalid complete call-round sets', async (invalidCalls) => {
+    const { prisma, tx } = prismaMock();
+    await expect(serviceFor(prisma).replaceCalls(1, invalidCalls, 9)).rejects.toBeInstanceOf(BadRequestException);
+    expect(tx.assemblyCall.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects replacement after calls are locked', async () => {
+    const { prisma, tx } = prismaMock();
+    prisma.assembly.findUnique.mockResolvedValue({ ...assembly, convocationsLockedAt: new Date() });
+    await expect(serviceFor(prisma).replaceCalls(1, calls, 9)).rejects.toBeInstanceOf(BadRequestException);
+    expect(tx.assemblyCall.deleteMany).not.toHaveBeenCalled();
   });
 });
 

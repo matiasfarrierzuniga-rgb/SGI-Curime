@@ -25,6 +25,7 @@ import { CreateAssemblyDto, UpdateAssemblyDto } from './dto/assembly.dto';
 import { QueryAssembliesDto } from './dto/query-assemblies.dto';
 import { RecordAttendanceDto } from './dto/record-attendance.dto';
 import { UpdateConvocationsDto } from './dto/update-convocations.dto';
+import { UpdateAssemblyCallsDto } from './dto/update-assembly-calls.dto';
 
 type AuthRequest = Request & { user: AuthenticatedUser };
 
@@ -79,6 +80,22 @@ export class AssembliesController {
   @RequireCapabilities('adm.assemblies.read')
   convocations(@Param('id', ParseIntPipe) id: number) {
     return this.service.getConvocations(id);
+  }
+
+  @Get(':id/calls')
+  @RequireCapabilities('adm.assemblies.read')
+  calls(@Param('id', ParseIntPipe) id: number) {
+    return this.service.getCalls(id);
+  }
+
+  @Put(':id/calls')
+  @RequireCapabilities('adm.assemblies.manage')
+  replaceCalls(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAssemblyCallsDto,
+    @Req() req: AuthRequest,
+  ) {
+    return this.service.replaceCalls(id, dto.calls, req.user.id, this.context(req));
   }
 
   @Put(':id/convocations')
