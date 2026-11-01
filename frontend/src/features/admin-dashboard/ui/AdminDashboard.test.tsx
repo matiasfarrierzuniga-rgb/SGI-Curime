@@ -82,7 +82,7 @@ describe('AdminDashboard', () => {
     expect(await screen.findByRole('heading', { name: 'Actividad reciente' })).toBeInTheDocument()
     expect(screen.getByText('María López', { exact: false })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Ver bitácora/ })).toHaveAttribute('href', '/admin/audit-logs')
-    expect(httpClient.get).toHaveBeenCalledWith('/audit-logs', { params: { page: 1, limit: 5 } })
+    expect(httpClient.get).toHaveBeenCalledWith('/audit-logs', { params: { page: 1, limit: 20 } })
   })
 
   it('marks real authorized reservations, assemblies and public events by category on the same Costa Rica day', async () => {

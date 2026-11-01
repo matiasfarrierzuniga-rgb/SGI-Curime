@@ -7,6 +7,6 @@ export const adminDashboardApi = {
     return (await httpClient.get<AdminDashboardResponse>('/admin-reports/dashboard')).data
   },
   async getRecentActivity() {
-    return (await httpClient.get<PaginatedResponse<RecentAuditActivity>>('/audit-logs', { params: { page: 1, limit: 5 } })).data
+    return (await httpClient.get<PaginatedResponse<RecentAuditActivity>>('/audit-logs', { params: { page: 1, limit: 20 } })).data
   },
 }
