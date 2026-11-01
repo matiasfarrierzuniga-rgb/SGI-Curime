@@ -118,7 +118,7 @@ export function InventoryCategoriesPage() {
   return (
     <InventoryPageContainer>
       <AdministrativeListLayout
-        header={<PageHeader context="Inventario" title="Categorías" description="Organice artículos por categorías activas para una consulta y gestión consistente." />}
+        header={<PageHeader className="gap-4 pb-5" context="Inventario" title="Categorías" description="Organice artículos por categorías activas para una consulta y gestión consistente." />}
         filters={
           <SearchFilterBar
             label="Buscar y filtrar categorías"

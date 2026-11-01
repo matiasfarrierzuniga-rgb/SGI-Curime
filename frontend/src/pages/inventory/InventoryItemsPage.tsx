@@ -342,7 +342,7 @@ export function InventoryItemsPage() {
   return (
     <InventoryPageContainer>
       <AdministrativeListLayout
-        header={<PageHeader context="Inventario" title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo." />}
+        header={<PageHeader className="gap-4 pb-5" context="Inventario" title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo." />}
         filters={
           <SearchFilterBar
             label="Buscar y filtrar artículos"

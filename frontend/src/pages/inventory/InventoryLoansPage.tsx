@@ -235,13 +235,13 @@ export function InventoryLoansPage() {
   return (
     <InventoryPageContainer>
       <AdministrativeListLayout
-        header={<PageHeader context="Inventario" title="Préstamos" description="Gestione entregas, devoluciones y vencimientos de artículos prestados." />}
+        className="space-y-5"
+        header={<PageHeader className="gap-4 pb-5" context="Inventario" title="Préstamos" description="Gestione entregas, devoluciones y vencimientos de artículos prestados." />}
         filters={
           <SearchFilterBar
             label="Filtrar préstamos"
-            controlsClassName="md:grid-cols-2 xl:grid-cols-[minmax(15rem,2fr)_minmax(10rem,1fr)_10rem_10rem_10rem]"
+            controlsClassName="md:grid-cols-2 xl:grid-cols-[minmax(16rem,2fr)_minmax(10rem,1fr)_10rem_10rem_auto]"
             onSubmit={submit}
-            actions={<><Button type="submit">Aplicar filtros</Button><Button type="button" variant="outline" onClick={openCreate}>Nuevo préstamo</Button></>}
           >
             <FormField id="inventory-loan-item" label="Artículo">
               <Select value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
@@ -257,19 +257,23 @@ export function InventoryLoansPage() {
                 <option value="CANCELLED">Cancelado</option>
               </Select>
             </FormField>
-            <div className="grid gap-1.5">
-              <span className="text-label font-semibold text-foreground">Vencimiento</span>
-              <label className="flex h-(--size-control) items-center gap-2 text-sm text-foreground" htmlFor="inventory-loan-overdue-checkbox">
-                <input id="inventory-loan-overdue-checkbox" type="checkbox" checked={form.overdue} onChange={(e) => setForm({ ...form, overdue: e.target.checked })} />
-                Solo vencidos
-              </label>
-            </div>
             <FormField id="inventory-loan-date-from" label="Desde">
               <Input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} />
             </FormField>
             <FormField id="inventory-loan-date-to" label="Hasta">
               <Input type="date" value={form.dateTo} onChange={(e) => setForm({ ...form, dateTo: e.target.value })} />
             </FormField>
+            <div className="flex w-full flex-wrap items-end gap-2 border-t border-border-subtle pt-2 md:col-span-2 xl:col-span-1 xl:w-auto xl:self-end xl:border-t-0 xl:border-l xl:pl-2 xl:pt-0">
+              <Button type="submit">Aplicar filtros</Button>
+              <Button type="button" variant="outline" onClick={openCreate}>Nuevo préstamo</Button>
+            </div>
+            <fieldset className="grid min-w-0 gap-1.5 md:col-span-2 xl:col-span-5">
+              <legend className="text-label font-semibold text-foreground">Vencimiento</legend>
+              <label className="flex h-(--size-control) items-center gap-2 text-sm text-foreground" htmlFor="inventory-loan-overdue-checkbox">
+                <input id="inventory-loan-overdue-checkbox" type="checkbox" checked={form.overdue} onChange={(e) => setForm({ ...form, overdue: e.target.checked })} />
+                Solo vencidos
+              </label>
+            </fieldset>
           </SearchFilterBar>
         }
       >

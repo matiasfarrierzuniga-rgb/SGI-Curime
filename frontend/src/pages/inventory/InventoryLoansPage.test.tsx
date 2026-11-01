@@ -55,6 +55,13 @@ describe('InventoryLoansPage', () => {
     vi.mocked(affiliatesService.list).mockResolvedValue({ data: [{ id: 7, fullName: 'Ana Soto', identification: '1-2' } as never], total: 1, page: 1, limit: 20 })
   })
 
+  it('groups the overdue filter with its accessible label', async () => {
+    page()
+
+    const overdueFilter = await screen.findByRole('checkbox', { name: 'Solo vencidos' })
+    expect(screen.getByRole('group', { name: 'Vencimiento' })).toContainElement(overdueFilter)
+  })
+
   it('lists loans with status', async () => {
     page()
     expect(await screen.findByText('Martillo')).toBeInTheDocument()

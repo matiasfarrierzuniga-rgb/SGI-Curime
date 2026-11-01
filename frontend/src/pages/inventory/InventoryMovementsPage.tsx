@@ -110,7 +110,7 @@ export function InventoryMovementsPage() {
   return (
     <InventoryPageContainer>
       <AdministrativeListLayout
-        header={<PageHeader context="Inventario" title="Movimientos" description="Historial inmutable de entradas, salidas y ajustes de inventario." />}
+        header={<PageHeader className="gap-4 pb-5" context="Inventario" title="Movimientos" description="Historial inmutable de entradas, salidas y ajustes de inventario." />}
         filters={
           <SearchFilterBar
             label="Filtrar movimientos"
