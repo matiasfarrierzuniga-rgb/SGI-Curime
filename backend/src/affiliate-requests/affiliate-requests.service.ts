@@ -308,30 +308,50 @@ export class AffiliateRequestsService {
     actorId: number,
     context: AuditContext = {},
   ) {
-    await this.requirePending(id);
-    const result = await this.prisma.affiliateRequest.updateMany({
-      where: { id, status: 'PENDING' },
-      data: {
-        status: 'REJECTED',
-        rejectionReason,
-        reviewedAt: new Date(),
-        reviewedById: actorId,
+    return this.prisma.$transaction(
+      async (tx) => {
+        const request = await tx.affiliateRequest.findUnique({
+          where: { id },
+        });
+        if (!request)
+          throw new NotFoundException('Affiliate request not found');
+        if (request.status !== RequestStatus.PENDING)
+          throw new ConflictException(
+            'Affiliate request has already been resolved',
+          );
+
+        const result = await tx.affiliateRequest.updateMany({
+          where: { id, status: 'PENDING' },
+          data: {
+            status: 'REJECTED',
+            rejectionReason,
+            reviewedAt: new Date(),
+            reviewedById: actorId,
+          },
+        });
+        if (result.count !== 1)
+          throw new ConflictException(
+            'Affiliate request has already been resolved',
+          );
+        const rejected = await tx.affiliateRequest.findUniqueOrThrow({
+          where: { id },
+          select,
+        });
+        await this.audit?.log(
+          {
+            userId: actorId,
+            action: AuditAction.AFFILIATE_REQUEST_REJECTED,
+            module: 'AFFILIATE_REQUESTS',
+            entityType: 'AffiliateRequest',
+            entityId: id,
+            ...context,
+          },
+          tx,
+        );
+        return toAffiliateRequestSnapshotResponse(rejected);
       },
-    });
-    if (result.count !== 1)
-      throw new ConflictException(
-        'Affiliate request has already been resolved',
-      );
-    const rejected = await this.findOne(id);
-    await this.audit?.log({
-      userId: actorId,
-      action: AuditAction.AFFILIATE_REQUEST_REJECTED,
-      module: 'AFFILIATE_REQUESTS',
-      entityType: 'AffiliateRequest',
-      entityId: id,
-      ...context,
-    });
-    return toAffiliateRequestSnapshotResponse(rejected);
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
   }
   private async requirePending(id: number) {
     const item = await this.prisma.affiliateRequest.findUnique({
