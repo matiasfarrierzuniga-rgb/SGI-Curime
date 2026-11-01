@@ -23,29 +23,29 @@
   --color-card-white: #fffdf9;
 
   /* Semantic color foundation. Values remain raw so legacy aliases stay stable. */
-  --color-foreground-primary: #2b2723;
-  --color-foreground-secondary: #5f574f;
-  --color-foreground-muted: #766d64;
-  --color-foreground-disabled: #a69d92;
+  --color-foreground-primary: #20342a;
+  --color-foreground-secondary: #536358;
+  --color-foreground-muted: #68766d;
+  --color-foreground-disabled: #9aa79e;
   --color-foreground-brand: #2f4a38;
   --color-foreground-institutional: #4a2f1a;
   --color-background-app: #faf4ea;
   --color-background-surface: #ffffff;
-  --color-background-subtle: #f4efe8;
-  --color-background-muted: #e9e2d9;
+  --color-background-subtle: #f2f5f1;
+  --color-background-muted: #e1e9e2;
   --color-background-selected: #f5e8cf;
-  --color-border-subtle: #e4ddd4;
-  --color-border-default: #d8d0c6;
-  --color-border-strong: #b8aea3;
+  --color-border-subtle: #e0e8e1;
+  --color-border-default: #cad7cd;
+  --color-border-strong: #a7b9ab;
   --color-border-focus: #2f4a38;
   --color-border-error: #b03a2e;
   --color-background: #faf4ea;
-  --color-foreground: #4a2f1a;
-  --color-surface: #fffdf9;
-  --color-surface-muted: #f2eadf;
+  --color-foreground: #20342a;
+  --color-surface: #ffffff;
+  --color-surface-muted: #edf3ed;
   --color-surface-elevated: #ffffff;
   --color-surface-overlay: rgba(74, 47, 26, 0.52);
-  --color-foreground-subtle: #8b7c70;
+  --color-foreground-subtle: #7a887f;
   --color-focus: #b03a2e;
 
   --color-admin-primary: #2f5f91;
@@ -84,14 +84,14 @@
   --color-institutional: #b03a2e;
   --color-institutional-foreground: #fffdf9;
 
-  --color-card: #fffdf9;
-  --color-card-foreground: #4a2f1a;
+  --color-card: #ffffff;
+  --color-card-foreground: #20342a;
 
-  --color-border: #d9cbbc;
+  --color-border: #cad7cd;
   --color-ring: #b03a2e;
 
-  --color-muted: #f2eadf;
-  --color-muted-foreground: #6c5b4d;
+  --color-muted: #edf3ed;
+  --color-muted-foreground: #5d6e63;
 
   --color-destructive: #9d3027;
   --color-destructive-foreground: #fff4f2;
@@ -109,13 +109,13 @@
   --color-info-bg: #e8f3f9;
 
   --color-surface-page: #faf4ea;
-  --color-surface-card: #fffdf9;
-  --color-text-primary: #4a2f1a;
-  --color-text-secondary: #6c5b4d;
-  --color-text-muted: #6c5b4d;
+  --color-surface-card: #ffffff;
+  --color-text-primary: #20342a;
+  --color-text-secondary: #536358;
+  --color-text-muted: #68766d;
   --color-text-inverse: #fffdf9;
-  --color-control: #fffdf9;
-  --color-control-disabled: #f2eadf;
+  --color-control: #f9fcf9;
+  --color-control-disabled: #edf3ed;
   --color-status-success-surface: #e7efe9;
   --color-status-success-border: #afc3b4;
   --color-status-success-foreground: #2f4a38;

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, ArrowRight, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, ClipboardList, FileClock, FileText, Heart, History, Package, PackageX, RefreshCw, Sun, UserPlus, Users, UsersRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '@/shared/ui/card
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { Skeleton } from '@/shared/ui/skeleton'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { hasCapability, type AccessCapability } from '@/shared/security/access'
 import { useAdminDashboard, useRecentAdminActivity } from '../hooks/useAdminDashboard'
 import type { AdminDashboardData, RecentAuditActivity } from '../model/adminDashboard.types'
@@ -24,7 +25,7 @@ type AccountRequestStatus = { isPending: boolean; isError: boolean; total?: numb
 type Tone = 'success' | 'warning' | 'danger' | 'info' | 'violet'
 type QuickAction = { label: string; path: string; capability: AccessCapability; icon: Icon; tone: Tone }
 type CalendarCategory = 'reservations' | 'assemblies' | 'events'
-type CalendarActivity = { category: CalendarCategory; startAt: string }
+type CalendarActivity = { category: CalendarCategory; startAt: string; title: string; location?: string | null; path: string }
 
 const quickActions: readonly QuickAction[] = [
   { label: 'Gestionar afiliados', path: '/app/admin/affiliates', capability: 'adm.affiliates.read', icon: Users, tone: 'success' },
@@ -114,16 +115,18 @@ function InstitutionalCalendar({ month, onMonthChange, events, reservations, ass
   const activitiesByDay = useMemo(() => groupActivitiesByDay(activities, month), [activities, month])
   const calendar = getCalendarDays(month)
   const monthLabel = new Intl.DateTimeFormat('es-CR', { month: 'long', year: 'numeric', timeZone: COSTA_RICA_TIME_ZONE }).format(month)
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  useEffect(() => { const handler = (event: Event) => setSelectedDay((event as CustomEvent<string>).detail); window.addEventListener('sgi-calendar-day', handler); return () => window.removeEventListener('sgi-calendar-day', handler) }, [])
 
-  return <section aria-label="Calendario institucional"><DashboardCard title="Calendario institucional" icon={CalendarDays} tone="info"><div className="mb-3 flex items-center justify-between"><Button type="button" variant="ghost" size="icon-sm" aria-label="Mes anterior" onClick={() => onMonthChange(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft aria-hidden="true" /></Button><p className="text-body-small font-bold capitalize text-erp-text">{monthLabel}</p><Button type="button" variant="ghost" size="icon-sm" aria-label="Mes siguiente" onClick={() => onMonthChange(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight aria-hidden="true" /></Button></div>{isPending ? <Skeleton className="h-48" /> : isError ? <InlineRetry message="No fue posible cargar actividades institucionales." onRetry={onRetry} /> : <><div className="grid grid-cols-7 gap-y-1 text-center text-caption font-semibold text-erp-text-muted" aria-hidden="true">{['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(day => <span key={day}>{day}</span>)}</div><div className="mt-2 grid grid-cols-7 gap-y-1" role="grid" aria-label="Días del mes">{calendar.map(day => <CalendarDay key={day.key} day={day} activities={activitiesByDay.get(day.key) ?? []} />)}</div><CalendarLegend includeReservations={includeReservations} includeAssemblies={includeAssemblies} /></>}</DashboardCard></section>
+  return <section aria-label="Calendario institucional"><DashboardCard title="Calendario institucional" icon={CalendarDays} tone="info"><div className="mb-3 flex items-center justify-between"><Button type="button" variant="ghost" size="icon-sm" aria-label="Mes anterior" onClick={() => onMonthChange(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft aria-hidden="true" /></Button><p className="text-body-small font-bold capitalize text-erp-text">{monthLabel}</p><Button type="button" variant="ghost" size="icon-sm" aria-label="Mes siguiente" onClick={() => onMonthChange(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight aria-hidden="true" /></Button></div>{isPending ? <Skeleton className="h-48" /> : isError ? <InlineRetry message="No fue posible cargar actividades institucionales." onRetry={onRetry} /> : <><div className="grid grid-cols-7 gap-y-1 text-center text-caption font-semibold text-erp-text-muted" aria-hidden="true">{['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(day => <span key={day}>{day}</span>)}</div><div className="mt-2 grid grid-cols-7 gap-y-1" role="grid" aria-label="Días del mes">{calendar.map(day => <CalendarDay key={day.key} day={day} activities={activitiesByDay.get(day.key) ?? []} onSelect={setSelectedDay} />)}</div><CalendarLegend includeReservations={includeReservations} includeAssemblies={includeAssemblies} /></>}</DashboardCard><DashboardCalendarDialog key={selectedDay ?? 'closed'} day={selectedDay} activities={activities} onClose={() => setSelectedDay(null)} /></section>
 }
 
-function CalendarDay({ day, activities }: { day: CalendarDayData; activities: readonly CalendarActivity[] }) {
+function CalendarDay({ day, activities, onSelect }: { day: CalendarDayData; activities: readonly CalendarActivity[]; onSelect: (day: string) => void }) {
   const categories = (['reservations', 'assemblies', 'events'] as const).filter(category => activities.some(activity => activity.category === category))
   const singleCategory = categories.length === 1 ? categories[0] : null
   const style = singleCategory ? calendarCategoryStyles[singleCategory] : null
   const activityLabel = activities.length ? `, ${activities.length} ${activities.length === 1 ? 'actividad' : 'actividades'}: ${categories.map(category => calendarCategoryStyles[category].label).join(', ')}` : ''
-  return <span role="gridcell" aria-label={`${formatCalendarDay(day.key)}${activityLabel}`} className={`relative mx-auto grid size-8 place-items-center rounded-full text-caption font-medium ${day.current ? 'text-erp-text' : 'text-erp-text-muted/60'} ${style ? style.surface : ''}`}><span>{day.date.getDate()}</span>{categories.length ? <span aria-hidden="true" className="absolute bottom-0.5 flex gap-0.5">{categories.map(category => <span key={category} className={`size-1 rounded-full ${calendarCategoryStyles[category].dot}`} />)}</span> : null}</span>
+  return <button type="button" role="gridcell" aria-label={`${formatCalendarDay(day.key)}${activityLabel}. Abrir agenda de esta fecha.`} onClick={() => onSelect(day.key)} className={`relative mx-auto grid size-8 place-items-center rounded-full text-caption font-medium transition-transform hover:scale-110 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus ${day.current ? 'text-erp-text' : 'text-erp-text-muted/60'} ${style ? style.surface : ''}`}><span>{day.date.getDate()}</span>{categories.length ? <span aria-hidden="true" className="absolute bottom-0.5 flex gap-0.5">{categories.map(category => <span key={category} className={`size-1 rounded-full ${calendarCategoryStyles[category].dot}`} />)}</span> : null}</button>
 }
 
 function CalendarLegend({ includeReservations, includeAssemblies }: { includeReservations: boolean; includeAssemblies: boolean }) {
@@ -136,6 +139,28 @@ const calendarCategoryStyles: Record<CalendarCategory, { label: string; dot: str
   reservations: { label: 'Reservas', dot: 'bg-[#2878f0]', surface: 'bg-[#e9f2ff] text-[#145ecb]' },
   assemblies: { label: 'Asambleas', dot: 'bg-[#279b72]', surface: 'bg-[#e6f6ee] text-[#0c7350]' },
   events: { label: 'Eventos', dot: 'bg-[#d69b2d]', surface: 'bg-[#fdf3df] text-[#9b6610]' },
+}
+
+type DashboardCalendarView = 'month' | 'week' | 'day' | 'agenda'
+function DashboardCalendarDialog({ day, activities, onClose }: { day: string | null; activities: readonly CalendarActivity[]; onClose: () => void }) {
+  const [view, setView] = useState<DashboardCalendarView>('day')
+  const initial = day ? new Date(`${day}T12:00:00-06:00`) : currentCostaRicaMonth()
+  const [month] = useState(() => new Date(initial.getFullYear(), initial.getMonth(), 1))
+  const selectedActivities = activities.filter(activity => calendarKey(activity.startAt) === day).sort((a, b) => a.startAt.localeCompare(b.startAt))
+  const monthActivities = activities.filter(activity => calendarKey(activity.startAt).startsWith(civilMonthKey(month))).sort((a, b) => a.startAt.localeCompare(b.startAt))
+  const viewOptions: Array<{ value: DashboardCalendarView; label: string }> = [{ value: 'month', label: 'Mes' }, { value: 'week', label: 'Semana' }, { value: 'day', label: 'Día' }, { value: 'agenda', label: 'Agenda' }]
+  const title = day ? formatCalendarDay(day) : 'Calendario institucional'
+  const changeDay = (offset: number) => { if (!day) return; const current = new Date(`${day}T12:00:00-06:00`); current.setDate(current.getDate() + offset); window.dispatchEvent(new CustomEvent('sgi-calendar-day', { detail: calendarKey(current) })) }
+  return <Dialog open={Boolean(day)} onOpenChange={open => { if (!open) onClose() }}><DialogContent size="lg" className="max-w-5xl"><DialogHeader className="pr-9"><p className="text-caption font-bold uppercase tracking-[0.14em] text-erp-accent">Agenda institucional</p><DialogTitle className="mt-1 capitalize">{title}</DialogTitle><DialogDescription>Actividades cargadas y autorizadas para su sesión.</DialogDescription></DialogHeader><div className="flex flex-wrap items-center justify-between gap-3 border-y border-erp-border py-2"><div className="flex items-center gap-1"><Button type="button" variant="ghost" size="icon-sm" aria-label="Día anterior" onClick={() => changeDay(-1)}><ChevronLeft aria-hidden="true" /></Button><Button type="button" variant="ghost" size="icon-sm" aria-label="Día siguiente" onClick={() => changeDay(1)}><ChevronRight aria-hidden="true" /></Button><p className="ml-2 min-w-36 text-body-small font-bold capitalize text-erp-text">{new Intl.DateTimeFormat('es-CR', { month: 'long', year: 'numeric' }).format(month)}</p></div><div className="flex flex-wrap gap-1" role="group" aria-label="Vista ampliada del calendario">{viewOptions.map(option => <Button key={option.value} type="button" variant={view === option.value ? 'secondary' : 'ghost'} size="sm" aria-pressed={view === option.value} onClick={() => setView(option.value)}>{option.label}</Button>)}</div></div>{view === 'month' ? <DashboardMonthView month={month} activities={monthActivities} /> : view === 'week' ? <DashboardAgendaList title="Semana de la fecha seleccionada" activities={activities.filter(activity => day && sameCalendarWeek(calendarKey(activity.startAt), day))} /> : view === 'agenda' ? <DashboardAgendaList title="Agenda institucional" activities={monthActivities} /> : <DashboardAgendaList title="Actividades del día" activities={selectedActivities} />}<div className="flex justify-end border-t border-erp-border pt-3"><Link to="/app/events" className="inline-flex min-h-10 items-center gap-2 rounded-control bg-erp-navigation px-3 text-body-small font-bold text-white transition-colors hover:bg-erp-navigation-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus"><CalendarDays className="size-4" aria-hidden="true" />Ver agenda completa</Link></div></DialogContent></Dialog>
+}
+
+function DashboardMonthView({ month, activities }: { month: Date; activities: readonly CalendarActivity[] }) {
+  const grouped = groupActivitiesByDay(activities, month)
+  return <div><div className="grid grid-cols-7 gap-1 text-center text-caption font-semibold text-erp-text-muted" aria-hidden="true">{['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(day => <span key={day}>{day}</span>)}</div><div className="mt-2 grid grid-cols-7 gap-1" role="grid" aria-label="Mes institucional ampliado">{getCalendarDays(month).map(item => { const count = grouped.get(item.key)?.length ?? 0; return <div key={item.key} role="gridcell" aria-label={`${formatCalendarDay(item.key)}${count ? `, ${count} actividades` : ''}`} className={`min-h-18 rounded-control border p-2 ${item.current ? 'border-erp-border bg-erp-surface' : 'border-transparent bg-erp-surface-subtle text-erp-text-muted'}`}><span className="text-caption font-semibold">{item.date.getDate()}</span>{count ? <span className="mt-2 block truncate rounded-control bg-status-info-surface px-1.5 py-1 text-caption font-bold text-status-info">{count} {count === 1 ? 'actividad' : 'actividades'}</span> : null}</div> })}</div></div>
+}
+
+function DashboardAgendaList({ title, activities }: { title: string; activities: readonly CalendarActivity[] }) {
+  return <section aria-label={title}><h3 className="mb-3 text-body-small font-bold text-erp-text">{title}</h3>{activities.length ? <ol className="grid gap-2">{activities.map(activity => { const category = calendarCategoryStyles[activity.category]; return <li key={`${activity.category}-${activity.startAt}-${activity.title}`} className="rounded-control border border-erp-border bg-erp-surface-subtle/55 p-3"><div className="flex items-start gap-3"><time className="w-24 shrink-0 text-caption font-bold text-erp-navigation" dateTime={activity.startAt}>{formatActivityDate(activity.startAt)}</time><div className="min-w-0 flex-1"><span className="inline-flex items-center gap-1.5 text-caption font-bold text-erp-text-muted"><span className={`size-1.5 rounded-full ${category.dot}`} aria-hidden="true" />{category.label}</span><p className="mt-1 text-body-small font-bold text-erp-text">{activity.title}</p>{activity.location ? <p className="mt-0.5 truncate text-caption text-erp-text-muted">{activity.location}</p> : null}</div><Link className="shrink-0 text-caption font-bold text-erp-navigation underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus" to={activity.path}>Ver</Link></div></li> })}</ol> : <EmptyState className="py-8" title="Sin actividades en esta vista" description="Cambie de fecha o consulte otra vista." />}</section>
 }
 function ModuleSummary({ data, permissionCodes }: { data: AdminDashboardData; permissionCodes?: readonly string[] }) {
   const modules: Array<{ title: string; value: string; icon: Icon; tone: Tone; path: string; capability: AccessCapability }> = [
@@ -169,9 +194,9 @@ const COSTA_RICA_TIME_ZONE = 'America/Costa_Rica'
 type CalendarDayData = { date: Date; key: string; current: boolean }
 
 function calendarActivities(events: PublicEvent[] | undefined, reservations: AdminReservation[] | undefined, assemblies: Assembly[] | undefined, includeReservations: boolean, includeAssemblies: boolean): CalendarActivity[] {
-  const activities: CalendarActivity[] = (Array.isArray(events) ? events : []).filter(event => event.status === 'SCHEDULED').map<CalendarActivity>(event => ({ category: 'events', startAt: event.startAt }))
-  if (includeReservations) activities.push(...(Array.isArray(reservations) ? reservations : []).filter(reservation => reservation.status === 'APPROVED' || reservation.status === 'CONFIRMED').map<CalendarActivity>(reservation => ({ category: 'reservations', startAt: reservation.startAt })))
-  if (includeAssemblies) activities.push(...(Array.isArray(assemblies) ? assemblies : []).filter(assembly => assembly.status !== 'CANCELLED').map<CalendarActivity>(assembly => ({ category: 'assemblies', startAt: assembly.date })))
+  const activities: CalendarActivity[] = (Array.isArray(events) ? events : []).filter(event => event.status === 'SCHEDULED').map<CalendarActivity>(event => ({ category: 'events', startAt: event.startAt, title: event.title, location: event.location, path: `/eventos/${event.publicId}` }))
+  if (includeReservations) activities.push(...(Array.isArray(reservations) ? reservations : []).filter(reservation => reservation.status === 'APPROVED' || reservation.status === 'CONFIRMED').map<CalendarActivity>(reservation => ({ category: 'reservations', startAt: reservation.startAt, title: reservation.resource.name, location: reservation.resource.location, path: '/app/reservations' })))
+  if (includeAssemblies) activities.push(...(Array.isArray(assemblies) ? assemblies : []).filter(assembly => assembly.status !== 'CANCELLED').map<CalendarActivity>(assembly => ({ category: 'assemblies', startAt: assembly.date, title: assembly.title, location: assembly.place, path: '/app/admin/assemblies' })))
   return activities
 }
 
@@ -183,6 +208,7 @@ function calendarMonthFilters(month: Date) { const year = month.getFullYear(); c
 function civilMonthKey(month: Date) { return civilDateKey(month.getFullYear(), month.getMonth() + 1, 1).slice(0, 7) }
 function civilDateKey(year: number, month: number, day: number) { const date = new Date(year, month - 1, day); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` }
 function formatCalendarDay(value: string) { const [year, month, day] = value.split('-').map(Number); return new Intl.DateTimeFormat('es-CR', { dateStyle: 'full', timeZone: COSTA_RICA_TIME_ZONE }).format(new Date(Date.UTC(year, month - 1, day, 12))) }
+function sameCalendarWeek(value: string, selected: string) { const date = new Date(`${value}T12:00:00-06:00`); const selectedDate = new Date(`${selected}T12:00:00-06:00`); const monday = new Date(selectedDate); monday.setDate(selectedDate.getDate() - ((selectedDate.getDay() + 6) % 7)); const sunday = new Date(monday); sunday.setDate(monday.getDate() + 7); return date >= monday && date < sunday }
 function startOfToday() { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), now.getDate()) }
 function displayCount(value: number | string | null) { return value === null ? '—' : typeof value === 'number' ? value.toLocaleString('es-CR') : value }
 function formatDashboardDate(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('es-CR', { dateStyle: 'full', timeZone: 'America/Costa_Rica' }).format(date) }

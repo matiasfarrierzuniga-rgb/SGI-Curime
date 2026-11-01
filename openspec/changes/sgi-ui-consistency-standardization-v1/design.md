@@ -59,6 +59,12 @@ Las skills disponibles fueron leídas antes de incorporar criterios. Se adoptan 
 | `frontend/.agents/skills/shadcn` / `tailwind-css-patterns` | Usar primitives existentes, tokens semánticos, composición con `gap`, mobile-first, `cn()` para clases condicionales y evitar arbitrary values innecesarios | El proyecto usa Base UI y primitives locales; no se instala/reemplaza shadcn |
 | `frontend/.agents/skills/tailwind-v4-shadcn`, `vite`, `vitest` | Preservar Tailwind v4/CSS-first y usar Vitest/Vite en pruebas focalizadas y gates existentes | No cambiar configuración durante Explore |
 
+### Current visual baseline — supersedes legacy fallback appearance
+
+`tailwind.css` is the visual source of truth. Interface foregrounds, borders and muted surfaces use green-charcoal and green-gray semantic tokens; `brand-ink` remains a heritage display accent rather than default UI copy. Shared `Button`, `Input`, `Select`, `Textarea`, `Card`, `Dialog` and `Modal` consume those tokens. `index.css` continues only as compatibility for legacy routes: its native-control fallback follows the same semantic tokens and no longer owns modal presentation.
+
+This supersedes the **CSS cascade Phase 1** record where beige-border/white-surface fallbacks and legacy modal selectors remained intentionally unchanged. That record is historical implementation evidence, not a current styling instruction. Modules still using raw native controls require visual QA before migration; no API, capability or business behavior changes follow from this baseline.
+
 ### UX acceptance matrix
 
 Esta matriz convierte la intención UX en evidencia de Apply/Verify, con prioridad para personas con poca familiaridad informática:

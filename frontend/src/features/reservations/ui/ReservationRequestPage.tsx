@@ -15,6 +15,7 @@ import { Select } from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card'
+import { DateRangePicker } from '@/shared/ui/date-picker/DatePicker'
 import { useCreateReservation, useReservableResources, useReservationAvailability } from '../hooks/useReservations'
 import type { ReservableResource } from '../model/reservations.types'
 
@@ -26,6 +27,10 @@ const blank: Values = { resourceId: '', startAt: '', endAt: '', purpose: '', est
 const localCostaRica = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
 function toUtc(value: string) { if (!localCostaRica.test(value)) return null; const date = new Date(`${value}:00-06:00`); return Number.isNaN(date.getTime()) ? null : date }
 function formatLocalDate(value: string) { return new Intl.DateTimeFormat('es-CR', { dateStyle: 'long', timeStyle: 'short', timeZone: 'America/Costa_Rica' }).format(toUtc(value)!) }
+function datePart(value: string) { return localCostaRica.test(value) ? value.slice(0, 10) : '' }
+function timePart(value: string, fallback: string) { return localCostaRica.test(value) ? value.slice(11, 16) : fallback }
+function withDate(value: string, current: string, fallbackTime: string) { return value ? `${value}T${timePart(current, fallbackTime)}` : '' }
+function withTime(value: string, current: string, fallbackTime: string) { return value ? `${datePart(current) || new Date().toISOString().slice(0, 10)}T${value}` : current ? `${datePart(current)}T${fallbackTime}` : '' }
 
 const schema = z.object({
   resourceId: z.string().min(1, 'Seleccione un espacio.'),
@@ -117,12 +122,12 @@ export function ReservationRequestPage() {
               </FormField>
               {selectedResource ? <ResourceSummary resource={selectedResource} /> : null}
             </FormSection>
-            <FormSection className="gap-5" title="2. Fecha y horario" description="Indique cuándo necesita el espacio y consulte antes de continuar.">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <FormField id="reservation-start" label="Fecha y hora de inicio" error={form.formState.errors.startAt?.message} required><Input type="datetime-local" {...form.register('startAt', { onChange: invalidateAvailability })} /></FormField>
-                <FormField id="reservation-end" label="Fecha y hora de finalización" error={form.formState.errors.endAt?.message} required><Input type="datetime-local" {...form.register('endAt', { onChange: invalidateAvailability })} /></FormField>
-              </div>
-              <AvailabilityStatus status={availability} onCheck={() => void checkAvailability()} disabled={availability === 'checking' || availabilityQuery.isFetching} />
+              <FormSection className="gap-5" title="2. Fecha y horario" description="Elija un período continuo y luego defina las horas. La disponibilidad se valida con el servidor.">
+               <div className="grid gap-5 rounded-surface border border-border-subtle bg-brand-ivory/40 p-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)] lg:items-start"><div><DateRangePicker startId="reservation-start-date" endId="reservation-end-date" startLabel="Período de reserva" endLabel="fin" startValue={datePart(values.startAt)} endValue={datePart(values.endAt)} min={new Date().toISOString().slice(0, 10)} onStartChange={value => { form.setValue('startAt', withDate(value, values.startAt, '08:00'), { shouldValidate: true, shouldTouch: true }); invalidateAvailability() }} onEndChange={value => { form.setValue('endAt', withDate(value, values.endAt, '09:00'), { shouldValidate: true, shouldTouch: true }); invalidateAvailability() }} /></div><aside className="rounded-control border border-border-subtle bg-surface p-3"><p className="text-caption font-bold uppercase tracking-wide text-primary">Disponibilidad</p><p className="mt-1 text-body-small text-text-secondary">Seleccione rango y horario; el servidor confirma el resultado definitivo.</p><div className="mt-3"><AvailabilityStatus status={availability} onCheck={() => void checkAvailability()} disabled={availability === 'checking' || availabilityQuery.isFetching} /></div></aside></div>
+                <div className="grid gap-5 sm:grid-cols-2">
+                 <FormField id="reservation-start-time" label="Hora de inicio" error={form.formState.errors.startAt?.message} required><Input id="reservation-start-time" type="time" value={timePart(values.startAt, '')} onChange={event => { form.setValue('startAt', withTime(event.target.value, values.startAt, '08:00'), { shouldValidate: true, shouldTouch: true }); invalidateAvailability() }} disabled={!datePart(values.startAt)} /></FormField>
+                 <FormField id="reservation-end-time" label="Hora de finalización" error={form.formState.errors.endAt?.message} required><Input id="reservation-end-time" type="time" value={timePart(values.endAt, '')} onChange={event => { form.setValue('endAt', withTime(event.target.value, values.endAt, '09:00'), { shouldValidate: true, shouldTouch: true }); invalidateAvailability() }} disabled={!datePart(values.endAt)} /></FormField>
+               </div>
             </FormSection>
             <FormSection className="gap-5 rounded-surface border border-border bg-subtle/50 p-4 sm:p-5" title="Datos de la solicitud" description="Explique el uso previsto y agregue detalles si son necesarios.">
               <FormField id="reservation-purpose" label="Motivo" error={form.formState.errors.purpose?.message} required><Textarea maxLength={1000} {...form.register('purpose')} /></FormField>

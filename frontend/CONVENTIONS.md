@@ -69,20 +69,23 @@ features/<domain>/
 
 - Tailwind v4 with `@tailwindcss/vite` plugin (CSS-first config).
 - Tokens defined in `src/tailwind.css` using `@theme` directive.
-- Legacy `src/index.css` preserved during transition; new code uses Tailwind utilities.
+- Legacy `src/index.css` remains a compatibility layer for unmigrated routes. It is not visual authority: new work uses Tailwind semantic utilities and primitives in `src/shared/ui/`. Native-control fallback styles use semantic control, border and foreground tokens; shared `Modal`/`Dialog` own their presentation without legacy modal selectors.
 
 ### Design Tokens
 
-Institutional palette (Curime / Nicoya / Guanacaste):
+Current institutional palette (Curime / Nicoya / Guanacaste), authoritative in `src/tailwind.css`:
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--color-brand-deep` | `#174c5b` | Deep Teal — primary dark |
-| `--color-brand-primary` | `#287b7b` | Teal — primary |
-| `--color-brand-soft` | `#75b5a6` | Soft Teal — secondary |
-| `--color-brand-accent` | `#e7c477` | Warm Gold — accent |
-| `--color-brand-ivory` | `#f7f5ed` | Warm Ivory — background |
-| `--color-brand-ink` | `#123b47` | Dark ink — text |
+| `--color-brand-green` / `--color-brand-primary` | `#2f4a38` | Forest green — primary action and institutional anchor |
+| `--color-brand-maize` / `--color-brand-accent` | `#c98a2d` | Maize — restrained accent and attention |
+| `--color-brand-ivory` | `#faf4ea` | Institutional cream — application canvas and selected surfaces |
+| `--color-brand-ink` | `#4a2f1a` | Heritage display accent; not default interface text |
+| `--color-foreground` / `--color-text-primary` | `#20342a` | Green-charcoal — default interface text |
+| `--color-border-default` | `#cad7cd` | Green-gray — default control and surface border |
+| `--color-surface-muted` | `#edf3ed` | Green-gray — subtle grouping and secondary controls |
+
+The former teal table (`#174c5b`, `#287b7b`, `#75b5a6`, `#e7c477`, `#f7f5ed`, `#123b47`) is retained only as historical convention. It is replaced by the tokens above and MUST NOT be copied into new components.
 
 ### Typography
 
@@ -109,6 +112,11 @@ Institutional palette (Curime / Nicoya / Guanacaste):
 
 Background/surface, foreground, border, focus, success/warning/danger/info states
 are all defined as Tailwind theme tokens. Single source of truth in `src/tailwind.css`.
+
+- `Button` primary is forest green; `outline` is a low-emphasis green-tinted action, not a white rectangular fallback.
+- `Input`, `Select` and `Textarea` use control/border/foreground tokens. Do not reintroduce raw white/beige/café control rules.
+- `Card`, `Dialog` and `Modal` use restrained green-gray boundaries and semantic elevation. Use shared primitives rather than global `.card` or `.modal*` styling.
+- FullCalendar v7 consumers import `skeleton.css`, one supported theme plugin, its `theme.css` and palette stylesheet. Theme variables are scoped to the consuming feature and mapped to institutional tokens.
 
 ## shadcn/ui
 

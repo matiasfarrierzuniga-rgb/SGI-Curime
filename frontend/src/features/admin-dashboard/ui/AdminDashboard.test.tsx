@@ -18,6 +18,10 @@ const data = {
   justifications: { pending: 2 },
 }
 const response = { metadata: { generatedAt: '2026-09-14T12:00:00.000Z', generatedBy: { id: 1, fullName: 'Admin' }, period: { from: null, to: null }, appliedFilters: {}, dataSource: ['AFFILIATE'], reportVersion: '1.0' }, data }
+const calendarFixtureParts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Costa_Rica', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date())
+const calendarFixturePart = (type: Intl.DateTimeFormatPartTypes) => calendarFixtureParts.find(part => part.type === type)?.value ?? ''
+const calendarFixtureDay = `${calendarFixturePart('year')}-${calendarFixturePart('month')}-${calendarFixturePart('day')}`
+const calendarFixtureAt = (hour: string) => `${calendarFixtureDay}T${hour}:00:00.000-06:00`
 
 function renderDashboard(permissionCodes?: readonly string[]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -88,9 +92,9 @@ describe('AdminDashboard', () => {
   it('marks real authorized reservations, assemblies and public events by category on the same Costa Rica day', async () => {
     vi.mocked(httpClient.get).mockImplementation((url: string) => {
       if (url === '/admin-reports/dashboard') return Promise.resolve({ data: response })
-      if (url === '/public/events') return Promise.resolve({ data: [{ publicId: 'event-1', title: 'Evento público', summary: 'Resumen', description: null, startAt: '2026-10-07T18:00:00.000Z', endAt: null, location: null, status: 'SCHEDULED' }] })
-      if (url === '/reservations') return Promise.resolve({ data: { data: [{ id: 1, resourceId: 1, resource: { id: 1, name: 'Salón', location: null, pricingType: 'FREE', price: null, currency: 'CRC' }, requesterUserId: 1, requester: { id: 1, fullName: 'Ana', email: 'ana@example.com' }, eventId: null, event: null, startAt: '2026-10-07T16:00:00.000Z', endAt: '2026-10-07T18:00:00.000Z', purpose: 'Actividad', estimatedAttendees: null, notes: null, status: 'CONFIRMED', approvedAt: null, approvedById: null, approvedBy: null, rejectionReason: null, cancelledAt: null, createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z', financialCharge: null }], total: 1, page: 1, limit: 100 } })
-      if (url === '/assemblies') return Promise.resolve({ data: { data: [{ id: 1, title: 'Asamblea', type: null, date: '2026-10-07T19:00:00.000Z', place: 'Salón', description: null, status: 'SCHEDULED', quorumType: null, quorumValue: null, convocationsLockedAt: null }] } })
+      if (url === '/public/events') return Promise.resolve({ data: [{ publicId: 'event-1', title: 'Evento público', summary: 'Resumen', description: null, startAt: calendarFixtureAt('18'), endAt: null, location: null, status: 'SCHEDULED' }] })
+      if (url === '/reservations') return Promise.resolve({ data: { data: [{ id: 1, resourceId: 1, resource: { id: 1, name: 'Salón', location: null, pricingType: 'FREE', price: null, currency: 'CRC' }, requesterUserId: 1, requester: { id: 1, fullName: 'Ana', email: 'ana@example.com' }, eventId: null, event: null, startAt: calendarFixtureAt('16'), endAt: calendarFixtureAt('18'), purpose: 'Actividad', estimatedAttendees: null, notes: null, status: 'CONFIRMED', approvedAt: null, approvedById: null, approvedBy: null, rejectionReason: null, cancelledAt: null, createdAt: calendarFixtureAt('10'), updatedAt: calendarFixtureAt('10'), financialCharge: null }], total: 1, page: 1, limit: 100 } })
+      if (url === '/assemblies') return Promise.resolve({ data: { data: [{ id: 1, title: 'Asamblea', type: null, date: calendarFixtureAt('19'), place: 'Salón', description: null, status: 'SCHEDULED', quorumType: null, quorumValue: null, convocationsLockedAt: null }] } })
       return Promise.reject(new Error(`unexpected endpoint ${url}`))
     })
     renderDashboard(['res.reservations.read', 'adm.assemblies.read'])
