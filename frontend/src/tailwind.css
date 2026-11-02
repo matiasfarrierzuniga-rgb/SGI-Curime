@@ -44,7 +44,7 @@
   --color-surface: #fffdf9;
   --color-surface-muted: #f2eadf;
   --color-surface-elevated: #ffffff;
-  --color-surface-overlay: rgba(74, 47, 26, 0.52);
+  --color-surface-overlay: rgb(17 24 39 / 40%);
   --color-foreground-subtle: #8b7c70;
   --color-focus: #b03a2e;
 

@@ -1,8 +1,10 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { CapabilityGuard, JwtAuthGuard, RequireCapabilities, type AuthenticatedUser } from '../auth';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { QueryReservationAvailabilityDto } from './dto/query-reservation-availability.dto';
+import { QueryPublicReservationOccupancyDto } from './dto/public-reservations.dto';
 import { QueryReservationsDto } from './dto/query-reservations.dto';
 import { RejectReservationDto } from './dto/reject-reservation.dto';
 import { ReservationsService } from './reservations.service';
@@ -17,6 +19,27 @@ export class ReservableResourcesController {
   @Get()
   findActive() {
     return this.reservationsService.findActiveResources();
+  }
+}
+
+@Controller('public/reservations')
+@UseGuards(ThrottlerGuard)
+export class PublicReservationsController {
+  constructor(private readonly reservationsService: ReservationsService) {}
+
+  @Get('resources')
+  findActiveResources() {
+    return this.reservationsService.findPublicActiveResources();
+  }
+
+  @Get('occupancy')
+  occupancy(@Query() query: QueryPublicReservationOccupancyDto) {
+    return this.reservationsService.findPublicOccupancy(query);
+  }
+
+  @Get('availability')
+  availability(@Query() query: QueryReservationAvailabilityDto) {
+    return this.reservationsService.checkAvailability(query);
   }
 }
 
