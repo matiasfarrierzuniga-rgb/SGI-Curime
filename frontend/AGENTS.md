@@ -10,6 +10,12 @@ Aplican además las reglas de `../AGENTS.md` y `CONVENTIONS.md`. Este archivo no
 - Antes de cambiar comportamiento funcional o rutas, identifica los CU V2 relacionados y contrástalos con contratos API, guards, rutas, feature slices y pruebas V1. El catálogo no autoriza UI, rutas ni permisos inexistentes.
 - Conserva los tokens de diseño SGI-Curime en `src/tailwind.css`, DM Sans y DM Serif Display, accesibilidad, foco, teclado y diseño responsive. No copiar la marca visual de Odoo.
 
+## Skills y autoridades locales
+
+- `CONVENTIONS.md` es la fuente operativa para arquitectura, tokens, tipografía, primitives y validación frontend; las skills SGI la complementan, no la reemplazan.
+- Selecciona solo las skills necesarias: `sgi-frontend-architecture` para estructura, `sgi-frontend-design` para UI visual, `sgi-forms-validation` para formularios, `sgi-dashboard-ux` para shell/navegación y `sgi-responsive-accessibility` para responsive/a11y.
+- Copias genéricas instaladas para distintos proveedores son referencias suplementarias, no reglas acumulativas. No modificar ni eliminar esas copias salvo alcance explícito.
+
 ## Registro comunitario — UX objetivo, todavía propuesto
 
 Lee `../docs/decisions/community-account-registration.md`; no mostrar como real lo que todavía no implementó el backend.
