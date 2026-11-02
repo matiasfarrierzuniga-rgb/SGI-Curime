@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AdminDashboard } from '@/features/admin-dashboard'
 import { httpClient } from '@/shared/api/httpClient'
+import { civilDateKey, currentCostaRicaMonth } from '@/shared/lib/calendar'
 
 vi.mock('@/shared/api/httpClient', () => ({ httpClient: { get: vi.fn() } }))
 
@@ -74,11 +75,14 @@ describe('AdminDashboard', () => {
   })
 
   it('marks real authorized reservations, assemblies and public events by category on the same Costa Rica day', async () => {
+    const month = currentCostaRicaMonth()
+    const activityDay = civilDateKey(month.getFullYear(), month.getMonth() + 1, 7)
+    const activityStart = `${activityDay}T12:00:00-06:00`
     vi.mocked(httpClient.get).mockImplementation((url: string) => {
       if (url === '/admin-reports/dashboard') return Promise.resolve({ data: response })
-      if (url === '/public/events') return Promise.resolve({ data: [{ publicId: 'event-1', title: 'Evento público', summary: 'Resumen', description: null, startAt: '2026-10-07T18:00:00.000Z', endAt: null, location: null, status: 'SCHEDULED' }] })
-      if (url === '/reservations') return Promise.resolve({ data: { data: [{ id: 1, resourceId: 1, resource: { id: 1, name: 'Salón', location: null, pricingType: 'FREE', price: null, currency: 'CRC' }, requesterUserId: 1, requester: { id: 1, fullName: 'Ana', email: 'ana@example.com' }, eventId: null, event: null, startAt: '2026-10-07T16:00:00.000Z', endAt: '2026-10-07T18:00:00.000Z', purpose: 'Actividad', estimatedAttendees: null, notes: null, status: 'CONFIRMED', approvedAt: null, approvedById: null, approvedBy: null, rejectionReason: null, cancelledAt: null, createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z', financialCharge: null }], total: 1, page: 1, limit: 100 } })
-      if (url === '/assemblies') return Promise.resolve({ data: { data: [{ id: 1, title: 'Asamblea', type: null, date: '2026-10-07T19:00:00.000Z', place: 'Salón', description: null, status: 'SCHEDULED', quorumType: null, quorumValue: null, convocationsLockedAt: null }] } })
+      if (url === '/public/events') return Promise.resolve({ data: [{ publicId: 'event-1', title: 'Evento público', summary: 'Resumen', description: null, startAt: activityStart, endAt: null, location: null, status: 'SCHEDULED' }] })
+      if (url === '/reservations') return Promise.resolve({ data: { data: [{ id: 1, resourceId: 1, resource: { id: 1, name: 'Salón', location: null, pricingType: 'FREE', price: null, currency: 'CRC' }, requesterUserId: 1, requester: { id: 1, fullName: 'Ana', email: 'ana@example.com' }, eventId: null, event: null, startAt: activityStart, endAt: activityStart, purpose: 'Actividad', estimatedAttendees: null, notes: null, status: 'CONFIRMED', approvedAt: null, approvedById: null, approvedBy: null, rejectionReason: null, cancelledAt: null, createdAt: activityStart, updatedAt: activityStart, financialCharge: null }], total: 1, page: 1, limit: 100 } })
+      if (url === '/assemblies') return Promise.resolve({ data: { data: [{ id: 1, title: 'Asamblea', type: null, date: activityStart, place: 'Salón', description: null, status: 'SCHEDULED', quorumType: null, quorumValue: null, convocationsLockedAt: null }] } })
       return Promise.reject(new Error(`unexpected endpoint ${url}`))
     })
     renderDashboard(['res.reservations.read', 'adm.assemblies.read'])
@@ -87,7 +91,17 @@ describe('AdminDashboard', () => {
     fireEvent.click(activityDay)
     expect(screen.getByText('Evento público')).toBeInTheDocument()
     expect(screen.getByText('Asamblea')).toBeInTheDocument()
-    expect(screen.getByText('Salón')).toBeInTheDocument()
+    expect(screen.getAllByText('Salón').length).toBeGreaterThan(0)
+    expect(screen.getByRole('link', { name: 'Asamblea' })).toHaveAttribute('href', '/app/admin/assemblies/1')
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir agenda completa por vistas' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Mes' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Semana' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Día' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Agenda' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Día anterior' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Día siguiente' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ver agenda completa' })).toHaveAttribute('href', '/eventos')
     expect(httpClient.get).toHaveBeenCalledWith('/reservations', { params: expect.objectContaining({ page: 1, limit: 100 }) })
     expect(httpClient.get).toHaveBeenCalledWith('/assemblies', { params: { page: 1, limit: 100 } })
   })

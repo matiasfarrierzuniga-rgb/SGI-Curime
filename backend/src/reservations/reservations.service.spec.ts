@@ -189,6 +189,36 @@ describe('ReservationsService', () => {
     );
   });
 
+  it('lists public resources without lifecycle or audit fields', async () => {
+    await service.findPublicActiveResources();
+
+    expect(prisma.reservableResource.findMany).toHaveBeenCalledWith({
+      where: { status: ReservableResourceStatus.ACTIVE },
+      select: {
+        id: true, name: true, description: true, location: true, capacity: true,
+        pricingType: true, price: true, currency: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+  });
+
+  it('lists public occupancy as time slots only for blocking reservations', async () => {
+    await expect(service.findPublicOccupancy({ resourceId: 1, from: '2030-01-01', to: '2030-01-03' })).resolves.toEqual({ resourceId: 1, slots: [] });
+
+    expect(prisma.reservation.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        resourceId: 1,
+        status: { in: [ReservationStatus.PENDING, ReservationStatus.APPROVED, ReservationStatus.CONFIRMED] },
+      }),
+      select: { startAt: true, endAt: true },
+      orderBy: { startAt: 'asc' },
+    }));
+  });
+
+  it('limits public occupancy requests to thirty-one days', async () => {
+    await expect(service.findPublicOccupancy({ resourceId: 1, from: '2030-01-01', to: '2030-02-02' })).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('reports availability when no blocking reservation overlaps', async () => {
     await expect(
       service.checkAvailability({ resourceId: 1, startAt, endAt }),
