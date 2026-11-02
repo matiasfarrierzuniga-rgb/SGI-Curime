@@ -16,6 +16,7 @@ import { RuntimePersonResolverService } from '../identity/runtime-person-resolve
 import { InboxNotificationService } from '../modules/notifications/application/inbox-notification.service';
 import { CreateAffiliateRequestDto } from './dto/create-affiliate-request.dto';
 import { QueryAffiliateRequestsDto } from './dto/query-affiliate-requests.dto';
+import { TerritorialCatalogService } from '../territorial-catalog/territorial-catalog.service';
 
 const select = {
   id: true,
@@ -45,6 +46,15 @@ const select = {
   submittedOccupation: true,
   submittedWorkplace: true,
   submittedAffiliationReason: true,
+  submittedProvinceCode: true,
+  submittedCantonCode: true,
+  submittedDistrictCode: true,
+  submittedCommunity: true,
+  submittedLocalityKey: true,
+  submittedLocalityCategory: true,
+  submittedTerritorialSource: true,
+  submittedTerritorialVersion: true,
+  submittedTerritorialIntegrity: true,
   status: true,
   rejectionReason: true,
   reviewedAt: true,
@@ -61,6 +71,7 @@ export class AffiliateRequestsService {
     @Optional() private readonly audit?: AuditService,
     private readonly personResolver?: RuntimePersonResolverService,
     private readonly inboxNotifications?: InboxNotificationService,
+    private readonly territorialCatalog?: TerritorialCatalogService,
   ) {}
   async create(
     dto: CreateAffiliateRequestDto,
@@ -77,6 +88,7 @@ export class AffiliateRequestsService {
           data: { birthDate: dto.birthDate },
         });
       }
+      const territorial = this.resolveTerritorialSnapshot(dto);
       const created = await tx.affiliateRequest.create({
         data: {
           fullName: personFullName(dto),
@@ -105,6 +117,15 @@ export class AffiliateRequestsService {
           submittedOccupation: dto.occupation,
           submittedWorkplace: dto.workplace,
           submittedAffiliationReason: dto.affiliationReason,
+          submittedProvinceCode: territorial?.province.code ?? dto.provinceCode,
+          submittedCantonCode: territorial?.canton.code ?? dto.cantonCode,
+          submittedDistrictCode: territorial?.district.code ?? dto.districtCode,
+          submittedCommunity: territorial?.locality.name ?? dto.community,
+          submittedLocalityKey: territorial?.locality.localityKey,
+          submittedLocalityCategory: territorial?.locality.category,
+          submittedTerritorialSource: territorial?.source.title,
+          submittedTerritorialVersion: territorial?.catalogVersion,
+          submittedTerritorialIntegrity: territorial?.source.archiveSha256,
           personId,
           status: 'PENDING',
         },
@@ -121,6 +142,20 @@ export class AffiliateRequestsService {
       ...context,
     });
     return toAffiliateRequestSnapshotResponse(created);
+  }
+  private resolveTerritorialSnapshot(dto: CreateAffiliateRequestDto) {
+    const selection = [dto.catalogVersion, dto.localityKey];
+    if (selection.every((value) => value === undefined)) return undefined;
+    const fields = [
+      dto.catalogVersion,
+      dto.provinceCode,
+      dto.cantonCode,
+      dto.districtCode,
+      dto.localityKey,
+    ];
+    if (fields.some((value) => value === undefined) || !this.territorialCatalog)
+      throw new ConflictException('La selección territorial debe estar completa y validarse con el catálogo vigente.');
+    return this.territorialCatalog.validate({ catalogVersion: dto.catalogVersion!, provinceCode: dto.provinceCode!, cantonCode: dto.cantonCode!, districtCode: dto.districtCode!, localityKey: dto.localityKey! });
   }
   async findAll(query: QueryAffiliateRequestsDto) {
     const where: Prisma.AffiliateRequestWhereInput = {
@@ -524,12 +559,22 @@ type AffiliateRequestSnapshotSource = {
   submittedOccupation?: string | null;
   submittedWorkplace?: string | null;
   submittedAffiliationReason?: string | null;
+  submittedProvinceCode?: string | null;
+  submittedCantonCode?: string | null;
+  submittedDistrictCode?: string | null;
+  submittedCommunity?: string | null;
 };
 
 function toAffiliateRequestSnapshotResponse<
   T extends AffiliateRequestSnapshotSource,
 >(request: T) {
   const snapshot = affiliateRequestSnapshot(request);
+  const hasTerritorialDeclaration = Boolean(
+    request.submittedProvinceCode ||
+      request.submittedCantonCode ||
+      request.submittedDistrictCode ||
+      request.submittedCommunity,
+  );
   return {
     ...request,
     ...snapshot,
@@ -551,5 +596,8 @@ function toAffiliateRequestSnapshotResponse<
     submittedWorkplace: request.submittedWorkplace ?? snapshot.workplace,
     submittedAffiliationReason:
       request.submittedAffiliationReason ?? snapshot.affiliationReason,
+    territorialDeclarationStatus: hasTerritorialDeclaration
+      ? 'UNVERIFIED_DECLARATION'
+      : 'NOT_DECLARED',
   };
 }

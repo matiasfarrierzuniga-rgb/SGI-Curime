@@ -95,6 +95,34 @@ export class CreateAffiliateRequestDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20)
+  provinceCode?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20)
+  cantonCode?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20)
+  districtCode?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  community?: string;
+  @Transform(trim) @IsOptional() @IsString() @IsNotEmpty() @MaxLength(120)
+  catalogVersion?: string;
+  @Transform(trim) @IsOptional() @IsString() @Matches(/^loc_[a-f0-9]{24}$/)
+  localityKey?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
   @MaxLength(100)
   occupation?: string;
   @Transform(trim)

@@ -5,4 +5,5 @@ export type {
 } from './model/affiliateRequests.types'
 export { affiliationSchema, type AffiliationFormValues } from './model/affiliation.schema'
 export { mapAffiliationFormToRequest } from './model/mapAffiliationFormToRequest'
+export { TerritorialSelectors } from './ui/TerritorialSelectors'
 export { AffiliateRequestsPage } from './ui/AffiliateRequestsPage'

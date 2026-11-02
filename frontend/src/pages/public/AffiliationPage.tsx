@@ -4,7 +4,7 @@ import { Check, CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, ClipboardL
 import { useEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { Link } from 'react-router-dom'
-import { affiliationSchema, mapAffiliationFormToRequest, type AffiliationFormValues } from '@/features/affiliate-requests'
+import { affiliationSchema, mapAffiliationFormToRequest, TerritorialSelectors, type AffiliationFormValues } from '@/features/affiliate-requests'
 import { userRequestsService, type IdentityLookupResult } from '@/features/user-requests'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { digitsOnly, identificationMaxLength } from '@/shared/lib/formValidation'
@@ -20,7 +20,7 @@ import { SectionContainer, Seo } from '../../components/public/PublicComponents'
 
 const emptyValues: AffiliationFormValues = {
   identificationType: 'NATIONAL', identification: '', firstName: '', firstSurname: '', secondSurname: '', birthDate: '', gender: '',
-  phoneCountryCode: '', phoneNationalNumber: '', email: '', address: '', occupation: '', workplace: '', affiliationReason: '',
+  phoneCountryCode: '', phoneNationalNumber: '', email: '', address: '', provinceCode: '', cantonCode: '', districtCode: '', community: '', catalogVersion: '', localityKey: '', occupation: '', workplace: '', affiliationReason: '',
 }
 
 const stepFields: Record<number, (keyof AffiliationFormValues)[]> = {
@@ -232,6 +232,7 @@ function ContactStep({ form, headingRef }: StepProps) {
       <Field label="Correo electrónico" id="email" error={form.formState.errors.email?.message}><Input className="h-12" type="email" autoComplete="email" maxLength={254} {...form.register('email')} /></Field>
     </div>
     <Field required label="Dirección" id="address" error={form.formState.errors.address?.message} description="Incluya referencias que faciliten su ubicación."><Textarea autoComplete="street-address" maxLength={300} {...form.register('address')} /></Field>
+    <TerritorialSelectors form={form} />
   </section>
 }
 

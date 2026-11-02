@@ -4,10 +4,11 @@ import { AuditModule } from '../audit/audit.module';
 import { PublicRequestRateLimitModule } from '../common/rate-limit/public-request-rate-limit.module';
 import { IdentityModule } from '../identity/identity.module';
 import { InboxNotificationsModule } from '../modules/notifications/inbox-notifications.module';
+import { TerritorialCatalogModule } from '../territorial-catalog/territorial-catalog.module';
 import { AffiliateRequestsController } from './affiliate-requests.controller';
 import { AffiliateRequestsService } from './affiliate-requests.service';
 @Module({
-  imports: [AuthModule, AuditModule, IdentityModule, PublicRequestRateLimitModule, InboxNotificationsModule],
+  imports: [AuthModule, AuditModule, IdentityModule, PublicRequestRateLimitModule, InboxNotificationsModule, TerritorialCatalogModule],
   controllers: [AffiliateRequestsController],
   providers: [AffiliateRequestsService],
 })

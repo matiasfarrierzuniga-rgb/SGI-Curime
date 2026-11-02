@@ -19,6 +19,15 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
     occupation: null,
     workplace: null,
     affiliationReason: 'Participar',
+    submittedProvinceCode: null,
+    submittedCantonCode: null,
+    submittedDistrictCode: null,
+    submittedCommunity: null,
+    submittedLocalityKey: null,
+    submittedLocalityCategory: null,
+    submittedTerritorialSource: null,
+    submittedTerritorialVersion: null,
+    submittedTerritorialIntegrity: null,
     status: 'PENDING',
     rejectionReason: null,
     reviewedAt: null,
@@ -127,6 +136,98 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
     expect(audit.log).toHaveBeenCalled();
   });
 
+  it('persists declared territorial values only as immutable request snapshots', async () => {
+    const declaredDto = {
+      ...dto,
+      provinceCode: '7',
+      cantonCode: '02',
+      districtCode: '01',
+      community: 'Curime Centro',
+    };
+
+    await service.create(declaredDto, {});
+
+    expect(tx.affiliateRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          submittedProvinceCode: '7',
+          submittedCantonCode: '02',
+          submittedDistrictCode: '01',
+          submittedCommunity: 'Curime Centro',
+        }),
+      }),
+    );
+    expect(tx.person.update).not.toHaveBeenCalled();
+  });
+
+  it('persists only the canonical territorial snapshot returned by the catalog', async () => {
+    const territorialCatalog = {
+      validate: jest.fn().mockReturnValue({
+        catalogVersion: 'fixture-v1',
+        source: { title: 'Fixture sintético', archiveSha256: 'a'.repeat(64) },
+        province: { code: '5', name: 'GUANACASTE' },
+        canton: { code: '02', name: 'NICOYA' },
+        district: { code: '01', name: 'NICOYA' },
+        locality: { localityKey: 'loc_1234567890abcdef12345678', name: 'CURIME', category: 'POBLADO' },
+      }),
+    };
+    const catalogService = new AffiliateRequestsService(
+      prisma as never, audit as never, personResolver as never, undefined, territorialCatalog as never,
+    );
+
+    await catalogService.create({
+      ...dto, catalogVersion: 'fixture-v1', provinceCode: '5', cantonCode: '02', districtCode: '01',
+      localityKey: 'loc_1234567890abcdef12345678', community: 'texto manipulado',
+    }, {});
+
+    expect(territorialCatalog.validate).toHaveBeenCalledWith({
+      catalogVersion: 'fixture-v1', provinceCode: '5', cantonCode: '02', districtCode: '01', localityKey: 'loc_1234567890abcdef12345678',
+    });
+    expect(tx.affiliateRequest.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        submittedProvinceCode: '5', submittedCantonCode: '02', submittedDistrictCode: '01',
+        submittedCommunity: 'CURIME', submittedLocalityKey: 'loc_1234567890abcdef12345678',
+        submittedLocalityCategory: 'POBLADO', submittedTerritorialSource: 'Fixture sintético',
+        submittedTerritorialVersion: 'fixture-v1', submittedTerritorialIntegrity: 'a'.repeat(64),
+      }),
+    }));
+  });
+
+  it('rejects incomplete or inconsistent catalog selections without persisting them', async () => {
+    const territorialCatalog = { validate: jest.fn().mockImplementation(() => { throw new ConflictException('Selección territorial inválida.'); }) };
+    const catalogService = new AffiliateRequestsService(
+      prisma as never, audit as never, personResolver as never, undefined, territorialCatalog as never,
+    );
+
+    await expect(catalogService.create({ ...dto, catalogVersion: 'fixture-v1', provinceCode: '5', localityKey: 'loc_1234567890abcdef12345678' }, {})).rejects.toBeInstanceOf(ConflictException);
+    expect(tx.affiliateRequest.create).not.toHaveBeenCalled();
+
+    await expect(catalogService.create({ ...dto, catalogVersion: 'fixture-v1', provinceCode: '5', cantonCode: '99', districtCode: '01', localityKey: 'loc_1234567890abcdef12345678' }, {})).rejects.toBeInstanceOf(ConflictException);
+    expect(tx.affiliateRequest.create).not.toHaveBeenCalled();
+  });
+
+  it('does not copy declared territorial values into audit or notifications', async () => {
+    const inboxNotifications = { notifyAffiliateRequestSubmitted: jest.fn() };
+    const serviceWithNotifications = new AffiliateRequestsService(
+      prisma as never,
+      audit as never,
+      personResolver as never,
+      inboxNotifications as never,
+    );
+
+    await serviceWithNotifications.create(
+      { ...dto, provinceCode: '7', community: 'Curime Centro' },
+      {},
+    );
+
+    expect(inboxNotifications.notifyAffiliateRequestSubmitted).toHaveBeenCalledWith(tx, request.id);
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        details: expect.objectContaining({ submittedProvinceCode: expect.anything() }),
+      }),
+    );
+  });
+
   it('resolves valid Person identity before creating request', async () => {
     await service.create(dto);
 
@@ -141,6 +242,25 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
       submittedFullName: request.fullName,
       submittedIdentification: request.identification,
       submittedAffiliationReason: request.affiliationReason,
+      territorialDeclarationStatus: 'NOT_DECLARED',
+    });
+  });
+
+  it('returns submitted territorial declarations without treating them as verified', async () => {
+    prisma.affiliateRequest.findUnique.mockResolvedValue({
+      ...request,
+      submittedProvinceCode: '7',
+      submittedCantonCode: '02',
+      submittedDistrictCode: '01',
+      submittedCommunity: 'Curime Centro',
+    });
+
+    await expect(service.findOne(request.id)).resolves.toMatchObject({
+      submittedProvinceCode: '7',
+      submittedCantonCode: '02',
+      submittedDistrictCode: '01',
+      submittedCommunity: 'Curime Centro',
+      territorialDeclarationStatus: 'UNVERIFIED_DECLARATION',
     });
   });
 

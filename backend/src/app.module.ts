@@ -30,6 +30,7 @@ import { EntrepreneurshipModule } from './entrepreneurship/entrepreneurship.modu
 import { VolunteeringModule } from './volunteering/volunteering.module';
 import { InboxNotificationsModule } from './modules/notifications/inbox-notifications.module';
 import { HealthController } from './health/health.controller';
+import { TerritorialCatalogModule } from './territorial-catalog/territorial-catalog.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { HealthController } from './health/health.controller';
     EntrepreneurshipModule,
     VolunteeringModule,
     InboxNotificationsModule,
+    TerritorialCatalogModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
