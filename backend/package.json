@@ -20,6 +20,7 @@
     "db:seed": "prisma db seed --config prisma.config.ts",
     "db:reconcile-persons": "tsx prisma/reconcile-persons.ts",
     "db:link-person-identities": "tsx prisma/link-person-identities.ts",
+    "catalog:generate:inec": "tsx scripts/generate-territorial-catalog.ts",
     "db:reconcile-legacy-user": "tsx prisma/reconcile-legacy-user.ts",
     "db:preflight:institutional-profile": "tsx prisma/preflight-institutional-profile.ts",
     "db:backfill:frozen-v1.1": "tsx prisma/backfill-frozen-v1-1.ts",

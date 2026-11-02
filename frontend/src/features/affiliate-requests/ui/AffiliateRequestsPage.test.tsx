@@ -73,6 +73,28 @@ describe('AffiliateRequestDetail approval', () => {
     expect(screen.getByText('Luis Mora (luis@example.com)')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Aprobar solicitud' })).not.toBeInTheDocument()
   })
+
+  it('shows territorial values as unverified declarations', () => {
+    vi.mocked(useAffiliateRequestDetail).mockReturnValue({
+      data: {
+        ...request,
+        submittedProvinceCode: '7',
+        submittedCantonCode: '02',
+        submittedDistrictCode: '01',
+        submittedCommunity: 'Curime Centro',
+        territorialDeclarationStatus: 'UNVERIFIED_DECLARATION',
+      },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as never)
+
+    render(<AffiliateRequestDetail requestId={7} onClose={vi.fn()} />)
+
+    expect(screen.getByText('Referencia territorial declarada')).toBeVisible()
+    expect(screen.getByText(/No verifica residencia ni define elegibilidad/)).toBeVisible()
+    expect(screen.getByText('Curime Centro')).toBeVisible()
+  })
 })
 
 describe('AffiliateRequestsPage filters', () => {

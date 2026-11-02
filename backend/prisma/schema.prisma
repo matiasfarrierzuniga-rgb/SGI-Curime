@@ -337,6 +337,15 @@ model AffiliateRequest {
   submittedOccupation          String?
   submittedWorkplace           String?
   submittedAffiliationReason   String?
+  submittedProvinceCode        String?
+  submittedCantonCode          String?
+  submittedDistrictCode        String?
+  submittedCommunity           String?
+  submittedLocalityKey         String?
+  submittedLocalityCategory    String?
+  submittedTerritorialSource   String?
+  submittedTerritorialVersion  String?
+  submittedTerritorialIntegrity String?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   reviewedBy          User?               @relation("AffiliateRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
