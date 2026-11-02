@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DatePicker } from './DatePicker'
+import { DatePicker, DateRangePicker } from './DatePicker'
 
 describe('DatePicker', () => {
   afterEach(() => vi.useRealTimers())
@@ -144,5 +144,14 @@ describe('DatePicker', () => {
 
     fireEvent.click(screen.getByRole('textbox'))
     expect(screen.getByRole('button', { name: 'Seleccionar 09/09/2026' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('captures a continuous range from one calendar surface', () => {
+    const onStartChange = vi.fn()
+    const onEndChange = vi.fn()
+    render(<DateRangePicker startLabel="Período" endLabel="fin" startValue="2026-09-10" endValue="" onStartChange={onStartChange} onEndChange={onEndChange} />)
+    fireEvent.click(screen.getByRole('button', { name: /Período y fin/ }))
+    fireEvent.click(screen.getByRole('gridcell', { name: 'Seleccionar 12/09/2026' }))
+    expect(onEndChange).toHaveBeenCalledWith('2026-09-12')
   })
 })
