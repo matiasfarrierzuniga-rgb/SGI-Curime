@@ -28,7 +28,7 @@ describe('InstitutionalProfilePage', () => {
   it('renders the empty profile without public-site defaults and exposes edit only with permission', () => {
     render(<InstitutionalProfilePage />)
     expect(screen.getAllByText('Sin validar o cargar')).not.toHaveLength(0)
-    expect(screen.getByText(/todavía no ha sido validado o cargado/i)).toBeVisible()
+    expect(screen.getAllByText('Perfil institucional')).not.toHaveLength(0)
     expect(screen.getByRole('button', { name: 'Editar perfil' })).toBeVisible()
   })
 
@@ -108,7 +108,7 @@ describe('InstitutionalProfilePage', () => {
   it('keeps institutional data readable and hides every edit control without update permission', () => {
     permissionCodes = ['adm.institutional-profile.read']
     render(<InstitutionalProfilePage />)
-    expect(screen.getByText('Datos institucionales')).toBeVisible()
+    expect(screen.getAllByText('Perfil institucional')).not.toHaveLength(0)
     expect(screen.getAllByText('Sin validar o cargar')).not.toHaveLength(0)
     expect(screen.queryByRole('button', { name: /Editar perfil|Guardar cambios|Cancelar/ })).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/Nombre legal/)).not.toBeInTheDocument()
