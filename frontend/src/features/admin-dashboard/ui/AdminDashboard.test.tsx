@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AdminDashboard } from '@/features/admin-dashboard'
@@ -82,7 +82,12 @@ describe('AdminDashboard', () => {
       return Promise.reject(new Error(`unexpected endpoint ${url}`))
     })
     renderDashboard(['res.reservations.read', 'adm.assemblies.read'])
-    expect(await screen.findByRole('gridcell', { name: /3 actividades: Reservas, Asambleas, Eventos/ })).toBeInTheDocument()
+    const activityDay = await screen.findByRole('gridcell', { name: /3 actividades: Reservas, Asambleas, Eventos/ })
+    expect(activityDay).toBeInTheDocument()
+    fireEvent.click(activityDay)
+    expect(screen.getByText('Evento público')).toBeInTheDocument()
+    expect(screen.getByText('Asamblea')).toBeInTheDocument()
+    expect(screen.getByText('Salón')).toBeInTheDocument()
     expect(httpClient.get).toHaveBeenCalledWith('/reservations', { params: expect.objectContaining({ page: 1, limit: 100 }) })
     expect(httpClient.get).toHaveBeenCalledWith('/assemblies', { params: { page: 1, limit: 100 } })
   })
