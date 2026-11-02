@@ -44,7 +44,9 @@
   --color-surface: #ffffff;
   --color-surface-muted: #edf3ed;
   --color-surface-elevated: #ffffff;
-  --color-surface-overlay: rgba(74, 47, 26, 0.52);
+  /* Shared dialog and modal backdrop: neutral charcoal at 40% opacity. */
+  --color-overlay-backdrop: rgb(17 24 39 / 40%);
+  --color-surface-overlay: var(--color-overlay-backdrop);
   --color-foreground-subtle: #7a887f;
   --color-focus: #b03a2e;
 

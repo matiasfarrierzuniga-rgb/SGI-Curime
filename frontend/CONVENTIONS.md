@@ -116,6 +116,7 @@ are all defined as Tailwind theme tokens. Single source of truth in `src/tailwin
 - `Button` primary is forest green; `outline` is a low-emphasis green-tinted action, not a white rectangular fallback.
 - `Input`, `Select` and `Textarea` use control/border/foreground tokens. Do not reintroduce raw white/beige/café control rules.
 - `Card`, `Dialog` and `Modal` use restrained green-gray boundaries and semantic elevation. Use shared primitives rather than global `.card` or `.modal*` styling.
+- Dialog and modal backdrops use `--color-overlay-backdrop` (`#111827` at 40% opacity) with `backdrop-blur-sm` (8 px). Do not create feature-level backdrop colors.
 - FullCalendar v7 consumers import `skeleton.css`, one supported theme plugin, its `theme.css` and palette stylesheet. Theme variables are scoped to the consuming feature and mapped to institutional tokens.
 
 ## shadcn/ui

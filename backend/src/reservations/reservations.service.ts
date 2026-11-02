@@ -9,6 +9,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { QueryReservationAvailabilityDto } from './dto/query-reservation-availability.dto';
+import { PublicReservationOccupancyDto, PublicReservableResourceDto, QueryPublicReservationOccupancyDto } from './dto/public-reservations.dto';
 import { QueryReservationsDto } from './dto/query-reservations.dto';
 import { assertReservationTransition } from './reservation-transition.policy';
 import { InboxNotificationService } from '../modules/notifications/application/inbox-notification.service';
@@ -49,6 +50,17 @@ const reservationSelect = {
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.ReservationSelect;
+
+const publicResourceSelect = {
+  id: true,
+  name: true,
+  description: true,
+  location: true,
+  capacity: true,
+  pricingType: true,
+  price: true,
+  currency: true,
+} satisfies Prisma.ReservableResourceSelect;
 
 const adminReservationSelect = {
   id: true,
@@ -103,6 +115,39 @@ export class ReservationsService {
       select: resourceSelect,
       orderBy: { name: 'asc' },
     });
+  }
+
+  async findPublicActiveResources(): Promise<PublicReservableResourceDto[]> {
+    const resources = await this.prisma.reservableResource.findMany({
+      where: { status: ReservableResourceStatus.ACTIVE },
+      select: publicResourceSelect,
+      orderBy: { name: 'asc' },
+    });
+    return resources.map((resource) => ({
+      ...resource,
+      price: resource.price?.toString() ?? null,
+    }));
+  }
+
+  async findPublicOccupancy(query: QueryPublicReservationOccupancyDto): Promise<PublicReservationOccupancyDto> {
+    const from = parseCostaRicaDayStart(query.from);
+    const to = parseCostaRicaExclusiveDayEnd(query.to);
+    if (from >= to) throw new BadRequestException('From date must be before or equal to to date');
+    if (to.getTime() - from.getTime() > 31 * 24 * 60 * 60 * 1000) {
+      throw new BadRequestException('Public occupancy range cannot exceed thirty-one days');
+    }
+    await this.requireActiveResource(this.prisma, query.resourceId);
+    const slots = await this.prisma.reservation.findMany({
+      where: {
+        resourceId: query.resourceId,
+        status: { in: [...BLOCKING_STATUSES] },
+        startAt: { lt: to },
+        endAt: { gt: from },
+      },
+      select: { startAt: true, endAt: true },
+      orderBy: { startAt: 'asc' },
+    });
+    return { resourceId: query.resourceId, slots };
   }
 
   async checkAvailability(query: QueryReservationAvailabilityDto) {
