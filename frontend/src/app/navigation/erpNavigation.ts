@@ -67,7 +67,7 @@ export function getErpNavigation(permissionCodes: readonly string[] | null | und
 
 export function getErpEntryPath(permissionCodes: readonly string[] | null | undefined): string {
   if (hasCapability(permissionCodes, 'erp.dashboard.read')) return '/app/dashboard'
-  if (hasCapability(permissionCodes, 'fin.charges.read')) return '/app/financial'
+  if (hasCapability(permissionCodes, 'fin.charges.read')) return '/app/financial/dashboard'
   if (hasCapability(permissionCodes, 'inv.inventory.read')) return '/inventory'
   for (const section of getErpNavigation(permissionCodes)) for (const item of section.items) {
     if (item.capability && item.path) return item.path
