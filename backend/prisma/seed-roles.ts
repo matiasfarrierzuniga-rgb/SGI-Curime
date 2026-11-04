@@ -4,13 +4,52 @@ import {
 } from '../src/auth/presentation/capabilities/capability-policy';
 
 export const INITIAL_ROLES = [
-  { name: 'Administrador', description: 'Gestiona la configuración y administración general del sistema.' },
-  { name: 'Tesorero', description: 'Gestiona las funciones financieras autorizadas.' },
-  { name: 'Gestor de Inventario', description: 'Gestiona el inventario institucional autorizado.' },
-  { name: 'Vecino/Afiliado', description: 'Accede a las funciones disponibles para vecinos y afiliados.' },
-  { name: 'Miembro de Junta Directiva', description: 'Representa a una persona integrante de la Junta Directiva.' },
+  {
+    name: 'Administrador',
+    description:
+      'Gestiona la configuración y administración general del sistema.',
+  },
+  {
+    name: 'Tesorero',
+    description: 'Gestiona las funciones financieras autorizadas.',
+  },
+  {
+    name: 'Gestor de Inventario',
+    description: 'Gestiona el inventario institucional autorizado.',
+  },
+  {
+    name: 'Vecino/Afiliado',
+    description: 'Accede a las funciones disponibles para vecinos y afiliados.',
+  },
+  {
+    name: 'Miembro de Junta Directiva',
+    description: 'Representa a una persona integrante de la Junta Directiva.',
+  },
   { name: 'Subscription_L1', description: 'Acceso de suscripción de nivel 1.' },
-  { name: 'Cuenta comunitaria', description: 'Acceso mínimo para una cuenta comunitaria verificada.' },
+  {
+    name: 'ROLE_COMMUNITY_USER',
+    description: 'Acceso mínimo para una cuenta comunitaria verificada.',
+  },
+  {
+    name: 'ROLE_SYSTEM_ADMIN',
+    description: 'Administración técnica institucional RBAC V2.',
+  },
+  {
+    name: 'ROLE_INSTITUTIONAL_PRESIDENT',
+    description: 'Rol institucional V2 de presidencia.',
+  },
+  {
+    name: 'ROLE_INSTITUTIONAL_SECRETARY',
+    description: 'Rol institucional V2 de secretaría.',
+  },
+  {
+    name: 'ROLE_INSTITUTIONAL_TREASURER',
+    description: 'Rol institucional V2 de tesorería.',
+  },
+  {
+    name: 'ROLE_INSTITUTIONAL_OPERATOR',
+    description: 'Rol institucional V2 operativo.',
+  },
 ] as const;
 
 export const INITIAL_PERMISSIONS = CAPABILITIES.map((code) => ({
@@ -53,7 +92,11 @@ type RoleSeeder = {
 export async function ensureInitialRoles(prisma: RoleSeeder): Promise<void> {
   await prisma.$transaction(
     INITIAL_ROLES.map((role) =>
-      prisma.role.upsert({ where: { name: role.name }, update: {}, create: role }),
+      prisma.role.upsert({
+        where: { name: role.name },
+        update: {},
+        create: role,
+      }),
     ),
   );
 

@@ -11,9 +11,10 @@ describe('getErpNavigation', () => {
   it('selects a capability-backed entry before the personal fallback', () => {
     expect(getErpEntryPath(['erp.dashboard.read'])).toBe('/app/dashboard')
     expect(getErpEntryPath(['fin.charges.read', 'erp.dashboard.read'])).toBe('/app/dashboard')
-    expect(getErpEntryPath(['fin.charges.read'])).toBe('/app/financial')
+    expect(getErpEntryPath(['fin.charges.read'])).toBe('/app/financial/dashboard')
+    expect(getErpEntryPath(['fin.movements.read'])).toBe('/app/financial/movements')
     expect(getErpEntryPath(['inv.inventory.read'])).toBe('/inventory')
-    expect(getErpEntryPath(['inv.inventory.read', 'fin.charges.read'])).toBe('/app/financial')
+    expect(getErpEntryPath(['inv.inventory.read', 'fin.charges.read'])).toBe('/app/financial/dashboard')
     expect(getErpEntryPath([])).toBe('/app/profile')
   })
 

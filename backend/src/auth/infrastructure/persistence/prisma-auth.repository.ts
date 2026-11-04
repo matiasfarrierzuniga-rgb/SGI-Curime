@@ -253,7 +253,9 @@ function toAuthTransaction(tx: Prisma.TransactionClient): AuthTransaction {
         where: {
           id: userId,
           status: 'INACTIVE',
-          role: { name: { not: 'Cuenta comunitaria' } },
+          role: {
+            name: { notIn: ['Cuenta comunitaria', 'ROLE_COMMUNITY_USER'] },
+          },
         },
         data: { passwordHash, status: 'ACTIVE' },
       });

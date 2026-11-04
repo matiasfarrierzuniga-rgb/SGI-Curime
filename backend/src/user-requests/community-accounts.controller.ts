@@ -35,7 +35,7 @@ export class CommunityAccountsController {
   constructor(private readonly service: CommunityAccountsService) {}
 
   @Get('pending')
-  @Roles('Administrador')
+  @Roles('Administrador', 'ROLE_SYSTEM_ADMIN')
   @RequireCapabilities('usr.users.read')
   @UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
   findPending(@Query('identification') identification: string) {
@@ -43,7 +43,7 @@ export class CommunityAccountsController {
   }
 
   @Post(':id/correct-email')
-  @Roles('Administrador')
+  @Roles('Administrador', 'ROLE_SYSTEM_ADMIN')
   @RequireCapabilities('usr.users.update')
   @UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
   correctEmail(
@@ -60,7 +60,7 @@ export class CommunityAccountsController {
   }
 
   @Post(':id/reverify')
-  @Roles('Administrador')
+  @Roles('Administrador', 'ROLE_SYSTEM_ADMIN')
   @RequireCapabilities('usr.users.lifecycle.manage')
   @UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
   reverify(

@@ -21,8 +21,13 @@ import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { isValidPhone } from '../common/validation/identity-contact.validation';
 import { CorrectCommunityEmailDto } from './dto/correct-community-email.dto';
+import {
+  COMMUNITY_ACCOUNT_ROLE,
+  COMMUNITY_ACCOUNT_ROLES,
+  isCommunityAccountRole,
+} from '../auth/domain/policies/internal-access.policy';
 
-const COMMUNITY_ROLE = 'Cuenta comunitaria';
+const COMMUNITY_ROLE = COMMUNITY_ACCOUNT_ROLE;
 const ACKNOWLEDGEMENT = {
   message:
     'Si el correo puede continuar el proceso, recibirá instrucciones de verificación.',
@@ -61,7 +66,7 @@ export class CommunityAccountsService {
       where: {
         identification: identification.trim(),
         status: 'PENDING_EMAIL_VERIFICATION',
-        role: { name: COMMUNITY_ROLE },
+        role: { name: { in: COMMUNITY_ACCOUNT_ROLES } },
       },
       select: {
         id: true,
@@ -109,7 +114,7 @@ export class CommunityAccountsService {
           if (
             !user ||
             user.status !== 'PENDING_EMAIL_VERIFICATION' ||
-            user.role.name !== COMMUNITY_ROLE
+            !isCommunityAccountRole(user.role.name)
           )
             throw new ConflictException(
               'La cuenta no permite corregir el correo.',
@@ -130,7 +135,7 @@ export class CommunityAccountsService {
               id,
               email: user.email,
               status: 'PENDING_EMAIL_VERIFICATION',
-              role: { name: COMMUNITY_ROLE },
+              role: { name: { in: COMMUNITY_ACCOUNT_ROLES } },
             },
             data: { email },
           });
@@ -223,7 +228,7 @@ export class CommunityAccountsService {
             status: 'INACTIVE',
             communityEmailVerifiedAt: null,
             role: {
-              name: COMMUNITY_ROLE,
+              name: { in: COMMUNITY_ACCOUNT_ROLES },
               isActive: true,
               permissions: { none: {} },
             },
@@ -438,7 +443,7 @@ export class CommunityAccountsService {
             id: activationToken.userId,
             status: 'PENDING_EMAIL_VERIFICATION',
             role: {
-              name: COMMUNITY_ROLE,
+              name: { in: COMMUNITY_ACCOUNT_ROLES },
               isActive: true,
               permissions: { none: {} },
             },

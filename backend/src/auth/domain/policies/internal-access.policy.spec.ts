@@ -51,16 +51,44 @@ describe('canAccessErp', () => {
     ).toBe(false);
   });
 
-  it('denies a treasurer without an affiliate', () => {
+  it('denies canonical community account even after Person and Affiliate linkage', () => {
     expect(
       canAccessErp({
         ...validAffiliate,
-        userRoleName: 'Tesorero',
-        hasPerson: false,
-        affiliateStatus: null,
+        userRoleName: 'ROLE_COMMUNITY_USER',
       }),
     ).toBe(false);
   });
+
+  it('admits a V2 technical administrator without an affiliate', () => {
+    expect(
+      canAccessErp({
+        ...validAffiliate,
+        userRoleName: 'ROLE_SYSTEM_ADMIN',
+        hasPerson: false,
+        affiliateStatus: null,
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    'ROLE_INSTITUTIONAL_PRESIDENT',
+    'ROLE_INSTITUTIONAL_SECRETARY',
+    'ROLE_INSTITUTIONAL_TREASURER',
+    'ROLE_INSTITUTIONAL_OPERATOR',
+  ])(
+    'admits active institutional role %s without an affiliate',
+    (userRoleName) => {
+      expect(
+        canAccessErp({
+          ...validAffiliate,
+          userRoleName,
+          hasPerson: false,
+          affiliateStatus: null,
+        }),
+      ).toBe(true);
+    },
+  );
 
   it('allows a treasurer with an active affiliate', () => {
     expect(

@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../../audit/audit-actions';
+import { isCommunityAccountRole } from '../../../../auth/domain/policies/internal-access.policy';
 import { User, UserStatus } from '../../domain/entities/user';
 import { AccountAlreadyActiveError } from '../../domain/errors/account-already-active.error';
 import { AccountBlockedError } from '../../domain/errors/account-blocked.error';
@@ -36,7 +37,7 @@ export class ActivateUserUseCase {
     if (user.status === UserStatus.ACTIVE)
       throw new AccountAlreadyActiveError();
     const evidence = await this.repository.communityVerificationEvidence(id);
-    if (user.role.name === 'Cuenta comunitaria' && !evidence) {
+    if (isCommunityAccountRole(user.role.name) && !evidence) {
       throw new ActivationNotCompletedError();
     }
     const passwordHash = await this.repository.getPasswordHash(id);

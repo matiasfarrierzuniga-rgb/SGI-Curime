@@ -121,8 +121,8 @@ async function main() {
       await tx.$executeRawUnsafe(indexSql);
     });
     const role = await prisma.role.upsert({
-      where: { name: 'Cuenta comunitaria' },
-      create: { name: 'Cuenta comunitaria' },
+      where: { name: 'ROLE_COMMUNITY_USER' },
+      create: { name: 'ROLE_COMMUNITY_USER' },
       update: {},
     });
     const adminRole = await prisma.role.upsert({
@@ -287,7 +287,7 @@ async function main() {
     const oldClaims = {
       sub: pending.id,
       email: corrected,
-      role: 'Cuenta comunitaria',
+      role: 'ROLE_COMMUNITY_USER',
       iat: Math.floor(Date.now() / 1000),
       sessionGeneration: pending.sessionGeneration,
     };

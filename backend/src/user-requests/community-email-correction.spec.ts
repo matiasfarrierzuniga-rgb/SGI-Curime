@@ -69,7 +69,10 @@ describe('administrative community email correction', () => {
         CommunityAccountsController.prototype,
         method,
       )!.value as object;
-      expect(Reflect.getMetadata('roles', handler)).toEqual(['Administrador']);
+      expect(Reflect.getMetadata('roles', handler)).toEqual([
+        'Administrador',
+        'ROLE_SYSTEM_ADMIN',
+      ]);
       expect(Reflect.getMetadata('capabilities', handler)).toEqual([
         capability,
       ]);
@@ -80,6 +83,35 @@ describe('administrative community email correction', () => {
       ]);
     }
   });
+  it.each([
+    ['Administrador', true, ['usr.users.update'], true],
+    ['ROLE_SYSTEM_ADMIN', true, ['usr.users.update'], true],
+    ['ROLE_SYSTEM_ADMIN', true, [], false],
+    ['ROLE_COMMUNITY_USER', false, ['usr.users.update'], false],
+    ['ROLE_INSTITUTIONAL_OPERATOR', true, ['usr.users.update'], false],
+  ])(
+    'requires both administrator role and persisted capability for %s',
+    (role, canAccessErp, permissionCodes, allowed) => {
+      const context = {
+        getHandler: () => null,
+        getClass: () => null,
+        switchToHttp: () => ({
+          getRequest: () => ({ user: { role, canAccessErp, permissionCodes } }),
+        }),
+      };
+      const roleGuard = new RolesGuard({
+        getAllAndOverride: () => ['Administrador', 'ROLE_SYSTEM_ADMIN'],
+      } as never);
+      const capabilityGuard = new CapabilityGuard({
+        getAllAndOverride: (key: string) =>
+          key === 'capabilities' ? ['usr.users.update'] : undefined,
+      } as never);
+      expect(
+        roleGuard.canActivate(context as never) &&
+          capabilityGuard.canActivate(context as never),
+      ).toBe(allowed);
+    },
+  );
   it('normalizes and validates input and requires recorded identity attestation', async () => {
     const parsed = plainToInstance(CorrectCommunityEmailDto, {
       ...dto,

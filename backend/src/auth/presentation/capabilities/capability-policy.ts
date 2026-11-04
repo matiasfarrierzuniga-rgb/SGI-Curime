@@ -19,7 +19,7 @@ export const VOLUNTEER_OPPORTUNITY_CAPABILITIES = {
   update: 'vol.opportunities.update',
 } as const;
 
-export const CAPABILITIES = [
+export const LEGACY_CAPABILITIES = [
   'erp.dashboard.read',
   'usr.users.read',
   'usr.user-requests.read',
@@ -68,9 +68,71 @@ export const CAPABILITIES = [
   VOLUNTEER_OPPORTUNITY_CAPABILITIES.update,
 ] as const;
 
+/**
+ * Approved RBAC V2 identifiers discovered in the persisted V2 contract.
+ * They are recognized by runtime policy but receive no seed grants here.
+ * Endpoint mappings remain explicit; a catalog entry never grants access.
+ */
+export const RBAC_V2_CAPABILITIES = [
+  'bookings.handover',
+  'bookings.manage',
+  'directory.enterprise.review',
+  'directory.stall.assign',
+  'document.official.manage',
+  'document.restricted.read',
+  'donations.approval',
+  'donations.inkind.register',
+  'donations.monetary.register',
+  'donations.receipt.emit',
+  'events.proposal.approve',
+  'events.proposal.create',
+  'events.proposal.review',
+  'events.publish',
+  'finance.cxc.generate',
+  'finance.expense.approve',
+  'finance.expense.request',
+  'finance.ledger.reverse',
+  'finance.ledger.write',
+  'finance.payment.verify',
+  'finance.period.lock',
+  'finance.receipt.emit',
+  'finance.reconcile',
+  'finance.report.dinadeco',
+  'governance.agreement.manage',
+  'governance.assembly.create',
+  'governance.assembly.session',
+  'governance.attendance.scan',
+  'governance.minute.sign',
+  'governance.minute.write',
+  'inventory.decommission',
+  'inventory.item.manage',
+  'inventory.loan.manage',
+  'maintenance.funds.approve',
+  'maintenance.order.manage',
+  'padron.affiliate.read',
+  'padron.affiliate.status',
+  'padron.affiliate.update',
+  'padron.application.approve',
+  'padron.application.review',
+  'padron.sanction.apply',
+  'system.audit.read',
+  'system.identity.manage',
+  'system.maintenance.operate',
+  'system.rbac.manage',
+  'volunteer.campaign.manage',
+  'volunteer.hours.certify',
+] as const;
+
+export const CAPABILITIES = [
+  ...LEGACY_CAPABILITIES,
+  ...RBAC_V2_CAPABILITIES,
+] as const;
+
 export type Capability = (typeof CAPABILITIES)[number];
 
-export function isKnownCapability(capability: string): capability is Capability {
+export function isKnownCapability(
+  capability: string,
+): capability is Capability {
   return CAPABILITIES.includes(capability as Capability);
 }
 
@@ -81,7 +143,7 @@ const ROLE_TREASURER = 'Tesorero';
 export const ROLE_CAPABILITIES: Readonly<
   Record<string, readonly Capability[]>
 > = {
-  [ROLE_ADMIN]: CAPABILITIES,
+  [ROLE_ADMIN]: LEGACY_CAPABILITIES,
   [ROLE_INVENTORY_MANAGER]: [
     'erp.dashboard.read',
     'usr.profile.read',
@@ -107,7 +169,7 @@ export function hasCapability(
   return (
     isKnownCapability(capability) &&
     role !== undefined &&
-    ROLE_CAPABILITIES[role]?.includes(capability as Capability) === true
+    ROLE_CAPABILITIES[role]?.includes(capability) === true
   );
 }
 

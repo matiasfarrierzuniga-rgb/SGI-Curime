@@ -14,8 +14,6 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  Roles,
-  RolesGuard,
 } from '../../../../auth';
 import type { AuthenticatedUser } from '../../../../auth';
 import { hasPersistedCapability } from '../../../../auth/presentation/capabilities/capability-policy';
@@ -41,7 +39,7 @@ import {
 import { toHttpError } from '../mappers/users-error.mapper';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
+@UseGuards(JwtAuthGuard, CapabilityGuard)
 export class UsersController {
   constructor(
     private readonly listUsers: ListUsersUseCase,
@@ -72,7 +70,6 @@ export class UsersController {
   }
 
   @Get('me')
-  @Roles()
   me(@Req() req: Request & { user: AuthenticatedUser }) {
     return this.run(async () => {
       const { user, affiliation } = await this.getUser.executeWithAffiliation(
@@ -107,8 +104,16 @@ export class UsersController {
   ) {
     return this.run(async () => {
       const user = dto.isActive
-        ? await this.activateUser.execute(accessId, req.user.id, this.context(req))
-        : await this.deactivateUser.execute(accessId, req.user.id, this.context(req));
+        ? await this.activateUser.execute(
+            accessId,
+            req.user.id,
+            this.context(req),
+          )
+        : await this.deactivateUser.execute(
+            accessId,
+            req.user.id,
+            this.context(req),
+          );
       return toUserResponse(user);
     });
   }

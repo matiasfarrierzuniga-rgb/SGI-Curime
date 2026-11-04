@@ -100,11 +100,19 @@ describe('ActivateAccountUseCase', () => {
     ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_ACTIVATED' });
   });
 
-  it('rejects legacy activation for a community account without email reverification', async () => {
-    repository.findActivationToken.mockResolvedValueOnce({ ...activationToken, userRoleName: 'Cuenta comunitaria' });
-    await expect(useCase.execute('token', 'Password1!', 'Password1!')).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_ACTIVATED' });
-    expect(repository.withTransaction).not.toHaveBeenCalled();
-  });
+  it.each(['Cuenta comunitaria', 'ROLE_COMMUNITY_USER'])(
+    'rejects legacy activation for community role %s',
+    async (role) => {
+      repository.findActivationToken.mockResolvedValueOnce({
+        ...activationToken,
+        userRoleName: role,
+      });
+      await expect(
+        useCase.execute('token', 'Password1!', 'Password1!'),
+      ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_ACTIVATED' });
+      expect(repository.withTransaction).not.toHaveBeenCalled();
+    },
+  );
 
   it('throws an application error when the claim fails in the transaction', async () => {
     tx.claimActivationToken.mockResolvedValueOnce(false);

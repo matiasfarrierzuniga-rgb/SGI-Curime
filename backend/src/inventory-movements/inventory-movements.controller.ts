@@ -1,11 +1,11 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import { CapabilityGuard, JwtAuthGuard, RequireCapabilities } from '../auth';
 import { QueryMovementsDto } from './dto/query-movements.dto';
 import { InventoryMovementsService } from './inventory-movements.service';
 
 @Controller('inventory/movements')
-@Roles('Administrador', 'Gestor de Inventario')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@RequireCapabilities('inv.inventory.read')
+@UseGuards(JwtAuthGuard, CapabilityGuard)
 export class InventoryMovementsController {
   constructor(private readonly movementsService: InventoryMovementsService) {}
 

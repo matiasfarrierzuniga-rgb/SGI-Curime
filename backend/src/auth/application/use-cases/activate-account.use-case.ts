@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { createHash } from 'crypto';
+import { isCommunityAccountRole } from '../../domain/policies/internal-access.policy';
 import { AuditAction } from '../../../audit/audit-actions';
 import { AuthApplicationError } from '../errors/auth.errors';
 import {
@@ -74,7 +75,7 @@ export class ActivateAccountUseCase {
     if (
       activationToken.userStatus !== 'INACTIVE' ||
       !activationToken.userRoleName ||
-      activationToken.userRoleName === 'Cuenta comunitaria'
+      isCommunityAccountRole(activationToken.userRoleName)
     ) {
       throw new AuthApplicationError(
         'ACCOUNT_CANNOT_BE_ACTIVATED',

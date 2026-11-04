@@ -91,26 +91,37 @@ describe('ActivateUserUseCase', () => {
     expect(repository.updateStatus).not.toHaveBeenCalled();
   });
 
-  it('fails closed for a community account with no verification history', async () => {
-    repository.findById.mockResolvedValueOnce({
-      ...domainUser,
-      role: { ...domainUser.role, name: 'Cuenta comunitaria' },
-    });
-    await expect(useCase.execute(2)).rejects.toBeInstanceOf(
-      ActivationNotCompletedError,
-    );
-    expect(repository.updateStatus).not.toHaveBeenCalled();
-  });
+  it.each(['Cuenta comunitaria', 'ROLE_COMMUNITY_USER'])(
+    'fails closed for %s with no verification history',
+    async (role) => {
+      repository.findById.mockResolvedValueOnce({
+        ...domainUser,
+        role: { ...domainUser.role, name: role },
+      });
+      await expect(useCase.execute(2)).rejects.toBeInstanceOf(
+        ActivationNotCompletedError,
+      );
+      expect(repository.updateStatus).not.toHaveBeenCalled();
+    },
+  );
 
-  it('allows reactivation when the latest community token was consumed', async () => {
-    repository.findById.mockResolvedValueOnce({
-      ...domainUser,
-      role: { ...domainUser.role, name: 'Cuenta comunitaria' },
-    });
-    repository.communityVerificationEvidence.mockResolvedValueOnce(new Date());
-    await useCase.execute(2);
-    expect(repository.updateStatus).toHaveBeenCalledWith(2, UserStatus.ACTIVE);
-  });
+  it.each(['Cuenta comunitaria', 'ROLE_COMMUNITY_USER'])(
+    'allows verified reactivation for %s',
+    async (role) => {
+      repository.findById.mockResolvedValueOnce({
+        ...domainUser,
+        role: { ...domainUser.role, name: role },
+      });
+      repository.communityVerificationEvidence.mockResolvedValueOnce(
+        new Date(),
+      );
+      await useCase.execute(2);
+      expect(repository.updateStatus).toHaveBeenCalledWith(
+        2,
+        UserStatus.ACTIVE,
+      );
+    },
+  );
 
   it('throws AccountAlreadyActiveError for an active user', async () => {
     repository.findById.mockResolvedValueOnce({

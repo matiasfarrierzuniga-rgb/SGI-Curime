@@ -1,47 +1,50 @@
-export const ROLE_ADMIN = 'Administrador'
-export const ROLE_INVENTORY_MANAGER = 'Gestor de Inventario'
-export const ROLE_TREASURER = 'Tesorero'
-export const ROLE_COMMUNITY_ACCOUNT = 'Cuenta comunitaria'
+export const ROLE_ADMIN = "Administrador";
+export const ROLE_INVENTORY_MANAGER = "Gestor de Inventario";
+export const ROLE_TREASURER = "Tesorero";
+export const ROLE_COMMUNITY_ACCOUNT = "ROLE_COMMUNITY_USER";
+export const LEGACY_ROLE_COMMUNITY_ACCOUNT = "Cuenta comunitaria";
 
 export type RoleLike =
   | string
   | {
-    name?: string | null
-  }
+      name?: string | null;
+    }
   | null
-  | undefined
+  | undefined;
 
-export const ADMIN_ROLES: readonly string[] = [ROLE_ADMIN]
+export const ADMIN_ROLES: readonly string[] = [ROLE_ADMIN];
 
 export const INVENTORY_ROLES: readonly string[] = [
   ROLE_ADMIN,
   ROLE_INVENTORY_MANAGER,
-]
+];
 
 export function getRoleName(role: RoleLike): string | undefined {
-  if (!role) return undefined
+  if (!role) return undefined;
 
-  if (typeof role === 'string') {
-    return role
+  if (typeof role === "string") {
+    return role;
   }
 
-  return role.name ?? undefined
+  return role.name ?? undefined;
 }
 
 export function isAdmin(role: RoleLike): boolean {
-  return getRoleName(role) === ROLE_ADMIN
+  return getRoleName(role) === ROLE_ADMIN;
 }
 
 export function canManageInventory(role: RoleLike): boolean {
-  const roleName = getRoleName(role)
+  const roleName = getRoleName(role);
 
-  return (
-    roleName !== undefined &&
-    INVENTORY_ROLES.includes(roleName)
-  )
+  return roleName !== undefined && INVENTORY_ROLES.includes(roleName);
 }
 
 export function homePathForRole(role: RoleLike, canAccessErp = false): string {
-  if (getRoleName(role) === ROLE_COMMUNITY_ACCOUNT) return '/mi-comunidad'
-  return getRoleName(role) && canAccessErp ? '/app' : '/servicios'
+  if (
+    [ROLE_COMMUNITY_ACCOUNT, LEGACY_ROLE_COMMUNITY_ACCOUNT].includes(
+      getRoleName(role) ?? "",
+    )
+  )
+    return "/mi-comunidad";
+  return getRoleName(role) && canAccessErp ? "/app" : "/servicios";
 }

@@ -51,7 +51,12 @@ describe('initial role seed', () => {
         'Vecino/Afiliado',
         'Miembro de Junta Directiva',
         'Subscription_L1',
+        'ROLE_COMMUNITY_USER',
+        'ROLE_SYSTEM_ADMIN',
       ]),
+    );
+    expect(INITIAL_ROLES.map((role) => role.name)).not.toContain(
+      'Cuenta comunitaria',
     );
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -63,7 +68,7 @@ describe('initial role seed', () => {
   });
 
   it('persists every compatibility capability and mapped role grant idempotently', async () => {
-    expect(INITIAL_PERMISSIONS).toHaveLength(46);
+    expect(INITIAL_PERMISSIONS).toHaveLength(93);
     expect(ROLE_CAPABILITIES.Administrador).toHaveLength(46);
     expect(INITIAL_PERMISSIONS).toEqual(
       expect.arrayContaining([
@@ -138,7 +143,9 @@ describe('initial role seed', () => {
     await ensureInitialRoles(prisma);
     await ensureInitialRoles(prisma);
 
-    expect(permissionUpsert).toHaveBeenCalledTimes(INITIAL_PERMISSIONS.length * 2);
+    expect(permissionUpsert).toHaveBeenCalledTimes(
+      INITIAL_PERMISSIONS.length * 2,
+    );
     expect(permissionUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { code: 'don.donations.read' },
@@ -155,15 +162,20 @@ describe('initial role seed', () => {
       ([roleName, capabilities]) =>
         capabilities.map((capability) => `${roleName}:${capability}`),
     );
-    const observedPairs = rolePermissionUpsert.mock.calls.map(
-      ([{ create, update, where }]) => {
-        expect(where).toEqual({ roleId_permissionId: create });
-        expect(update).toEqual({});
-        return `${roleNameById.get(create.roleId)}:${capabilityById.get(
-          create.permissionId,
-        )}`;
-      },
-    );
+    const observedPairs = rolePermissionUpsert.mock.calls.map(([call]) => {
+      const { create, update, where } = call as {
+        create: { roleId: number; permissionId: number };
+        update: Record<string, never>;
+        where: {
+          roleId_permissionId: { roleId: number; permissionId: number };
+        };
+      };
+      expect(where).toEqual({ roleId_permissionId: create });
+      expect(update).toEqual({});
+      return `${roleNameById.get(create.roleId)}:${capabilityById.get(
+        create.permissionId,
+      )}`;
+    });
 
     expect(observedPairs).toEqual([...expectedPairs, ...expectedPairs]);
     expect(new Set(observedPairs)).toEqual(new Set(expectedPairs));

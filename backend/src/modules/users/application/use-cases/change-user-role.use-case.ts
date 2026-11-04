@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../../audit/audit-actions';
+import { isCommunityAccountRole } from '../../../../auth/domain/policies/internal-access.policy';
 import { User, UserStatus } from '../../domain/entities/user';
 import { ActivationNotCompletedError } from '../../domain/errors/activation-not-completed.error';
 import { InactiveRoleError } from '../../domain/errors/inactive-role.error';
@@ -43,7 +44,7 @@ export class ChangeUserRoleUseCase {
       if (user.status === UserStatus.PENDING_EMAIL_VERIFICATION)
         throw new ActivationNotCompletedError();
       if (
-        user.role.name === 'Cuenta comunitaria' &&
+        isCommunityAccountRole(user.role.name) &&
         !(await tx.communityVerificationEvidence(id))
       )
         throw new ActivationNotCompletedError();

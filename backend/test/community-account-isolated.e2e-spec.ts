@@ -86,7 +86,7 @@ describe('community account HTTP authorization with isolated PostgreSQL', () => 
     )
       throw new Error('database identity mismatch');
     const role = await prisma.role.findUniqueOrThrow({
-      where: { name: 'Cuenta comunitaria' },
+      where: { name: 'ROLE_COMMUNITY_USER' },
     });
     const adminRole = await prisma.role.findUniqueOrThrow({
       where: { name: 'Administrador' },
