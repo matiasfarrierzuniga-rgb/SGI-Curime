@@ -54,5 +54,8 @@ describe('AdminReportsController', () => {
     expect(Reflect.getMetadata(ROLES_KEY, AdminReportsController)).toEqual([
       'Administrador',
     ]);
+    expect(Reflect.getMetadata(ROLES_KEY, controller.dashboard)).toEqual([
+      'Administrador', 'ROLE_SYSTEM_ADMIN',
+    ]);
   });
 });
