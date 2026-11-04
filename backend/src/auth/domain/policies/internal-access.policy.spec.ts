@@ -11,13 +11,13 @@ describe('canAccessErp', () => {
 
   const administrator = {
     userStatus: 'ACTIVE',
-    userRoleName: 'Administrador',
+    userRoleName: 'ROLE_SYSTEM_ADMIN',
     userRoleIsActive: true,
     hasPerson: false,
     affiliateStatus: null,
   };
 
-  it('allows an active administrator with an active role without a person or affiliate', () => {
+  it('allows an active canonical administrator without a person or affiliate', () => {
     expect(canAccessErp(administrator)).toBe(true);
   });
 

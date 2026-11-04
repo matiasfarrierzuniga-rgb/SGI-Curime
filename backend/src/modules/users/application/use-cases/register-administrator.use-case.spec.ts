@@ -14,7 +14,7 @@ const input = {
 
 const administratorRole = {
   id: 1,
-  name: 'Administrador',
+  name: 'ROLE_SYSTEM_ADMIN',
   description: null,
   isActive: true,
 };
@@ -55,7 +55,7 @@ describe('RegisterAdministratorUseCase', () => {
     passwordHasher.hash.mockResolvedValue('hash');
   });
 
-  it('bootstraps first active Administrator through Person-first with no expiration', async () => {
+  it('bootstraps first active system administrator through Person-first with no expiration', async () => {
     await useCase.execute(input);
 
     expect(repository.resolvePerson).toHaveBeenCalledWith(
@@ -71,7 +71,7 @@ describe('RegisterAdministratorUseCase', () => {
     );
   });
 
-  it('requires authentication after an Administrator exists', async () => {
+  it('requires authentication after a system administrator exists', async () => {
     repository.countAdministrators.mockResolvedValue(1);
 
     await expect(useCase.execute(input)).rejects.toMatchObject({
@@ -79,7 +79,7 @@ describe('RegisterAdministratorUseCase', () => {
     });
   });
 
-  it('rejects non-administrator actors and allows Administrador actors', async () => {
+  it('rejects non-administrator actors and allows canonical system administrators', async () => {
     repository.countAdministrators.mockResolvedValue(1);
 
     await expect(
@@ -88,7 +88,7 @@ describe('RegisterAdministratorUseCase', () => {
       name: 'AdministratorRegistrationForbiddenError',
     });
     await expect(
-      useCase.execute(input, { id: 1, role: 'Administrador' }),
+      useCase.execute(input, { id: 1, role: 'ROLE_SYSTEM_ADMIN' }),
     ).resolves.toEqual({ id: 1 });
   });
 

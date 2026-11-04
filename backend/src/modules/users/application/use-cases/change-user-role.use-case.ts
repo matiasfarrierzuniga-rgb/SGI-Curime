@@ -4,6 +4,8 @@ import { User } from '../../domain/entities/user';
 import { InactiveRoleError } from '../../domain/errors/inactive-role.error';
 import { RoleNotFoundError } from '../../domain/errors/role-not-found.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
+import { NonAssignableRoleError } from '../../domain/errors/non-assignable-role.error';
+import { isCanonicalRoleCode } from '../../../../auth/domain/policies/canonical-role-catalog';
 import {
   assertAnotherActiveAdministrator,
   requiresAdminContinuity,
@@ -41,6 +43,7 @@ export class ChangeUserRoleUseCase {
       if (!user) throw new UserNotFoundError();
       if (!role) throw new RoleNotFoundError();
       if (!role.isActive) throw new InactiveRoleError();
+      if (!isCanonicalRoleCode(role.name)) throw new NonAssignableRoleError();
       previousRoleId = user.roleId;
 
       if (requiresAdminContinuity(user, role.name)) {

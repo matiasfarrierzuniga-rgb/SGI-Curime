@@ -92,9 +92,17 @@ describe('UserRequestsService', () => {
     prisma.userRequest.findUnique.mockResolvedValue(pending);
     prisma.userRequest.create.mockResolvedValue(pending);
     prisma.userRequest.updateMany.mockResolvedValue({ count: 1 });
-    prisma.role.findUnique.mockResolvedValue({ id: 2, isActive: true });
+    prisma.role.findUnique.mockResolvedValue({
+      id: 2,
+      name: 'ROLE_COMMUNITY_USER',
+      isActive: true,
+    });
     tx.$queryRaw.mockResolvedValue([{ locked: 1 }]);
-    tx.role.findUnique.mockResolvedValue({ id: 2, isActive: true });
+    tx.role.findUnique.mockResolvedValue({
+      id: 2,
+      name: 'ROLE_COMMUNITY_USER',
+      isActive: true,
+    });
     tx.userRequest.updateMany.mockResolvedValue({ count: 1 });
     tx.userRequest.create.mockResolvedValue(pending);
     tx.userRequest.findUniqueOrThrow.mockResolvedValue({
@@ -450,9 +458,26 @@ describe('UserRequestsService', () => {
   });
 
   it('rejects an inactive role', async () => {
-    tx.role.findUnique.mockResolvedValue({ id: 2, isActive: false });
+    tx.role.findUnique.mockResolvedValue({
+      id: 2,
+      name: 'ROLE_COMMUNITY_USER',
+      isActive: false,
+    });
     await expect(service.approve(10, { roleId: 2 }, 1)).rejects.toBeInstanceOf(
       ConflictException,
     );
+  });
+
+  it('rejects an active legacy role', async () => {
+    tx.role.findUnique.mockResolvedValue({
+      id: 2,
+      name: 'Administrador',
+      isActive: true,
+    });
+
+    await expect(service.approve(10, { roleId: 2 }, 1)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(tx.user.create).not.toHaveBeenCalled();
   });
 });

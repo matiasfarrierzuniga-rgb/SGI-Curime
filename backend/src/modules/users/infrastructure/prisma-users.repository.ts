@@ -5,6 +5,7 @@ import {
   UserStatus,
 } from '../../../../generated/prisma/client';
 import { getAccountLockoutPolicy, lockoutCutoff } from '../../../auth';
+import { SYSTEM_ADMIN_ROLE } from '../../../auth/domain/policies/canonical-role-catalog';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
   PersonLogicalIdentityRaceError,
@@ -26,8 +27,6 @@ import {
   UsersRepository,
   RegistrationDataConflictError,
 } from '../domain/repositories/users-repository';
-
-const ADMIN_ROLE = 'Administrador';
 
 const userSelect = {
   id: true,
@@ -408,13 +407,15 @@ export class PrismaUsersRepository implements UsersRepository {
       where: {
         id: { not: excludeUserId },
         status: UserStatus.ACTIVE,
-        role: { name: ADMIN_ROLE },
+        role: { name: SYSTEM_ADMIN_ROLE },
       },
     });
   }
 
   async countAdministrators(): Promise<number> {
-    return this.db.user.count({ where: { role: { name: ADMIN_ROLE } } });
+    return this.db.user.count({
+      where: { role: { name: SYSTEM_ADMIN_ROLE } },
+    });
   }
 
   private toWhere(query: UserQuery): Prisma.PersonWhereInput {

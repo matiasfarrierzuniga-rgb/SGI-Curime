@@ -170,7 +170,7 @@ export function UserRequestsPage() {
       {action === "approve" ? <Modal title="Aprobar solicitud" onClose={() => setAction(null)} busy={busy}>
         <p className="text-text-secondary">Seleccione el rol que tendrá la nueva cuenta y confirme la aprobación.</p>
         <label className="mt-5 flex flex-col gap-1 text-label font-semibold text-text-primary">Rol
-          <Select value={roleId} onChange={(event) => setRoleId(event.target.value)}><option value="">Seleccione un rol</option>{roles.map((role) => <option value={role.id} key={role.id}>{role.name}</option>)}</Select>
+          <Select value={roleId} onChange={(event) => setRoleId(event.target.value)}><option value="">Seleccione un rol</option>{roles.map((role) => <option value={role.id} key={role.id}>{role.label}</option>)}</Select>
         </label>
         <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border-subtle pt-5 sm:flex-row sm:justify-end"><Button type="button" variant="outline" onClick={() => setAction(null)} disabled={busy}>Cancelar</Button><Button type="button" loading={busy} disabled={!roleId || busy} onClick={() => void run()}>{busy ? "Aprobando…" : "Aprobar solicitud"}</Button></div>
       </Modal> : null}

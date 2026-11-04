@@ -120,7 +120,7 @@ export function UsersTable({ users, onOpen, onManage }: UsersTableProps) {
             <DataTableCell className="w-56 max-w-56">
               {user.access ? <div className="grid gap-1"><Badge variant={user.access.isBlocked ? "warning" : user.access.status === "ACTIVE" ? "success" : "neutral"}>{statusLabel(user.access)}</Badge><span className="overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text-secondary">{user.access.email}</span></div> : <span className="text-text-secondary">Sin cuenta SGI</span>}
             </DataTableCell>
-            <DataTableCell className="whitespace-nowrap">{user.access?.role.name || "Sin rol de cuenta"}</DataTableCell>
+            <DataTableCell className="whitespace-nowrap">{user.access?.role.label || "Sin rol de cuenta"}</DataTableCell>
             <DataTableCell><Badge variant={user.affiliate?.status === "ACTIVE" ? "success" : "neutral"}>{user.affiliate ? user.affiliate.status === "ACTIVE" ? "Afiliación activa" : "Afiliación inactiva" : "Sin afiliación"}</Badge></DataTableCell>
             <DataTableCell className="text-right">
               <UserActionsCell

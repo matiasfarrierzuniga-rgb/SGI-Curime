@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { CANONICAL_ROLE_CODES } from '../../../auth/domain/policies/canonical-role-catalog';
 import type { Role } from '../domain/entities/role';
 import type { RolesRepository } from '../domain/repositories/roles-repository';
 
@@ -9,7 +10,10 @@ export class PrismaRolesRepository implements RolesRepository {
 
   async findActive(): Promise<Role[]> {
     const roles = await this.db.role.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        name: { in: [...CANONICAL_ROLE_CODES] },
+      },
       orderBy: { name: 'asc' },
     });
     return roles.map(toRole);

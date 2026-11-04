@@ -17,7 +17,7 @@ const adminUser = {
   status: UserStatus.ACTIVE,
   lockedAt: null,
   roleId: 1,
-  role: { id: 1, name: 'Administrador', description: null, isActive: true },
+  role: { id: 1, name: 'ROLE_SYSTEM_ADMIN', description: null, isActive: true },
   createdAt: new Date(),
   updatedAt: new Date(),
 };

@@ -7,6 +7,7 @@ import {
   ResourcePricingType,
 } from '../generated/prisma/client';
 import { ensureInitialRoles } from './seed-roles';
+import { SYSTEM_ADMIN_ROLE } from '../src/auth/domain/policies/canonical-role-catalog';
 
 const INITIAL_RESERVABLE_RESOURCES = [
   {
@@ -106,7 +107,7 @@ async function main(): Promise<void> {
     console.log('Initial reservable resources were ensured successfully.');
 
     const administratorRole = await prisma.role.findUniqueOrThrow({
-      where: { name: 'Administrador' },
+      where: { name: SYSTEM_ADMIN_ROLE },
     });
 
     const [userWithEmail, userWithIdentification] = await Promise.all([

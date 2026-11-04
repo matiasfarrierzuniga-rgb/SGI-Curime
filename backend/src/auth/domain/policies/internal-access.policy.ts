@@ -1,13 +1,16 @@
+import {
+  CANONICAL_ROLE_CODES,
+  SYSTEM_ADMIN_ROLE,
+} from './canonical-role-catalog';
+
 export const GENERAL_ACCOUNT_ROLE = 'Subscription_L1';
 export const COMMUNITY_ACCOUNT_ROLE = 'ROLE_COMMUNITY_USER';
 export const LEGACY_COMMUNITY_ACCOUNT_ROLE = 'Cuenta comunitaria';
-const ADMINISTRATOR_ROLE = 'Administrador';
 export const ERP_ADMITTED_V2_ROLES = [
-  'ROLE_SYSTEM_ADMIN',
-  'ROLE_INSTITUTIONAL_PRESIDENT',
-  'ROLE_INSTITUTIONAL_SECRETARY',
-  'ROLE_INSTITUTIONAL_TREASURER',
-  'ROLE_INSTITUTIONAL_OPERATOR',
+  SYSTEM_ADMIN_ROLE,
+  ...CANONICAL_ROLE_CODES.filter(
+    (role) => role !== COMMUNITY_ACCOUNT_ROLE && role !== SYSTEM_ADMIN_ROLE,
+  ),
 ] as const;
 
 export interface InternalAccessContext {
@@ -24,7 +27,6 @@ export function canAccessErp(context: InternalAccessContext): boolean {
   }
 
   if (
-    context.userRoleName === ADMINISTRATOR_ROLE ||
     ERP_ADMITTED_V2_ROLES.some((role) => role === context.userRoleName)
   ) {
     return true;
