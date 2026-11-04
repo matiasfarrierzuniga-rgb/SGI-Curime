@@ -29,7 +29,6 @@ import { AboutPage, CommunityPage, ContactPage, NewsDetailPage, NewsPage, Servic
 import { AffiliationPage } from '@/pages/public/AffiliationPage'
 import { LandingPage } from '@/features/public-site'
 import { AppHomePage } from '@/pages/erp/AppHomePage'
-import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
 import { DinadecoAnnualReportPage, FinancialDashboardPage, FinancialMovementsPage, FinancialPage, TreasuryPage } from '@/features/financial'
 import { DonationsPage } from '@/features/donations'
@@ -88,7 +87,9 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="erp.dashboard.read" />}>
             <Route path="/app/dashboard" element={<AppHomePage />} />
           </Route>
-          <Route path="/app/profile" element={<ProfilePage />} />
+          <Route element={<RoleRoute capability="usr.profile.read" />}>
+            <Route path="/app/profile" element={<ProfilePage />} />
+          </Route>
           <Route path="/app/notifications" element={<NotificationsPage />} />
            <Route element={<RoleRoute capability="res.reservations.read" />}>
              <Route path="/app/reservations" element={<ReservationAdminPage />} />
@@ -114,19 +115,16 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="usr.users.read" />}>
             <Route path="/admin/users" element={<UsersPage />} />
           </Route>
-          <Route element={<RoleRoute capability="usr.roles.read" />}>
-            <Route path="/app/roles" element={<ErpPlaceholderPage title="Roles" />} />
-          </Route>
           <Route element={<RoleRoute capability="adm.affiliates.read" />}>
             <Route path="/app/admin/affiliates" element={<AffiliatesPage />} />
           </Route>
-          <Route element={<RoleRoute capability="adm.requests.read" />}>
+          <Route element={<RoleRoute capability="padron.application.review" />}>
             <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />
           </Route>
           <Route element={<RoleRoute capability="usr.user-requests.read" />}>
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
           </Route>
-          <Route element={<RoleRoute capability="adm.assemblies.read" />}>
+          <Route element={<RoleRoute anyOfCapabilities={['governance.assembly.session', 'adm.assemblies.read']} />}>
             <Route path="/app/admin/assemblies" element={<AssembliesAdminPage />} />
             <Route path="/app/admin/assemblies/:id" element={<AssemblyManagementPage />} />
           </Route>
@@ -152,7 +150,7 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="aud.logs.read" />}>
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
           </Route>
-          <Route element={<RoleRoute capability="pub.events.manage" />}>
+          <Route element={<RoleRoute anyOfCapabilities={['events.proposal.create', 'events.proposal.review', 'events.proposal.approve', 'events.publish', 'pub.events.manage']} />}>
             <Route path="/app/events" element={<EventsManagementPage />} />
           </Route>
           <Route element={<RoleRoute capability="inv.inventory.read" />}>

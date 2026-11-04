@@ -5,6 +5,13 @@ import { ToastProvider } from '@/shared/ui/Toast'
 import { usersService } from '../api/users.api'
 import { UsersPage } from './UsersPage'
 
+vi.mock('@/features/auth', () => ({
+  useAuth: () => ({
+    user: { permissionCodes: ['usr.users.read', 'usr.roles.read'] },
+    isLoading: false,
+  }),
+}))
+
 vi.mock('../api/users.api', () => ({
   usersService: {
     list: vi.fn(),

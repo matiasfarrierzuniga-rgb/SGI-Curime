@@ -47,18 +47,18 @@ describe('FinancialPage', () => {
   it('sends server filters and resets page on filter change', () => {
     render(<FinancialPage />)
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'PENDING' } })
-    expect(vi.mocked(useFinancialChargesList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'PENDING', page: 1, limit: 20 }))
+    expect(vi.mocked(useFinancialChargesList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'PENDING', page: 1, limit: 20 }), true)
     fireEvent.change(screen.getByLabelText('ID de reserva'), { target: { value: '9' } })
-    expect(vi.mocked(useFinancialChargesList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'PENDING', reservationId: 9, page: 1, limit: 20 }))
+    expect(vi.mocked(useFinancialChargesList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'PENDING', reservationId: 9, page: 1, limit: 20 }), true)
   })
 
   it('uses server pagination while preserving filters and clears all filters', () => {
     render(<FinancialPage />)
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'PENDING' } })
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
-    expect(vi.mocked(useFinancialChargesList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'PENDING', page: 2, limit: 20 }))
+    expect(vi.mocked(useFinancialChargesList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'PENDING', page: 2, limit: 20 }), true)
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
-    expect(vi.mocked(useFinancialChargesList)).toHaveBeenLastCalledWith({ page: 1, limit: 20 })
+    expect(vi.mocked(useFinancialChargesList)).toHaveBeenLastCalledWith({ page: 1, limit: 20 }, true)
   })
 
   it('shows the record payment action only for pending charges with the capability', () => {
@@ -67,13 +67,13 @@ describe('FinancialPage', () => {
   })
 
   it('allows payment recording through the assigned capability', () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['fin.payments.record'] } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['fin.charges.read', 'fin.payments.record'] } } as never)
     render(<FinancialPage />)
     expect(screen.getAllByRole('button', { name: 'Registrar pago' })).toHaveLength(1)
   })
 
   it('hides the record payment action without the capability', () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: [] } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['fin.charges.read'] } } as never)
     render(<FinancialPage />)
     expect(screen.queryByRole('button', { name: 'Registrar pago' })).not.toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Ver detalle' })).toHaveLength(3)

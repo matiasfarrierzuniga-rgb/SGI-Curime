@@ -32,12 +32,12 @@ export function DonationsPage() {
   const [editing, setEditing] = useState<Donation | null>(null)
   const [cancelling, setCancelling] = useState<Donation | null>(null)
   const [deleting, setDeleting] = useState<Donation | null>(null)
+  const mayRead = hasCapability(user?.permissionCodes, 'don.donations.read')
   const list = useDonationsList({
     ...filters,
     dateTo: filters.dateTo ? toLocalEndOfDayIso(filters.dateTo) : undefined,
-  })
+  }, mayRead)
   const donations = list.data?.data ?? []
-  const mayRead = hasCapability(user?.permissionCodes, 'don.donations.read')
   const mayCreate = hasCapability(user?.permissionCodes, 'don.donations.create')
   const mayEdit = hasCapability(user?.permissionCodes, 'don.donations.update')
   const mayCancel = hasCapability(user?.permissionCodes, 'don.donations.cancel')

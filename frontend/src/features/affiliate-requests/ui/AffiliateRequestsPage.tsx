@@ -7,6 +7,8 @@ import { AdministrativeListLayout, AdministrativeListResults } from '@/shared/ui
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Button } from '@/shared/ui/button'
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 import { useAffiliateRequestsList } from '../hooks/useAffiliateRequestsQueries'
 import type { AffiliateRequestStatus } from '../model/affiliateRequests.types'
 import { AffiliateRequestsFilters } from './AffiliateRequestsFilters'
@@ -16,6 +18,8 @@ import { AffiliateRequestsTable } from './AffiliateRequestsTable'
 const limit = 20
 
 export function AffiliateRequestsPage() {
+  const { user } = useAuth()
+  const canApprove = hasCapability(user?.permissionCodes, 'padron.application.approve')
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [emailDraft, setEmailDraft] = useState('')
@@ -77,7 +81,7 @@ export function AffiliateRequestsPage() {
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </AdministrativeListResults>
       )}
-      {selectedRequestId !== null && <AffiliateRequestDetail key={selectedRequestId} requestId={selectedRequestId} onClose={() => setSelectedRequestId(null)} />}
+      {selectedRequestId !== null && <AffiliateRequestDetail key={selectedRequestId} requestId={selectedRequestId} canApprove={canApprove} onClose={() => setSelectedRequestId(null)} />}
     </AdministrativeListLayout>
   )
 }

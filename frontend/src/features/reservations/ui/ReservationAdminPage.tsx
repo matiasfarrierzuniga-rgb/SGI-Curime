@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
@@ -41,7 +42,8 @@ export function ReservationAdminPage() {
   const [actionError, setActionError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [calendarMonth, setCalendarMonth] = useState(currentCostaRicaMonth)
-  const list = useReservationsList(filters)
+  const mayReadReservations = hasCapability(user?.permissionCodes, 'res.reservations.read')
+  const list = useReservationsList(filters, mayReadReservations)
   const resources = useReservableResources()
   const mutations = useReservationMutations()
   const rejectForm = useForm<RejectValues>({ resolver: zodResolver(rejectSchema), defaultValues: { rejectionReason: '' } })

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'; import { describe, expect, it, beforeEach, vi } from 'vitest'; import { AuditLogsPage } from './AuditLogsPage'; import { ToastProvider } from '@/shared/ui/Toast'; import { auditLogsService } from '../../services/auditLogsService'
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes: ['aud.logs.read'] }, isLoading: false }) }))
 vi.mock('../../services/auditLogsService', () => ({ auditLogsService: { list: vi.fn(), get: vi.fn() } }))
 
 const log = { id: 1, action: 'LOGIN', module: 'AUTH', entityType: null, entityId: null, details: { safe: '<script>alert(1)</script>' }, ipAddress: null, userAgent: null, createdAt: '2026-01-01T00:00:00.000Z', userId: null, user: null } as any

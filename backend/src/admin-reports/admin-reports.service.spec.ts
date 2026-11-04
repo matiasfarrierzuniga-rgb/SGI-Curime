@@ -50,7 +50,11 @@ describe('AdminReportsService attendanceSummary', () => {
   });
 
   it('consolidates real domain summaries without adding donations to finance', async () => {
-    prisma.$transaction.mockResolvedValue([12, 9, 3, 4]);
+    prisma.affiliate.count
+      .mockResolvedValueOnce(12)
+      .mockResolvedValueOnce(9)
+      .mockResolvedValueOnce(3);
+    prisma.affiliateRequest.count.mockResolvedValue(4);
     prisma.absenceJustification.groupBy.mockResolvedValue([
       { status: 'PENDING', _count: { _all: 2 } },
       { status: 'APPROVED', _count: { _all: 5 } },
@@ -89,10 +93,22 @@ describe('AdminReportsService attendanceSummary', () => {
       },
     });
 
-    const result = await service.dashboard({
-      id: 12,
-      fullName: 'Persona Administradora',
-    });
+    const result = await service.dashboard(
+      {
+        id: 12,
+        fullName: 'Persona Administradora',
+      },
+      [
+        'adm.affiliates.read',
+        'padron.application.review',
+        'res.reservations.read',
+        'fin.movements.read',
+        'don.donations.read',
+        'inv.inventory.read',
+        'governance.assembly.session',
+        'adm.justifications.read',
+      ],
+    );
 
     expect(financialService.summarizeMovements).toHaveBeenCalledWith({});
     expect(inventoryReportsService.summary).toHaveBeenCalledWith();
@@ -153,7 +169,8 @@ describe('AdminReportsService attendanceSummary', () => {
   });
 
   it('returns explicit zero counts when grouped domains have no data', async () => {
-    prisma.$transaction.mockResolvedValue([0, 0, 0, 0]);
+    prisma.affiliate.count.mockResolvedValue(0);
+    prisma.affiliateRequest.count.mockResolvedValue(0);
     prisma.absenceJustification.groupBy.mockResolvedValue([]);
     prisma.reservation.groupBy.mockResolvedValue([]);
     prisma.assembly.groupBy.mockResolvedValue([]);
@@ -178,13 +195,62 @@ describe('AdminReportsService attendanceSummary', () => {
       },
     });
 
-    const result = await service.dashboard();
+    const result = await service.dashboard(null, [
+      'adm.affiliates.read',
+        'padron.application.review',
+      'res.reservations.read',
+      'fin.movements.read',
+      'don.donations.read',
+      'inv.inventory.read',
+        'governance.assembly.session',
+      'adm.justifications.read',
+    ]);
 
-    expect(result.data.reservations.total).toBe(0);
-    expect(result.data.reservations.confirmed).toBe(0);
-    expect(result.data.assemblies.in_progress).toBe(0);
-    expect(result.data.donations.confirmed).toBe(0);
-    expect(result.data.justifications.pending).toBe(0);
+    expect(result.data.reservations?.total).toBe(0);
+    expect(result.data.reservations?.confirmed).toBe(0);
+    expect(result.data.assemblies?.in_progress).toBe(0);
+    expect(result.data.donations?.confirmed).toBe(0);
+    expect(result.data.justifications?.pending).toBe(0);
+  });
+
+  it('omits unauthorized domains without querying them', async () => {
+    inventoryReportsService.summary.mockResolvedValue({
+      metadata: {},
+      data: {
+        totalItems: 2,
+        activeItems: 2,
+        inactiveItems: 0,
+        totalCategories: 1,
+        lowStockCount: 0,
+        outOfStockCount: 0,
+        activeLoans: 0,
+        overdueLoans: 0,
+      },
+    });
+
+    const result = await service.dashboard(null, ['inv.inventory.read']);
+
+    expect(result.data).toEqual({
+      inventory: {
+        totalItems: 2,
+        lowStockItems: 0,
+        outOfStockItems: 0,
+        activeLoans: 0,
+        overdueLoans: 0,
+      },
+    });
+    expect(result.metadata.dataSource).toEqual([
+      'INVENTORY_ITEM',
+      'INVENTORY_CATEGORY',
+      'INVENTORY_LOAN',
+    ]);
+    expect(prisma.affiliate.count).not.toHaveBeenCalled();
+    expect(prisma.affiliateRequest.count).not.toHaveBeenCalled();
+    expect(prisma.reservation.groupBy).not.toHaveBeenCalled();
+    expect(financialService.summarizeMovements).not.toHaveBeenCalled();
+    expect(prisma.donation.groupBy).not.toHaveBeenCalled();
+    expect(prisma.assembly.groupBy).not.toHaveBeenCalled();
+    expect(prisma.absenceJustification.groupBy).not.toHaveBeenCalled();
   });
 
   it('calculates attendance from the assembly convocation population', async () => {

@@ -175,6 +175,7 @@ describe('LoginUseCase', () => {
   it('signs a token, persists only the refresh hash, and audits on success', async () => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
       ...account,
+      roleName: 'ROLE_SYSTEM_ADMIN',
       hasPerson: false,
       affiliateStatus: null,
       affiliateRoleId: null,
@@ -187,7 +188,7 @@ describe('LoginUseCase', () => {
     expect(tokens.sign).toHaveBeenCalledWith({
       sub: 1,
       email: 'admin@example.com',
-      role: 'Administrador',
+      role: 'ROLE_SYSTEM_ADMIN',
     });
     expect(repository.recordLoginSuccessAndCreateSession).toHaveBeenCalledWith(
       1,
@@ -210,7 +211,7 @@ describe('LoginUseCase', () => {
         fullName: 'Admin',
         email: 'admin@example.com',
         status: 'ACTIVE',
-        role: 'Administrador',
+        role: 'ROLE_SYSTEM_ADMIN',
         permissionCodes: ['usr.users.read'],
         canAccessErp: true,
       },

@@ -80,9 +80,9 @@ describe('DonationsPage', () => {
       ).length,
     ).toBeGreaterThan(0)
     fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'SINPE-8' } })
-    expect(mocks.useDonationsList).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'SINPE-8', page: 1 }))
+    expect(mocks.useDonationsList).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'SINPE-8', page: 1 }), true)
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }))
-    expect(mocks.useDonationsList).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }))
+    expect(mocks.useDonationsList).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }), true)
   })
 
   it('uses local end-of-day semantics for the dateTo filter', () => {
@@ -91,7 +91,7 @@ describe('DonationsPage', () => {
     expect(mocks.useDonationsList).toHaveBeenLastCalledWith(expect.objectContaining({
       dateTo: toLocalEndOfDayIso('2026-09-09'),
       page: 1,
-    }))
+    }), true)
   })
 
   it('gates donation actions by capability and hides delete from Treasurer', () => {

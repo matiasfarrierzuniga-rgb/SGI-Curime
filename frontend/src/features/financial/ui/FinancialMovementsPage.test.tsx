@@ -23,7 +23,7 @@ describe('FinancialMovementsPage', () => {
     expect(screen.getByText('Venta de comidas')).toBeInTheDocument()
     expect(screen.getByText('Ingresos')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Tipo'), { target: { value: 'INCOME' } })
-    expect(useFinancialMovementsList).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'INCOME', page: 1, limit: 20 }))
+    expect(useFinancialMovementsList).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'INCOME', page: 1, limit: 20 }), true)
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }))
     expect(useFinancialMovementDetail).toHaveBeenLastCalledWith(3)
   })

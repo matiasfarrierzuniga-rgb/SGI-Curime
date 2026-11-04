@@ -28,7 +28,7 @@ const stateVariant = (value: string) => value === 'ACTIVE' || value === 'PUBLISH
 const date = (value: string) => new Intl.DateTimeFormat('es-CR', { dateStyle: 'medium' }).format(new Date(value))
 
 export function VenturesPage() {
-  const { user } = useAuth()
+  const { user, isLoading: isSessionLoading } = useAuth()
   const { notify } = useToast()
   const { publish, unpublish } = useVentureMutations()
   const [filters, setFilters] = useState(INITIAL_FILTERS)
@@ -41,8 +41,10 @@ export function VenturesPage() {
   const [creating, setCreating] = useState(false)
   const [publishTarget, setPublishTarget] = useState<Venture>()
   const [publicationError, setPublicationError] = useState('')
-  const ventures = useVentures(filters)
-  const detail = useVenture(selectedId)
+  const mayRead = hasCapability(user?.permissionCodes, 'ent.ventures.read')
+  const queriesEnabled = !isSessionLoading && mayRead
+  const ventures = useVentures(filters, queriesEnabled)
+  const detail = useVenture(selectedId, queriesEnabled)
   const mayCreate = hasCapability(user?.permissionCodes, 'ent.ventures.create')
   const mayUpdate = hasCapability(user?.permissionCodes, 'ent.ventures.update')
   const mayPublish = hasCapability(user?.permissionCodes, 'ent.ventures.publish')
@@ -85,9 +87,9 @@ export function VenturesPage() {
       </CardContent>
     </Card>
 
-    {ventures.isPending ? <LoadingState label="Cargando emprendimientos..." /> : null}
+    {isSessionLoading || ventures.isPending ? <LoadingState label="Cargando emprendimientos..." /> : null}
     {ventures.isError ? <ErrorState title="No fue posible cargar los emprendimientos" message={getErrorMessage(ventures.error)} action={<Button type="button" variant="outline" onClick={() => void ventures.refetch()}>Reintentar</Button>} /> : null}
-    {!ventures.isPending && !ventures.isError ? <>
+    {!isSessionLoading && !ventures.isPending && !ventures.isError ? <>
       <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-body font-semibold text-text-primary" aria-live="polite">{venturesFound} {venturesFound === 1 ? 'emprendimiento encontrado' : 'emprendimientos encontrados'}</p>
         <div className="hidden items-center rounded-lg border border-border bg-surface-subtle p-1 md:flex" aria-label="Modo de visualización" role="group">

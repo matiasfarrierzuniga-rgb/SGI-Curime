@@ -46,9 +46,9 @@ describe('VenturesPage', () => {
     fireEvent.change(screen.getByLabelText('Estado institucional'), { target: { value: 'SUSPENDED' } })
     fireEvent.change(screen.getByLabelText('Publicación'), { target: { value: 'PUBLISHED' } })
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }))
-    expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'café', status: 'SUSPENDED', publicationStatus: 'PUBLISHED', page: 1 }))
+    expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'café', status: 'SUSPENDED', publicationStatus: 'PUBLISHED', page: 1 }), true)
     fireEvent.click(screen.getByRole('button', { name: /Limpiar filtros/ }))
-    expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith({ page: 1, limit: 20 })
+    expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith({ page: 1, limit: 20 }, true)
   })
 
   it('distinguishes empty registry from no matching filters and offers recovery', () => {
@@ -66,15 +66,15 @@ describe('VenturesPage', () => {
   it('switches directory views without changing filters and opens detail from each view', () => {
     render(<VenturesPage />)
     fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalle' })[0])
-    expect(useVenture).toHaveBeenLastCalledWith(1)
+    expect(useVenture).toHaveBeenLastCalledWith(1, true)
     const detailDialog = screen.getByRole('dialog', { name: 'Detalle del emprendimiento' })
     fireEvent.click(within(detailDialog).getByRole('button', { name: 'Volver al directorio' }))
     expect(screen.queryByRole('dialog', { name: 'Detalle del emprendimiento' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Tabla' }))
     expect(screen.getByRole('button', { name: 'Tabla' })).toHaveAttribute('aria-pressed', 'true')
-    expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith({ page: 1, limit: 20 })
+    expect(vi.mocked(useVentures)).toHaveBeenLastCalledWith({ page: 1, limit: 20 }, true)
     fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalle' })[0])
-    expect(useVenture).toHaveBeenLastCalledWith(1)
+    expect(useVenture).toHaveBeenLastCalledWith(1, true)
   })
 
   it('presents supported detail information, safe links, and an accessible return action', () => {

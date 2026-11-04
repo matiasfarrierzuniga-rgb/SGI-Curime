@@ -2,6 +2,8 @@ import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import {
   JwtAuthGuard,
+  CapabilityGuard,
+  RequireCapabilities,
   Roles,
   RolesGuard,
   type AuthenticatedUser,
@@ -12,30 +14,39 @@ import { AttendanceReportQueryDto } from './dto/report-query.dto';
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
 @Controller('admin-reports')
-@Roles('Administrador')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminReportsController {
   constructor(private readonly service: AdminReportsService) {}
   @Get('dashboard')
-  @Roles('Administrador', 'ROLE_SYSTEM_ADMIN')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
+  @RequireCapabilities('erp.dashboard.read')
   dashboard(@Req() req: AuthenticatedRequest) {
-    return this.service.dashboard(this.generatedBy(req));
+    return this.service.dashboard(
+      this.generatedBy(req),
+      req.user.permissionCodes ?? [],
+    );
   }
-  @Get('affiliates-summary') affiliates(@Req() req: AuthenticatedRequest) {
+  @Get('affiliates-summary')
+  @Roles('Administrador')
+  affiliates(@Req() req: AuthenticatedRequest) {
     return this.service.affiliatesSummary(this.generatedBy(req));
   }
-  @Get('attendance-summary') attendance(
+  @Get('attendance-summary')
+  @Roles('Administrador')
+  attendance(
     @Query() q: AttendanceReportQueryDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.attendanceSummary(q, this.generatedBy(req));
   }
-  @Get('justifications-summary') justifications(
-    @Req() req: AuthenticatedRequest,
-  ) {
+  @Get('justifications-summary')
+  @Roles('Administrador')
+  justifications(@Req() req: AuthenticatedRequest) {
     return this.service.justificationsSummary(this.generatedBy(req));
   }
-  @Get('sanctions-summary') sanctions(@Req() req: AuthenticatedRequest) {
+  @Get('sanctions-summary')
+  @Roles('Administrador')
+  sanctions(@Req() req: AuthenticatedRequest) {
     return this.service.sanctionsSummary(this.generatedBy(req));
   }
 

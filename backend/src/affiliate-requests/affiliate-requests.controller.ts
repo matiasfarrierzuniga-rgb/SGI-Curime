@@ -15,8 +15,6 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  Roles,
-  RolesGuard,
 } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -35,26 +33,26 @@ export class AffiliateRequestsController {
     return this.service.create(dto, this.context(req));
   }
   @Get()
-  @RequireCapabilities('adm.requests.read')
+  @RequireCapabilities('padron.application.review')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   findAll(@Query() query: QueryAffiliateRequestsDto) {
     return this.service.findAll(query);
   }
   @Get(':id')
-  @RequireCapabilities('adm.requests.read')
+  @RequireCapabilities('padron.application.review')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
   @Patch(':id/approve')
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequireCapabilities('padron.application.approve')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   approve(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.approve(id, req.user.id, this.context(req));
   }
   @Patch(':id/reject')
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequireCapabilities('padron.application.approve')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   reject(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RejectAffiliateRequestDto,

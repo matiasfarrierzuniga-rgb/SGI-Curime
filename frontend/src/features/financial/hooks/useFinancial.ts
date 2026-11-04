@@ -20,9 +20,9 @@ export const financialMovementKeys = {
   all: () => financialKeys.movements(),
 }
 
-export function useFinancialChargesList(filters: FinancialChargeListFilters) { return useQuery({ queryKey: financialKeys.chargeList(filters), queryFn: () => financialApi.listCharges(filters) }) }
+export function useFinancialChargesList(filters: FinancialChargeListFilters, enabled = true) { return useQuery({ queryKey: financialKeys.chargeList(filters), queryFn: () => financialApi.listCharges(filters), enabled }) }
 export function useFinancialChargeDetail(id: number | null) { return useQuery({ queryKey: financialKeys.chargeDetail(id ?? 0), queryFn: () => financialApi.getCharge(id!), enabled: id !== null }) }
-export function useFinancialMovementsList(filters: FinancialMovementListFilters) { return useQuery({ queryKey: financialKeys.movementList(filters), queryFn: () => financialApi.listMovements(filters) }) }
+export function useFinancialMovementsList(filters: FinancialMovementListFilters, enabled = true) { return useQuery({ queryKey: financialKeys.movementList(filters), queryFn: () => financialApi.listMovements(filters), enabled }) }
 export function useFinancialMovementDetail(id: number | null) { return useQuery({ queryKey: financialKeys.movementDetail(id ?? 0), queryFn: () => financialApi.getMovement(id!), enabled: id !== null }) }
 export function useFinancialMovementSummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>, enabled = true) { return useQuery({ queryKey: financialKeys.movementSummary(filters), queryFn: () => financialApi.getMovementSummary(filters), enabled }) }
 export function useTreasurySummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) { return useQuery({ queryKey: financialKeys.treasurySummary(filters), queryFn: () => financialApi.getTreasurySummary(filters) }) }

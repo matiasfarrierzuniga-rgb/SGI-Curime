@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   AssemblyQuorumType,
   AssemblyType,
@@ -204,22 +199,6 @@ export class AssembliesService {
       orderBy: { fullName: 'asc' },
     });
     return affiliates;
-  }
-
-  async findOneAllowed(id: number, userId: number, role: string) {
-    if (role === 'Administrador') return this.detail(id);
-    const affiliateId = await this.affiliateIdForUser(userId);
-    if (!affiliateId) throw new ForbiddenException('Assembly access denied');
-    const own = await this.prisma.assemblyConvocation.findUnique({
-      where: { assemblyId_affiliateId: { assemblyId: id, affiliateId } },
-      select: { legacyRoleNameSnapshot: true },
-    });
-    if (!own) throw new ForbiddenException('Assembly access denied');
-    const assembly = await this.findOne(id);
-    return {
-      ...assembly,
-      roleNameSnapshot: own.legacyRoleNameSnapshot,
-    };
   }
 
   async detail(id: number) {

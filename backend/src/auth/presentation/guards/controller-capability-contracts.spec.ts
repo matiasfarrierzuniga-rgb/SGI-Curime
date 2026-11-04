@@ -2,6 +2,7 @@ import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { AffiliateRequestsController } from '../../../affiliate-requests/affiliate-requests.controller';
 import { AffiliatesController } from '../../../affiliates/affiliates.controller';
 import { AuditController } from '../../../audit/audit.controller';
+import { AdminReportsController } from '../../../admin-reports/admin-reports.controller';
 import { InventoryAlertsController } from '../../../inventory-alerts/inventory-alerts.controller';
 import { InventoryCategoriesController } from '../../../inventory-categories/inventory-categories.controller';
 import { InventoryItemsController } from '../../../inventory-items/inventory-items.controller';
@@ -22,10 +23,13 @@ function handler(controller: { prototype: object }, name: string): object {
 
 describe('migrated controller authorization contracts', () => {
   it.each([
-    [AffiliateRequestsController, 'findAll', 'adm.requests.read'],
-    [AffiliateRequestsController, 'findOne', 'adm.requests.read'],
+    [AffiliateRequestsController, 'findAll', 'padron.application.review'],
+    [AffiliateRequestsController, 'findOne', 'padron.application.review'],
+    [AffiliateRequestsController, 'approve', 'padron.application.approve'],
+    [AffiliateRequestsController, 'reject', 'padron.application.approve'],
     [AffiliatesController, 'findAll', 'adm.affiliates.read'],
     [AffiliatesController, 'findOne', 'adm.affiliates.read'],
+    [AffiliatesController, 'update', 'padron.affiliate.update'],
     [InventoryCategoriesController, 'findAll', 'inv.inventory.read'],
     [InventoryCategoriesController, 'findOne', 'inv.inventory.read'],
     [InventoryItemsController, 'findAll', 'inv.inventory.read'],
@@ -60,10 +64,18 @@ describe('migrated controller authorization contracts', () => {
     ]);
   });
 
+  it('requires dashboard entry capability; data domains are isolated in the service', () => {
+    const target = handler(AdminReportsController, 'dashboard');
+
+    expect(Reflect.getMetadata(CAPABILITIES_KEY, target)).toEqual([
+      'erp.dashboard.read',
+    ]);
+    expect(Reflect.getMetadata(GUARDS_METADATA, target)).toEqual(
+      expect.arrayContaining([JwtAuthGuard, CapabilityGuard]),
+    );
+  });
+
   it.each([
-    [AffiliateRequestsController, 'approve', ['Administrador']],
-    [AffiliateRequestsController, 'reject', ['Administrador']],
-    [AffiliatesController, 'update', ['Administrador']],
     [AffiliatesController, 'activate', ['Administrador']],
     [AffiliatesController, 'deactivate', ['Administrador']],
     [
