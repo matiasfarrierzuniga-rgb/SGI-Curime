@@ -26,22 +26,9 @@ export function canAccessErp(context: InternalAccessContext): boolean {
     return false;
   }
 
-  if (
-    ERP_ADMITTED_V2_ROLES.some((role) => role === context.userRoleName)
-  ) {
-    return true;
-  }
-
-  if (
-    context.userRoleName === COMMUNITY_ACCOUNT_ROLE ||
-    context.userRoleName === LEGACY_COMMUNITY_ACCOUNT_ROLE
-  ) {
-    return false;
-  }
-
-  return (
-    context.hasPerson &&
-    context.affiliateStatus === 'ACTIVE' &&
-    context.userRoleName !== GENERAL_ACCOUNT_ROLE
+  // ERP admission is defined exclusively by an active canonical ERP role.
+  // A Person, Affiliate, or legacy role must never grant ERP access.
+  return ERP_ADMITTED_V2_ROLES.some(
+    (role) => role === context.userRoleName,
   );
 }
