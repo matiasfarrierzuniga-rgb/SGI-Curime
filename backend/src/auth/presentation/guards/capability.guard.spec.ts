@@ -9,6 +9,13 @@ import {
 
 const ROLE_PERMISSION_FIXTURES: Record<string, readonly string[]> = {
   Administrador: ROLE_CAPABILITIES.Administrador,
+  ROLE_SYSTEM_ADMIN: ['usr.users.read', 'system.rbac.manage'],
+  ROLE_INSTITUTIONAL_PRESIDENT: ['erp.dashboard.read', 'padron.affiliate.read'],
+  ROLE_INSTITUTIONAL_TREASURER: [
+    'fin.charges.read',
+    'fin.payments.record',
+    'fin.movements.read',
+  ],
   'Gestor de Inventario': [
     'erp.dashboard.read',
     'usr.profile.read',
@@ -188,6 +195,49 @@ describe('CapabilityGuard', () => {
       .mockReturnValue(['aud.logs.read']);
 
     expect(guard.canActivate(contextFor('Administrador', true, []))).toBe(
+      false,
+    );
+  });
+
+  it('allows approved V2 capabilities only when persisted', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['system.rbac.manage']);
+
+    expect(guard.canActivate(contextFor('ROLE_SYSTEM_ADMIN'))).toBe(true);
+    expect(guard.canActivate(contextFor('ROLE_SYSTEM_ADMIN', true, []))).toBe(
+      false,
+    );
+  });
+
+  it('denies unapproved capabilities even when persistence claims them', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['system.unapproved.manage']);
+
+    expect(
+      guard.canActivate(
+        contextFor('ROLE_SYSTEM_ADMIN', true, ['system.unapproved.manage']),
+      ),
+    ).toBe(false);
+  });
+
+  it('keeps technical and institutional roles least-privileged', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['fin.payments.record']);
+    expect(guard.canActivate(contextFor('ROLE_SYSTEM_ADMIN'))).toBe(false);
+    expect(guard.canActivate(contextFor('ROLE_INSTITUTIONAL_TREASURER'))).toBe(
+      true,
+    );
+
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['padron.affiliate.read']);
+    expect(guard.canActivate(contextFor('ROLE_INSTITUTIONAL_PRESIDENT'))).toBe(
+      true,
+    );
+    expect(guard.canActivate(contextFor('ROLE_INSTITUTIONAL_TREASURER'))).toBe(
       false,
     );
   });

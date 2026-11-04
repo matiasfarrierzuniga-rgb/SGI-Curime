@@ -33,6 +33,8 @@ export class InventoryCategoriesController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   create(
     @Body() dto: CreateInventoryCategoryDto,
     @Req() req: AuthenticatedRequest,
@@ -43,6 +45,8 @@ export class InventoryCategoriesController {
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get()
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findAll(@Query() query: QueryInventoryCategoriesDto) {
     return this.categoriesService.findAll(query);
   }
@@ -50,6 +54,8 @@ export class InventoryCategoriesController {
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get(':id')
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.findOne(id);
   }
@@ -57,6 +63,8 @@ export class InventoryCategoriesController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateInventoryCategoryDto,
@@ -73,6 +81,8 @@ export class InventoryCategoriesController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/activate')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   activate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,
@@ -88,6 +98,8 @@ export class InventoryCategoriesController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/deactivate')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   deactivate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,

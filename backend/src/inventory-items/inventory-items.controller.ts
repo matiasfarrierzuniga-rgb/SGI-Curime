@@ -33,6 +33,8 @@ export class InventoryItemsController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   create(
     @Body() dto: CreateInventoryItemDto,
     @Req() req: AuthenticatedRequest,
@@ -43,6 +45,8 @@ export class InventoryItemsController {
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get()
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findAll(@Query() query: QueryInventoryItemsDto) {
     return this.itemsService.findAll(query);
   }
@@ -50,6 +54,8 @@ export class InventoryItemsController {
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get(':id')
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.itemsService.findOne(id);
   }
@@ -57,6 +63,8 @@ export class InventoryItemsController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateInventoryItemDto,
@@ -68,6 +76,8 @@ export class InventoryItemsController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/activate')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   activate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,
@@ -83,6 +93,8 @@ export class InventoryItemsController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/deactivate')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   deactivate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,

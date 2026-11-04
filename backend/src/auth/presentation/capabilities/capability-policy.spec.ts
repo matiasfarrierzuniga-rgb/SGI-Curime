@@ -1,9 +1,16 @@
 import {
   DONATION_CAPABILITIES,
   hasCapability,
+  isKnownCapability,
+  RBAC_V2_CAPABILITIES,
 } from './capability-policy';
 
 describe('donation capability policy', () => {
+  it('recognizes the reviewed V2 catalog and rejects unapproved codes', () => {
+    expect(RBAC_V2_CAPABILITIES).toHaveLength(47);
+    expect(isKnownCapability('system.rbac.manage')).toBe(true);
+    expect(isKnownCapability('system.unapproved.manage')).toBe(false);
+  });
   it('grants user-management capabilities only to Administrador', () => {
     for (const capability of [
       'usr.users.update',
@@ -19,7 +26,10 @@ describe('donation capability policy', () => {
   });
 
   it('grants institutional profile administration only to Administrador', () => {
-    for (const capability of ['adm.institutional-profile.read', 'adm.institutional-profile.update']) {
+    for (const capability of [
+      'adm.institutional-profile.read',
+      'adm.institutional-profile.update',
+    ]) {
       expect(hasCapability('Administrador', capability)).toBe(true);
       expect(hasCapability('Tesorero', capability)).toBe(false);
       expect(hasCapability('Gestor de Inventario', capability)).toBe(false);
@@ -28,15 +38,25 @@ describe('donation capability policy', () => {
     }
   });
   it('grants board capabilities only to Administrador', () => {
-    for (const capability of ['adm.institutional-board.read', 'adm.institutional-board.manage']) {
+    for (const capability of [
+      'adm.institutional-board.read',
+      'adm.institutional-board.manage',
+    ]) {
       expect(hasCapability('Administrador', capability)).toBe(true);
-      for (const role of ['Tesorero', 'Gestor de Inventario', 'Vecino/Afiliado']) expect(hasCapability(role, capability)).toBe(false);
+      for (const role of [
+        'Tesorero',
+        'Gestor de Inventario',
+        'Vecino/Afiliado',
+      ])
+        expect(hasCapability(role, capability)).toBe(false);
     }
   });
   it('grants DINADECO reporting only to Administrador and Tesorero', () => {
     expect(hasCapability('Administrador', 'fin.dinadeco.read')).toBe(true);
     expect(hasCapability('Tesorero', 'fin.dinadeco.read')).toBe(true);
-    expect(hasCapability('Gestor de Inventario', 'fin.dinadeco.read')).toBe(false);
+    expect(hasCapability('Gestor de Inventario', 'fin.dinadeco.read')).toBe(
+      false,
+    );
     expect(hasCapability('Vecino/Afiliado', 'fin.dinadeco.read')).toBe(false);
   });
 

@@ -33,6 +33,8 @@ export class InventoryLoansController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   create(@Body() dto: CreateLoanDto, @Req() req: AuthenticatedRequest) {
     return this.loansService.create(dto, req.user.id, this.context(req));
   }
@@ -40,6 +42,8 @@ export class InventoryLoansController {
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get()
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findAll(@Query() query: QueryLoansDto) {
     return this.loansService.findAll(query);
   }
@@ -47,6 +51,8 @@ export class InventoryLoansController {
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get(':id')
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.loansService.findOne(id);
   }
@@ -54,6 +60,8 @@ export class InventoryLoansController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/return')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   return(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ReturnLoanDto,
@@ -65,6 +73,8 @@ export class InventoryLoansController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/cancel')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   cancel(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,

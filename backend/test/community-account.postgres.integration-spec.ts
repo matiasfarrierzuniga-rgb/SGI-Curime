@@ -35,7 +35,7 @@ describeIntegration('community account PostgreSQL', () => {
     await prisma.permission.deleteMany();
     await prisma.role.deleteMany();
     await prisma.role.create({
-      data: { name: 'Cuenta comunitaria', isActive: true },
+      data: { name: 'ROLE_COMMUNITY_USER', isActive: true },
     });
   });
 
@@ -60,7 +60,7 @@ describeIntegration('community account PostgreSQL', () => {
       identification: null,
       status: 'PENDING_EMAIL_VERIFICATION',
     });
-    expect(pending.role.name).toBe('Cuenta comunitaria');
+    expect(pending.role.name).toBe('ROLE_COMMUNITY_USER');
     expect(pending.role.permissions).toHaveLength(0);
     expect(pending.activationTokens).toEqual([
       expect.objectContaining({
@@ -84,7 +84,7 @@ describeIntegration('community account PostgreSQL', () => {
 
   it('returns a neutral acknowledgement for an existing account without changing it', async () => {
     const role = await prisma.role.findUniqueOrThrow({
-      where: { name: 'Cuenta comunitaria' },
+      where: { name: 'ROLE_COMMUNITY_USER' },
     });
     await prisma.user.create({
       data: {
@@ -106,7 +106,7 @@ describeIntegration('community account PostgreSQL', () => {
 
   it('rejects an ADI activation token from community verification', async () => {
     const role = await prisma.role.findUniqueOrThrow({
-      where: { name: 'Cuenta comunitaria' },
+      where: { name: 'ROLE_COMMUNITY_USER' },
     });
     const user = await prisma.user.create({
       data: {
@@ -189,7 +189,7 @@ describeIntegration('community account PostgreSQL', () => {
 
   it('refuses registration when a pre-existing community role carries permissions', async () => {
     const role = await prisma.role.findUniqueOrThrow({
-      where: { name: 'Cuenta comunitaria' },
+      where: { name: 'ROLE_COMMUNITY_USER' },
     });
     const permission = await prisma.permission.create({
       data: { code: 'erp.dashboard.read', name: 'ERP dashboard' },

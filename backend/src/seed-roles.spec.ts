@@ -51,8 +51,12 @@ describe('initial role seed', () => {
         'Vecino/Afiliado',
         'Miembro de Junta Directiva',
         'Subscription_L1',
-        'Cuenta comunitaria',
+        'ROLE_COMMUNITY_USER',
+        'ROLE_SYSTEM_ADMIN',
       ]),
+    );
+    expect(INITIAL_ROLES.map((role) => role.name)).not.toContain(
+      'Cuenta comunitaria',
     );
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -64,7 +68,7 @@ describe('initial role seed', () => {
   });
 
   it('persists every compatibility capability and mapped role grant idempotently', async () => {
-    expect(INITIAL_PERMISSIONS).toHaveLength(46);
+    expect(INITIAL_PERMISSIONS).toHaveLength(93);
     expect(ROLE_CAPABILITIES.Administrador).toHaveLength(46);
     expect(INITIAL_PERMISSIONS).toEqual(
       expect.arrayContaining([

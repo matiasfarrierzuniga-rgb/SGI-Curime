@@ -25,21 +25,21 @@ type AuthRequest = Request & { user: AuthenticatedUser };
 @Controller('affiliates')
 export class AffiliatesController {
   constructor(private readonly service: AffiliatesService) {}
+  @Get()
   @RequireCapabilities('adm.affiliates.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
-  @Get()
   findAll(@Query() q: QueryAffiliatesDto) {
     return this.service.findAll(q);
   }
+  @Get(':id')
   @RequireCapabilities('adm.affiliates.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
-  @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
+  @Patch(':id')
   @Roles('Administrador')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAffiliateDto,
@@ -47,15 +47,15 @@ export class AffiliatesController {
   ) {
     return this.service.update(id, dto, req.user.id, this.context(req));
   }
+  @Patch(':id/activate')
   @Roles('Administrador')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch(':id/activate')
   activate(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.setStatus(id, 'ACTIVE', req.user.id, this.context(req));
   }
+  @Patch(':id/deactivate')
   @Roles('Administrador')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch(':id/deactivate')
   deactivate(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.deactivate(id, req.user.id, this.context(req));
   }

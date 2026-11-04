@@ -33,6 +33,8 @@ export class InventoryItemOperationsController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post(':id/entries')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   recordEntry(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateEntryDto,
@@ -49,6 +51,8 @@ export class InventoryItemOperationsController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post(':id/exits')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   recordExit(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateExitDto,
@@ -65,6 +69,8 @@ export class InventoryItemOperationsController {
   @Roles('Administrador', 'Gestor de Inventario')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post(':id/adjustments')
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   recordAdjustment(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateAdjustmentDto,
@@ -81,6 +87,8 @@ export class InventoryItemOperationsController {
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get(':id/movements')
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findItemMovements(
     @Param('id', ParseIntPipe) id: number,
     @Query() query: QueryMovementsDto,

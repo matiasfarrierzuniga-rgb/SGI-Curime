@@ -19,7 +19,7 @@ import { CreateCommunityAccountDto } from './dto/create-community-account.dto';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 
-const COMMUNITY_ROLE = 'Cuenta comunitaria';
+const COMMUNITY_ROLE = 'ROLE_COMMUNITY_USER';
 const ACKNOWLEDGEMENT = {
   message:
     'Si el correo puede continuar el proceso, recibirá instrucciones de verificación.',
