@@ -16,7 +16,9 @@ type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminReportsController {
   constructor(private readonly service: AdminReportsService) {}
-  @Get('dashboard') dashboard(@Req() req: AuthenticatedRequest) {
+  @Get('dashboard')
+  @Roles('Administrador', 'ROLE_SYSTEM_ADMIN')
+  dashboard(@Req() req: AuthenticatedRequest) {
     return this.service.dashboard(this.generatedBy(req));
   }
   @Get('affiliates-summary') affiliates(@Req() req: AuthenticatedRequest) {
