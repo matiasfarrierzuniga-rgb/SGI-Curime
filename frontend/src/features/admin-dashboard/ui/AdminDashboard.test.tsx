@@ -89,7 +89,7 @@ describe('AdminDashboard', () => {
     const activityDayCell = await screen.findByRole('gridcell', { name: /3 actividades: Reservas, Asambleas, Eventos/ })
     expect(activityDayCell).toBeInTheDocument()
     fireEvent.click(activityDayCell)
-    expect(screen.getAllByText('Evento público').length).toBeGreaterThan(0)
+    expect(within(screen.getByRole('dialog')).getByText('Evento público')).toBeInTheDocument()
     expect(screen.getByText('Asamblea')).toBeInTheDocument()
     expect(screen.getAllByText('Salón').length).toBeGreaterThan(0)
     expect(screen.getByRole('dialog')).toBeInTheDocument()

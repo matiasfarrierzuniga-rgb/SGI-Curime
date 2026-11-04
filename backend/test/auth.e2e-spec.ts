@@ -13,6 +13,7 @@ import { createHash } from 'crypto';
 import cookieParser from 'cookie-parser';
 import { buildPrismaAuthUser } from './helpers/auth-fixtures';
 import { ROLE_CAPABILITIES } from '../src/auth/presentation/capabilities/capability-policy';
+import { publicRequestRateLimitConfig } from '../src/common/rate-limit/public-request-rate-limit.config';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
@@ -88,7 +89,9 @@ describe('AuthController (e2e)', () => {
   const prismaMock = {
     user: {
       findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     passwordResetToken: {
       findUnique: jest.fn(),
@@ -169,6 +172,28 @@ describe('AuthController (e2e)', () => {
         }
         currentUser = { ...currentUser, ...data };
         return Promise.resolve(currentUser);
+      },
+    );
+    prismaMock.user.updateMany.mockImplementation(
+      ({
+        where,
+        data,
+      }: {
+        where: { id: number; status: string };
+        data: Record<string, unknown>;
+      }) => {
+        if (currentUser?.id !== where.id || currentUser.status !== where.status)
+          return Promise.resolve({ count: 0 });
+        currentUser = { ...currentUser, ...data };
+        return Promise.resolve({ count: 1 });
+      },
+    );
+    prismaMock.user.findUniqueOrThrow.mockImplementation(
+      ({ where }: { where: { id: number } }) => {
+        if (currentUser?.id !== where.id) throw new Error('User not found');
+        return Promise.resolve({
+          sessionGeneration: currentUser.sessionGeneration,
+        });
       },
     );
     prismaMock.passwordResetToken.findUnique.mockImplementation(
@@ -302,6 +327,9 @@ describe('AuthController (e2e)', () => {
     const body = loginResponseBody(response);
 
     expect(body.accessToken).toEqual(expect.any(String));
+    expect(jwtService.decode(body.accessToken)).toEqual(
+      expect.objectContaining({ sub: 1, sessionGeneration: 0 }),
+    );
     expect(body.user).toEqual({
       id: 1,
       fullName: 'Administrador de Prueba',
@@ -529,7 +557,7 @@ describe('AuthController (e2e)', () => {
       .expect(401);
 
     currentUser = {
-      ...withRole(currentUser!, 'Subscription_L1'),
+      ...withRole(currentUser, 'Subscription_L1'),
       status: 'ACTIVE',
       subscriptionExpirationDate: new Date(Date.now() - 1),
     };
@@ -547,7 +575,7 @@ describe('AuthController (e2e)', () => {
     const response = await login().expect(200);
     const cookie = refreshCookie(response);
     currentUser = {
-      ...currentUser!,
+      ...currentUser,
       subscriptionExpirationDate: new Date(Date.now() - 1),
     };
 
@@ -579,6 +607,20 @@ describe('AuthController (e2e)', () => {
       .post('/auth/forgot-password')
       .send({ email: 'not-an-email' })
       .expect(400);
+  });
+
+  it('rate limits public recovery requests per client', async () => {
+    const { limit } = publicRequestRateLimitConfig();
+    for (let attempt = 0; attempt < limit; attempt += 1) {
+      await request(app.getHttpServer())
+        .post('/auth/forgot-password')
+        .send({ email: `unknown-${attempt}@curime.test` })
+        .expect(200);
+    }
+    await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'unknown-extra@curime.test' })
+      .expect(429);
   });
 
   it('validates password policy and confirmation for reset and change', async () => {
@@ -724,14 +766,37 @@ describe('AuthController (e2e)', () => {
       .expect(401);
   });
 
+  it('rejects a pre-deactivation JWT after same-second reactivation and accepts the new generation', async () => {
+    const oldToken = await jwtService.signAsync({
+      sub: currentUser!.id,
+      sessionGeneration: currentUser!.sessionGeneration,
+    });
+    currentUser = { ...currentUser!, status: 'INACTIVE', sessionGeneration: 1 };
+    currentUser = { ...currentUser, status: 'ACTIVE' };
+
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${oldToken}`)
+      .expect(401);
+
+    const newToken = await jwtService.signAsync({
+      sub: currentUser.id,
+      sessionGeneration: currentUser.sessionGeneration,
+    });
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${newToken}`)
+      .expect(200);
+  });
+
   it('rejects a JWT when its Subscription_L1 user expires', async () => {
     currentUser = {
-      ...withRole(currentUser!, 'Subscription_L1'),
+      ...withRole(currentUser, 'Subscription_L1'),
       subscriptionExpirationDate: new Date(Date.now() + 60_000),
     };
     const body = loginResponseBody(await login().expect(200));
     currentUser = {
-      ...currentUser!,
+      ...currentUser,
       subscriptionExpirationDate: new Date(Date.now() - 1),
     };
 

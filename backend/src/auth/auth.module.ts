@@ -30,10 +30,19 @@ import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
 import { CapabilityGuard } from './presentation/guards/capability.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
 import { JwtStrategy } from './presentation/strategies/jwt.strategy';
+import { NotificationsModule } from '../modules/notifications/notifications.module';
+import { PublicRequestRateLimitModule } from '../common/rate-limit/public-request-rate-limit.module';
 
 @Module({
   imports: [
     PrismaModule,
+    PublicRequestRateLimitModule,
+    NotificationsModule.forRoot({
+      baseUrl:
+        process.env.APP_PUBLIC_URL ??
+        process.env.FRONTEND_URL ??
+        (process.env.NODE_ENV === 'test' ? 'https://sgi.example.test' : ''),
+    }),
     PassportModule,
     JwtModule.registerAsync({
       useFactory: () => {

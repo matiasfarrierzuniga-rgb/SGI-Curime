@@ -1,3 +1,4 @@
+throw new Error('Cleanup helper disabled: fixture deletion requires verified disposable container ownership.');
 import { createRequire } from 'node:module';
 import { processEnvironmentForTest } from './disposable-postgres-guard.mjs';
 

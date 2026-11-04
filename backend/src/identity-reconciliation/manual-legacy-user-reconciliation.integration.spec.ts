@@ -7,6 +7,7 @@ import {
 } from './manual-legacy-user-reconciliation';
 
 const connectionString = process.env.IDENTITY_6_6_TEST_DATABASE_URL;
+if (connectionString) throw new Error('Destructive legacy suite disabled until isolated-target ownership verification is implemented.');
 const describeIntegration = connectionString ? describe : describe.skip;
 
 describeIntegration('manual legacy User reconciliation PostgreSQL', () => {

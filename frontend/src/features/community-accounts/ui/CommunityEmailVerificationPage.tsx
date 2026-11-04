@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { emailError } from '@/shared/lib/formValidation'
 import { useToast } from '@/shared/ui/Toast'
@@ -6,7 +6,7 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { showResultDialog } from '@/shared/ui/resultDialog'
 import { communityAccountsService } from '../api/communityAccounts.api'
-import { communityAccountFeedback, communityFeedbackMessages } from '../model/communityAccountFeedback'
+import { communityAccountFeedback, communityFeedbackMessages, communityPasswordError } from '../model/communityAccountFeedback'
 
 export function CommunityEmailVerificationPage() {
   const { notify } = useToast()
@@ -19,7 +19,22 @@ export function CommunityEmailVerificationPage() {
   const [emailErrorMessage, setEmailErrorMessage] = useState('')
   const [loading, setLoading] = useState<'verify' | 'resend' | null>(null)
   const [verificationSucceeded, setVerificationSucceeded] = useState(false)
+  const [tokenValid, setTokenValid] = useState(false)
+  const [password, setPassword] = useState('')
+  const [passwordConfirmation, setPasswordConfirmation] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [confirmationError, setConfirmationError] = useState('')
   const verificationStarted = useRef(false)
+
+  useEffect(() => {
+    let active = true
+    if (!token) return () => { active = false }
+    setTokenValid(false)
+    communityAccountsService.validateToken(token)
+      .then(() => { if (active) { setTokenValid(true); setVerificationError('') } })
+      .catch(error => { if (active) setVerificationError(communityAccountFeedback(error, 'verify').message) })
+    return () => { active = false }
+  }, [token])
 
   async function verify() {
     if (!token) {
@@ -28,11 +43,17 @@ export function CommunityEmailVerificationPage() {
     }
     if (verificationStarted.current) return
 
+    const invalidPassword = communityPasswordError(password)
+    const invalidConfirmation = password !== passwordConfirmation ? communityFeedbackMessages.passwordConfirmation : ''
+    setPasswordError(invalidPassword)
+    setConfirmationError(invalidConfirmation)
+    if (invalidPassword || invalidConfirmation || !tokenValid) return
+
     verificationStarted.current = true
     setLoading('verify')
     setVerificationError('')
     try {
-      await communityAccountsService.verifyEmail(token)
+      await communityAccountsService.verifyEmail(token, password, passwordConfirmation)
     } catch (error) {
       verificationStarted.current = false
       setVerificationError(communityAccountFeedback(error, 'verify').message)
@@ -80,10 +101,16 @@ export function CommunityEmailVerificationPage() {
     <main className="w-full">
       <p className="public-eyebrow text-brand-primary">Cuenta comunitaria</p>
       <h1 className="mt-2 font-heading text-heading-1 font-bold text-brand-deep">Verifique su correo</h1>
-      <p className="mt-3 text-body leading-relaxed text-text-secondary">Use el enlace recibido para completar la verificación. No necesita definir otra contraseña.</p>
+      <p className="mt-3 text-body leading-relaxed text-text-secondary">Cree una contraseña para activar su cuenta comunitaria.</p>
       {verificationMessage ? <p className="mt-5 rounded-control border border-status-success/30 bg-status-success-surface p-4 text-body-small text-status-success" role="status">{verificationMessage}</p> : null}
       {(verificationError || !token) ? <p className="mt-5 rounded-control border border-status-danger/30 bg-status-danger-surface p-4 text-body-small text-status-danger" role="alert">{verificationError || communityFeedbackMessages.tokenUnavailable}</p> : null}
-      <Button className="mt-6 min-h-12" loading={loading === 'verify'} disabled={!token || loading === 'resend' || verificationSucceeded} onClick={verify}>Verificar correo</Button>
+      {tokenValid && !verificationSucceeded ? <div className="mt-6 grid gap-4">
+        <label className="grid gap-1.5 text-label font-semibold text-foreground" htmlFor="activation-password">Contraseña<Input id="activation-password" type="password" autoComplete="new-password" maxLength={128} value={password} aria-invalid={Boolean(passwordError)} aria-describedby={passwordError ? 'activation-password-error' : undefined} onChange={event => setPassword(event.target.value)} /></label>
+        {passwordError ? <p id="activation-password-error" role="alert" className="text-body-small text-destructive">{passwordError}</p> : null}
+        <label className="grid gap-1.5 text-label font-semibold text-foreground" htmlFor="activation-password-confirmation">Confirmar contraseña<Input id="activation-password-confirmation" type="password" autoComplete="new-password" maxLength={128} value={passwordConfirmation} aria-invalid={Boolean(confirmationError)} aria-describedby={confirmationError ? 'activation-password-confirmation-error' : undefined} onChange={event => setPasswordConfirmation(event.target.value)} /></label>
+        {confirmationError ? <p id="activation-password-confirmation-error" role="alert" className="text-body-small text-destructive">{confirmationError}</p> : null}
+      </div> : null}
+      <Button className="mt-6 min-h-12" loading={loading === 'verify'} disabled={!tokenValid || loading === 'resend' || verificationSucceeded} onClick={verify}>Activar cuenta</Button>
       <form className="mt-8 grid gap-3 border-t border-border-subtle pt-6" noValidate onSubmit={resend}>
         <h2 className="font-heading text-heading-3 font-bold text-brand-deep">¿Necesita otro enlace?</h2>
         <label className="grid gap-1.5 text-label font-semibold text-foreground" htmlFor="resend-email">

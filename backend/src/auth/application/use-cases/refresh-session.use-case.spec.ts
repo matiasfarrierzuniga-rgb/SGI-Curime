@@ -16,6 +16,7 @@ const user = {
   roleName: 'Administrador',
   status: 'ACTIVE',
   subscriptionExpirationDate: null,
+  sessionGeneration: 3,
 };
 
 describe('RefreshSessionUseCase', () => {
@@ -64,6 +65,7 @@ describe('RefreshSessionUseCase', () => {
       sub: 1,
       email: 'admin@example.com',
       role: 'Administrador',
+      sessionGeneration: 3,
     });
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: AuditAction.REFRESH_SUCCESS }),

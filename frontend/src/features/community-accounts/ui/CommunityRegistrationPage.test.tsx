@@ -17,29 +17,30 @@ describe('CommunityRegistrationPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
     expect(screen.getByText('Debe aceptar el uso de sus datos para crear la cuenta.')).toBeInTheDocument()
   })
-  it('submits normalized public data and shows neutral confirmation', async () => {
+  it('submits normalized public data and shows the email confirmation', async () => {
     vi.mocked(communityAccountsService.register).mockResolvedValue({ message: 'neutral' })
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
-    fireEvent.change(screen.getByLabelText(/Nombre completo/), { target: { value: ' Ana Pérez ' } })
+    fireEvent.change(screen.getByLabelText(/Nombre\(s\)/), { target: { value: ' Ana ' } })
+    fireEvent.change(screen.getByLabelText(/Primer apellido/), { target: { value: ' Pérez ' } })
+    fireEvent.change(screen.getByLabelText(/Número de identificación/), { target: { value: '123456789' } })
     fireEvent.change(screen.getByLabelText(/Correo electrónico/), { target: { value: ' ANA@EXAMPLE.TEST ' } })
-    fireEvent.change(screen.getByLabelText(/^Contraseña/), { target: { value: 'Password123' } })
-    fireEvent.change(screen.getByLabelText(/^Confirmar contraseña/), { target: { value: 'Password123' } })
     fireEvent.click(screen.getByRole('checkbox'))
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
     expect(await screen.findByRole('heading', { name: 'Confirme su correo electrónico' })).toBeInTheDocument()
-    expect(communityAccountsService.register).toHaveBeenCalledWith(expect.objectContaining({ fullName: 'Ana Pérez', email: 'ana@example.test', privacyAcknowledgement: true }))
+    expect(communityAccountsService.register).toHaveBeenCalledWith(expect.objectContaining({ firstName: 'Ana', firstSurname: 'Pérez', identification: '123456789', email: 'ana@example.test', privacyAcknowledgement: true }))
+    expect(vi.mocked(communityAccountsService.register).mock.calls[0][0]).not.toHaveProperty('password')
     expect(dialog.showResultDialog).toHaveBeenCalledWith({
       icon: 'info', title: 'Solicitud recibida',
-      text: 'Si el correo puede utilizarse, recibirás un enlace para verificar tu cuenta',
+      text: 'Si los datos permiten continuar, recibirás instrucciones. Revisá tu correo o solicitá ayuda para recuperar el acceso.',
       confirmButtonText: 'Entendido',
     })
     expect(toast.notify).not.toHaveBeenCalled()
   })
-  it('shows uppercase password feedback inline without submitting', () => {
+  it('shows identification feedback inline without submitting', () => {
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
-    fireEvent.change(screen.getByLabelText(/^Contraseña/), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText(/Número de identificación/), { target: { value: '123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(screen.getByText('La contraseña debe incluir al menos una letra mayúscula')).toBeInTheDocument()
+    expect(screen.getByText('Cédula nacional: debe contener exactamente 9 dígitos y no iniciar en 0.')).toBeInTheDocument()
     expect(communityAccountsService.register).not.toHaveBeenCalled()
   })
 })

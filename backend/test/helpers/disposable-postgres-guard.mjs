@@ -17,13 +17,14 @@ function parseTestUrl(value, name = 'TEST_DATABASE_URL') {
   }
   if (!['postgres:', 'postgresql:'].includes(url.protocol)) fail(`protocol-${name}`);
   if (!LOCAL_HOSTS.has(url.hostname)) fail(`host-${name}`);
-  if (!url.port || url.port === '5432') fail(`port-${name}`);
+  if (!url.port || ['5432', '5433'].includes(url.port)) fail(`port-${name}`);
   const port = Number(url.port);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) fail(`port-${name}`);
   const database = decodeURIComponent(url.pathname).replace(/^\//, '');
   if (database !== EXPECTED_DATABASE || !database.endsWith('_test')) fail(`database-${name}`);
   if (decodeURIComponent(url.username) !== EXPECTED_USER) fail(`username-${name}`);
   if (decodeURIComponent(url.password) !== EXPECTED_PASSWORD) fail(`credentials-${name}`);
+  for (const key of url.searchParams.keys()) if (key !== 'schema') fail(`parameter-${name}`);
   if (url.searchParams.has('schema') && url.searchParams.get('schema') !== 'public') fail(`schema-${name}`);
   return { value, host: url.hostname, port: url.port, database, username: decodeURIComponent(url.username) };
 }

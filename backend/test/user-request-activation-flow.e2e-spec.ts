@@ -163,6 +163,8 @@ describe('User request activation flow (e2e)', () => {
               usedAt: tokenRecord.usedAt,
               expiresAt: tokenRecord.expiresAt,
               userStatus: user.status,
+              userRoleName: 'Tesorero',
+              purpose: 'LEGACY_ACCOUNT_ACTIVATION',
             }
           : null,
       ),

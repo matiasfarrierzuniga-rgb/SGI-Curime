@@ -40,24 +40,31 @@ export class RequestPasswordResetUseCase {
 
   async execute(email: string): Promise<{ message: string }> {
     const user = await this.repository.findCredentialsByEmail(email);
-    if (!user) return { message: GENERIC_RESPONSE };
+    if (!user || user.status !== 'ACTIVE') return { message: GENERIC_RESPONSE };
 
     const token = randomBytes(32).toString('base64url');
     const now = new Date();
     const expiresAt = new Date(now.getTime() + this.ttlMinutes * 60_000);
 
-    await this.repository.invalidateAndCreateResetToken(
+    const created = await this.repository.invalidateAndCreateResetToken(
       user.id,
       hashToken(token),
       expiresAt,
+      user.email,
     );
+    if (!created) return { message: GENERIC_RESPONSE };
 
-    await this.delivery.deliver({
+    const delivery = {
       email: user.email,
       fullName: user.fullName,
       token,
       expiresAt,
-    });
+    };
+    try {
+      void this.delivery.deliver(delivery).catch(() => undefined);
+    } catch {
+      // Public response stays independent of the mail provider's availability.
+    }
 
     return { message: GENERIC_RESPONSE };
   }

@@ -1,6 +1,7 @@
 import { AuditAction } from '../../../../audit/audit-actions';
 import { UserStatus } from '../../domain/entities/user';
 import { InactiveRoleError } from '../../domain/errors/inactive-role.error';
+import { ActivationNotCompletedError } from '../../domain/errors/activation-not-completed.error';
 import { LastAdministratorError } from '../../domain/errors/last-administrator.error';
 import { RoleNotFoundError } from '../../domain/errors/role-not-found.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
@@ -37,6 +38,7 @@ describe('ChangeUserRoleUseCase', () => {
     countActiveAdministrators: jest.fn(),
     updateRole: jest.fn(),
     updateActiveAffiliateRoleForUser: jest.fn(),
+    communityVerificationEvidence: jest.fn(),
   };
   const audit = { record: jest.fn() };
   let useCase: ChangeUserRoleUseCase;
@@ -64,6 +66,31 @@ describe('ChangeUserRoleUseCase', () => {
       UserNotFoundError,
     );
   });
+
+  it('rejects role changes while email verification is pending', async () => {
+    repository.findById.mockResolvedValueOnce({
+      ...adminUser,
+      status: UserStatus.PENDING_EMAIL_VERIFICATION,
+    });
+    await expect(useCase.execute(1, 2)).rejects.toThrow();
+    expect(repository.updateRole).not.toHaveBeenCalled();
+  });
+
+  it.each(['Cuenta comunitaria', 'ROLE_COMMUNITY_USER'])(
+    'rejects role changes without verification for %s',
+    async (role) => {
+      repository.findById.mockResolvedValueOnce({
+        ...adminUser,
+        status: UserStatus.INACTIVE,
+        role: { ...adminUser.role, name: role },
+      });
+      repository.communityVerificationEvidence.mockResolvedValueOnce(null);
+      await expect(useCase.execute(1, 2)).rejects.toBeInstanceOf(
+        ActivationNotCompletedError,
+      );
+      expect(repository.updateRole).not.toHaveBeenCalled();
+    },
+  );
 
   it('throws RoleNotFoundError for an unknown role', async () => {
     repository.findRoleById.mockResolvedValueOnce(null);
@@ -99,7 +126,10 @@ describe('ChangeUserRoleUseCase', () => {
     });
 
     expect(repository.updateRole).toHaveBeenCalledWith(1, 2);
-    expect(repository.updateActiveAffiliateRoleForUser).toHaveBeenCalledWith(1, 2);
+    expect(repository.updateActiveAffiliateRoleForUser).toHaveBeenCalledWith(
+      1,
+      2,
+    );
     expect(result).toEqual(adminUser);
     expect(audit.record).toHaveBeenCalledWith({
       userId: 7,

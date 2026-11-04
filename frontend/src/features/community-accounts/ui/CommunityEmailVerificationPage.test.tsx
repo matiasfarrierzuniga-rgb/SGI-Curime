@@ -7,7 +7,7 @@ import { CommunityEmailVerificationPage } from './CommunityEmailVerificationPage
 
 const toast = vi.hoisted(() => ({ notify: vi.fn() }))
 vi.mock('@/shared/ui/Toast', () => ({ useToast: () => toast }))
-vi.mock('../api/communityAccounts.api', () => ({ communityAccountsService: { verifyEmail: vi.fn(), resendVerification: vi.fn() } }))
+vi.mock('../api/communityAccounts.api', () => ({ communityAccountsService: { validateToken: vi.fn(), verifyEmail: vi.fn(), resendVerification: vi.fn() } }))
 const dialog = vi.hoisted(() => ({ showResultDialog: vi.fn() }))
 vi.mock('@/shared/ui/resultDialog', () => dialog)
 
@@ -16,13 +16,19 @@ function renderPage(entry = '/verify-community-email?token=valid-token', strict 
   return render(strict ? <StrictMode>{routes}</StrictMode> : routes)
 }
 
+async function completePassword() {
+  fireEvent.change(await screen.findByLabelText('Contraseña'), { target: { value: 'Password123' } })
+  fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'Password123' } })
+}
+
 describe('CommunityEmailVerificationPage', () => {
-  beforeEach(() => { vi.clearAllMocks(); dialog.showResultDialog.mockResolvedValue({ isConfirmed: true }) })
+  beforeEach(() => { vi.resetAllMocks(); dialog.showResultDialog.mockResolvedValue({ isConfirmed: true }); vi.mocked(communityAccountsService.validateToken).mockResolvedValue({ message: 'valid' }) })
 
   it('shows a success dialog and sends its primary action to login', async () => {
     vi.mocked(communityAccountsService.verifyEmail).mockResolvedValue({ message: 'ignored' })
     renderPage()
-    fireEvent.click(screen.getByRole('button', { name: 'Verificar correo' }))
+    await completePassword()
+    fireEvent.click(screen.getByRole('button', { name: 'Activar cuenta' }))
     expect(await screen.findByText('Login target')).toBeInTheDocument()
     expect(dialog.showResultDialog).toHaveBeenCalledWith({
       icon: 'success', title: '¡Correo verificado!',
@@ -39,7 +45,8 @@ describe('CommunityEmailVerificationPage', () => {
     let resolve!: (value: { message: string }) => void
     vi.mocked(communityAccountsService.verifyEmail).mockReturnValue(new Promise((done) => { resolve = done }))
     renderPage()
-    const button = screen.getByRole('button', { name: 'Verificar correo' })
+    await completePassword()
+    const button = screen.getByRole('button', { name: 'Activar cuenta' })
     act(() => {
       fireEvent.click(button)
       fireEvent.click(button)
@@ -55,7 +62,8 @@ describe('CommunityEmailVerificationPage', () => {
     vi.mocked(communityAccountsService.verifyEmail).mockResolvedValue({ message: 'verified' })
     renderPage('/verify-community-email?token=strict-token', true)
     expect(communityAccountsService.verifyEmail).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Verificar correo' }))
+    await completePassword()
+    fireEvent.click(screen.getByRole('button', { name: 'Activar cuenta' }))
     expect(await screen.findByText('Login target')).toBeInTheDocument()
     expect(communityAccountsService.verifyEmail).toHaveBeenCalledTimes(1)
   })
@@ -63,22 +71,32 @@ describe('CommunityEmailVerificationPage', () => {
   it('shows used-token guidance for a real 409 and does not open success', async () => {
     vi.mocked(communityAccountsService.verifyEmail).mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: 'El enlace de verificación ya no está disponible.' } } })
     renderPage()
-    fireEvent.click(screen.getByRole('button', { name: 'Verificar correo' }))
+    await completePassword()
+    fireEvent.click(screen.getByRole('button', { name: 'Activar cuenta' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Este enlace ya no es válido. Podés solicitar uno nuevo')
     expect(dialog.showResultDialog).not.toHaveBeenCalled()
   })
 
   it('shows expired token guidance as persistent page state', async () => {
-    vi.mocked(communityAccountsService.verifyEmail).mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: 'El enlace de verificación venció.' } } })
+    vi.mocked(communityAccountsService.validateToken).mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: 'El enlace de verificación venció.' } } })
     renderPage()
-    fireEvent.click(screen.getByRole('button', { name: 'Verificar correo' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('El enlace venció. Solicitá uno nuevo para continuar')
   })
 
   it('shows missing-token guidance without calling the backend', () => {
     renderPage('/verify-community-email')
     expect(screen.getByRole('alert')).toHaveTextContent('Este enlace ya no es válido. Podés solicitar uno nuevo')
-    expect(screen.getByRole('button', { name: 'Verificar correo' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Activar cuenta' })).toBeDisabled()
+    expect(communityAccountsService.verifyEmail).not.toHaveBeenCalled()
+  })
+
+  it('rejects an insecure password and mismatched confirmation before activation', async () => {
+    renderPage()
+    fireEvent.change(await screen.findByLabelText('Contraseña'), { target: { value: 'short' } })
+    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'different' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Activar cuenta' }))
+    expect(screen.getByText('Use al menos 10 caracteres.')).toBeInTheDocument()
+    expect(screen.getByText('Las contraseñas no coinciden')).toBeInTheDocument()
     expect(communityAccountsService.verifyEmail).not.toHaveBeenCalled()
   })
 

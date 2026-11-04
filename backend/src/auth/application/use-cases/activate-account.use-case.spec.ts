@@ -8,6 +8,7 @@ const activationToken = {
   usedAt: null,
   expiresAt: new Date(Date.now() + 60 * 60_000),
   userStatus: 'INACTIVE',
+  userRoleName: 'Administrador',
   purpose: 'LEGACY_ACCOUNT_ACTIVATION',
 };
 
@@ -98,6 +99,20 @@ describe('ActivateAccountUseCase', () => {
       useCase.execute('token', 'Password1!', 'Password1!'),
     ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_ACTIVATED' });
   });
+
+  it.each(['Cuenta comunitaria', 'ROLE_COMMUNITY_USER'])(
+    'rejects legacy activation for community role %s',
+    async (role) => {
+      repository.findActivationToken.mockResolvedValueOnce({
+        ...activationToken,
+        userRoleName: role,
+      });
+      await expect(
+        useCase.execute('token', 'Password1!', 'Password1!'),
+      ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_ACTIVATED' });
+      expect(repository.withTransaction).not.toHaveBeenCalled();
+    },
+  );
 
   it('throws an application error when the claim fails in the transaction', async () => {
     tx.claimActivationToken.mockResolvedValueOnce(false);
