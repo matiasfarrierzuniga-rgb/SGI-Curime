@@ -26,7 +26,7 @@ export function AppHomePage() {
   const { user } = useAuth()
   const roleName = getRoleName(user?.role)
   const isCommunityUser = roleName === 'Vecino/Afiliado'
-  const isAdministrator = roleName === 'Administrador'
+  const isAdministrator = roleName === 'ROLE_SYSTEM_ADMIN' || roleName === 'Administrador'
   const canViewInventory = roleName === 'Gestor de Inventario'
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
   const [loading, setLoading] = useState(canViewInventory)
