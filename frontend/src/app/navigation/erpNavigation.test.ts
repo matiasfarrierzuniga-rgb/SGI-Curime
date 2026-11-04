@@ -18,6 +18,11 @@ describe('getErpNavigation', () => {
     expect(getErpEntryPath([])).toBe('/app/profile')
   })
 
+  it('sends treasurers with both required read capabilities to the financial summary', () => {
+    expect(getErpEntryPath(['erp.dashboard.read', 'fin.movements.read', 'fin.charges.read'], 'ROLE_INSTITUTIONAL_TREASURER')).toBe('/app/financial')
+    expect(getErpEntryPath(['erp.dashboard.read', 'fin.movements.read', 'fin.charges.read'], 'ROLE_SYSTEM_ADMIN')).toBe('/app/dashboard')
+  })
+
   it('organizes ERP destinations into institutional sidebar sections', () => {
     const navigation = getErpNavigation([
       'erp.dashboard.read',

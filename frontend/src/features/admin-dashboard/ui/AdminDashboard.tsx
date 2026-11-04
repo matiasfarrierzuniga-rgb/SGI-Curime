@@ -32,8 +32,8 @@ const quickActions: readonly QuickAction[] = [
   { label: 'Gestionar afiliados', path: '/app/admin/affiliates', capability: 'adm.affiliates.read', icon: Users, tone: 'success' },
   { label: 'Gestionar reservas', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarCheck, tone: 'info' },
   { label: 'Inventario', path: '/inventory', capability: 'inv.inventory.read', icon: Package, tone: 'success' },
-  { label: 'Convocar asamblea', path: '/app/admin/assemblies', capability: 'adm.assemblies.read', icon: UsersRound, tone: 'warning' },
-  { label: 'Registrar donación', path: '/app/donations', capability: 'don.donations.read', icon: Heart, tone: 'violet' },
+  { label: 'Convocar asamblea', path: '/app/admin/assemblies', capability: 'adm.assemblies.manage', icon: UsersRound, tone: 'warning' },
+  { label: 'Registrar donación', path: '/app/donations', capability: 'don.donations.create', icon: Heart, tone: 'violet' },
   { label: 'Ver reportes', path: '/inventory/reports', capability: 'inv.inventory.read', icon: FileText, tone: 'info' },
 ]
 

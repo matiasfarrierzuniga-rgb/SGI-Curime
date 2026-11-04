@@ -32,12 +32,20 @@ describe('AppHomePage', () => {
   })
 
   it('keeps inventory summary without broad legacy action grid', async () => {
-    auth.user = { fullName: 'Luis Mora', role: 'Gestor de Inventario' }
+    auth.user = { fullName: 'Luis Mora', role: 'ROLE_INSTITUTIONAL_OPERATOR', permissionCodes: ['erp.dashboard.read', 'inv.inventory.read'] }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
     expect(await screen.findByText('Artículos activos')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Accesos rápidos' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Abrir inventario|Gestionar usuarios|Revisar solicitudes|Consultar bitácora/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Indicadores administrativos' })).not.toBeInTheDocument()
+  })
+
+  it('shows only route-backed destinations to a canonical institutional dashboard', () => {
+    auth.user = { fullName: 'Sofía Rojas', role: 'ROLE_INSTITUTIONAL_PRESIDENT', permissionCodes: ['erp.dashboard.read'] }
+    render(<MemoryRouter><AppHomePage /></MemoryRouter>)
+    expect(screen.getByRole('heading', { name: 'Accesos autorizados' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Mis asambleas' })).toHaveAttribute('href', '/app/assemblies/mine')
+    expect(screen.queryByRole('link', { name: 'Afiliados' })).not.toBeInTheDocument()
   })
 
   it('shows a clear set of real account actions to community users', () => {

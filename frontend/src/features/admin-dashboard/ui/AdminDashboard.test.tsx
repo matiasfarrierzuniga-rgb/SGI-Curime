@@ -72,6 +72,8 @@ describe('AdminDashboard', () => {
     expect(within(navigation).getByRole('link', { name: 'Inventario' })).toHaveAttribute('href', '/inventory')
     expect(within(navigation).getByRole('link', { name: 'Ver reportes' })).toHaveAttribute('href', '/inventory/reports')
     expect(within(navigation).queryByRole('link', { name: 'Administrar usuarios' })).not.toBeInTheDocument()
+    expect(within(navigation).queryByRole('link', { name: 'Convocar asamblea' })).not.toBeInTheDocument()
+    expect(within(navigation).queryByRole('link', { name: 'Registrar donación' })).not.toBeInTheDocument()
   })
 
   it('marks real authorized reservations, assemblies and public events by category on the same Costa Rica day', async () => {

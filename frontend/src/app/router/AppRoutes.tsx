@@ -43,7 +43,7 @@ import { NotificationsPage } from '@/features/notifications'
 
 function ErpEntryRedirect() {
   const { user } = useAuth()
-  return <Navigate to={getErpEntryPath(user?.permissionCodes)} replace />
+  return <Navigate to={getErpEntryPath(user?.permissionCodes, user?.role)} replace />
 }
 
 export function AppRoutes() {

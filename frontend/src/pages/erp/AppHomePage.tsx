@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { AdminDashboard } from '@/features/admin-dashboard'
 import { getRoleName } from '@/shared/security/roles'
+import { hasCapability } from '@/shared/security/access'
+import { getErpNavigation } from '@/app/navigation/erpNavigation'
 import { inventoryReportsService } from '@/services/inventoryReportsService'
 import type { InventoryReportSummary } from '@/types/inventory'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -25,9 +27,14 @@ const communityLinks = [
 export function AppHomePage() {
   const { user } = useAuth()
   const roleName = getRoleName(user?.role)
-  const isCommunityUser = roleName === 'Vecino/Afiliado'
+  const isCommunityUser = roleName === 'Vecino/Afiliado' || roleName === 'ROLE_COMMUNITY_USER'
   const isAdministrator = roleName === 'ROLE_SYSTEM_ADMIN' || roleName === 'Administrador'
-  const canViewInventory = roleName === 'Gestor de Inventario'
+  const canViewInventory = hasCapability(user?.permissionCodes, 'inv.inventory.read')
+  const canViewDashboard = hasCapability(user?.permissionCodes, 'erp.dashboard.read')
+  const authorizedDestinations = getErpNavigation(user?.permissionCodes)
+    .flatMap(section => section.items)
+    .flatMap(item => item.children?.length ? item.children : [item])
+    .filter((item): item is typeof item & { path: string } => item.path !== undefined && item.path !== '/app/dashboard')
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
   const [loading, setLoading] = useState(canViewInventory)
   const [summaryUnavailable, setSummaryUnavailable] = useState(false)
@@ -66,6 +73,27 @@ export function AppHomePage() {
           ) : (
             <Card><CardContent className="text-sm text-foreground-muted">{summaryUnavailable ? 'El resumen no está disponible en este momento. Puede consultar el módulo de Inventario.' : 'No hay datos de inventario para mostrar.'}</CardContent></Card>
           )}
+        </section>
+      )}
+
+      {canViewDashboard && !isAdministrator && (
+        <section aria-labelledby="authorized-destinations-title">
+          <Card>
+            <CardContent className="p-5">
+              <h2 id="authorized-destinations-title" className="text-xl font-bold text-brand-ink">Accesos autorizados</h2>
+              {authorizedDestinations.length ? (
+                <nav aria-label="Accesos autorizados" className="mt-4 flex flex-wrap gap-2">
+                  {authorizedDestinations.map((destination) => (
+                    <Link key={destination.path} to={destination.path} className="inline-flex min-h-11 items-center rounded-lg border border-border bg-surface-card px-4 font-semibold text-brand-deep hover:border-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep">
+                      {destination.label}
+                    </Link>
+                  ))}
+                </nav>
+              ) : (
+                <p className="mt-2 text-sm text-foreground-muted">No hay módulos con una ruta funcional equivalente a sus capacidades institucionales.</p>
+              )}
+            </CardContent>
+          </Card>
         </section>
       )}
 

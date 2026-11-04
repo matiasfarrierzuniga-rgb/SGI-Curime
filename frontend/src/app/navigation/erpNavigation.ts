@@ -65,7 +65,13 @@ export function getErpNavigation(permissionCodes: readonly string[] | null | und
   })
 }
 
-export function getErpEntryPath(permissionCodes: readonly string[] | null | undefined): string {
+export function getErpEntryPath(permissionCodes: readonly string[] | null | undefined, roleName?: string): string {
+  // Entry selection is presentation only; RoleRoute still authorizes every destination by capability.
+  if (
+    (roleName === 'ROLE_INSTITUTIONAL_TREASURER' || roleName === 'Tesorero')
+    && hasCapability(permissionCodes, 'fin.movements.read')
+    && hasCapability(permissionCodes, 'fin.charges.read')
+  ) return '/app/financial'
   if (hasCapability(permissionCodes, 'erp.dashboard.read')) return '/app/dashboard'
   if (hasCapability(permissionCodes, 'fin.charges.read')) return '/app/financial/dashboard'
   if (hasCapability(permissionCodes, 'inv.inventory.read')) return '/inventory'
