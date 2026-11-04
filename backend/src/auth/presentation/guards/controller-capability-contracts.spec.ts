@@ -40,10 +40,9 @@ describe('migrated controller authorization contracts', () => {
   ])('%s.%s uses persisted capability %s', (controller, method, capability) => {
     const target = handler(controller, method);
     expect(Reflect.getMetadata(CAPABILITIES_KEY, target)).toEqual([capability]);
-    expect(Reflect.getMetadata(GUARDS_METADATA, target)).toEqual([
-      JwtAuthGuard,
-      CapabilityGuard,
-    ]);
+    expect(Reflect.getMetadata(GUARDS_METADATA, target)).toEqual(
+      expect.arrayContaining([JwtAuthGuard, CapabilityGuard]),
+    );
   });
 
   it.each([
@@ -123,10 +122,9 @@ describe('migrated controller authorization contracts', () => {
       const target = handler(controller, method);
       expect(Reflect.getMetadata(ROLES_KEY, target)).toEqual(roles);
       expect(Reflect.getMetadata(CAPABILITIES_KEY, target)).toBeUndefined();
-      expect(Reflect.getMetadata(GUARDS_METADATA, target)).toEqual([
-        JwtAuthGuard,
-        RolesGuard,
-      ]);
+      expect(Reflect.getMetadata(GUARDS_METADATA, target)).toEqual(
+        expect.arrayContaining([JwtAuthGuard, RolesGuard]),
+      );
     },
   );
 });

@@ -162,15 +162,20 @@ describe('initial role seed', () => {
       ([roleName, capabilities]) =>
         capabilities.map((capability) => `${roleName}:${capability}`),
     );
-    const observedPairs = rolePermissionUpsert.mock.calls.map(
-      ([{ create, update, where }]) => {
-        expect(where).toEqual({ roleId_permissionId: create });
-        expect(update).toEqual({});
-        return `${roleNameById.get(create.roleId)}:${capabilityById.get(
-          create.permissionId,
-        )}`;
-      },
-    );
+    const observedPairs = rolePermissionUpsert.mock.calls.map(([call]) => {
+      const { create, update, where } = call as {
+        create: { roleId: number; permissionId: number };
+        update: Record<string, never>;
+        where: {
+          roleId_permissionId: { roleId: number; permissionId: number };
+        };
+      };
+      expect(where).toEqual({ roleId_permissionId: create });
+      expect(update).toEqual({});
+      return `${roleNameById.get(create.roleId)}:${capabilityById.get(
+        create.permissionId,
+      )}`;
+    });
 
     expect(observedPairs).toEqual([...expectedPairs, ...expectedPairs]);
     expect(new Set(observedPairs)).toEqual(new Set(expectedPairs));
