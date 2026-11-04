@@ -3,12 +3,11 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  RolesGuard,
 } from '../../../../auth';
 import { ListRolesUseCase } from '../../application/use-cases/list-roles.use-case';
 
 @Controller('roles')
-@UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
+@UseGuards(JwtAuthGuard, CapabilityGuard)
 export class RolesController {
   constructor(private readonly listRoles: ListRolesUseCase) {}
 

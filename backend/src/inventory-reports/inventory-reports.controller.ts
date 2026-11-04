@@ -1,17 +1,17 @@
 import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import {
+  CapabilityGuard,
   JwtAuthGuard,
-  Roles,
-  RolesGuard,
+  RequireCapabilities,
   type AuthenticatedUser,
 } from '../auth';
 import { QueryReportsDto } from './dto/query-reports.dto';
 import { InventoryReportsService } from './inventory-reports.service';
 
 @Controller('inventory/reports')
-@Roles('Administrador', 'Gestor de Inventario')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@RequireCapabilities('inv.inventory.read')
+@UseGuards(JwtAuthGuard, CapabilityGuard)
 export class InventoryReportsController {
   constructor(private readonly reportsService: InventoryReportsService) {}
 

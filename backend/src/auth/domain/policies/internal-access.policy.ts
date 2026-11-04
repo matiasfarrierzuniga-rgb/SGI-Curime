@@ -1,6 +1,14 @@
 export const GENERAL_ACCOUNT_ROLE = 'Subscription_L1';
-export const COMMUNITY_ACCOUNT_ROLE = 'Cuenta comunitaria';
+export const COMMUNITY_ACCOUNT_ROLE = 'ROLE_COMMUNITY_USER';
+export const LEGACY_COMMUNITY_ACCOUNT_ROLE = 'Cuenta comunitaria';
 const ADMINISTRATOR_ROLE = 'Administrador';
+export const ERP_ADMITTED_V2_ROLES = [
+  'ROLE_SYSTEM_ADMIN',
+  'ROLE_INSTITUTIONAL_PRESIDENT',
+  'ROLE_INSTITUTIONAL_SECRETARY',
+  'ROLE_INSTITUTIONAL_TREASURER',
+  'ROLE_INSTITUTIONAL_OPERATOR',
+] as const;
 
 export interface InternalAccessContext {
   userStatus: string;
@@ -15,11 +23,17 @@ export function canAccessErp(context: InternalAccessContext): boolean {
     return false;
   }
 
-  if (context.userRoleName === ADMINISTRATOR_ROLE) {
+  if (
+    context.userRoleName === ADMINISTRATOR_ROLE ||
+    ERP_ADMITTED_V2_ROLES.some((role) => role === context.userRoleName)
+  ) {
     return true;
   }
 
-  if (context.userRoleName === COMMUNITY_ACCOUNT_ROLE) {
+  if (
+    context.userRoleName === COMMUNITY_ACCOUNT_ROLE ||
+    context.userRoleName === LEGACY_COMMUNITY_ACCOUNT_ROLE
+  ) {
     return false;
   }
 

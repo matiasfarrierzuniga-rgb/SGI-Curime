@@ -1,10 +1,10 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import { CapabilityGuard, JwtAuthGuard, RequireCapabilities } from '../auth';
 import { InventoryAlertsService } from './inventory-alerts.service';
 
 @Controller('inventory/alerts')
-@Roles('Administrador', 'Gestor de Inventario')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@RequireCapabilities('inv.inventory.read')
+@UseGuards(JwtAuthGuard, CapabilityGuard)
 export class InventoryAlertsController {
   constructor(private readonly alertsService: InventoryAlertsService) {}
 

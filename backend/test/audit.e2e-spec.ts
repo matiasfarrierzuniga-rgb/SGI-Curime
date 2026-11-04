@@ -68,7 +68,7 @@ describe('AuditController (e2e)', () => {
     `Bearer ${await jwt.signAsync({ sub: 1, email: 'admin@example.com', role })}`;
   it('requires JWT', () =>
     request(app.getHttpServer()).get('/audit-logs').expect(401));
-  it('forbids non-administrators', async () => {
+  it('forbids authenticated users without the audit-log capability', async () => {
     role = 'Tesorero';
     await request(app.getHttpServer())
       .get('/audit-logs')
