@@ -1,14 +1,14 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { CapabilityGuard } from './capability.guard';
-import { CAPABILITIES } from '../capabilities/capability-policy';
+import { ROLE_CAPABILITIES } from '../capabilities/capability-policy';
 import {
   CAPABILITY_BY_BODY_VALUE_KEY,
   type CapabilityByBodyValueRequirement,
 } from '../decorators/require-capability-by-body-value.decorator';
 
 const ROLE_PERMISSION_FIXTURES: Record<string, readonly string[]> = {
-  Administrador: CAPABILITIES,
+  Administrador: ROLE_CAPABILITIES.Administrador,
   'Gestor de Inventario': [
     'erp.dashboard.read',
     'usr.profile.read',
@@ -88,12 +88,30 @@ describe('CapabilityGuard', () => {
   });
 
   it('enforces separate persisted UserRequest read and review grants', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.user-requests.read']);
-    expect(guard.canActivate(contextFor('Unknown', true, ['usr.user-requests.read']))).toBe(true);
-    expect(guard.canActivate(contextFor('Unknown', true, ['adm.requests.read']))).toBe(false);
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.user-requests.review']);
-    expect(guard.canActivate(contextFor('Unknown', true, ['usr.user-requests.read']))).toBe(false);
-    expect(guard.canActivate(contextFor('Unknown', true, ['usr.user-requests.review']))).toBe(true);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['usr.user-requests.read']);
+    expect(
+      guard.canActivate(
+        contextFor('Unknown', true, ['usr.user-requests.read']),
+      ),
+    ).toBe(true);
+    expect(
+      guard.canActivate(contextFor('Unknown', true, ['adm.requests.read'])),
+    ).toBe(false);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['usr.user-requests.review']);
+    expect(
+      guard.canActivate(
+        contextFor('Unknown', true, ['usr.user-requests.read']),
+      ),
+    ).toBe(false);
+    expect(
+      guard.canActivate(
+        contextFor('Unknown', true, ['usr.user-requests.review']),
+      ),
+    ).toBe(true);
   });
 
   it('allows administrators to manage and publish events', () => {
@@ -113,13 +131,19 @@ describe('CapabilityGuard', () => {
   });
 
   it('denies a role capability when current affiliate access is invalid', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['usr.users.read']);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['usr.users.read']);
     expect(guard.canActivate(contextFor('Administrador', false))).toBe(false);
   });
 
   it('denies every ERP capability to a community account', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['erp.dashboard.read']);
-    expect(guard.canActivate(contextFor('Cuenta comunitaria', false, []))).toBe(false);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['erp.dashboard.read']);
+    expect(guard.canActivate(contextFor('Cuenta comunitaria', false, []))).toBe(
+      false,
+    );
   });
 
   it('denies an unknown role and unknown capability', () => {
@@ -146,14 +170,34 @@ describe('CapabilityGuard', () => {
     ).toBe(true);
   });
 
+  it('allows audit-log reads from the persisted audit capability', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['aud.logs.read']);
+
+    expect(
+      guard.canActivate(
+        contextFor('Unrecognized role', true, ['aud.logs.read']),
+      ),
+    ).toBe(true);
+  });
+
+  it('denies audit-log reads without the persisted audit capability', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['aud.logs.read']);
+
+    expect(guard.canActivate(contextFor('Administrador', true, []))).toBe(
+      false,
+    );
+  });
+
   it('allows an approve-only grant only for APPROVED generic decisions', () => {
     requireDecisionCapability();
-    const context = contextFor(
-      'Unrecognized role',
-      true,
-      ['adm.justifications.approve'],
-    );
-    const request = context.switchToHttp().getRequest() as { body: object };
+    const context = contextFor('Unrecognized role', true, [
+      'adm.justifications.approve',
+    ]);
+    const request = context.switchToHttp().getRequest<{ body: object }>();
 
     request.body = { status: 'APPROVED' };
     expect(guard.canActivate(context)).toBe(true);
@@ -163,12 +207,10 @@ describe('CapabilityGuard', () => {
 
   it('allows a reject-only grant only for REJECTED generic decisions', () => {
     requireDecisionCapability();
-    const context = contextFor(
-      'Unrecognized role',
-      true,
-      ['adm.justifications.reject'],
-    );
-    const request = context.switchToHttp().getRequest() as { body: object };
+    const context = contextFor('Unrecognized role', true, [
+      'adm.justifications.reject',
+    ]);
+    const request = context.switchToHttp().getRequest<{ body: object }>();
 
     request.body = { status: 'REJECTED' };
     expect(guard.canActivate(context)).toBe(true);
@@ -200,9 +242,9 @@ describe('CapabilityGuard', () => {
       .mockReturnValue(['usr.users.read']);
 
     const context = contextFor('Administrador');
-    const request = context.switchToHttp().getRequest() as {
+    const request = context.switchToHttp().getRequest<{
       user: { permissionCodes?: readonly string[] };
-    };
+    }>();
     delete request.user.permissionCodes;
 
     expect(guard.canActivate(context)).toBe(false);

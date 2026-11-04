@@ -10,7 +10,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import {
+  CapabilityGuard,
+  JwtAuthGuard,
+  RequireCapabilities,
+  Roles,
+  RolesGuard,
+} from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { CreateAdjustmentDto } from './dto/create-adjustment.dto';
 import { CreateEntryDto } from './dto/create-entry.dto';
@@ -21,11 +27,11 @@ import { InventoryMovementsService } from './inventory-movements.service';
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
 @Controller('inventory/items')
-@Roles('Administrador', 'Gestor de Inventario')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class InventoryItemOperationsController {
   constructor(private readonly movementsService: InventoryMovementsService) {}
 
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post(':id/entries')
   recordEntry(
     @Param('id', ParseIntPipe) id: number,
@@ -40,6 +46,8 @@ export class InventoryItemOperationsController {
     );
   }
 
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post(':id/exits')
   recordExit(
     @Param('id', ParseIntPipe) id: number,
@@ -54,6 +62,8 @@ export class InventoryItemOperationsController {
     );
   }
 
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post(':id/adjustments')
   recordAdjustment(
     @Param('id', ParseIntPipe) id: number,
@@ -68,6 +78,8 @@ export class InventoryItemOperationsController {
     );
   }
 
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get(':id/movements')
   findItemMovements(
     @Param('id', ParseIntPipe) id: number,

@@ -51,6 +51,7 @@ describe('initial role seed', () => {
         'Vecino/Afiliado',
         'Miembro de Junta Directiva',
         'Subscription_L1',
+        'Cuenta comunitaria',
       ]),
     );
     expect(upsert).toHaveBeenCalledWith(
@@ -138,7 +139,9 @@ describe('initial role seed', () => {
     await ensureInitialRoles(prisma);
     await ensureInitialRoles(prisma);
 
-    expect(permissionUpsert).toHaveBeenCalledTimes(INITIAL_PERMISSIONS.length * 2);
+    expect(permissionUpsert).toHaveBeenCalledTimes(
+      INITIAL_PERMISSIONS.length * 2,
+    );
     expect(permissionUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { code: 'don.donations.read' },

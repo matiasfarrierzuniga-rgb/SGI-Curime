@@ -6,13 +6,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import { CapabilityGuard, JwtAuthGuard, RequireCapabilities } from '../auth';
 import { AuditService } from './audit.service';
 import { QueryAuditLogsDto } from './dto/query-audit-logs.dto';
 
 @Controller('audit-logs')
-@Roles('Administrador')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@RequireCapabilities('aud.logs.read')
+@UseGuards(JwtAuthGuard, CapabilityGuard)
 export class AuditController {
   constructor(private readonly audit: AuditService) {}
   @Get() findAll(@Query() query: QueryAuditLogsDto) {

@@ -11,7 +11,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import {
+  CapabilityGuard,
+  JwtAuthGuard,
+  RequireCapabilities,
+  Roles,
+  RolesGuard,
+} from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { CreateInventoryCategoryDto } from './dto/create-inventory-category.dto';
 import { UpdateInventoryCategoryDto } from './dto/update-inventory-category.dto';
@@ -21,11 +27,11 @@ import { InventoryCategoriesService } from './inventory-categories.service';
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
 @Controller('inventory/categories')
-@Roles('Administrador', 'Gestor de Inventario')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class InventoryCategoriesController {
   constructor(private readonly categoriesService: InventoryCategoriesService) {}
 
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
   create(
     @Body() dto: CreateInventoryCategoryDto,
@@ -34,16 +40,22 @@ export class InventoryCategoriesController {
     return this.categoriesService.create(dto, req.user.id, this.context(req));
   }
 
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get()
   findAll(@Query() query: QueryInventoryCategoriesDto) {
     return this.categoriesService.findAll(query);
   }
 
+  @RequireCapabilities('inv.inventory.read')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.findOne(id);
   }
 
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -58,6 +70,8 @@ export class InventoryCategoriesController {
     );
   }
 
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/activate')
   activate(
     @Param('id', ParseIntPipe) id: number,
@@ -71,6 +85,8 @@ export class InventoryCategoriesController {
     );
   }
 
+  @Roles('Administrador', 'Gestor de Inventario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/deactivate')
   deactivate(
     @Param('id', ParseIntPipe) id: number,
