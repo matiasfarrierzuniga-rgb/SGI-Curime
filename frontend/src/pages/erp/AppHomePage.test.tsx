@@ -25,6 +25,12 @@ describe('AppHomePage', () => {
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
   })
 
+  it('renders the administrative dashboard for the canonical system administrator', async () => {
+    auth.user = { fullName: 'Ana Pérez', role: 'ROLE_SYSTEM_ADMIN' }
+    render(<MemoryRouter><AppHomePage /></MemoryRouter>)
+    expect(await screen.findByText('Afiliados activos')).toBeInTheDocument()
+  })
+
   it('keeps inventory summary without broad legacy action grid', async () => {
     auth.user = { fullName: 'Luis Mora', role: 'Gestor de Inventario' }
     render(<MemoryRouter><AppHomePage /></MemoryRouter>)
