@@ -4,7 +4,7 @@ import { authService } from '@/features/auth'
 import { ToastProvider } from '@/shared/ui/Toast'
 import { ProfilePage } from './ProfilePage'
 
-vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { fullName: 'Ana', email: 'ana@test.com', role: 'Usuario', status: 'ACTIVE' } }), authService: { changePassword: vi.fn() } }))
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { fullName: 'Ana', email: 'ana@test.com', role: 'ROLE_SYSTEM_ADMIN', status: 'ACTIVE' } }), authService: { changePassword: vi.fn() } }))
 
 const renderPage = () => render(<ToastProvider><ProfilePage /></ToastProvider>)
 
@@ -22,6 +22,8 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Ana')).toBeInTheDocument()
     expect(screen.getByText('ana@test.com')).toBeInTheDocument()
     expect(screen.getByText('Activo')).toBeInTheDocument()
+    expect(screen.getByText('Administrador del sistema')).toBeInTheDocument()
+    expect(screen.queryByText('ROLE_SYSTEM_ADMIN')).not.toBeInTheDocument()
     expect(screen.getAllByLabelText(/contraseña/i)).toHaveLength(3)
   })
 
