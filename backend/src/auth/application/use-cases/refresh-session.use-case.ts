@@ -82,6 +82,7 @@ export class RefreshSessionUseCase {
       sub: user.id,
       email: user.email,
       role: user.roleName,
+      sessionGeneration: user.sessionGeneration,
     });
     await recordAuditBestEffort(this.audit, {
       userId: user.id,

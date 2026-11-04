@@ -54,6 +54,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       !account ||
       account.status !== 'ACTIVE' ||
       !Array.isArray(account.permissionCodes) ||
+      !isCurrentSessionGeneration(
+        payload.sessionGeneration,
+        account.sessionGeneration,
+      ) ||
       isTemporaryLockActive(account.lockedAt, this.lockoutMinutes)
     ) {
       throw new UnauthorizedException('Unauthorized');
@@ -95,4 +99,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         : {}),
     };
   }
+}
+
+function isCurrentSessionGeneration(
+  tokenGeneration: number | undefined,
+  currentGeneration: number,
+): boolean {
+  // Historical JWTs had no generation claim. Accept them only until the first
+  // deactivation increments the persisted generation from its default zero.
+  if (tokenGeneration === undefined) return currentGeneration === 0;
+  return (
+    Number.isSafeInteger(tokenGeneration) &&
+    tokenGeneration === currentGeneration
+  );
 }

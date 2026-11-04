@@ -64,6 +64,8 @@ export function buildPrismaAuthUser(options: PrismaAuthUserOptions = {}) {
     lockedAt: options.lockedAt ?? null,
     failedLoginAttempts: options.failedLoginAttempts ?? 0,
     lastLoginAt: options.lastLoginAt ?? null,
+    sessionsInvalidBefore: null,
+    sessionGeneration: 0,
     subscriptionExpirationDate: options.subscriptionExpirationDate ?? null,
   };
 }

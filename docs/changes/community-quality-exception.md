@@ -1,0 +1,9 @@
+# Excepción puntual de verificación para cierre local
+
+- **Autorización:** responsable del repositorio, 4 de noviembre de 2026. Aplica exclusivamente a los tres commits locales de dashboard, asambleas y registro comunitario. No modifica las reglas generales ni autoriza despliegue a producción.
+- **Base contrastada:** `e93a402162b2585e5dccb8b5127fc12eb4b43e82`. Cuatro fallos de asambleas y cinco de reservas se reprodujeron individualmente en una copia de esa revisión. La suite de rutas pasó 60/60 individualmente tanto en la base como en el incremento.
+- **Estado corregido:** la prueba del dashboard pasa 6/6; las pruebas de asambleas pasan 23/23. Las correcciones se registran en commits separados del incremento comunitario. Reservas queda a cargo de su responsable.
+- **Verificación dirigida de cierre:** registro 3/3, activación 8/8, backend 118/118 y HTTP 32/32; builds de frontend y backend aprobados. La compilación frontend informó una advertencia por tamaño de bundle.
+- **Control global:** `npm run verify` no pasó. La ejecución con dos workers informó 22 fallos, incluidos reservas y varios tiempos agotados. La ejecución diagnóstica de toda la suite con un worker `vmThreads` informó 482 fallos; una comparación acotada sugiere problemas de aislamiento de mocks entre archivos. El origen de esos fallos globales y de los tiempos agotados sigue pendiente de investigación.
+- **Riesgos y seguimiento:** corregir y verificar reservas con su responsable; investigar el aislamiento y la carga de Vitest; repetir el control global sin excluir pruebas antes de integrar o desplegar. Los checks dirigidos no sustituyen una suite global aprobada. Las migraciones requieren su revisión y autorización de despliegue; las bases compartidas no se modificaron para este cierre.
+- **Trazabilidad:** CU V2 relacionados con autenticación y registro (`CU-01`, `CU-20`, `CU-22` y `CU-23` a `CU-27`) permanecen `NOT_VERIFIED` contra el catálogo inmutable.

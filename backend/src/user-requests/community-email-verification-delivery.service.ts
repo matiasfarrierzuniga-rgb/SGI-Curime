@@ -20,7 +20,7 @@ export class CommunityEmailVerificationDeliveryService {
 
   async deliver(delivery: CommunityVerificationDelivery): Promise<boolean> {
     try {
-      await this.notifications.send({
+      const result = await this.notifications.send({
         type: NotificationEventType.COMMUNITY_EMAIL_VERIFICATION,
         userId: delivery.userId,
         to: delivery.email,
@@ -28,6 +28,7 @@ export class CommunityEmailVerificationDeliveryService {
         token: delivery.token,
         expiresAt: delivery.expiresAt,
       });
+      if (!result.accepted) throw new Error('Email was not accepted.');
       return true;
     } catch {
       this.logger.error(

@@ -1,5 +1,12 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+import { IsSecurePassword } from '../../auth/presentation/dto/password-policy';
 import { trim, trimLowercase } from '../../common/validation/normalizers';
 
 export class VerifyCommunityEmailDto {
@@ -8,6 +15,16 @@ export class VerifyCommunityEmailDto {
   @IsNotEmpty()
   @MaxLength(256)
   token: string;
+}
+
+export class CompleteCommunityActivationDto extends VerifyCommunityEmailDto {
+  @IsSecurePassword()
+  password: string;
+
+  @IsString()
+  @MinLength(10)
+  @MaxLength(128)
+  passwordConfirmation: string;
 }
 
 export class ResendCommunityVerificationDto {

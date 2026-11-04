@@ -19,6 +19,7 @@ const account = {
   affiliateStatus: 'ACTIVE',
   affiliateRoleId: 2,
   subscriptionExpirationDate: null,
+  sessionGeneration: 0,
 };
 
 describe('LoginUseCase', () => {
@@ -55,7 +56,7 @@ describe('LoginUseCase', () => {
     tokens.sign.mockResolvedValue('signed-token');
     refreshTokens.generate.mockReturnValue('raw-refresh-token');
     refreshTokens.hash.mockReturnValue('refresh-hash');
-    repository.recordLoginSuccessAndCreateSession.mockResolvedValue(undefined);
+    repository.recordLoginSuccessAndCreateSession.mockResolvedValue(1);
     repository.recordFailedLogin.mockResolvedValue(false);
   });
 
@@ -188,6 +189,7 @@ describe('LoginUseCase', () => {
       sub: 1,
       email: 'admin@example.com',
       role: 'Administrador',
+      sessionGeneration: 1,
     });
     expect(repository.recordLoginSuccessAndCreateSession).toHaveBeenCalledWith(
       1,

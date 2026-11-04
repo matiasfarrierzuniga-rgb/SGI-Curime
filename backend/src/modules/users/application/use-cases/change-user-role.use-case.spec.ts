@@ -65,6 +65,15 @@ describe('ChangeUserRoleUseCase', () => {
     );
   });
 
+  it('rejects role changes while email verification is pending', async () => {
+    repository.findById.mockResolvedValueOnce({
+      ...adminUser,
+      status: UserStatus.PENDING_EMAIL_VERIFICATION,
+    });
+    await expect(useCase.execute(1, 2)).rejects.toThrow();
+    expect(repository.updateRole).not.toHaveBeenCalled();
+  });
+
   it('throws RoleNotFoundError for an unknown role', async () => {
     repository.findRoleById.mockResolvedValueOnce(null);
 
@@ -99,7 +108,10 @@ describe('ChangeUserRoleUseCase', () => {
     });
 
     expect(repository.updateRole).toHaveBeenCalledWith(1, 2);
-    expect(repository.updateActiveAffiliateRoleForUser).toHaveBeenCalledWith(1, 2);
+    expect(repository.updateActiveAffiliateRoleForUser).toHaveBeenCalledWith(
+      1,
+      2,
+    );
     expect(result).toEqual(adminUser);
     expect(audit.record).toHaveBeenCalledWith({
       userId: 7,

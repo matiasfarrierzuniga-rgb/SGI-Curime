@@ -139,18 +139,20 @@ export class LoginUseCase {
       );
     }
 
+    const refreshToken = this.refreshTokens.generate();
+    const expiresAt = new Date(Date.now() + getRefreshTokenTtlSeconds() * 1000);
+    const sessionGeneration =
+      await this.repository.recordLoginSuccessAndCreateSession(
+        account.id,
+        this.refreshTokens.hash(refreshToken),
+        expiresAt,
+      );
     const accessToken = await this.tokens.sign({
       sub: account.id,
       email: account.email,
       role: account.roleName,
+      sessionGeneration,
     });
-    const refreshToken = this.refreshTokens.generate();
-    const expiresAt = new Date(Date.now() + getRefreshTokenTtlSeconds() * 1000);
-    await this.repository.recordLoginSuccessAndCreateSession(
-      account.id,
-      this.refreshTokens.hash(refreshToken),
-      expiresAt,
-    );
     await recordAuditBestEffort(this.audit, {
       userId: account.id,
       action: AuditAction.LOGIN_SUCCESS,

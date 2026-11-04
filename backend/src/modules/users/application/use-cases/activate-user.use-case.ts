@@ -30,12 +30,17 @@ export class ActivateUserUseCase {
   ): Promise<User> {
     const user = await this.repository.findById(id);
     if (!user) throw new UserNotFoundError();
-    const passwordHash = await this.repository.getPasswordHash(id);
-    if (!passwordHash) throw new ActivationNotCompletedError();
+    if (user.status === UserStatus.PENDING_EMAIL_VERIFICATION)
+      throw new ActivationNotCompletedError();
     if (user.status === UserStatus.BLOCKED) throw new AccountBlockedError();
     if (user.status === UserStatus.ACTIVE)
       throw new AccountAlreadyActiveError();
-
+    const evidence = await this.repository.communityVerificationEvidence(id);
+    if (user.role.name === 'Cuenta comunitaria' && !evidence) {
+      throw new ActivationNotCompletedError();
+    }
+    const passwordHash = await this.repository.getPasswordHash(id);
+    if (!passwordHash) throw new ActivationNotCompletedError();
     const updated = await this.repository.updateStatus(id, UserStatus.ACTIVE);
     await this.audit?.record({
       userId: actorId,

@@ -71,7 +71,11 @@ export class ActivateAccountUseCase {
         'Activation token has expired',
       );
     }
-    if (activationToken.userStatus !== 'INACTIVE') {
+    if (
+      activationToken.userStatus !== 'INACTIVE' ||
+      !activationToken.userRoleName ||
+      activationToken.userRoleName === 'Cuenta comunitaria'
+    ) {
       throw new AuthApplicationError(
         'ACCOUNT_CANNOT_BE_ACTIVATED',
         'Account cannot be activated',

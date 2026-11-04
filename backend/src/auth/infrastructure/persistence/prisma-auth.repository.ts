@@ -19,7 +19,7 @@ type AccountRow = Prisma.UserGetPayload<{
 }>;
 
 type ActivationTokenRow = Prisma.AccountActivationTokenGetPayload<{
-  include: { user: true };
+  include: { user: { include: { role: true } } };
 }>;
 
 type ResetTokenRow = Prisma.PasswordResetTokenGetPayload<{
@@ -36,6 +36,8 @@ function toAuthAccount(user: AccountRow): AuthAccount {
     lockedAt: user.lockedAt,
     failedLoginAttempts: user.failedLoginAttempts,
     lastLoginAt: user.lastLoginAt,
+    sessionsInvalidBefore: user.sessionsInvalidBefore,
+    sessionGeneration: user.sessionGeneration,
     roleName: user.role.name,
     roleId: user.roleId,
     roleIsActive: user.role.isActive,
@@ -80,7 +82,7 @@ export class PrismaAuthRepository implements AuthRepository {
   ): Promise<ActivationToken | null> {
     const token = await this.db.accountActivationToken.findUnique({
       where: { tokenHash },
-      include: { user: true },
+      include: { user: { include: { role: true } } },
     });
     return token ? toActivationToken(token) : null;
   }
@@ -134,37 +136,65 @@ export class PrismaAuthRepository implements AuthRepository {
     id: number,
     refreshTokenHash: string,
     expiresAt: Date,
-  ): Promise<void> {
-    await this.db.$transaction(async (tx: Prisma.TransactionClient) => {
-      await tx.session.create({
-        data: { userId: id, refreshTokenHash, expiresAt },
-      });
-      await tx.user.update({
-        where: { id },
-        data: {
-          failedLoginAttempts: 0,
-          lockedAt: null,
-          lastLoginAt: new Date(),
-        },
-      });
-    });
+  ): Promise<number> {
+    return this.db.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const locked = await tx.user.updateMany({
+          where: { id, status: 'ACTIVE' },
+          data: {
+            failedLoginAttempts: 0,
+            lockedAt: null,
+            lastLoginAt: new Date(),
+          },
+        });
+        if (locked.count !== 1) throw new Error('Account is no longer active.');
+        const current = await tx.user.findUniqueOrThrow({
+          where: { id },
+          select: { sessionGeneration: true },
+        });
+        await tx.session.create({
+          data: { userId: id, refreshTokenHash, expiresAt },
+        });
+        return current.sessionGeneration;
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
   }
 
   async invalidateAndCreateResetToken(
     userId: number,
     tokenHash: string,
     expiresAt: Date,
-  ): Promise<void> {
-    await this.db.$transaction(async (tx: Prisma.TransactionClient) => {
-      const now = new Date();
-      await tx.passwordResetToken.updateMany({
-        where: { userId, usedAt: null, expiresAt: { gt: now } },
-        data: { usedAt: now },
-      });
-      await tx.passwordResetToken.create({
-        data: { userId, tokenHash, expiresAt },
-      });
-    });
+    expectedEmail: string,
+  ): Promise<boolean> {
+    try {
+      return await this.db.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+          const locked = await tx.user.updateMany({
+            where: { id: userId, status: 'ACTIVE', email: expectedEmail },
+            data: { updatedAt: new Date() },
+          });
+          if (locked.count !== 1) return false;
+          const now = new Date();
+          await tx.passwordResetToken.updateMany({
+            where: { userId, usedAt: null, expiresAt: { gt: now } },
+            data: { usedAt: now },
+          });
+          await tx.passwordResetToken.create({
+            data: { userId, tokenHash, expiresAt },
+          });
+          return true;
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2034'
+      )
+        return false;
+      throw error;
+    }
   }
 
   async updatePassword(id: number, passwordHash: string): Promise<void> {
@@ -192,6 +222,7 @@ function toActivationToken(token: ActivationTokenRow): ActivationToken {
     expiresAt: token.expiresAt,
     userStatus: token.user.status,
     purpose: token.purpose,
+    userRoleName: token.user.role.name,
   };
 }
 
@@ -219,23 +250,36 @@ function toAuthTransaction(tx: Prisma.TransactionClient): AuthTransaction {
     },
     async activateUser(userId: number, passwordHash: string): Promise<boolean> {
       const activated = await tx.user.updateMany({
-        where: { id: userId, status: 'INACTIVE' },
+        where: {
+          id: userId,
+          status: 'INACTIVE',
+          role: { name: { not: 'Cuenta comunitaria' } },
+        },
         data: { passwordHash, status: 'ACTIVE' },
       });
       return activated.count === 1;
     },
     async claimResetToken(tokenId: number, now: Date): Promise<boolean> {
       const claimed = await tx.passwordResetToken.updateMany({
-        where: { id: tokenId, usedAt: null, expiresAt: { gt: now } },
+        where: {
+          id: tokenId,
+          usedAt: null,
+          expiresAt: { gt: now },
+          user: { status: 'ACTIVE' },
+        },
         data: { usedAt: now },
       });
       return claimed.count === 1;
     },
-    async setUserPassword(userId: number, passwordHash: string): Promise<void> {
-      await tx.user.update({
-        where: { id: userId },
+    async setUserPassword(
+      userId: number,
+      passwordHash: string,
+    ): Promise<boolean> {
+      const changed = await tx.user.updateMany({
+        where: { id: userId, status: 'ACTIVE' },
         data: { passwordHash, failedLoginAttempts: 0, lockedAt: null },
       });
+      return changed.count === 1;
     },
     async revokeUserSessions(userId: number, reason: string): Promise<number> {
       const revoked = await tx.session.updateMany({

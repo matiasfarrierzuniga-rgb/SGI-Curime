@@ -26,6 +26,7 @@ describe('ActivateUserUseCase', () => {
   const repository = {
     findById: jest.fn(),
     getPasswordHash: jest.fn(),
+    communityVerificationEvidence: jest.fn(),
     updateStatus: jest.fn(),
   };
   const audit = { record: jest.fn() };
@@ -39,6 +40,7 @@ describe('ActivateUserUseCase', () => {
     );
     repository.findById.mockResolvedValue(domainUser);
     repository.getPasswordHash.mockResolvedValue('hash');
+    repository.communityVerificationEvidence.mockResolvedValue(null);
     repository.updateStatus.mockResolvedValue(domainUser);
   });
 
@@ -65,6 +67,49 @@ describe('ActivateUserUseCase', () => {
     await expect(useCase.execute(2)).rejects.toBeInstanceOf(
       AccountBlockedError,
     );
+  });
+
+  it('never administratively activates a community account pending email verification even when it has a legacy password hash', async () => {
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
+      status: UserStatus.PENDING_EMAIL_VERIFICATION,
+    });
+    await expect(useCase.execute(2)).rejects.toBeInstanceOf(
+      ActivationNotCompletedError,
+    );
+    expect(repository.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it('does not reactivate an inactive account with an unconsumed community verification token', async () => {
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
+      role: { ...domainUser.role, name: 'Cuenta comunitaria' },
+    });
+    await expect(useCase.execute(2)).rejects.toBeInstanceOf(
+      ActivationNotCompletedError,
+    );
+    expect(repository.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it('fails closed for a community account with no verification history', async () => {
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
+      role: { ...domainUser.role, name: 'Cuenta comunitaria' },
+    });
+    await expect(useCase.execute(2)).rejects.toBeInstanceOf(
+      ActivationNotCompletedError,
+    );
+    expect(repository.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it('allows reactivation when the latest community token was consumed', async () => {
+    repository.findById.mockResolvedValueOnce({
+      ...domainUser,
+      role: { ...domainUser.role, name: 'Cuenta comunitaria' },
+    });
+    repository.communityVerificationEvidence.mockResolvedValueOnce(new Date());
+    await useCase.execute(2);
+    expect(repository.updateStatus).toHaveBeenCalledWith(2, UserStatus.ACTIVE);
   });
 
   it('throws AccountAlreadyActiveError for an active user', async () => {

@@ -10,6 +10,8 @@ const userRow = {
   lockedAt: null,
   failedLoginAttempts: 0,
   lastLoginAt: null,
+  sessionsInvalidBefore: null,
+  sessionGeneration: 0,
   roleId: 2,
   role: {
     name: 'Administrador',
@@ -28,7 +30,7 @@ const activationTokenRow = {
   userId: 5,
   usedAt: null,
   expiresAt: new Date(),
-  user: { status: 'INACTIVE' },
+  user: { status: 'INACTIVE', role: { name: 'Administrador' } },
 };
 
 const resetTokenRow = {
@@ -44,6 +46,7 @@ function createDb() {
       findUnique: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
+      findUniqueOrThrow: jest.fn().mockResolvedValue({ sessionGeneration: 4 }),
     },
     accountActivationToken: {
       findUnique: jest.fn(),
@@ -73,6 +76,7 @@ describe('PrismaAuthRepository', () => {
 
   beforeEach(() => {
     db = createDb();
+    db.user.updateMany.mockResolvedValue({ count: 1 });
     repository = new PrismaAuthRepository(db as unknown as PrismaService);
   });
 
@@ -90,6 +94,8 @@ describe('PrismaAuthRepository', () => {
       lockedAt: null,
       failedLoginAttempts: 0,
       lastLoginAt: null,
+      sessionsInvalidBefore: null,
+      sessionGeneration: 0,
       roleName: 'Administrador',
       roleId: 2,
       roleIsActive: true,
@@ -160,6 +166,7 @@ describe('PrismaAuthRepository', () => {
       usedAt: null,
       expiresAt: anyDate,
       userStatus: 'INACTIVE',
+      userRoleName: 'Administrador',
     });
   });
 
@@ -221,11 +228,13 @@ describe('PrismaAuthRepository', () => {
   });
 
   it('creates a session and records login success atomically', async () => {
-    await repository.recordLoginSuccessAndCreateSession(
-      1,
-      'refresh-hash',
-      new Date('2026-09-02T00:00:00.000Z'),
-    );
+    await expect(
+      repository.recordLoginSuccessAndCreateSession(
+        1,
+        'refresh-hash',
+        new Date('2026-09-02T00:00:00.000Z'),
+      ),
+    ).resolves.toBe(4);
 
     expect(db.session.create).toHaveBeenCalledWith({
       data: {
@@ -234,8 +243,8 @@ describe('PrismaAuthRepository', () => {
         expiresAt: new Date('2026-09-02T00:00:00.000Z'),
       },
     });
-    expect(db.user.update).toHaveBeenCalledWith({
-      where: { id: 1 },
+    expect(db.user.updateMany).toHaveBeenCalledWith({
+      where: { id: 1, status: 'ACTIVE' },
       data: {
         failedLoginAttempts: 0,
         lockedAt: null,
@@ -252,6 +261,7 @@ describe('PrismaAuthRepository', () => {
       1,
       'hash',
       new Date('2026-01-01'),
+      'admin@example.com',
     );
 
     expect(db.passwordResetToken.updateMany).toHaveBeenCalledWith({
@@ -296,7 +306,11 @@ describe('PrismaAuthRepository', () => {
       data: { usedAt: anyDate },
     });
     expect(db.user.updateMany).toHaveBeenCalledWith({
-      where: { id: 5, status: 'INACTIVE' },
+      where: {
+        id: 5,
+        status: 'INACTIVE',
+        role: { name: { not: 'Cuenta comunitaria' } },
+      },
       data: { passwordHash: 'hashed', status: 'ACTIVE' },
     });
   });
@@ -313,7 +327,7 @@ describe('PrismaAuthRepository', () => {
 
   it('exposes transactional reset claim and password update', async () => {
     db.passwordResetToken.updateMany.mockResolvedValueOnce({ count: 1 });
-    db.user.update.mockResolvedValueOnce({ id: 5 });
+    db.user.updateMany.mockResolvedValueOnce({ count: 1 });
 
     const result = await repository.withTransaction(async (tx) => {
       const claimed = await tx.claimResetToken(20, new Date());
@@ -323,11 +337,16 @@ describe('PrismaAuthRepository', () => {
 
     expect(result).toBe(true);
     expect(db.passwordResetToken.updateMany).toHaveBeenCalledWith({
-      where: { id: 20, usedAt: null, expiresAt: { gt: anyDate } },
+      where: {
+        id: 20,
+        usedAt: null,
+        expiresAt: { gt: anyDate },
+        user: { status: 'ACTIVE' },
+      },
       data: { usedAt: anyDate },
     });
-    expect(db.user.update).toHaveBeenCalledWith({
-      where: { id: 5 },
+    expect(db.user.updateMany).toHaveBeenCalledWith({
+      where: { id: 5, status: 'ACTIVE' },
       data: { passwordHash: 'hashed', failedLoginAttempts: 0, lockedAt: null },
     });
   });
