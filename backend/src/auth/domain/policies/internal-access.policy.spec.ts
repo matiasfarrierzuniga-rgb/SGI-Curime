@@ -66,7 +66,6 @@ describe('canAccessErp', () => {
         userRoleName: 'Vecino/Afiliado',
         hasPerson: true,
         affiliateStatus: 'ACTIVE',
-        affiliateRoleId: 999,
       }),
     ).toBe(false);
   });
