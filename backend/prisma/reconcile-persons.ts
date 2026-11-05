@@ -247,7 +247,7 @@ async function reconcile(tx: Prisma.TransactionClient): Promise<RunSummary> {
 function toSource(
   row: {
     id: number;
-    identification: string;
+    identification: string | null;
     identificationType: string | null;
     fullName: string;
     email: string | null;

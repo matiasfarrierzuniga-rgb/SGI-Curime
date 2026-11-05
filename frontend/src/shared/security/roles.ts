@@ -1,45 +1,63 @@
-export const ROLE_ADMIN = 'Administrador'
-export const ROLE_INVENTORY_MANAGER = 'Gestor de Inventario'
-export const ROLE_TREASURER = 'Tesorero'
+export const ROLE_ADMIN = "Administrador";
+export const ROLE_INVENTORY_MANAGER = "Gestor de Inventario";
+export const ROLE_TREASURER = "Tesorero";
+export const ROLE_COMMUNITY_ACCOUNT = "ROLE_COMMUNITY_USER";
+export const LEGACY_ROLE_COMMUNITY_ACCOUNT = "Cuenta comunitaria";
 
 export type RoleLike =
   | string
   | {
-    name?: string | null
-  }
+      name?: string | null;
+    }
   | null
-  | undefined
+  | undefined;
 
-export const ADMIN_ROLES: readonly string[] = [ROLE_ADMIN]
-
-export const INVENTORY_ROLES: readonly string[] = [
-  ROLE_ADMIN,
-  ROLE_INVENTORY_MANAGER,
-]
+/** @deprecated Historical labels are presentation-only and never authorize UI. */
+export const ADMIN_ROLES: readonly string[] = [];
+/** @deprecated Inventory mutations have no approved endpoint capability mapping. */
+export const INVENTORY_ROLES: readonly string[] = [];
 
 export function getRoleName(role: RoleLike): string | undefined {
-  if (!role) return undefined
+  if (!role) return undefined;
 
-  if (typeof role === 'string') {
-    return role
+  if (typeof role === "string") {
+    return role;
   }
 
-  return role.name ?? undefined
+  return role.name ?? undefined;
 }
 
 export function isAdmin(role: RoleLike): boolean {
-  return getRoleName(role) === ROLE_ADMIN
+  void role;
+  return false;
 }
 
 export function canManageInventory(role: RoleLike): boolean {
-  const roleName = getRoleName(role)
-
-  return (
-    roleName !== undefined &&
-    INVENTORY_ROLES.includes(roleName)
-  )
+  void role;
+  return false;
 }
 
 export function homePathForRole(role: RoleLike, canAccessErp = false): string {
-  return getRoleName(role) && canAccessErp ? '/app' : '/servicios'
+  if (
+    [ROLE_COMMUNITY_ACCOUNT, LEGACY_ROLE_COMMUNITY_ACCOUNT].includes(
+      getRoleName(role) ?? "",
+    )
+  )
+    return "/mi-comunidad";
+  return getRoleName(role) && canAccessErp ? "/app" : "/servicios";
+}
+
+/** Etiquetas de presentación: nunca utilizar para autorización. */
+export const CANONICAL_ROLE_LABELS: Readonly<Record<string, string>> = {
+  ROLE_SYSTEM_ADMIN: 'Administrador del sistema',
+  ROLE_INSTITUTIONAL_PRESIDENT: 'Presidente',
+  ROLE_INSTITUTIONAL_SECRETARY: 'Secretario',
+  ROLE_INSTITUTIONAL_TREASURER: 'Tesorero',
+  ROLE_INSTITUTIONAL_OPERATOR: 'Operador institucional',
+  ROLE_COMMUNITY_USER: 'Usuario comunitario',
+};
+
+export function getRoleLabel(role: RoleLike): string {
+  const code = getRoleName(role);
+  return code ? (CANONICAL_ROLE_LABELS[code] ?? code) : '—';
 }

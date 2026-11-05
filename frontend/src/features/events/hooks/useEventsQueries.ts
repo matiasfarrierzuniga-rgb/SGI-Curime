@@ -17,8 +17,8 @@ export function usePublicEvent(publicId: string) {
   return useQuery({ queryKey: eventsKeys.publicDetail(publicId), queryFn: () => eventsApi.getPublic(publicId), enabled: Boolean(publicId) })
 }
 
-export function useAdminEvents() {
-  return useQuery({ queryKey: eventsKeys.admin(), queryFn: eventsApi.listAdmin })
+export function useAdminEvents(enabled = true) {
+  return useQuery({ queryKey: eventsKeys.admin(), queryFn: eventsApi.listAdmin, enabled })
 }
 
 export function useEventMutations() {

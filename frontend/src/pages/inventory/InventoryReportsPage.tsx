@@ -1,3 +1,5 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { Button } from '@/shared/ui/button'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
@@ -15,6 +17,7 @@ import { conditionLabels, itemStatusLabels, movementTypeLabels } from '../../typ
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { InventoryPageLayout } from './InventoryPageLayout'
 
 const stockLimit = 20
@@ -105,7 +108,7 @@ export function InventoryReportsPage() {
           <option value="EXIT">Salida</option>
           <option value="ADJUSTMENT">Ajuste</option>
         </select></label>
-        <div className="actions"><button className="primary">Aplicar filtros</button></div>
+        <div className="actions"><Button type="submit">Aplicar filtros</Button></div>
       </form>
       {error && <ErrorState message={error} />}
       {loading ? (
@@ -161,26 +164,26 @@ export function InventoryReportsPage() {
             ) : (
               <>
                 <div className="table-wrap" tabIndex={0} aria-label="Tabla de reporte de stock, desplazable horizontalmente">
-                  <table>
-                    <thead>
-                      <tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Existencia</th><th>Mínimo</th><th>Unidad</th><th>Ubicación</th><th>Estado</th><th>Condición</th></tr>
-                    </thead>
-                    <tbody>
+                  <DataTable>
+                    <DataTableHeader>
+                      <DataTableRow><DataTableHead>Código</DataTableHead><DataTableHead>Nombre</DataTableHead><DataTableHead>Categoría</DataTableHead><DataTableHead>Existencia</DataTableHead><DataTableHead>Mínimo</DataTableHead><DataTableHead>Unidad</DataTableHead><DataTableHead>Ubicación</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead>Condición</DataTableHead></DataTableRow>
+                    </DataTableHeader>
+                    <DataTableBody>
                       {stock.map((row) => (
-                        <tr key={row.id}>
-                          <td>{row.code}</td>
-                          <td>{row.name}</td>
-                          <td>{row.category.name}</td>
-                          <td>{row.currentQuantity}</td>
-                          <td>{row.minimumQuantity}</td>
-                          <td>{row.unit}</td>
-                          <td>{row.location || '—'}</td>
-                          <td><span className={`badge ${row.status === 'ACTIVE' ? 'success' : 'neutral'}`}>{itemStatusLabels[row.status]}</span></td>
-                          <td>{conditionLabels[row.condition]}</td>
-                        </tr>
+                        <DataTableRow key={row.id}>
+                          <DataTableCell>{row.code}</DataTableCell>
+                          <DataTableCell>{row.name}</DataTableCell>
+                          <DataTableCell>{row.category.name}</DataTableCell>
+                          <DataTableCell>{row.currentQuantity}</DataTableCell>
+                          <DataTableCell>{row.minimumQuantity}</DataTableCell>
+                          <DataTableCell>{row.unit}</DataTableCell>
+                          <DataTableCell>{row.location || '—'}</DataTableCell>
+                          <DataTableCell><StatusBadge variant={row.status === 'ACTIVE' ? 'success' : 'neutral'}>{itemStatusLabels[row.status]}</StatusBadge></DataTableCell>
+                          <DataTableCell>{conditionLabels[row.condition]}</DataTableCell>
+                        </DataTableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </DataTableBody>
+                  </DataTable>
                 </div>
                 <Pagination page={stockPage} total={stockTotal} limit={stockLimit} onChange={setStockPage} />
               </>

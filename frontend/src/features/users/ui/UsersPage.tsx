@@ -5,7 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ErrorState } from "@/shared/ui/ErrorState";
 import { LoadingState } from "@/shared/ui/LoadingState";
-import { PageContainer } from "@/shared/ui/PageContainer";
+import { AdministrativeListLayout, AdministrativeListResults } from "@/shared/ui/AdministrativeListLayout";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import type { User, UserStatus, UserUpdate } from "../model/users.types";
 import { getErrorMessage } from "@/shared/lib/errors";
@@ -21,6 +21,8 @@ import { UserManagementDialogs } from "./UserManagementDialogs";
 import { usersService } from "../api/users.api";
 import { usersKeys } from "../hooks/useUsersQueries";
 import { useToast } from "@/shared/ui/Toast";
+import { useAuth } from "@/features/auth";
+import { hasCapability } from "@/shared/security/access";
 
 type ManagementAction = "edit" | "role" | "activate" | "deactivate" | "unlock";
 
@@ -36,15 +38,19 @@ export function UsersPage() {
   const [management, setManagement] = useState<{ user: User; action: ManagementAction } | null>(null);
   const queryClient = useQueryClient();
   const { notify } = useToast();
+  const { user, isLoading: isSessionLoading } = useAuth();
+  const mayReadUsers = hasCapability(user?.permissionCodes, "usr.users.read");
+  const mayReadRoles = hasCapability(user?.permissionCodes, "usr.roles.read");
+  const queriesEnabled = !isSessionLoading && mayReadUsers;
 
   const filters = { page, limit, name: query, status: status || undefined, roleId: roleId ? Number(roleId) : 0 };
-  const listQuery = useUsersList(filters);
-  const rolesQuery = useRolesOptions();
-  const detailQuery = useUserDetail(selectedId);
+  const listQuery = useUsersList(filters, queriesEnabled);
+  const rolesQuery = useRolesOptions(!isSessionLoading && mayReadRoles);
+  const detailQuery = useUserDetail(selectedId, queriesEnabled);
 
   const users = listQuery.data?.data ?? [];
   const total = listQuery.data?.total ?? 0;
-  const loading = listQuery.isPending;
+  const loading = isSessionLoading || listQuery.isPending;
   const error =
     listQuery.error
       ? getErrorMessage(listQuery.error, "No fue posible cargar los usuarios.")
@@ -91,13 +97,14 @@ export function UsersPage() {
   const hasActiveFilters = Boolean(query || status || roleId);
 
   return (
-    <PageContainer className="space-y-6">
-      <PageHeader
+    <AdministrativeListLayout
+      header={<PageHeader
+        className="gap-4 pb-5"
         context="Administración"
         title="Usuarios"
         description="Consulte personas, sus cuentas SGI y la afiliación disponible."
-      />
-      <UserFilters
+      />}
+      filters={<UserFilters
         name={name}
         onNameChange={setName}
         status={status}
@@ -116,13 +123,8 @@ export function UsersPage() {
           setQuery(name.trim());
         }}
         onClear={clearFilters}
-      />
-      <div className="flex flex-col gap-1 border-b border-border-subtle pb-3 sm:flex-row sm:items-baseline sm:justify-between">
-        <p className="text-body-small font-semibold text-text-primary">
-          {loading ? "Cargando resultados…" : `${total} ${total === 1 ? "persona encontrada" : "personas encontradas"}`}
-        </p>
-        <p className="text-body-small text-text-secondary">Desplácese horizontalmente para ver todas las columnas.</p>
-      </div>
+      />}
+    >
       {error ? <ErrorState message={error} action={<Button type="button" variant="outline" onClick={() => { void listQuery.refetch(); void rolesQuery.refetch(); }}>Reintentar</Button>} /> : null}
       {!error && loading ? (
         <LoadingState label="Cargando usuarios…" />
@@ -133,22 +135,22 @@ export function UsersPage() {
           action={hasActiveFilters ? <Button type="button" variant="outline" onClick={clearFilters}>Limpiar filtros</Button> : undefined}
         />
       ) : (
-        <>
-           <UsersTable users={users} onOpen={setSelectedId} onManage={(user, action) => setManagement({ user, action })} />
+        <AdministrativeListResults count={loading ? "Cargando resultados…" : `${total} ${total === 1 ? "persona encontrada" : "personas encontradas"}`}>
+          <UsersTable users={users} onOpen={setSelectedId} onManage={(user, action) => setManagement({ user, action })} />
           <Pagination
             page={page}
             total={total}
             limit={limit}
             onChange={setPage}
           />
-        </>
+        </AdministrativeListResults>
       )}
       {selectedId !== null && (
         <UserDetailsModal
           selected={selected}
           loading={detailQuery.isPending}
           error={detailQuery.error ? getErrorMessage(detailQuery.error, "No fue posible cargar el detalle de la persona.") : null}
-          onRetry={() => { void detailQuery.refetch(); }}
+        onRetry={() => { if (queriesEnabled) void detailQuery.refetch(); }}
           onClose={() => {
             setSelectedId(null);
           }}
@@ -165,6 +167,6 @@ export function UsersPage() {
         onChangeRole={(roleId) => management && mutation.mutate({ action: "role", user: management.user, payload: roleId })}
         onLifecycle={(action) => management && mutation.mutate({ action, user: management.user })}
       />
-    </PageContainer>
+    </AdministrativeListLayout>
   );
 }

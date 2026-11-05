@@ -8,6 +8,8 @@ const activationToken = {
   usedAt: null,
   expiresAt: new Date(Date.now() + 60 * 60_000),
   userStatus: 'INACTIVE',
+  userRoleName: 'Administrador',
+  purpose: 'LEGACY_ACCOUNT_ACTIVATION',
 };
 
 describe('ActivateAccountUseCase', () => {
@@ -75,6 +77,18 @@ describe('ActivateAccountUseCase', () => {
     ).rejects.toMatchObject({ code: 'ACTIVATION_TOKEN_EXPIRED' });
   });
 
+  it('rejects a community verification token without claiming or activating it', async () => {
+    repository.findActivationToken.mockResolvedValueOnce({
+      ...activationToken,
+      purpose: 'COMMUNITY_EMAIL_VERIFICATION',
+    });
+
+    await expect(
+      useCase.execute('token', 'Password1!', 'Password1!'),
+    ).rejects.toMatchObject({ code: 'INVALID_ACTIVATION_TOKEN' });
+    expect(repository.withTransaction).not.toHaveBeenCalled();
+  });
+
   it('throws an application error when the account is not INACTIVE', async () => {
     repository.findActivationToken.mockResolvedValueOnce({
       ...activationToken,
@@ -85,6 +99,20 @@ describe('ActivateAccountUseCase', () => {
       useCase.execute('token', 'Password1!', 'Password1!'),
     ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_ACTIVATED' });
   });
+
+  it.each(['Cuenta comunitaria', 'ROLE_COMMUNITY_USER'])(
+    'rejects legacy activation for community role %s',
+    async (role) => {
+      repository.findActivationToken.mockResolvedValueOnce({
+        ...activationToken,
+        userRoleName: role,
+      });
+      await expect(
+        useCase.execute('token', 'Password1!', 'Password1!'),
+      ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_ACTIVATED' });
+      expect(repository.withTransaction).not.toHaveBeenCalled();
+    },
+  );
 
   it('throws an application error when the claim fails in the transaction', async () => {
     tx.claimActivationToken.mockResolvedValueOnce(false);
@@ -112,7 +140,11 @@ describe('ActivateAccountUseCase', () => {
       expect.stringMatching(/^[0-9a-f]{64}$/),
     );
     expect(hasher.hash).toHaveBeenCalledWith('Password1!');
-    expect(tx.claimActivationToken).toHaveBeenCalledWith(10, expect.any(Date));
+    expect(tx.claimActivationToken).toHaveBeenCalledWith(
+      10,
+      expect.any(Date),
+      'LEGACY_ACCOUNT_ACTIVATION',
+    );
     expect(tx.activateUser).toHaveBeenCalledWith(5, 'hashed-password');
     expect(audit.record).toHaveBeenCalledWith({
       userId: 5,

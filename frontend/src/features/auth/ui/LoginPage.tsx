@@ -1,6 +1,7 @@
 import { Eye, EyeOff } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { communityAccountFeedback } from '@/features/community-accounts'
 import { homePathForRole } from '@/shared/security/roles'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { Button } from '@/shared/ui/button'
@@ -29,8 +30,8 @@ export function LoginPage() {
       const requested = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
       const authorizedRequest = requested && (!requested.startsWith('/app') || user.canAccessErp) ? requested : undefined
       navigate(authorizedRequest || homePathForRole(user.role, user.canAccessErp), { replace: true })
-    } catch {
-      setError('No fue posible iniciar sesión. Verifique sus credenciales.')
+    } catch (error) {
+      setError(communityAccountFeedback(error, 'login').message)
     } finally {
       submitting.current = false
       setLoading(false)
@@ -63,7 +64,7 @@ export function LoginPage() {
       </form>
       <div className="mt-8 border-t border-border-subtle pt-6 text-center">
         <p className="text-sm text-foreground-muted">¿Todavía no tiene una cuenta?</p>
-        <Link className="mt-2 inline-flex min-h-11 items-center rounded-sm font-bold text-brand-green underline-offset-4 hover:text-brand-red hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red" to="/register">Solicitar una cuenta</Link>
+        <Link className="mt-2 inline-flex min-h-11 items-center rounded-sm font-bold text-brand-green underline-offset-4 hover:text-brand-red hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red" to="/register">Crear cuenta comunitaria</Link>
       </div>
     </main>
   )

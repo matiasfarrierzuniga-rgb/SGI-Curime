@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { useState, type ReactNode } from 'react'
 import { ArrowLeft, BriefcaseBusiness, CalendarDays, ExternalLink, Globe2, LayoutGrid, Mail, MapPin, Pencil, Phone, Plus, Search, TableProperties, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -27,7 +28,7 @@ const stateVariant = (value: string) => value === 'ACTIVE' || value === 'PUBLISH
 const date = (value: string) => new Intl.DateTimeFormat('es-CR', { dateStyle: 'medium' }).format(new Date(value))
 
 export function VenturesPage() {
-  const { user } = useAuth()
+  const { user, isLoading: isSessionLoading } = useAuth()
   const { notify } = useToast()
   const { publish, unpublish } = useVentureMutations()
   const [filters, setFilters] = useState(INITIAL_FILTERS)
@@ -40,8 +41,10 @@ export function VenturesPage() {
   const [creating, setCreating] = useState(false)
   const [publishTarget, setPublishTarget] = useState<Venture>()
   const [publicationError, setPublicationError] = useState('')
-  const ventures = useVentures(filters)
-  const detail = useVenture(selectedId)
+  const mayRead = hasCapability(user?.permissionCodes, 'ent.ventures.read')
+  const queriesEnabled = !isSessionLoading && mayRead
+  const ventures = useVentures(filters, queriesEnabled)
+  const detail = useVenture(selectedId, queriesEnabled)
   const mayCreate = hasCapability(user?.permissionCodes, 'ent.ventures.create')
   const mayUpdate = hasCapability(user?.permissionCodes, 'ent.ventures.update')
   const mayPublish = hasCapability(user?.permissionCodes, 'ent.ventures.publish')
@@ -84,9 +87,9 @@ export function VenturesPage() {
       </CardContent>
     </Card>
 
-    {ventures.isPending ? <LoadingState label="Cargando emprendimientos..." /> : null}
+    {isSessionLoading || ventures.isPending ? <LoadingState label="Cargando emprendimientos..." /> : null}
     {ventures.isError ? <ErrorState title="No fue posible cargar los emprendimientos" message={getErrorMessage(ventures.error)} action={<Button type="button" variant="outline" onClick={() => void ventures.refetch()}>Reintentar</Button>} /> : null}
-    {!ventures.isPending && !ventures.isError ? <>
+    {!isSessionLoading && !ventures.isPending && !ventures.isError ? <>
       <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-body font-semibold text-text-primary" aria-live="polite">{venturesFound} {venturesFound === 1 ? 'emprendimiento encontrado' : 'emprendimientos encontrados'}</p>
         <div className="hidden items-center rounded-lg border border-border bg-surface-subtle p-1 md:flex" aria-label="Modo de visualización" role="group">
@@ -113,7 +116,7 @@ function VentureCards({ ventures, onDetail }: { ventures: Venture[]; onDetail: (
 }
 
 function VentureTable({ ventures, onDetail }: { ventures: Venture[]; onDetail: (id: number) => void }) {
-  return <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block"><table className="min-w-[52rem] w-full text-left text-body-small"><thead className="bg-surface-subtle text-text-secondary"><tr><th scope="col" className="p-4 font-semibold">Emprendimiento</th><th scope="col" className="p-4 font-semibold">Estado</th><th scope="col" className="p-4 font-semibold">Publicación</th><th scope="col" className="p-4 font-semibold">Incorporación</th><th scope="col" className="p-4"><span className="sr-only">Acciones</span></th></tr></thead><tbody>{ventures.map(venture => <tr key={venture.id} className="border-t border-border align-middle transition-colors hover:bg-surface-subtle/70"><td className="p-4"><p className="font-semibold text-text-primary">{venture.name}</p><p className="mt-1 max-w-md truncate text-text-secondary">{venture.locationText ?? venture.businessPhone ?? 'Sin información de ubicación o contacto'}</p></td><td className="p-4"><StatusBadge variant={stateVariant(venture.status)}>{stateLabel(venture.status)}</StatusBadge></td><td className="p-4"><StatusBadge variant={stateVariant(venture.publicationStatus)}>{stateLabel(venture.publicationStatus)}</StatusBadge></td><td className="whitespace-nowrap p-4 text-text-secondary">{date(venture.incorporatedAt)}</td><td className="p-4 text-right"><Button type="button" size="sm" variant="outline" onClick={() => onDetail(venture.id)}>Ver detalle</Button></td></tr>)}</tbody></table></div>
+  return <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block"><DataTable className="min-w-[52rem] w-full text-left text-body-small"><DataTableHeader className="bg-surface-subtle text-text-secondary"><DataTableRow><DataTableHead scope="col" className="p-4 font-semibold">Emprendimiento</DataTableHead><DataTableHead scope="col" className="p-4 font-semibold">Estado</DataTableHead><DataTableHead scope="col" className="p-4 font-semibold">Publicación</DataTableHead><DataTableHead scope="col" className="p-4 font-semibold">Incorporación</DataTableHead><DataTableHead scope="col" className="p-4"><span className="sr-only">Acciones</span></DataTableHead></DataTableRow></DataTableHeader><DataTableBody>{ventures.map(venture => <DataTableRow key={venture.id} className="border-t border-border align-middle transition-colors hover:bg-surface-subtle/70"><DataTableCell className="p-4"><p className="font-semibold text-text-primary">{venture.name}</p><p className="mt-1 max-w-md truncate text-text-secondary">{venture.locationText ?? venture.businessPhone ?? 'Sin información de ubicación o contacto'}</p></DataTableCell><DataTableCell className="p-4"><StatusBadge variant={stateVariant(venture.status)}>{stateLabel(venture.status)}</StatusBadge></DataTableCell><DataTableCell className="p-4"><StatusBadge variant={stateVariant(venture.publicationStatus)}>{stateLabel(venture.publicationStatus)}</StatusBadge></DataTableCell><DataTableCell className="whitespace-nowrap p-4 text-text-secondary">{date(venture.incorporatedAt)}</DataTableCell><DataTableCell className="p-4 text-right"><Button type="button" size="sm" variant="outline" onClick={() => onDetail(venture.id)}>Ver detalle</Button></DataTableCell></DataTableRow>)}</DataTableBody></DataTable></div>
 }
 
 function VentureDetail({ venture, loading, error, publicationError, onClose, onEdit, mayPublish, publicationBusy, onPublish, onUnpublish }: { venture?: Venture; loading: boolean; error: string; publicationError: string; onClose: () => void; onEdit?: () => void; mayPublish: boolean; publicationBusy: boolean; onPublish: (venture: Venture) => void; onUnpublish: (venture: Venture) => void }) {

@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { CheckCircle2, CirclePause, CircleX, Search, Store, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@/features/auth'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { hasCapability } from '@/shared/security/access'
 import { Button, buttonVariants } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader } from '@/shared/ui/card'
 import { EmptyState } from '@/shared/ui/EmptyState'
@@ -26,15 +28,17 @@ const statusMetadata: Record<VentureStatus, { label: string; description: string
 }
 
 export function VenturesSummaryPage() {
+  const { user, isLoading: isSessionLoading } = useAuth()
+  const queriesEnabled = !isSessionLoading && hasCapability(user?.permissionCodes, 'ent.ventures.read')
   const [filters, setFilters] = useState<VenturesFilters>(INITIAL_FILTERS)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<VentureStatus | undefined>()
   const [publicationStatus, setPublicationStatus] = useState<VenturePublicationStatus | undefined>()
-  const filtered = useVentures(filters)
-  const activePublished = useVentures({ ...SUMMARY_PAGE, search: filters.search, status: 'ACTIVE', publicationStatus: 'PUBLISHED' })
-  const active = useVentures({ ...SUMMARY_PAGE, search: filters.search, status: 'ACTIVE', publicationStatus: filters.publicationStatus })
-  const suspended = useVentures({ ...SUMMARY_PAGE, search: filters.search, status: 'SUSPENDED', publicationStatus: filters.publicationStatus })
-  const closed = useVentures({ ...SUMMARY_PAGE, search: filters.search, status: 'CLOSED', publicationStatus: filters.publicationStatus })
+  const filtered = useVentures(filters, queriesEnabled)
+  const activePublished = useVentures({ ...SUMMARY_PAGE, search: filters.search, status: 'ACTIVE', publicationStatus: 'PUBLISHED' }, queriesEnabled)
+  const active = useVentures({ ...SUMMARY_PAGE, search: filters.search, status: 'ACTIVE', publicationStatus: filters.publicationStatus }, queriesEnabled)
+  const suspended = useVentures({ ...SUMMARY_PAGE, search: filters.search, status: 'SUSPENDED', publicationStatus: filters.publicationStatus }, queriesEnabled)
+  const closed = useVentures({ ...SUMMARY_PAGE, search: filters.search, status: 'CLOSED', publicationStatus: filters.publicationStatus }, queriesEnabled)
   const queries = [filtered, activePublished, active, suspended, closed]
   const filtersActive = Boolean(filters.search || filters.status || filters.publicationStatus)
   const pending = queries.some((query) => query.isPending)
@@ -58,9 +62,9 @@ export function VenturesSummaryPage() {
       </CardContent>
     </Card>
 
-    {pending ? <LoadingState label="Cargando resumen de emprendimientos..." /> : null}
+    {isSessionLoading || pending ? <LoadingState label="Cargando resumen de emprendimientos..." /> : null}
     {failed ? <ErrorState title="No fue posible cargar el resumen" message={getErrorMessage(failed.error)} action={<Button type="button" variant="outline" onClick={retry}>Reintentar</Button>} /> : null}
-    {!pending && !failed && filtered.data && activePublished.data && active.data && suspended.data && closed.data ? <SummaryContent filtersActive={filtersActive} filteredTotal={filtered.data.total} activePublishedTotal={activePublished.data.total} statusTotals={{ ACTIVE: active.data.total, SUSPENDED: suspended.data.total, CLOSED: closed.data.total }} /> : null}
+    {!isSessionLoading && !pending && !failed && filtered.data && activePublished.data && active.data && suspended.data && closed.data ? <SummaryContent filtersActive={filtersActive} filteredTotal={filtered.data.total} activePublishedTotal={activePublished.data.total} statusTotals={{ ACTIVE: active.data.total, SUSPENDED: suspended.data.total, CLOSED: closed.data.total }} /> : null}
   </section>
 }
 

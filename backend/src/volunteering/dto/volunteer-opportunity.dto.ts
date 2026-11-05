@@ -17,23 +17,73 @@ const trim = ({ value }: { value: unknown }) =>
 
 export class CreateVolunteerOpportunityDto {
   @Transform(trim) @IsString() @IsNotEmpty() @MaxLength(200) title: string;
-  @Transform(trim) @IsOptional() @IsString() @IsNotEmpty() @MaxLength(5000) description?: string;
-  @Transform(trim) @IsOptional() @IsString() @IsNotEmpty() @MaxLength(500) location?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(5000)
+  description?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  location?: string;
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) capacity?: number;
   @Type(() => Date) @IsOptional() @IsDate() applicationDeadline?: Date;
 }
 
 export class UpdateVolunteerOpportunityDto {
-  @Transform(trim) @IsOptional() @IsString() @IsNotEmpty() @MaxLength(200) title?: string;
-  @Transform(trim) @IsOptional() @IsString() @IsNotEmpty() @MaxLength(5000) description?: string;
-  @Transform(trim) @IsOptional() @IsString() @IsNotEmpty() @MaxLength(500) location?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  title?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(5000)
+  description?: string;
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  location?: string;
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) capacity?: number;
   @Type(() => Date) @IsOptional() @IsDate() applicationDeadline?: Date;
 }
 
 export class QueryVolunteerOpportunitiesDto {
   @Transform(trim) @IsOptional() @IsString() @MaxLength(200) search?: string;
-  @IsOptional() @IsEnum(VolunteerOpportunityStatus) status?: VolunteerOpportunityStatus;
+  @IsOptional()
+  @IsEnum(VolunteerOpportunityStatus)
+  status?: VolunteerOpportunityStatus;
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) page = 1;
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(100) limit = 20;
+}
+
+export class QueryPublicVolunteerOpportunitiesDto {
+  @Transform(trim) @IsOptional() @IsString() @MaxLength(200) search?: string;
+  @Type(() => Number) @IsOptional() @IsInt() @Min(1) page = 1;
+  @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(100) limit = 20;
+}
+
+export class CreateVolunteerSessionDto {
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  title?: string;
+
+  @Type(() => Date)
+  @IsDate()
+  startAt: Date;
+
+  @Type(() => Date)
+  @IsDate()
+  endAt: Date;
 }

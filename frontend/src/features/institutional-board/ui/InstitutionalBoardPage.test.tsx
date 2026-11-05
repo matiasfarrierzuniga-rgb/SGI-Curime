@@ -5,13 +5,14 @@ import { InstitutionalBoardPage } from './InstitutionalBoardPage'
 const createTerm = vi.fn().mockResolvedValue({})
 const createAppointment = vi.fn().mockResolvedValue({})
 const updateAppointment = vi.fn().mockResolvedValue({})
+const replaceAppointment = vi.fn().mockResolvedValue({})
 const updateTerm = vi.fn().mockResolvedValue({})
 let permissionCodes = ['adm.institutional-board.manage']
 vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes } }) }))
 vi.mock('../hooks/institutionalBoard.queries', () => ({
   useBoardTerms: () => ({ data: [{ id: 1, startsOn: '2026-01-01', endsOn: '2027-12-31', appointments: [{ id: 2, boardTermId: 1, personId: 8, position: 'PRESIDENT', seatNumber: null, startsOn: null, endsOn: null, person: { id: 8, firstName: 'Persona', firstSurname: 'Ficticia', secondSurname: null, legacyFullName: null } }] }], isPending: false, isError: false }),
   usePersonCandidates: () => ({ data: [{ id: 9, displayName: 'Otra Persona', identificationType: 'NATIONAL', identificationHint: '••••0001' }] }),
-  useBoardMutations: () => ({ createTerm: { mutateAsync: createTerm, isPending: false }, updateTerm: { mutateAsync: updateTerm, isPending: false }, createAppointment: { mutateAsync: createAppointment, isPending: false }, updateAppointment: { mutateAsync: updateAppointment, isPending: false } }),
+  useBoardMutations: () => ({ createTerm: { mutateAsync: createTerm, isPending: false }, updateTerm: { mutateAsync: updateTerm, isPending: false }, createAppointment: { mutateAsync: createAppointment, isPending: false }, updateAppointment: { mutateAsync: updateAppointment, isPending: false }, replaceAppointment: { mutateAsync: replaceAppointment, isPending: false } }),
 }))
 
 describe('InstitutionalBoardPage', () => {
@@ -48,6 +49,14 @@ describe('InstitutionalBoardPage', () => {
     expect(screen.getByText('Persona Ficticia')).toBeInTheDocument()
     expect(screen.getByLabelText(/Buscar persona/)).toBeInTheDocument()
   })
+  it('substitutes an active appointment through one guided mutation', async () => {
+    render(<InstitutionalBoardPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Sustituir' }))
+    fireEvent.change(screen.getByLabelText('Finalización del nombramiento anterior'), { target: { value: '2026-12-31' } })
+    fireEvent.click(screen.getByRole('button', { name: /Otra Persona/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar sustitución' }))
+    await waitFor(() => expect(replaceAppointment).toHaveBeenCalledWith({ id: 2, input: expect.objectContaining({ personId: 9, replacedEndsOn: '2026-12-31' }) }))
+  })
   it('keeps board data readable and hides every mutation control without management permission', () => {
     permissionCodes = []
     render(<InstitutionalBoardPage />)
@@ -58,6 +67,7 @@ describe('InstitutionalBoardPage', () => {
     expect(screen.queryByText('Actualizar período seleccionado')).not.toBeInTheDocument()
     expect(screen.queryByText('Agregar nombramiento')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sustituir' })).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/Buscar persona/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Guardar fechas|Crear período|Guardar cambios|Cancelar/ })).not.toBeInTheDocument()
   })

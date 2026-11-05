@@ -15,10 +15,7 @@ export type ReportDataSource =
   | 'DONATION'
   | 'ASSEMBLY';
 
-export type ReportDataSources = readonly [
-  ReportDataSource,
-  ...ReportDataSource[],
-];
+export type ReportDataSources = readonly ReportDataSource[];
 
 export interface ReportGeneratedBy {
   id: number;

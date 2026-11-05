@@ -7,6 +7,8 @@ export interface AuthAccount {
   lockedAt: Date | null;
   failedLoginAttempts: number;
   lastLoginAt: Date | null;
+  sessionsInvalidBefore?: Date | null;
+  sessionGeneration: number;
   roleName: string;
   roleId: number;
   roleIsActive: boolean;
@@ -23,6 +25,8 @@ export interface ActivationToken {
   usedAt: Date | null;
   expiresAt: Date;
   userStatus: string;
+  purpose: 'LEGACY_ACCOUNT_ACTIVATION' | 'COMMUNITY_EMAIL_VERIFICATION';
+  userRoleName: string;
 }
 
 export interface ResetToken {

@@ -42,7 +42,9 @@ describe('RolesController (e2e)', () => {
     role = 'Administrador';
     permissionCodes = undefined;
     jest.clearAllMocks();
-    listRoles.execute.mockResolvedValue([{ id: 1, name: 'Administrador' }]);
+    listRoles.execute.mockResolvedValue([
+      { id: 1, name: 'ROLE_SYSTEM_ADMIN' },
+    ]);
     const module = await Test.createTestingModule({ imports: [RolesModule] })
       .overrideProvider(PrismaService)
       .useValue(prisma)
@@ -78,7 +80,13 @@ describe('RolesController (e2e)', () => {
       .get('/roles')
       .set('Authorization', await auth())
       .expect(200)
-      .expect([{ id: 1, name: 'Administrador' }]);
+      .expect([
+        {
+          id: 1,
+          name: 'ROLE_SYSTEM_ADMIN',
+          label: 'Administrador del sistema',
+        },
+      ]);
   });
 
   it('returns the active safe role catalog to administrators', async () => {
@@ -86,7 +94,13 @@ describe('RolesController (e2e)', () => {
       .get('/roles')
       .set('Authorization', await auth())
       .expect(200)
-      .expect([{ id: 1, name: 'Administrador' }]);
+      .expect([
+        {
+          id: 1,
+          name: 'ROLE_SYSTEM_ADMIN',
+          label: 'Administrador del sistema',
+        },
+      ]);
     expect(listRoles.execute).toHaveBeenCalledTimes(1);
   });
 });

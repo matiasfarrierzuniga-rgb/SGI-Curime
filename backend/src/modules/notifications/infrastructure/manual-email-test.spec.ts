@@ -9,6 +9,7 @@ import {
 
 const validEnvironment = {
   EMAIL_PROVIDER: 'gmail-app-password',
+  NODE_ENV: 'test',
   EMAIL_SEND_ENABLED: 'true',
   EMAIL_FROM: 'notificaciones@example.test',
   EMAIL_FROM_NAME: 'Asociación de Desarrollo Integral de Curime',
@@ -55,7 +56,7 @@ describe('manual email test', () => {
     expect(harness.send).not.toHaveBeenCalled();
   });
 
-  it('refuses delivery for a non-Gmail provider', async () => {
+  it('refuses delivery for an unsupported provider', async () => {
     const harness = createHarness({
       ...validEnvironment,
       EMAIL_PROVIDER: 'fake',
@@ -66,8 +67,27 @@ describe('manual email test', () => {
         recipient: 'recipient@example.test',
         ...harness,
       }),
-    ).rejects.toThrow('EMAIL_PROVIDER must be gmail-app-password');
+    ).rejects.toThrow('EMAIL_PROVIDER must be gmail-app-password or resend');
     expect(harness.providerFactory).not.toHaveBeenCalled();
+  });
+
+  it('accepts an explicitly configured Resend QA delivery', async () => {
+    const harness = createHarness({
+      EMAIL_PROVIDER: 'resend',
+      NODE_ENV: 'test',
+      EMAIL_SEND_ENABLED: 'true',
+      EMAIL_FROM: 'onboarding@resend.dev',
+      RESEND_API_KEY: 'resend-api-key-secret',
+      RESEND_QA_ALLOWED_RECIPIENT: 'recipient@example.test',
+    });
+
+    await runManualEmailTest({
+      recipient: 'recipient@example.test',
+      ...harness,
+    });
+
+    expect(harness.providerFactory).toHaveBeenCalledTimes(1);
+    expect(harness.send).toHaveBeenCalledTimes(1);
   });
 
   it('fails with variable names when required configuration is missing', async () => {

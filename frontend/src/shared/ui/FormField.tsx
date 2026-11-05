@@ -6,6 +6,8 @@ type ControlProps = {
   id?: string
   "aria-describedby"?: string
   "aria-invalid"?: boolean | "true" | "false"
+  "aria-required"?: boolean | "true" | "false"
+  required?: boolean
 }
 
 type FormFieldProps = Omit<ComponentProps<"div">, "children" | "id"> & {
@@ -32,6 +34,8 @@ function FormField({
   const describedBy = [children.props["aria-describedby"], descriptionId, errorId].filter(Boolean).join(" ") || undefined
   const control = cloneElement(children, {
     id,
+    required: required || children.props.required,
+    "aria-required": required ? true : children.props["aria-required"],
     "aria-describedby": describedBy,
     "aria-invalid": error ? true : children.props["aria-invalid"],
   })

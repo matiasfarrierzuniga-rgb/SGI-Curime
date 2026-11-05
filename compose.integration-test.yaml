@@ -1,12 +1,12 @@
 services:
   postgres:
-    image: postgres:17.5-alpine
+    image: postgres:17
     environment:
       POSTGRES_DB: sgi_curime_integration_test
       POSTGRES_USER: sgi_curime_test
       POSTGRES_PASSWORD: sgi_curime_test_password
     ports:
-      - "${TEST_POSTGRES_PORT}:5432"
+      - "127.0.0.1:${TEST_POSTGRES_PORT}:5432"
     tmpfs:
       - /var/lib/postgresql/data:rw,noexec,nosuid,size=256m
     labels:

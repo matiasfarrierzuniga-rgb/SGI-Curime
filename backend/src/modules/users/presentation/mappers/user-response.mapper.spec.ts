@@ -18,7 +18,12 @@ const domainUser = {
   subscriptionExpirationDate: null,
   lockedAt: null,
   roleId: 2,
-  role: { id: 2, name: 'Tesorero', description: null, isActive: true },
+  role: {
+    id: 2,
+    name: 'ROLE_INSTITUTIONAL_TREASURER',
+    description: null,
+    isActive: true,
+  },
   personId: null,
   affiliateId: null,
   person: null,
@@ -34,6 +39,10 @@ describe('user-response.mapper', () => {
     expect(response.isBlocked).toBe(false);
     expect(response.isTemporarilyLocked).toBe(false);
     expect(response.isAdministrativelyBlocked).toBe(false);
+    expect(response.role).toMatchObject({
+      name: 'ROLE_INSTITUTIONAL_TREASURER',
+      label: 'Tesorería institucional',
+    });
   });
 
   it('marks a blocked user as administratively blocked', () => {
@@ -54,6 +63,18 @@ describe('user-response.mapper', () => {
 
     expect(response.isBlocked).toBe(true);
     expect(response.isTemporarilyLocked).toBe(true);
+  });
+
+  it('keeps historical users with legacy roles readable', () => {
+    const response = toUserResponse({
+      ...domainUser,
+      role: { ...domainUser.role, name: 'Administrador' },
+    });
+
+    expect(response.role).toMatchObject({
+      name: 'Administrador',
+      label: 'Administrador',
+    });
   });
 
   it('separates canonical Person contact from linked User access email', () => {
@@ -78,7 +99,11 @@ describe('user-response.mapper', () => {
         id: 2,
         email: 'access@example.com',
         status: 'ACTIVE',
-        role: { id: 2, name: 'Tesorero' },
+        role: {
+          id: 2,
+          name: 'ROLE_INSTITUTIONAL_TREASURER',
+          label: 'Tesorería institucional',
+        },
       },
       affiliate: { id: '22', status: 'ACTIVE', legacyRoleId: 4 },
     });

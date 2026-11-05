@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { Building2, CalendarDays, FileText, Landmark, Pencil, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
@@ -180,11 +181,11 @@ function FieMovements({ title, lines, count, capacity, overflow, direction }: { 
         {overflow && <p role="alert" className="text-sm font-semibold text-status-warning">El formulario oficial no tiene espacio suficiente para representar individualmente todos los movimientos de {direction}. Se conserva el detalle completo; la estrategia de consolidación requiere validación con la ADI.</p>}
         {lines.length === 0 ? <p className="text-sm text-foreground-muted">No se registraron movimientos de {direction} en el período.</p> : (
           <div className="overflow-x-auto" tabIndex={0} aria-label={`Detalle de ${title.toLowerCase()} para preparar el FIE`}>
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <caption className="sr-only">Detalle de {title.toLowerCase()} para preparar el FIE</caption>
-              <thead><tr>{['Fecha', 'Descripción', 'Fuente', 'Monto'].map((label) => <th key={label} scope="col" className="p-3 text-left">{label}</th>)}</tr></thead>
-              <tbody>{lines.map((line) => <tr key={line.id} className="border-t border-border-default"><td className="p-3 whitespace-nowrap">{formatFinancialDate(line.occurredAt)}</td><td className="p-3 break-words">{line.description}</td><td className="p-3">{financialMovementSourceLabel(line.source)}</td><td className="p-3 text-right whitespace-nowrap tabular-nums">{formatFinancialCurrency(line.amount)}</td></tr>)}</tbody>
-            </table>
+              <DataTableHeader><DataTableRow>{['Fecha', 'Descripción', 'Fuente', 'Monto'].map((label) => <DataTableHead key={label} scope="col" className="p-3 text-left">{label}</DataTableHead>)}</DataTableRow></DataTableHeader>
+              <DataTableBody>{lines.map((line) => <DataTableRow key={line.id} className="border-t border-border-default"><DataTableCell className="p-3 whitespace-nowrap">{formatFinancialDate(line.occurredAt)}</DataTableCell><DataTableCell className="p-3 break-words">{line.description}</DataTableCell><DataTableCell className="p-3">{financialMovementSourceLabel(line.source)}</DataTableCell><DataTableCell className="p-3 text-right whitespace-nowrap tabular-nums">{formatFinancialCurrency(line.amount)}</DataTableCell></DataTableRow>)}</DataTableBody>
+            </DataTable>
           </div>
         )}
       </CardContent>

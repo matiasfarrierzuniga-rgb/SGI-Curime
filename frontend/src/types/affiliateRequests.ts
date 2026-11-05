@@ -13,6 +13,7 @@ export interface AffiliateRequest {
 export interface CreateAffiliateRequest {
   identificationType: IdentificationType; identification: string; firstName: string; firstSurname: string; secondSurname?: string;
   birthDate: string; gender?: string; phoneCountryCode?: string; phoneNationalNumber?: string; email?: string; address: string;
+  provinceCode?: string; cantonCode?: string; districtCode?: string; community?: string; catalogVersion?: string; localityKey?: string;
   occupation?: string; workplace?: string; affiliationReason: string;
 }
 export interface AffiliateRequestQuery { status?: AffiliateRequestStatus; search?: string; page: number; limit: number }

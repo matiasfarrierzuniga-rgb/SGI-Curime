@@ -11,6 +11,7 @@ import type {
   FinancialMovementSummary,
   PaginatedFinancialCharges,
   RecordPaymentInput,
+  TreasurySummary,
 } from '../model/financial.types'
 
 export const financialApi = {
@@ -20,6 +21,7 @@ export const financialApi = {
   async listMovements(filters: FinancialMovementListFilters) { return (await httpClient.get<FinancialMovementListResponse>('/financial/movements', { params: filters })).data },
   async getMovement(id: number) { return (await httpClient.get<FinancialMovementDetail>(`/financial/movements/${id}`)).data },
   async getMovementSummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) { return (await httpClient.get<FinancialMovementSummary>('/financial/movements/summary', { params: filters })).data },
+  async getTreasurySummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) { return (await httpClient.get<TreasurySummary>('/financial/treasury/summary', { params: filters })).data },
   async createMovement(payload: CreateFinancialMovementInput) { return (await httpClient.post<FinancialMovement>('/financial/movements', payload)).data },
   async getDinadecoAnnualReport(year: number) { return (await httpClient.get<DinadecoAnnualReport>('/financial/reports/dinadeco/annual', { params: { year } })).data },
 }

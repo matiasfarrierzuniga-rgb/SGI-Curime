@@ -11,8 +11,8 @@ import { ForgotPasswordPage } from '@/features/auth'
 import { LoginPage } from '@/features/auth'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProfilePage } from '@/features/profile'
-import { RegisterPage } from '@/features/user-requests'
 import { TokenPasswordPage } from '@/features/auth'
+import { CommunityEmailVerificationPage, CommunityHomePage, CommunityRegistrationPage } from '@/features/community-accounts'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
 import { UserRequestsPage } from '@/pages/admin/UserRequestsPage'
 import { UsersPage } from '@/features/users'
@@ -29,21 +29,20 @@ import { AboutPage, CommunityPage, ContactPage, NewsDetailPage, NewsPage, Servic
 import { AffiliationPage } from '@/pages/public/AffiliationPage'
 import { LandingPage } from '@/features/public-site'
 import { AppHomePage } from '@/pages/erp/AppHomePage'
-import { ErpPlaceholderPage } from '@/pages/erp/ErpPlaceholderPage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
-import { DinadecoAnnualReportPage, FinancialMovementsPage, FinancialPage } from '@/features/financial'
+import { DinadecoAnnualReportPage, FinancialDashboardPage, FinancialMovementsPage, FinancialPage, TreasuryPage } from '@/features/financial'
 import { DonationsPage } from '@/features/donations'
 import { AssembliesAdminPage, AssemblyManagementPage, MineAssembliesPage } from '@/features/assemblies'
 import { InstitutionalProfilePage } from '@/features/institutional-profile'
 import { InstitutionalBoardPage } from '@/features/institutional-board'
 import { PublicVentureDetailPage, PublicVenturesPage, VenturesPage, VenturesSummaryPage } from '@/features/entrepreneurship'
-import { OpportunitiesPage } from '@/features/volunteering'
+import { OpportunitiesPage, PublicOpportunitiesPage, PublicOpportunityDetailPage } from '@/features/volunteering'
 import { getErpEntryPath } from '@/app/navigation/erpNavigation'
 import { NotificationsPage } from '@/features/notifications'
 
 function ErpEntryRedirect() {
   const { user } = useAuth()
-  return <Navigate to={getErpEntryPath(user?.permissionCodes)} replace />
+  return <Navigate to={getErpEntryPath(user?.permissionCodes, user?.role)} replace />
 }
 
 export function AppRoutes() {
@@ -59,6 +58,8 @@ export function AppRoutes() {
         <Route path="/eventos/:publicId" element={<PublicEventDetailPage />} />
         <Route path="/ventures" element={<PublicVenturesPage />} />
         <Route path="/ventures/:id" element={<PublicVentureDetailPage />} />
+        <Route path="/voluntariado" element={<PublicOpportunitiesPage />} />
+        <Route path="/voluntariado/:id" element={<PublicOpportunityDetailPage />} />
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/transparencia" element={<TransparencyPage />} />
         <Route path="/contacto" element={<ContactPage />} />
@@ -66,7 +67,8 @@ export function AppRoutes() {
       </Route>
       <Route element={<AccessLayout />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<CommunityRegistrationPage />} />
+        <Route path="/verify-community-email" element={<CommunityEmailVerificationPage />} />
         <Route path="/activate-account" element={<TokenPasswordPage mode="activate" />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<TokenPasswordPage mode="reset" />} />
@@ -74,6 +76,7 @@ export function AppRoutes() {
       <Route path="/403" element={<ForbiddenPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<PublicLayout />}>
+          <Route path="/mi-comunidad" element={<CommunityHomePage />} />
           <Route path="/servicios/reservas" element={<ReservationRequestPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
@@ -84,7 +87,9 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="erp.dashboard.read" />}>
             <Route path="/app/dashboard" element={<AppHomePage />} />
           </Route>
-          <Route path="/app/profile" element={<ProfilePage />} />
+          <Route element={<RoleRoute capability="usr.profile.read" />}>
+            <Route path="/app/profile" element={<ProfilePage />} />
+          </Route>
           <Route path="/app/notifications" element={<NotificationsPage />} />
            <Route element={<RoleRoute capability="res.reservations.read" />}>
              <Route path="/app/reservations" element={<ReservationAdminPage />} />
@@ -92,8 +97,14 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="don.donations.read" />}>
             <Route path="/app/donations" element={<DonationsPage />} />
           </Route>
+          <Route element={<RoleRoute allOfCapabilities={['fin.movements.read', 'fin.charges.read']} />}>
+            <Route path="/app/financial" element={<TreasuryPage />} />
+          </Route>
           <Route element={<RoleRoute capability="fin.charges.read" />}>
-            <Route path="/app/financial" element={<FinancialPage />} />
+            <Route path="/app/financial/charges" element={<FinancialPage />} />
+          </Route>
+          <Route element={<RoleRoute anyOfCapabilities={['fin.movements.read', 'fin.charges.read']} />}>
+            <Route path="/app/financial/dashboard" element={<FinancialDashboardPage />} />
           </Route>
           <Route element={<RoleRoute capability="fin.movements.read" />}>
             <Route path="/app/financial/movements" element={<FinancialMovementsPage />} />
@@ -104,19 +115,16 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="usr.users.read" />}>
             <Route path="/admin/users" element={<UsersPage />} />
           </Route>
-          <Route element={<RoleRoute capability="usr.roles.read" />}>
-            <Route path="/app/roles" element={<ErpPlaceholderPage title="Roles" />} />
-          </Route>
           <Route element={<RoleRoute capability="adm.affiliates.read" />}>
             <Route path="/app/admin/affiliates" element={<AffiliatesPage />} />
           </Route>
-          <Route element={<RoleRoute capability="adm.requests.read" />}>
+          <Route element={<RoleRoute capability="padron.application.review" />}>
             <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />
           </Route>
           <Route element={<RoleRoute capability="usr.user-requests.read" />}>
             <Route path="/admin/user-requests" element={<UserRequestsPage />} />
           </Route>
-          <Route element={<RoleRoute capability="adm.assemblies.read" />}>
+          <Route element={<RoleRoute anyOfCapabilities={['governance.assembly.session', 'adm.assemblies.read']} />}>
             <Route path="/app/admin/assemblies" element={<AssembliesAdminPage />} />
             <Route path="/app/admin/assemblies/:id" element={<AssemblyManagementPage />} />
           </Route>
@@ -142,7 +150,7 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="aud.logs.read" />}>
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
           </Route>
-          <Route element={<RoleRoute capability="pub.events.manage" />}>
+          <Route element={<RoleRoute anyOfCapabilities={['events.proposal.create', 'events.proposal.review', 'events.proposal.approve', 'events.publish', 'pub.events.manage']} />}>
             <Route path="/app/events" element={<EventsManagementPage />} />
           </Route>
           <Route element={<RoleRoute capability="inv.inventory.read" />}>

@@ -109,11 +109,17 @@ model RolePermission {
 model User {
   id                          Int                      @id @default(autoincrement())
   fullName                    String
-  identification              String                   @unique
+  firstName                   String?
+  firstSurname                String?
+  secondSurname               String?
+  identification              String?                  @unique
   email                       String                   @unique
   phone                       String?
   address                     String?
   passwordHash                String?
+  communityEmailVerifiedAt    DateTime?
+  sessionsInvalidBefore       DateTime?
+  sessionGeneration           Int                      @default(0)
   status                      UserStatus               @default(ACTIVE)
   failedLoginAttempts         Int                      @default(0)
   lockedAt                    DateTime?
@@ -225,6 +231,7 @@ model AccountActivationToken {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
+  purpose   AccountActivationTokenPurpose @default(LEGACY_ACCOUNT_ACTIVATION)
   userId    Int
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -336,6 +343,15 @@ model AffiliateRequest {
   submittedOccupation          String?
   submittedWorkplace           String?
   submittedAffiliationReason   String?
+  submittedProvinceCode        String?
+  submittedCantonCode          String?
+  submittedDistrictCode        String?
+  submittedCommunity           String?
+  submittedLocalityKey         String?
+  submittedLocalityCategory    String?
+  submittedTerritorialSource   String?
+  submittedTerritorialVersion  String?
+  submittedTerritorialIntegrity String?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   reviewedBy          User?               @relation("AffiliateRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -1151,7 +1167,13 @@ enum NotificationResourceType {
 enum UserStatus {
   ACTIVE
   INACTIVE
+  PENDING_EMAIL_VERIFICATION
   BLOCKED
+}
+
+enum AccountActivationTokenPurpose {
+  LEGACY_ACCOUNT_ACTIVATION
+  COMMUNITY_EMAIL_VERIFICATION
 }
 
 enum AffiliateStatus {

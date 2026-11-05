@@ -17,6 +17,12 @@ describe('NotificationUrlBuilder', () => {
     );
   });
 
+  it('builds the community email verification URL', () => {
+    expect(builder.communityEmailVerification('abc')).toBe(
+      'https://sgi.example.org/verify-community-email?token=abc',
+    );
+  });
+
   it('encodes tokens safely', () => {
     const url = new URL(builder.activation('a+b&c=d /?'));
 

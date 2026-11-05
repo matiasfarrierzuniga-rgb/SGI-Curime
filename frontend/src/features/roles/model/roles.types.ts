@@ -1,2 +1,2 @@
-export interface RoleOption { id: number; name: string }
-export interface Role { id: number; name: string; description: string | null; isActive: boolean }
+export interface RoleOption { id: number; name: string; label: string }
+export interface Role extends RoleOption { description: string | null; isActive: boolean }

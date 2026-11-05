@@ -15,7 +15,8 @@ describe('FinancialSectionNav', () => {
     render(<MemoryRouter initialEntries={['/app/financial/movements']}><FinancialSectionNav /></MemoryRouter>)
 
     expect(screen.getByRole('navigation', { name: 'Secciones de gestión financiera' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Cargos/ })).toHaveAttribute('href', '/app/financial')
+    expect(screen.getByRole('link', { name: /Resumen/ })).toHaveAttribute('href', '/app/financial')
+    expect(screen.getByRole('link', { name: /Cargos/ })).toHaveAttribute('href', '/app/financial/charges')
     expect(screen.getByRole('link', { name: /Movimientos/ })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: /Movimientos/ })).toHaveClass('focus-visible:ring-3', 'focus-visible:ring-ring/50')
     expect(screen.getByRole('link', { name: /DINADECO/ })).toHaveAttribute('href', '/app/financial/dinadeco')

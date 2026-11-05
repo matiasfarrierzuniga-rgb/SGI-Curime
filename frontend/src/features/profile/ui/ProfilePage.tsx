@@ -1,13 +1,12 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { authService, useAuth } from '@/features/auth'
 import { getErrorMessage } from '@/shared/lib/errors'
-import { getRoleName } from '@/shared/security/roles'
+import { getRoleLabel } from '@/shared/security/roles'
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { FormField } from '@/shared/ui/FormField'
 import { Input } from '@/shared/ui/input'
-import { PageContainer } from '@/shared/ui/PageContainer'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { useToast } from '@/shared/ui/Toast'
@@ -19,7 +18,7 @@ const emptyPasswordForm: PasswordForm = { currentPassword: '', password: '', pas
 export function ProfilePage() {
   const { user } = useAuth()
   const { notify } = useToast()
-  const roleName = getRoleName(user?.role)
+  const roleLabel = getRoleLabel(user?.role)
   const [form, setForm] = useState<PasswordForm>(emptyPasswordForm)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -45,7 +44,7 @@ export function ProfilePage() {
   }
 
   return (
-    <PageContainer className="space-y-6 lg:space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       <PageHeader context="Cuenta" title="Mi perfil" description="Consulte los datos asociados a su cuenta y actualice su contraseña." />
 
       <Card className="shadow-elevation-1">
@@ -57,7 +56,7 @@ export function ProfilePage() {
           <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
             <AccountDetail label="Nombre">{user?.fullName ?? '—'}</AccountDetail>
             <AccountDetail label="Correo"><span className="break-all">{user?.email ?? '—'}</span></AccountDetail>
-            <AccountDetail label="Rol">{roleName ?? '—'}</AccountDetail>
+            <AccountDetail label="Rol">{roleLabel}</AccountDetail>
             <AccountDetail label="Estado">
               <StatusBadge variant={user?.status === 'ACTIVE' ? 'success' : 'neutral'}>{user?.status === 'ACTIVE' ? 'Activo' : user?.status ?? '—'}</StatusBadge>
             </AccountDetail>
@@ -90,7 +89,7 @@ export function ProfilePage() {
           </form>
         </CardContent>
       </Card>
-    </PageContainer>
+    </div>
   )
 }
 

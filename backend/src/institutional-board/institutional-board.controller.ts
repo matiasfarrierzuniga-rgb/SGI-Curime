@@ -4,6 +4,7 @@ import { CapabilityGuard, JwtAuthGuard, RequireCapabilities, type AuthenticatedU
 import { CreateBoardAppointmentDto, UpdateBoardAppointmentDto } from './dto/board-appointment.dto';
 import { CreateBoardTermDto, UpdateBoardTermDto } from './dto/board-term.dto';
 import { PersonCandidatesQueryDto } from './dto/person-candidates.dto';
+import { ReplaceBoardAppointmentDto } from './dto/replace-board-appointment.dto';
 import { InstitutionalBoardService } from './institutional-board.service';
 type AuthRequest = Request & { user: AuthenticatedUser };
 
@@ -18,5 +19,6 @@ export class InstitutionalBoardController {
   @Patch('terms/:id') @RequireCapabilities('adm.institutional-board.manage') updateTerm(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBoardTermDto, @Req() req: AuthRequest) { return this.service.updateTerm(id, dto, req.user.id, this.context(req)); }
   @Post('terms/:termId/appointments') @RequireCapabilities('adm.institutional-board.manage') createAppointment(@Param('termId', ParseIntPipe) termId: number, @Body() dto: CreateBoardAppointmentDto, @Req() req: AuthRequest) { return this.service.createAppointment(termId, dto, req.user.id, this.context(req)); }
   @Patch('appointments/:id') @RequireCapabilities('adm.institutional-board.manage') updateAppointment(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBoardAppointmentDto, @Req() req: AuthRequest) { return this.service.updateAppointment(id, dto, req.user.id, this.context(req)); }
+  @Post('appointments/:id/replacement') @RequireCapabilities('adm.institutional-board.manage') replaceAppointment(@Param('id', ParseIntPipe) id: number, @Body() dto: ReplaceBoardAppointmentDto, @Req() req: AuthRequest) { return this.service.replaceAppointment(id, dto, req.user.id, this.context(req)); }
   private context(req: Request) { return { ipAddress: req.ip, userAgent: req.get('user-agent') }; }
 }

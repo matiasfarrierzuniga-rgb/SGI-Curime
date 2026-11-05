@@ -8,12 +8,12 @@ export const venturesKeys = {
   detail: (id: number) => [...venturesKeys.all, 'detail', id] as const,
 }
 
-export function useVentures(filters: VenturesFilters) {
-  return useQuery({ queryKey: venturesKeys.list(filters), queryFn: () => venturesApi.list(filters) })
+export function useVentures(filters: VenturesFilters, enabled = true) {
+  return useQuery({ queryKey: venturesKeys.list(filters), queryFn: () => venturesApi.list(filters), enabled })
 }
 
-export function useVenture(id: number | null) {
-  return useQuery({ queryKey: venturesKeys.detail(id ?? 0), queryFn: () => venturesApi.get(id!), enabled: id !== null })
+export function useVenture(id: number | null, enabled = true) {
+  return useQuery({ queryKey: venturesKeys.detail(id ?? 0), queryFn: () => venturesApi.get(id!), enabled: enabled && id !== null })
 }
 
 export function useVentureMutations() {

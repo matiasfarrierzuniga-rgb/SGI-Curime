@@ -13,8 +13,7 @@ import {
   type UsersRepository,
 } from '../../domain/repositories/users-repository';
 import type { RegisterUserData } from './register-user.use-case';
-
-const ADMIN_ROLE = 'Administrador';
+import { SYSTEM_ADMIN_ROLE } from '../../../../auth/domain/policies/canonical-role-catalog';
 
 export interface AdministratorRegistrationActor {
   id: number;
@@ -46,11 +45,11 @@ export class RegisterAdministratorUseCase {
       if (administratorCount > 0 && !actor) {
         throw new AdministratorRegistrationAuthenticationRequiredError();
       }
-      if (administratorCount > 0 && actor?.role !== ADMIN_ROLE) {
+       if (administratorCount > 0 && actor?.role !== SYSTEM_ADMIN_ROLE) {
         throw new AdministratorRegistrationForbiddenError();
       }
 
-      const role = await tx.findRoleByName(ADMIN_ROLE);
+      const role = await tx.findRoleByName(SYSTEM_ADMIN_ROLE);
       if (!role?.isActive) throw new RegistrationRoleUnavailableError();
       const resolution = await tx.resolvePerson({
         identificationType: data.identificationType,

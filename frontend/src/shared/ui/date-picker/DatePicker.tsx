@@ -19,6 +19,20 @@ type DatePickerProps = {
   'aria-invalid'?: boolean
 }
 
+type DateRangePickerProps = {
+  startId?: string
+  endId?: string
+  startValue: string
+  endValue: string
+  onStartChange: (value: string) => void
+  onEndChange: (value: string) => void
+  startLabel?: string
+  endLabel?: string
+  min?: string
+  max?: string
+  disabled?: boolean
+}
+
 const monthNames = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -295,4 +309,46 @@ export function DatePicker({
   )
 }
 
-export type { DatePickerProps }
+export function DateRangePicker({ startId, endId, startValue, endValue, onStartChange, onEndChange, startLabel = 'Desde', endLabel = 'Hasta', min, max, disabled = false }: DateRangePickerProps) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const calendarId = useId()
+  const [isOpen, setIsOpen] = useState(false)
+  const [view, setView] = useState(() => getInitialView(startValue || endValue, min, max))
+  const start = parseIsoDate(startValue)
+  const end = parseIsoDate(endValue)
+  const days = rangeCalendarDays(view)
+  const monthLabel = `${monthNames[view.month - 1]} ${view.year}`
+  const summary = start && end ? `${toDisplayDate(start)} — ${toDisplayDate(end)}` : start ? `${toDisplayDate(start)} — Seleccione fin` : 'Seleccione un período'
+
+  useEffect(() => {
+    if (!isOpen) return
+    const closeOnOutsideClick = (event: MouseEvent) => { if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false) }
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); setIsOpen(false) } }
+    document.addEventListener('mousedown', closeOnOutsideClick)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => { document.removeEventListener('mousedown', closeOnOutsideClick); document.removeEventListener('keydown', closeOnEscape) }
+  }, [isOpen])
+
+  const selectDate = (date: CalendarDate) => {
+    const value = toIsoDate(date)
+    if (!isWithinLimits(value, min, max)) return
+    if (!start || end || value < startValue) { onStartChange(value); onEndChange(''); return }
+    if (value === startValue) { onEndChange(value); setIsOpen(false); return }
+    onEndChange(value)
+    setIsOpen(false)
+  }
+
+  return <div ref={rootRef} className="relative grid gap-2">
+    <div className="grid gap-1"><span className="text-label font-semibold text-text-primary">{startLabel} y {endLabel}</span><button id={startId} type="button" disabled={disabled} aria-label={`${startLabel} y ${endLabel}: ${summary}`} aria-haspopup="dialog" aria-expanded={isOpen} aria-controls={isOpen ? calendarId : undefined} onClick={() => { setView(getInitialView(startValue || endValue, min, max)); setIsOpen(true) }} className="flex min-h-12 w-full items-center justify-between gap-3 rounded-control border border-border-default bg-control px-3 text-left text-base font-normal text-text-primary shadow-sm transition hover:border-primary/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-60"><span className={start ? 'font-medium' : 'text-text-muted'}>{summary}</span><CalendarDays className="size-5 shrink-0 text-primary" aria-hidden="true" /></button><span className="text-caption text-text-secondary">Elija inicio y final en un mismo calendario.</span></div>
+    <input id={endId} type="hidden" value={endValue} readOnly aria-label={endLabel} />
+    {isOpen ? <div id={calendarId} role="dialog" aria-label="Seleccionar rango de fechas" className="absolute top-full z-40 mt-1 w-full min-w-[min(22rem,calc(100vw-1.5rem))] rounded-surface border border-border-default bg-surface p-3 shadow-lg sm:w-[28rem]"><div className="mb-3 flex items-center justify-between gap-2"><button type="button" aria-label="Mes anterior" className="grid size-10 place-items-center rounded-control hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => setView(current => moveMonth(current, -1))}><ChevronLeft className="size-4" aria-hidden="true" /></button><div className="grid grid-cols-2 gap-1"><select aria-label="Mes del rango" className="h-10 rounded-control border border-border-default bg-surface px-2 text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50" value={view.month} onChange={event => setView(current => ({ ...current, month: Number(event.target.value) }))}>{monthNames.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}</select><select aria-label="Año del rango" className="h-10 rounded-control border border-border-default bg-surface px-2 text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50" value={view.year} onChange={event => setView(current => ({ ...current, year: Number(event.target.value) }))}>{getAvailableYears(min, max, start ?? end).map(year => <option key={year} value={year}>{year}</option>)}</select></div><button type="button" aria-label="Mes siguiente" className="grid size-10 place-items-center rounded-control hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => setView(current => moveMonth(current, 1))}><ChevronRight className="size-4" aria-hidden="true" /></button></div><div className="grid grid-cols-7 text-center text-xs font-semibold text-muted-foreground" aria-hidden="true">{weekDays.map(day => <span key={day} className="grid size-10 place-items-center">{day}</span>)}</div><div className="grid grid-cols-7" role="grid" aria-label={monthLabel}>{days.map((date, index) => { if (!date) return <span key={`empty-${index}`} className="size-10" aria-hidden="true" />; const value = toIsoDate(date); const unavailable = !isWithinLimits(value, min, max); const selected = value === startValue || value === endValue; const inRange = Boolean(startValue && endValue && value > startValue && value < endValue); return <button key={value} type="button" role="gridcell" disabled={unavailable} aria-label={`Seleccionar ${toDisplayDate(date)}`} aria-pressed={selected} onClick={() => selectDate(date)} className={`relative grid size-10 place-items-center text-sm font-medium transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${selected ? 'rounded-control bg-primary text-primary-foreground' : inRange ? 'bg-primary/15 text-primary' : 'rounded-control hover:bg-muted'} disabled:cursor-not-allowed disabled:text-muted-foreground disabled:opacity-45`}>{date.day}</button> })}</div><div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-3"><p className="text-caption text-text-secondary">{start && !end ? 'Ahora seleccione fecha final.' : 'Rango de fechas'}</p><button type="button" className="text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => { onStartChange(''); onEndChange('') }}>Limpiar</button></div></div> : null}
+  </div>
+}
+
+function rangeCalendarDays(view: Pick<CalendarDate, 'year' | 'month'>): Array<CalendarDate | null> {
+  const firstDayOffset = (new Date(view.year, view.month - 1, 1).getDay() + 6) % 7
+  const daysInMonth = new Date(view.year, view.month, 0).getDate()
+  return Array.from({ length: firstDayOffset + daysInMonth }, (_, index) => index < firstDayOffset ? null : { year: view.year, month: view.month, day: index - firstDayOffset + 1 })
+}
+
+export type { DatePickerProps, DateRangePickerProps }

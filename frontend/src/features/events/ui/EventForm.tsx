@@ -24,7 +24,7 @@ function errorsFor(form: FormState) {
   return { title: !form.title.trim() ? 'Ingrese un título.' : form.title.length > 200 ? 'El título no puede superar 200 caracteres.' : '', summary: !form.summary.trim() ? 'Ingrese un resumen.' : form.summary.length > 500 ? 'El resumen no puede superar 500 caracteres.' : '', description: form.description.length > 5000 ? 'La descripción no puede superar 5000 caracteres.' : '', startAt: !form.startAt ? 'Indique fecha y hora de inicio.' : '', endAt: form.endAt && form.endAt <= form.startAt ? 'La fecha final debe ser posterior a la inicial.' : '', location: form.location.length > 200 ? 'El lugar no puede superar 200 caracteres.' : '' }
 }
 
-export function EventForm({ event, onClose }: { event?: AdminEvent; onClose: () => void }) {
+export function EventForm({ event, onClose, creationLabel = 'Crear evento' }: { event?: AdminEvent; onClose: () => void; creationLabel?: string }) {
   const [form, setForm] = useState(() => initialForm(event))
   const [error, setError] = useState('')
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({})
@@ -49,7 +49,7 @@ export function EventForm({ event, onClose }: { event?: AdminEvent; onClose: () 
   }
   const fieldProps = (field: FieldName) => ({ onBlur: () => setTouched(current => ({ ...current, [field]: true })) })
 
-  return <Modal title={event ? 'Editar evento' : 'Crear evento'} onClose={onClose} busy={mutation.isPending}>
+  return <Modal title={event ? 'Editar evento' : creationLabel} onClose={onClose} busy={mutation.isPending}>
     <form className="grid gap-6" noValidate onSubmit={(event) => { event.preventDefault(); void submit() }}>
       <div className="border-b border-border pb-4"><p className="text-body-small text-foreground-muted">Los campos marcados con * son obligatorios. La fecha y hora se conservan exactamente como se ingresan.</p></div>
       {error ? <ErrorState title="No fue posible guardar el evento" message={error} /> : null}

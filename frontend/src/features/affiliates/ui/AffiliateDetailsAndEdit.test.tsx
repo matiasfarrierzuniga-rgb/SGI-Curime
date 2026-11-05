@@ -45,7 +45,7 @@ describe('Affiliate detail and edit', () => {
     vi.mocked(affiliatesService.detail).mockResolvedValue(affiliate)
     const edit = vi.fn()
 
-    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={edit} />)
+    renderWithClient(<AffiliateDetailsModal id={7} canUpdate canManageLifecycle onClose={vi.fn()} onEdit={edit} />)
 
     expect(screen.getByRole('status')).toHaveTextContent('Cargando detalle del afiliado...')
     expect(await screen.findByText('Ana Pérez')).toBeInTheDocument()
@@ -58,14 +58,14 @@ describe('Affiliate detail and edit', () => {
   it('shows detail loading errors without using list data as detail data', async () => {
     vi.mocked(affiliatesService.detail).mockRejectedValue(new Error('fallo'))
 
-    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+    renderWithClient(<AffiliateDetailsModal id={7} canUpdate canManageLifecycle onClose={vi.fn()} onEdit={vi.fn()} />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar el detalle del afiliado.')
   })
 
   it('retries detail loading after an error', async () => {
     vi.mocked(affiliatesService.detail).mockRejectedValueOnce(new Error('fallo')).mockResolvedValueOnce(affiliate)
-    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+    renderWithClient(<AffiliateDetailsModal id={7} canUpdate canManageLifecycle onClose={vi.fn()} onEdit={vi.fn()} />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar el detalle del afiliado.')
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
@@ -173,7 +173,7 @@ describe('Affiliate detail and edit', () => {
   ] as const)('shows only the valid lifecycle action for %s', async (status, availableAction, hiddenAction) => {
     vi.mocked(affiliatesService.detail).mockResolvedValue({ ...affiliate, status })
 
-    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+    renderWithClient(<AffiliateDetailsModal id={7} canUpdate canManageLifecycle onClose={vi.fn()} onEdit={vi.fn()} />)
 
     expect(await screen.findByRole('button', { name: availableAction })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: hiddenAction })).not.toBeInTheDocument()
@@ -181,7 +181,7 @@ describe('Affiliate detail and edit', () => {
 
   it('requires confirmation and cancellation does not deactivate', async () => {
     vi.mocked(affiliatesService.detail).mockResolvedValue(affiliate)
-    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+    renderWithClient(<AffiliateDetailsModal id={7} canUpdate canManageLifecycle onClose={vi.fn()} onEdit={vi.fn()} />)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Desactivar afiliado' }))
     expect(screen.getByRole('heading', { name: 'Desactivar afiliado' })).toBeInTheDocument()
@@ -195,7 +195,7 @@ describe('Affiliate detail and edit', () => {
     let resolve!: (value: typeof affiliate) => void
     vi.mocked(affiliatesService.detail).mockResolvedValueOnce(affiliate).mockResolvedValue({ ...affiliate, status: 'INACTIVE' })
     vi.mocked(affiliatesService.deactivate).mockReturnValue(new Promise((next) => { resolve = next }))
-    const { queryClient } = renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+    const { queryClient } = renderWithClient(<AffiliateDetailsModal id={7} canUpdate canManageLifecycle onClose={vi.fn()} onEdit={vi.fn()} />)
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
 
     fireEvent.click(await screen.findByRole('button', { name: 'Desactivar afiliado' }))
@@ -214,7 +214,7 @@ describe('Affiliate detail and edit', () => {
   it('activates once after confirmation and refreshes status', async () => {
     vi.mocked(affiliatesService.detail).mockResolvedValueOnce({ ...affiliate, status: 'INACTIVE' }).mockResolvedValue({ ...affiliate, status: 'ACTIVE' })
     vi.mocked(affiliatesService.activate).mockResolvedValue({ ...affiliate, status: 'ACTIVE' })
-    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+    renderWithClient(<AffiliateDetailsModal id={7} canUpdate canManageLifecycle onClose={vi.fn()} onEdit={vi.fn()} />)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Activar afiliado' }))
     expect(screen.getByText('Activarás a Ana Pérez. Recuperará el estado Activo.')).toBeInTheDocument()
@@ -231,7 +231,7 @@ describe('Affiliate detail and edit', () => {
   ] as const)('shows recoverable %s errors', async (action, detail, actionLabel, confirmLabel, error, message) => {
     vi.mocked(affiliatesService.detail).mockResolvedValue(detail)
     vi.mocked(affiliatesService[action]).mockRejectedValue(error)
-    renderWithClient(<AffiliateDetailsModal id={7} onClose={vi.fn()} onEdit={vi.fn()} />)
+    renderWithClient(<AffiliateDetailsModal id={7} canUpdate canManageLifecycle onClose={vi.fn()} onEdit={vi.fn()} />)
 
     fireEvent.click(await screen.findByRole('button', { name: actionLabel }))
     fireEvent.click(screen.getByRole('button', { name: confirmLabel }))

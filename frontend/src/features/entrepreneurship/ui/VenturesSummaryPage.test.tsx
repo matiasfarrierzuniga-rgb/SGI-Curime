@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useVentures } from '../hooks/useVentures'
 import { VenturesSummaryPage } from './VenturesSummaryPage'
 
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes: ['ent.ventures.read'] }, isLoading: false }) }))
 vi.mock('../hooks/useVentures', () => ({ useVentures: vi.fn() }))
 
 const refetch = vi.fn()
@@ -43,8 +44,8 @@ describe('VenturesSummaryPage', () => {
     fireEvent.change(screen.getByLabelText('Publicación'), { target: { value: 'PUBLISHED' } })
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }))
 
-    expect(vi.mocked(useVentures)).toHaveBeenCalledWith({ page: 1, limit: 1, search: 'café', status: 'SUSPENDED', publicationStatus: 'PUBLISHED' })
-    expect(vi.mocked(useVentures)).toHaveBeenCalledWith({ page: 1, limit: 1, search: 'café', status: 'ACTIVE', publicationStatus: 'PUBLISHED' })
+    expect(vi.mocked(useVentures)).toHaveBeenCalledWith({ page: 1, limit: 1, search: 'café', status: 'SUSPENDED', publicationStatus: 'PUBLISHED' }, true)
+    expect(vi.mocked(useVentures)).toHaveBeenCalledWith({ page: 1, limit: 1, search: 'café', status: 'ACTIVE', publicationStatus: 'PUBLISHED' }, true)
   })
 
   it('renders loading, error with retry, and empty states', () => {

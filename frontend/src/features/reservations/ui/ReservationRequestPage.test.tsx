@@ -8,7 +8,20 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 vi.mock('../hooks/useReservations', () => ({ useReservableResources: vi.fn(), useReservationAvailability: vi.fn(), useCreateReservation: vi.fn() }))
 
 const resources = [{ id: 1, name: 'Salón comunal', description: 'Espacio para actividades comunitarias', location: 'Curime', capacity: 50, status: 'ACTIVE' as const, pricingType: 'FREE' as const, price: null, currency: 'CRC' }]
-const future = { start: '2030-01-01T10:00', end: '2030-01-01T12:00' }
+
+function selectReservationDateRange() {
+  fireEvent.click(screen.getByRole('button', { name: /Período de reserva y fin/ }))
+  fireEvent.change(screen.getByLabelText('Año del rango'), { target: { value: '2030' } })
+  fireEvent.change(screen.getByLabelText('Mes del rango'), { target: { value: '1' } })
+  fireEvent.click(screen.getByRole('gridcell', { name: 'Seleccionar 01/01/2030' }))
+  fireEvent.click(screen.getByRole('gridcell', { name: 'Seleccionar 01/01/2030' }))
+}
+
+function reservationTimeInput(id: 'reservation-start-time' | 'reservation-end-time') {
+  const input = document.getElementById(id)
+  if (!(input instanceof HTMLInputElement) || input.type !== 'time') throw new Error(`Expected time input #${id}`)
+  return input
+}
 
 describe('ReservationRequestPage', () => {
   const mutateAsync = vi.fn()
@@ -23,8 +36,9 @@ describe('ReservationRequestPage', () => {
 
   function fill() {
     fireEvent.change(screen.getByLabelText(/Espacio/), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Fecha y hora de inicio/), { target: { value: future.start } })
-    fireEvent.change(screen.getByLabelText(/Fecha y hora de finalización/), { target: { value: future.end } })
+    selectReservationDateRange()
+    fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '10:00' } })
+    fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '12:00' } })
     fireEvent.change(screen.getByLabelText(/Motivo/), { target: { value: 'Reunión vecinal' } })
   }
 
@@ -40,14 +54,15 @@ describe('ReservationRequestPage', () => {
   it('does not consult invalid times and presents distinct checking failures', async () => {
     render(<ReservationRequestPage />)
     fireEvent.change(screen.getByLabelText(/Espacio/), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Fecha y hora de inicio/), { target: { value: future.start } })
-    fireEvent.change(screen.getByLabelText(/Fecha y hora de finalización/), { target: { value: '2030-01-01T10:30' } })
+    selectReservationDateRange()
+    fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '10:00' } })
+    fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '10:30' } })
     fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
     expect(await screen.findByText(/al menos una hora/i)).toBeInTheDocument()
     expect(refetch).not.toHaveBeenCalled()
 
     refetch.mockRejectedValue(new Error('network failure'))
-    fireEvent.change(screen.getByLabelText(/Fecha y hora de finalización/), { target: { value: future.end } })
+    fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '12:00' } })
     fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
     expect(await screen.findByText(/No fue posible consultar la disponibilidad/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeDisabled()
@@ -59,7 +74,7 @@ describe('ReservationRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
     expect(await screen.findByText(/Disponible en este horario/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeEnabled()
-    fireEvent.change(screen.getByLabelText(/Fecha y hora de inicio/), { target: { value: '2030-01-01T11:00' } })
+    fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '11:00' } })
     expect(screen.getByText('Aún no ha consultado la disponibilidad.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeDisabled()
   })
@@ -100,8 +115,9 @@ describe('ReservationRequestPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Enviar solicitud' }))
     expect(await screen.findByRole('button', { name: 'Revisar solicitud' })).toBeInTheDocument()
     expect(screen.getByLabelText(/Espacio/)).toHaveValue('1')
-    expect(screen.getByLabelText(/Fecha y hora de inicio/)).toHaveValue(future.start)
-    expect(screen.getByLabelText(/Fecha y hora de finalización/)).toHaveValue(future.end)
+    expect(screen.getByRole('button', { name: /Período de reserva y fin: 01\/01\/2030 — 01\/01\/2030/ })).toBeInTheDocument()
+    expect(reservationTimeInput('reservation-start-time')).toHaveValue('10:00')
+    expect(reservationTimeInput('reservation-end-time')).toHaveValue('12:00')
     expect(screen.getByLabelText(/Motivo/)).toHaveValue('Reunión vecinal')
     expect(toast.error).toHaveBeenCalled()
   })

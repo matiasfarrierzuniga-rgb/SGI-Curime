@@ -1,4 +1,8 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { Button } from '@/shared/ui/button'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useAuth } from '@/features/auth'
+import { canManageInventory } from '@/shared/security/roles'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -17,7 +21,14 @@ import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { InventoryPageLayout } from './InventoryPageLayout'
+import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { FormField } from '@/shared/ui/FormField'
+import { Input } from '@/shared/ui/input'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { SearchFilterBar } from '@/shared/ui/SearchFilterBar'
+import { Select } from '@/shared/ui/select'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 10
 
@@ -39,6 +50,9 @@ const emptyAdjustmentForm = { newQuantity: '', reason: '', notes: '' }
 type ModalMode = null | 'detail' | 'create' | 'edit' | 'entry' | 'exit' | 'adjustment' | 'movements'
 
 export function InventoryItemsPage() {
+  const { user } = useAuth()
+  // UI mirrors legacy endpoint policy; server RolesGuard remains authoritative.
+  const mayManageInventory = canManageInventory(user?.role)
   const { notify } = useToast()
   const [items, setItems] = useState<InventoryItem[]>([])
   const [categories, setCategories] = useState<InventoryCategory[]>([])
@@ -331,22 +345,42 @@ export function InventoryItemsPage() {
   const hasFilters = Boolean(search || categoryFilter || statusFilter || lowStockFilter)
 
   return (
-    <InventoryPageLayout title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo.">
-      <div aria-busy={loading} className="space-y-5">
-      <form className="filters card" onSubmit={applyFilters}>
-        <label>Búsqueda (nombre o código)<input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
-        <label>Categoría<select value={categoryFilter} onChange={(e) => { setPage(1); setCategoryFilter(e.target.value) }}>
-          <option value="">Todas</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select></label>
-        <label>Estado<select value={statusFilter} onChange={(e) => { setPage(1); setStatusFilter(e.target.value as InventoryItemStatus | '') }}>
-          <option value="">Todos</option>
-          <option value="ACTIVE">Activo</option>
-          <option value="INACTIVE">Inactivo</option>
-        </select></label>
-        <label className="checkbox-inline"><input type="checkbox" checked={lowStockFilter} onChange={(e) => { setPage(1); setLowStockFilter(e.target.checked) }} />Solo stock bajo</label>
-        <div className="actions"><button className="primary">Buscar</button><button type="button" onClick={openCreate}>Nuevo artículo</button></div>
-      </form>
+    <InventoryPageContainer>
+      <AdministrativeListLayout
+        header={<PageHeader className="gap-4 pb-5" context="Inventario" title="Artículos" description="Controle existencias, condiciones y movimientos de cada artículo." />}
+        filters={
+          <SearchFilterBar
+            label="Buscar y filtrar artículos"
+            controlsClassName="md:grid-cols-2 xl:grid-cols-[minmax(16rem,2fr)_minmax(12rem,1fr)_10rem_11rem]"
+            onSubmit={applyFilters}
+            actions={<><Button type="submit">Buscar</Button>{mayManageInventory ? <Button type="button" variant="outline" onClick={openCreate}>Nuevo artículo</Button> : null}</>}
+          >
+            <FormField id="inventory-item-search" label="Búsqueda (nombre o código)">
+              <Input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} />
+            </FormField>
+            <FormField id="inventory-item-category" label="Categoría">
+              <Select value={categoryFilter} onChange={(e) => { setPage(1); setCategoryFilter(e.target.value) }}>
+                <option value="">Todas</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            </FormField>
+            <FormField id="inventory-item-status" label="Estado">
+              <Select value={statusFilter} onChange={(e) => { setPage(1); setStatusFilter(e.target.value as InventoryItemStatus | '') }}>
+                <option value="">Todos</option>
+                <option value="ACTIVE">Activo</option>
+                <option value="INACTIVE">Inactivo</option>
+              </Select>
+            </FormField>
+            <div className="grid gap-1.5">
+              <span className="text-label font-semibold text-foreground">Existencia</span>
+              <label className="flex h-(--size-control) items-center gap-2 text-sm text-foreground" htmlFor="inventory-item-low-stock-checkbox">
+                <input id="inventory-item-low-stock-checkbox" type="checkbox" checked={lowStockFilter} onChange={(e) => { setPage(1); setLowStockFilter(e.target.checked) }} />
+                Solo stock bajo
+              </label>
+            </div>
+          </SearchFilterBar>
+        }
+      >
       {error && <ErrorState message={error} />}
       {loading ? (
         <LoadingState label="Cargando artículos…" />
@@ -354,36 +388,34 @@ export function InventoryItemsPage() {
         <EmptyState title={hasFilters ? 'Sin resultados' : 'Sin artículos registrados'} description={hasFilters ? 'No hay artículos que coincidan con los filtros.' : 'No hay bienes registrados en el inventario.'} />
       ) : (
         <>
-          <div className="table-wrap" tabIndex={0} aria-label="Tabla de artículos, desplazable horizontalmente">
-            <table>
+            <DataTable scrollLabel="Tabla de artículos, desplazable horizontalmente">
               <caption className="sr-only">Listado de bienes registrados en el inventario</caption>
-              <thead>
-                <tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Existencia</th><th>Mínimo</th><th>Unidad</th><th>Ubicación</th><th>Estado</th><th>Condición</th><th><span className="sr-only">Acciones</span></th></tr>
-              </thead>
-              <tbody>
+              <DataTableHeader>
+                <DataTableRow><DataTableHead>Código</DataTableHead><DataTableHead>Nombre</DataTableHead><DataTableHead>Categoría</DataTableHead><DataTableHead>Existencia</DataTableHead><DataTableHead>Mínimo</DataTableHead><DataTableHead>Unidad</DataTableHead><DataTableHead>Ubicación</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead>Condición</DataTableHead><DataTableHead><span className="sr-only">Acciones</span></DataTableHead></DataTableRow>
+              </DataTableHeader>
+              <DataTableBody>
                 {items.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.code}</td>
-                    <td>{item.name}</td>
-                    <td>{item.category.name}</td>
-                    <td><span className={`badge ${quantityTone(item)}`}>{item.currentQuantity}</span></td>
-                    <td>{item.minimumQuantity}</td>
-                    <td>{item.unit}</td>
-                    <td>{item.location || '—'}</td>
-                    <td><span className={`badge ${statusTone(item.status)}`}>{itemStatusLabels[item.status]}</span></td>
-                    <td>{conditionLabels[item.condition]}</td>
-                    <td>
+                  <DataTableRow key={item.id}>
+                    <DataTableCell>{item.code}</DataTableCell>
+                    <DataTableCell>{item.name}</DataTableCell>
+                    <DataTableCell>{item.category.name}</DataTableCell>
+                    <DataTableCell><StatusBadge variant={quantityTone(item)}>{item.currentQuantity}</StatusBadge></DataTableCell>
+                    <DataTableCell>{item.minimumQuantity}</DataTableCell>
+                    <DataTableCell>{item.unit}</DataTableCell>
+                    <DataTableCell>{item.location || '—'}</DataTableCell>
+                    <DataTableCell><StatusBadge variant={statusTone(item.status)}>{itemStatusLabels[item.status]}</StatusBadge></DataTableCell>
+                    <DataTableCell>{conditionLabels[item.condition]}</DataTableCell>
+                    <DataTableCell>
                       <div className="actions">
-                        <button onClick={() => void openDetail(item.id)}>Ver detalle</button>
-                        <button onClick={() => { setSelected(item); openMovement('entry') }}>Entrada</button>
-                        <button onClick={() => { setSelected(item); openMovement('exit') }}>Salida</button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => void openDetail(item.id)}>Ver detalle</Button>
+                        {mayManageInventory ? <><Button type="button" variant="outline" size="sm" onClick={() => { setSelected(item); openMovement('entry') }}>Entrada</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => { setSelected(item); openMovement('exit') }}>Salida</Button></> : null}
                       </div>
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </DataTableBody>
+            </DataTable>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
@@ -397,19 +429,19 @@ export function InventoryItemsPage() {
             <div><dt>Cantidad mínima</dt><dd>{selected.minimumQuantity} {selected.unit}</dd></div>
             <div><dt>Unidad</dt><dd>{selected.unit}</dd></div>
             <div><dt>Ubicación</dt><dd>{selected.location || '—'}</dd></div>
-            <div><dt>Estado</dt><dd><span className={`badge ${statusTone(selected.status)}`}>{itemStatusLabels[selected.status]}</span></dd></div>
+            <div><dt>Estado</dt><dd><StatusBadge variant={statusTone(selected.status)}>{itemStatusLabels[selected.status]}</StatusBadge></dd></div>
             <div><dt>Condición</dt><dd>{conditionLabels[selected.condition]}</dd></div>
             <div><dt>Descripción</dt><dd>{selected.description || '—'}</dd></div>
           </dl>
           <div className="actions">
-            <button onClick={() => openEdit(selected)}>Editar</button>
-            <button onClick={() => openMovement('entry')}>Registrar entrada</button>
-            <button onClick={() => openMovement('exit')}>Registrar salida</button>
-            <button onClick={() => openMovement('adjustment')}>Realizar ajuste</button>
-            <button onClick={() => void openMovements(selected)}>Ver movimientos</button>
-            {selected.status === 'ACTIVE'
-              ? <button onClick={() => setConfirm({ item: selected, action: 'deactivate' })}>Inactivar</button>
-              : <button onClick={() => setConfirm({ item: selected, action: 'activate' })}>Activar</button>}
+            {mayManageInventory ? <><Button type="button" variant="outline" onClick={() => openEdit(selected)}>Editar</Button>
+            <Button type="button" onClick={() => openMovement('entry')}>Registrar entrada</Button>
+            <Button type="button" onClick={() => openMovement('exit')}>Registrar salida</Button>
+            <Button type="button" variant="outline" onClick={() => openMovement('adjustment')}>Realizar ajuste</Button></> : null}
+            <Button type="button" variant="outline" onClick={() => void openMovements(selected)}>Ver movimientos</Button>
+            {mayManageInventory && (selected.status === 'ACTIVE'
+              ? <Button type="button" variant="danger" onClick={() => setConfirm({ item: selected, action: 'deactivate' })}>Inactivar</Button>
+              : <Button type="button" onClick={() => setConfirm({ item: selected, action: 'activate' })}>Activar</Button>)}
           </div>
         </Modal>
       )}
@@ -435,7 +467,7 @@ export function InventoryItemsPage() {
               <option value="UNDER_REPAIR">En reparación</option>
             </select></label>
             {mode === 'create' && <p className="muted">Si es mayor que cero, se registra como entrada inicial para conservar su trazabilidad.</p>}
-            <div className="actions"><button className="primary" disabled={busy || categories.length === 0}>{busy ? 'Guardando…' : 'Guardar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy || categories.length === 0}>{busy ? 'Guardando…' : 'Guardar'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       ) : null}
@@ -450,7 +482,7 @@ export function InventoryItemsPage() {
             <label>Motivo<input maxLength={500} required value={movementForm.reason} onChange={(e) => setMovementForm({ ...movementForm, reason: e.target.value })} /></label>
             <label>Referencia (opcional)<input maxLength={200} value={movementForm.reference} onChange={(e) => setMovementForm({ ...movementForm, reference: e.target.value })} /></label>
             <label>Notas (opcionales)<textarea maxLength={1000} value={movementForm.notes} onChange={(e) => setMovementForm({ ...movementForm, notes: e.target.value })} /></label>
-            <div className="actions"><button className="primary" disabled={busy}>{busy ? 'Registrando…' : 'Registrar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy}>{busy ? 'Registrando…' : 'Registrar'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       ) : null}
@@ -462,7 +494,7 @@ export function InventoryItemsPage() {
             <label>Nueva cantidad<input type="number" min={0} step={1} required value={adjustmentForm.newQuantity} onChange={(e) => setAdjustmentForm({ ...adjustmentForm, newQuantity: e.target.value })} /></label>
             <label>Motivo<input maxLength={500} required value={adjustmentForm.reason} onChange={(e) => setAdjustmentForm({ ...adjustmentForm, reason: e.target.value })} /></label>
             <label>Notas (opcionales)<textarea maxLength={1000} value={adjustmentForm.notes} onChange={(e) => setAdjustmentForm({ ...adjustmentForm, notes: e.target.value })} /></label>
-            <div className="actions"><button className="primary" disabled={busy}>{busy ? 'Ajustando…' : 'Ajustar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy}>{busy ? 'Ajustando…' : 'Ajustar'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       ) : null}
@@ -475,25 +507,23 @@ export function InventoryItemsPage() {
             <p>Este artículo no tiene movimientos registrados.</p>
           ) : (
             <>
-              <div className="table-wrap" tabIndex={0} aria-label="Tabla de movimientos del artículo, desplazable horizontalmente">
-                <table>
-                  <thead>
-                    <tr><th>Fecha</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Referencia</th><th>Registrado por</th></tr>
-                  </thead>
-                  <tbody>
+                <DataTable scrollLabel="Tabla de movimientos del artículo, desplazable horizontalmente">
+                  <DataTableHeader>
+                    <DataTableRow><DataTableHead>Fecha</DataTableHead><DataTableHead>Tipo</DataTableHead><DataTableHead>Cantidad</DataTableHead><DataTableHead>Motivo</DataTableHead><DataTableHead>Referencia</DataTableHead><DataTableHead>Registrado por</DataTableHead></DataTableRow>
+                  </DataTableHeader>
+                  <DataTableBody>
                     {itemMovements.map((m) => (
-                      <tr key={m.id}>
-                        <td>{new Date(m.createdAt).toLocaleString('es-CR')}</td>
-                        <td><span className="badge">{movementTypeLabels[m.type]}</span></td>
-                        <td>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</td>
-                        <td>{m.reason}</td>
-                        <td>{m.reference || '—'}</td>
-                        <td>{m.createdBy?.fullName ?? '—'}</td>
-                      </tr>
+                      <DataTableRow key={m.id}>
+                        <DataTableCell>{new Date(m.createdAt).toLocaleString('es-CR')}</DataTableCell>
+                        <DataTableCell><StatusBadge variant={m.type === 'ENTRY' ? 'success' : m.type === 'EXIT' ? 'warning' : 'info'}>{movementTypeLabels[m.type]}</StatusBadge></DataTableCell>
+                        <DataTableCell>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</DataTableCell>
+                        <DataTableCell>{m.reason}</DataTableCell>
+                        <DataTableCell>{m.reference || '—'}</DataTableCell>
+                        <DataTableCell>{m.createdBy?.fullName ?? '—'}</DataTableCell>
+                      </DataTableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </DataTableBody>
+                </DataTable>
               <Pagination page={movementPage} total={movementTotal} limit={20} onChange={(p) => { setMovementPage(p); void loadItemMovements(selected.id, p) }} />
             </>
           )}
@@ -513,7 +543,7 @@ export function InventoryItemsPage() {
           onClose={() => setConfirm(null)}
         />
       )}
-      </div>
-    </InventoryPageLayout>
+      </AdministrativeListLayout>
+    </InventoryPageContainer>
   )
 }

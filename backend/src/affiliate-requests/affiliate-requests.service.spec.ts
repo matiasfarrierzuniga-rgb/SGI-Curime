@@ -19,6 +19,15 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
     occupation: null,
     workplace: null,
     affiliationReason: 'Participar',
+    submittedProvinceCode: null,
+    submittedCantonCode: null,
+    submittedDistrictCode: null,
+    submittedCommunity: null,
+    submittedLocalityKey: null,
+    submittedLocalityCategory: null,
+    submittedTerritorialSource: null,
+    submittedTerritorialVersion: null,
+    submittedTerritorialIntegrity: null,
     status: 'PENDING',
     rejectionReason: null,
     reviewedAt: null,
@@ -127,6 +136,98 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
     expect(audit.log).toHaveBeenCalled();
   });
 
+  it('persists declared territorial values only as immutable request snapshots', async () => {
+    const declaredDto = {
+      ...dto,
+      provinceCode: '7',
+      cantonCode: '02',
+      districtCode: '01',
+      community: 'Curime Centro',
+    };
+
+    await service.create(declaredDto, {});
+
+    expect(tx.affiliateRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          submittedProvinceCode: '7',
+          submittedCantonCode: '02',
+          submittedDistrictCode: '01',
+          submittedCommunity: 'Curime Centro',
+        }),
+      }),
+    );
+    expect(tx.person.update).not.toHaveBeenCalled();
+  });
+
+  it('persists only the canonical territorial snapshot returned by the catalog', async () => {
+    const territorialCatalog = {
+      validate: jest.fn().mockReturnValue({
+        catalogVersion: 'fixture-v1',
+        source: { title: 'Fixture sintético', archiveSha256: 'a'.repeat(64) },
+        province: { code: '5', name: 'GUANACASTE' },
+        canton: { code: '02', name: 'NICOYA' },
+        district: { code: '01', name: 'NICOYA' },
+        locality: { localityKey: 'loc_1234567890abcdef12345678', name: 'CURIME', category: 'POBLADO' },
+      }),
+    };
+    const catalogService = new AffiliateRequestsService(
+      prisma as never, audit as never, personResolver as never, undefined, territorialCatalog as never,
+    );
+
+    await catalogService.create({
+      ...dto, catalogVersion: 'fixture-v1', provinceCode: '5', cantonCode: '02', districtCode: '01',
+      localityKey: 'loc_1234567890abcdef12345678', community: 'texto manipulado',
+    }, {});
+
+    expect(territorialCatalog.validate).toHaveBeenCalledWith({
+      catalogVersion: 'fixture-v1', provinceCode: '5', cantonCode: '02', districtCode: '01', localityKey: 'loc_1234567890abcdef12345678',
+    });
+    expect(tx.affiliateRequest.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        submittedProvinceCode: '5', submittedCantonCode: '02', submittedDistrictCode: '01',
+        submittedCommunity: 'CURIME', submittedLocalityKey: 'loc_1234567890abcdef12345678',
+        submittedLocalityCategory: 'POBLADO', submittedTerritorialSource: 'Fixture sintético',
+        submittedTerritorialVersion: 'fixture-v1', submittedTerritorialIntegrity: 'a'.repeat(64),
+      }),
+    }));
+  });
+
+  it('rejects incomplete or inconsistent catalog selections without persisting them', async () => {
+    const territorialCatalog = { validate: jest.fn().mockImplementation(() => { throw new ConflictException('Selección territorial inválida.'); }) };
+    const catalogService = new AffiliateRequestsService(
+      prisma as never, audit as never, personResolver as never, undefined, territorialCatalog as never,
+    );
+
+    await expect(catalogService.create({ ...dto, catalogVersion: 'fixture-v1', provinceCode: '5', localityKey: 'loc_1234567890abcdef12345678' }, {})).rejects.toBeInstanceOf(ConflictException);
+    expect(tx.affiliateRequest.create).not.toHaveBeenCalled();
+
+    await expect(catalogService.create({ ...dto, catalogVersion: 'fixture-v1', provinceCode: '5', cantonCode: '99', districtCode: '01', localityKey: 'loc_1234567890abcdef12345678' }, {})).rejects.toBeInstanceOf(ConflictException);
+    expect(tx.affiliateRequest.create).not.toHaveBeenCalled();
+  });
+
+  it('does not copy declared territorial values into audit or notifications', async () => {
+    const inboxNotifications = { notifyAffiliateRequestSubmitted: jest.fn() };
+    const serviceWithNotifications = new AffiliateRequestsService(
+      prisma as never,
+      audit as never,
+      personResolver as never,
+      inboxNotifications as never,
+    );
+
+    await serviceWithNotifications.create(
+      { ...dto, provinceCode: '7', community: 'Curime Centro' },
+      {},
+    );
+
+    expect(inboxNotifications.notifyAffiliateRequestSubmitted).toHaveBeenCalledWith(tx, request.id);
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        details: expect.objectContaining({ submittedProvinceCode: expect.anything() }),
+      }),
+    );
+  });
+
   it('resolves valid Person identity before creating request', async () => {
     await service.create(dto);
 
@@ -141,6 +242,25 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
       submittedFullName: request.fullName,
       submittedIdentification: request.identification,
       submittedAffiliationReason: request.affiliationReason,
+      territorialDeclarationStatus: 'NOT_DECLARED',
+    });
+  });
+
+  it('returns submitted territorial declarations without treating them as verified', async () => {
+    prisma.affiliateRequest.findUnique.mockResolvedValue({
+      ...request,
+      submittedProvinceCode: '7',
+      submittedCantonCode: '02',
+      submittedDistrictCode: '01',
+      submittedCommunity: 'Curime Centro',
+    });
+
+    await expect(service.findOne(request.id)).resolves.toMatchObject({
+      submittedProvinceCode: '7',
+      submittedCantonCode: '02',
+      submittedDistrictCode: '01',
+      submittedCommunity: 'Curime Centro',
+      territorialDeclarationStatus: 'UNVERIFIED_DECLARATION',
     });
   });
 
@@ -184,10 +304,10 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
     expect(tx.affiliate.create.mock.calls[0][0].data).not.toHaveProperty('roleId');
   });
 
-  it('rejects resolved request and records reason and review metadata', async () => {
+  it('rejects pending request and records audit in the same transaction', async () => {
     await service.reject(10, 'No cumple requisitos', 99, {});
 
-    expect(prisma.affiliateRequest.updateMany).toHaveBeenCalledWith({
+    expect(tx.affiliateRequest.updateMany).toHaveBeenCalledWith({
       where: { id: 10, status: 'PENDING' },
       data: expect.objectContaining({
         status: 'REJECTED',
@@ -197,6 +317,59 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
       }),
     });
     expect(tx.affiliate.create).not.toHaveBeenCalled();
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'AFFILIATE_REQUEST_REJECTED',
+        entityId: 10,
+        userId: 99,
+      }),
+      tx,
+    );
+  });
+
+  it('rolls back rejection when audit persistence fails', async () => {
+    const persistedRequest = { ...request };
+    tx.affiliateRequest.findUnique.mockImplementation(async () => persistedRequest);
+    tx.affiliateRequest.updateMany.mockImplementation(async ({ data }) => {
+      Object.assign(persistedRequest, data);
+      return { count: 1 };
+    });
+    tx.affiliateRequest.findUniqueOrThrow.mockImplementation(async () => persistedRequest);
+    audit.log.mockRejectedValueOnce(new Error('Audit persistence failed'));
+    prisma.$transaction.mockImplementationOnce(async (work) => {
+      const snapshot = { ...persistedRequest };
+      try {
+        return await (work as (client: typeof tx) => unknown)(tx);
+      } catch (error) {
+        Object.assign(persistedRequest, snapshot);
+        throw error;
+      }
+    });
+
+    await expect(service.reject(10, 'No cumple requisitos', 99, {})).rejects.toThrow(
+      'Audit persistence failed',
+    );
+
+    expect(persistedRequest).toMatchObject({
+      status: 'PENDING',
+      rejectionReason: null,
+      reviewedAt: null,
+      reviewedById: null,
+    });
+  });
+
+  it('rejects an already resolved request without modifying data', async () => {
+    tx.affiliateRequest.findUnique.mockResolvedValue({
+      ...request,
+      status: 'APPROVED',
+    });
+
+    await expect(service.reject(10, 'No cumple requisitos', 99, {})).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+
+    expect(tx.affiliateRequest.updateMany).not.toHaveBeenCalled();
+    expect(audit.log).not.toHaveBeenCalled();
   });
 
   it('rejects approval when request is no longer PENDING', async () => {

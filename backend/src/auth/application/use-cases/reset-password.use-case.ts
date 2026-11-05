@@ -77,7 +77,15 @@ export class ResetPasswordUseCase {
             'Reset token is no longer valid',
           );
         }
-        await tx.setUserPassword(resetToken.userId, passwordHash);
+        const updated = await tx.setUserPassword(
+          resetToken.userId,
+          passwordHash,
+        );
+        if (!updated)
+          throw new AuthApplicationError(
+            'RESET_TOKEN_NO_LONGER_VALID',
+            'Reset token is no longer valid',
+          );
         return tx.revokeUserSessions(resetToken.userId, 'password-reset');
       },
     );

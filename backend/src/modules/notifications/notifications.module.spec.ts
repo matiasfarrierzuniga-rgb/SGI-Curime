@@ -3,6 +3,7 @@ import type { EmailProvider } from './application/ports/email-provider.port';
 import { EMAIL_PROVIDER } from './application/ports/email-provider.port';
 import { FakeEmailProvider } from './infrastructure/fake-email.provider';
 import { GmailAppPasswordEmailProvider } from './infrastructure/gmail-app-password-email.provider';
+import { ResendEmailProvider } from './infrastructure/resend-email.provider';
 import { NotificationsModule } from './notifications.module';
 
 describe('NotificationsModule provider selection', () => {
@@ -42,6 +43,28 @@ describe('NotificationsModule provider selection', () => {
 
     expect(module.get<EmailProvider>(EMAIL_PROVIDER)).toBeInstanceOf(
       GmailAppPasswordEmailProvider,
+    );
+  });
+
+  it('selects Resend when configured and enabled', async () => {
+    const module = await Test.createTestingModule({
+      imports: [
+        NotificationsModule.forRoot({
+          baseUrl: 'https://sgi.example.test',
+          environment: {
+            EMAIL_PROVIDER: 'resend',
+            NODE_ENV: 'test',
+            EMAIL_SEND_ENABLED: 'true',
+            EMAIL_FROM: 'onboarding@resend.dev',
+            RESEND_API_KEY: 'resend-api-key-secret',
+            RESEND_QA_ALLOWED_RECIPIENT: 'qa.user@example.test',
+          },
+        }),
+      ],
+    }).compile();
+
+    expect(module.get<EmailProvider>(EMAIL_PROVIDER)).toBeInstanceOf(
+      ResendEmailProvider,
     );
   });
 });

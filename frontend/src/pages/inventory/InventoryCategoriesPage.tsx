@@ -1,4 +1,8 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
+import { Button } from '@/shared/ui/button'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useAuth } from '@/features/auth'
+import { canManageInventory } from '@/shared/security/roles'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -9,13 +13,23 @@ import { getErrorMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { InventoryPageLayout } from './InventoryPageLayout'
+import { AdministrativeListLayout } from '@/shared/ui/AdministrativeListLayout'
+import { FormField } from '@/shared/ui/FormField'
+import { Input } from '@/shared/ui/input'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { SearchFilterBar } from '@/shared/ui/SearchFilterBar'
+import { Select } from '@/shared/ui/select'
+import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { InventoryPageContainer } from './InventoryPageLayout'
 
 const limit = 10
 
 const emptyForm = { name: '', description: '' }
 
 export function InventoryCategoriesPage() {
+  const { user } = useAuth()
+  // UI mirrors legacy endpoint policy; server RolesGuard remains authoritative.
+  const mayManageInventory = canManageInventory(user?.role)
   const { notify } = useToast()
   const [categories, setCategories] = useState<InventoryCategory[]>([])
   const [total, setTotal] = useState(0)
@@ -107,17 +121,29 @@ export function InventoryCategoriesPage() {
   }
 
   return (
-    <InventoryPageLayout title="Categorías" description="Organice artículos por categorías activas para una consulta y gestión consistente.">
-      <div className="space-y-5">
-      <form className="filters card" onSubmit={(e) => { e.preventDefault(); setPage(1); void load() }}>
-        <label>Búsqueda por nombre<input maxLength={100} value={search} onChange={(e) => setSearch(e.target.value)} /></label>
-        <label>Estado<select value={activeFilter} onChange={(e) => { setPage(1); setActiveFilter(e.target.value as 'true' | 'false' | '') }}>
-          <option value="">Todos</option>
-          <option value="true">Activas</option>
-          <option value="false">Inactivas</option>
-        </select></label>
-        <div className="actions"><button className="primary">Buscar</button><button type="button" onClick={openCreate}>Nueva categoría</button></div>
-      </form>
+    <InventoryPageContainer>
+      <AdministrativeListLayout
+        header={<PageHeader className="gap-4 pb-5" context="Inventario" title="Categorías" description="Organice artículos por categorías activas para una consulta y gestión consistente." />}
+        filters={
+          <SearchFilterBar
+            label="Buscar y filtrar categorías"
+            controlsClassName="md:grid-cols-[minmax(0,1fr)_12rem]"
+            onSubmit={(e) => { e.preventDefault(); setPage(1); void load() }}
+            actions={<><Button type="submit">Buscar</Button>{mayManageInventory ? <Button type="button" variant="outline" onClick={openCreate}>Nueva categoría</Button> : null}</>}
+          >
+            <FormField id="inventory-category-search" label="Búsqueda por nombre">
+              <Input maxLength={100} value={search} onChange={(e) => setSearch(e.target.value)} />
+            </FormField>
+            <FormField id="inventory-category-status" label="Estado">
+              <Select value={activeFilter} onChange={(e) => { setPage(1); setActiveFilter(e.target.value as 'true' | 'false' | '') }}>
+                <option value="">Todos</option>
+                <option value="true">Activas</option>
+                <option value="false">Inactivas</option>
+              </Select>
+            </FormField>
+          </SearchFilterBar>
+        }
+      >
       {error && <ErrorState message={error} />}
       {loading ? (
         <LoadingState label="Cargando categorías…" />
@@ -125,30 +151,28 @@ export function InventoryCategoriesPage() {
         <EmptyState title="Sin categorías" description="No hay categorías que coincidan con los filtros." />
       ) : (
         <>
-          <div className="table-wrap" tabIndex={0} aria-label="Tabla de categorías, desplazable horizontalmente">
-            <table>
-              <thead>
-                <tr><th>Nombre</th><th>Descripción</th><th>Estado</th><th><span className="sr-only">Acciones</span></th></tr>
-              </thead>
-              <tbody>
+            <DataTable scrollLabel="Tabla de categorías, desplazable horizontalmente">
+              <DataTableHeader>
+                <DataTableRow><DataTableHead>Nombre</DataTableHead><DataTableHead>Descripción</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead><span className="sr-only">Acciones</span></DataTableHead></DataTableRow>
+              </DataTableHeader>
+              <DataTableBody>
                 {categories.map((c) => (
-                  <tr key={c.id}>
-                    <td>{c.name}</td>
-                    <td>{c.description || '—'}</td>
-                    <td><span className={`badge ${c.isActive ? 'success' : 'neutral'}`}>{c.isActive ? 'Activa' : 'Inactiva'}</span></td>
-                    <td>
-                      <div className="actions">
-                        <button onClick={() => openEdit(c)}>Editar</button>
+                  <DataTableRow key={c.id}>
+                    <DataTableCell>{c.name}</DataTableCell>
+                    <DataTableCell>{c.description || '—'}</DataTableCell>
+                    <DataTableCell><StatusBadge variant={c.isActive ? 'success' : 'neutral'}>{c.isActive ? 'Activa' : 'Inactiva'}</StatusBadge></DataTableCell>
+                    <DataTableCell>
+                      {mayManageInventory ? <div className="actions">
+                        <Button type="button" variant="outline" size="sm" onClick={() => openEdit(c)}>Editar</Button>
                         {c.isActive
-                          ? <button onClick={() => setConfirm({ category: c, action: 'deactivate' })}>Inactivar</button>
-                          : <button onClick={() => setConfirm({ category: c, action: 'activate' })}>Activar</button>}
-                      </div>
-                    </td>
-                  </tr>
+                          ? <Button type="button" variant="danger" size="sm" onClick={() => setConfirm({ category: c, action: 'deactivate' })}>Inactivar</Button>
+                          : <Button type="button" size="sm" onClick={() => setConfirm({ category: c, action: 'activate' })}>Activar</Button>}
+                      </div> : null}
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </DataTableBody>
+            </DataTable>
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </>
       )}
@@ -157,7 +181,7 @@ export function InventoryCategoriesPage() {
           <form className="form-grid" onSubmit={(e) => void submit(e)}>
             <label>Nombre<input maxLength={100} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
             <label>Descripción<textarea maxLength={500} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-            <div className="actions"><button className="primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar'}</button><button type="button" onClick={() => setMode(null)} disabled={busy}>Cancelar</button></div>
+            <div className="actions"><Button type="submit" loading={busy} disabled={busy}>{busy ? 'Guardando…' : 'Guardar'}</Button><Button type="button" variant="outline" onClick={() => setMode(null)} disabled={busy}>Cancelar</Button></div>
           </form>
         </Modal>
       )}
@@ -174,7 +198,7 @@ export function InventoryCategoriesPage() {
           onClose={() => setConfirm(null)}
         />
       )}
-      </div>
-    </InventoryPageLayout>
+      </AdministrativeListLayout>
+    </InventoryPageContainer>
   )
 }

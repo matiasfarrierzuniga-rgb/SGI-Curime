@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { createHash } from 'crypto';
+import { isCommunityAccountRole } from '../../domain/policies/internal-access.policy';
 import { AuditAction } from '../../../audit/audit-actions';
 import { AuthApplicationError } from '../errors/auth.errors';
 import {
@@ -59,13 +60,23 @@ export class ActivateAccountUseCase {
         'Activation token has already been used',
       );
     }
+    if (activationToken.purpose !== 'LEGACY_ACCOUNT_ACTIVATION') {
+      throw new AuthApplicationError(
+        'INVALID_ACTIVATION_TOKEN',
+        'Invalid activation token',
+      );
+    }
     if (activationToken.expiresAt <= new Date()) {
       throw new AuthApplicationError(
         'ACTIVATION_TOKEN_EXPIRED',
         'Activation token has expired',
       );
     }
-    if (activationToken.userStatus !== 'INACTIVE') {
+    if (
+      activationToken.userStatus !== 'INACTIVE' ||
+      !activationToken.userRoleName ||
+      isCommunityAccountRole(activationToken.userRoleName)
+    ) {
       throw new AuthApplicationError(
         'ACCOUNT_CANNOT_BE_ACTIVATED',
         'Account cannot be activated',
@@ -78,6 +89,7 @@ export class ActivateAccountUseCase {
       const claimed = await tx.claimActivationToken(
         activationToken.id,
         new Date(),
+        'LEGACY_ACCOUNT_ACTIVATION',
       );
       if (!claimed) {
         throw new AuthApplicationError(

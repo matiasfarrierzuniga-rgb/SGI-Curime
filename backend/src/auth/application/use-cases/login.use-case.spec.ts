@@ -11,7 +11,7 @@ const account = {
   lockedAt: null,
   failedLoginAttempts: 0,
   lastLoginAt: null,
-  roleName: 'Administrador',
+  roleName: 'ROLE_SYSTEM_ADMIN',
   roleId: 2,
   roleIsActive: true,
   permissionCodes: ['usr.users.read'],
@@ -19,6 +19,7 @@ const account = {
   affiliateStatus: 'ACTIVE',
   affiliateRoleId: 2,
   subscriptionExpirationDate: null,
+  sessionGeneration: 0,
 };
 
 describe('LoginUseCase', () => {
@@ -55,7 +56,7 @@ describe('LoginUseCase', () => {
     tokens.sign.mockResolvedValue('signed-token');
     refreshTokens.generate.mockReturnValue('raw-refresh-token');
     refreshTokens.hash.mockReturnValue('refresh-hash');
-    repository.recordLoginSuccessAndCreateSession.mockResolvedValue(undefined);
+    repository.recordLoginSuccessAndCreateSession.mockResolvedValue(1);
     repository.recordFailedLogin.mockResolvedValue(false);
   });
 
@@ -74,17 +75,20 @@ describe('LoginUseCase', () => {
     });
   });
 
-  it('throws an application error when the account is not ACTIVE', async () => {
-    repository.findCredentialsByEmail.mockResolvedValueOnce({
-      ...account,
-      status: 'INACTIVE',
-    });
+  it.each(['INACTIVE', 'PENDING_EMAIL_VERIFICATION', 'BLOCKED'] as const)(
+    'throws an application error when the account is %s',
+    async (status) => {
+      repository.findCredentialsByEmail.mockResolvedValueOnce({
+        ...account,
+        status,
+      });
 
-    await expect(
-      useCase.execute('admin@example.com', 'secret'),
-    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
-    expect(hasher.compare).not.toHaveBeenCalled();
-  });
+      await expect(
+        useCase.execute('admin@example.com', 'secret'),
+      ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
+      expect(hasher.compare).not.toHaveBeenCalled();
+    },
+  );
 
   it('denies an expired Subscription_L1 after valid credentials with 403 error code', async () => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
@@ -172,6 +176,7 @@ describe('LoginUseCase', () => {
   it('signs a token, persists only the refresh hash, and audits on success', async () => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
       ...account,
+      roleName: 'ROLE_SYSTEM_ADMIN',
       hasPerson: false,
       affiliateStatus: null,
       affiliateRoleId: null,
@@ -184,7 +189,8 @@ describe('LoginUseCase', () => {
     expect(tokens.sign).toHaveBeenCalledWith({
       sub: 1,
       email: 'admin@example.com',
-      role: 'Administrador',
+      role: 'ROLE_SYSTEM_ADMIN',
+      sessionGeneration: 1,
     });
     expect(repository.recordLoginSuccessAndCreateSession).toHaveBeenCalledWith(
       1,
@@ -207,11 +213,38 @@ describe('LoginUseCase', () => {
         fullName: 'Admin',
         email: 'admin@example.com',
         status: 'ACTIVE',
-        role: 'Administrador',
+        role: 'ROLE_SYSTEM_ADMIN',
         permissionCodes: ['usr.users.read'],
         canAccessErp: true,
       },
     });
+  });
+
+  it('creates a standard session for an active community account without ERP access', async () => {
+    repository.findCredentialsByEmail.mockResolvedValueOnce({
+      ...account,
+      fullName: 'Community User',
+      email: 'community@example.test',
+      roleName: 'ROLE_COMMUNITY_USER',
+      permissionCodes: [],
+      hasPerson: true,
+      affiliateStatus: 'ACTIVE',
+    });
+
+    const result = await useCase.execute('community@example.test', 'secret');
+
+    expect(repository.recordLoginSuccessAndCreateSession).toHaveBeenCalledWith(
+      1,
+      'refresh-hash',
+      expect.any(Date),
+    );
+    expect(result.user).toEqual(
+      expect.objectContaining({
+        role: 'ROLE_COMMUNITY_USER',
+        permissionCodes: [],
+        canAccessErp: false,
+      }),
+    );
   });
 
   it.each([
@@ -245,19 +278,14 @@ describe('LoginUseCase', () => {
     ).resolves.toMatchObject({ user: { canAccessErp: false } });
   });
 
-  it.each([
-    ['a null legacy affiliate role', null],
-    ['a different legacy affiliate role', 999],
-  ])(
-    'keeps ERP access for %s when persisted capabilities grant access',
-    async (_label, affiliateRoleId) => {
+  it('denies a legacy role even when persisted capabilities are present', async () => {
       repository.findCredentialsByEmail.mockResolvedValueOnce({
         ...account,
         roleId: 3,
         roleName: 'Tesorero',
         hasPerson: true,
         affiliateStatus: 'ACTIVE',
-        affiliateRoleId,
+        affiliateRoleId: null,
         permissionCodes: ['fin.charges.read'],
       });
 
@@ -265,10 +293,38 @@ describe('LoginUseCase', () => {
         useCase.execute('admin@example.com', 'secret'),
       ).resolves.toMatchObject({
         user: {
-          canAccessErp: true,
+          canAccessErp: false,
           permissionCodes: ['fin.charges.read'],
         },
       });
+  });
+
+  it.each([
+    'ROLE_SYSTEM_ADMIN',
+    'ROLE_INSTITUTIONAL_PRESIDENT',
+    'ROLE_INSTITUTIONAL_SECRETARY',
+    'ROLE_INSTITUTIONAL_TREASURER',
+    'ROLE_INSTITUTIONAL_OPERATOR',
+  ] as const)(
+    'creates a valid session and admits active canonical ERP role %s',
+    async (roleName) => {
+      repository.findCredentialsByEmail.mockResolvedValueOnce({
+        ...account,
+        roleName,
+      });
+
+      await expect(
+        useCase.execute('admin@example.com', 'secret'),
+      ).resolves.toMatchObject({
+        user: { role: roleName, canAccessErp: true },
+      });
+      expect(tokens.sign).toHaveBeenCalledWith({
+        sub: 1,
+        email: 'admin@example.com',
+        role: roleName,
+        sessionGeneration: 1,
+      });
+      expect(repository.recordLoginSuccessAndCreateSession).toHaveBeenCalled();
     },
   );
 

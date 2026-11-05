@@ -3,11 +3,13 @@ import { useEffect, useRef, useState } from 'react'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { ErrorState } from '@/shared/ui/ErrorState'
+import { FormField } from '@/shared/ui/FormField'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { Modal } from '@/shared/ui/Modal'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { Button } from '@/shared/ui/button'
+import { Textarea } from '@/shared/ui/textarea'
 import { useAffiliateRequestDetail, useAffiliateRequestMutations } from '../hooks/useAffiliateRequestsQueries'
 import type { AffiliateRequestStatus } from '../model/affiliateRequests.types'
 
@@ -49,7 +51,7 @@ function getMutationErrorMessage(error: unknown) {
   return getErrorMessage(error, 'No fue posible procesar la solicitud. Intente nuevamente.')
 }
 
-export function AffiliateRequestDetail({ requestId, onClose }: { requestId: number; onClose: () => void }) {
+export function AffiliateRequestDetail({ requestId, canApprove, onClose }: { requestId: number; canApprove: boolean; onClose: () => void }) {
   const detailQuery = useAffiliateRequestDetail(requestId)
   const { approve, reject } = useAffiliateRequestMutations()
   const [dialog, setDialog] = useState<'detail' | 'approve-confirm' | 'reject-reason' | 'reject-confirm'>('detail')
@@ -164,7 +166,7 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
   }
 
   if (dialog === 'reject-reason') {
-    return <Modal title="Rechazar solicitud" onClose={returnToDetail} busy={busy}><div className="space-y-4"><div><label className="font-semibold text-text-primary" htmlFor="rejection-reason">Motivo de rechazo</label><textarea id="rejection-reason" className="mt-2 min-h-28 w-full rounded-control border border-border-default p-3 text-text-primary" value={rejectionReason} onChange={(event) => { setRejectionReason(event.target.value); setReasonError('') }} aria-describedby={reasonError ? 'rejection-reason-error' : undefined} aria-invalid={Boolean(reasonError)} /></div>{reasonError && <p id="rejection-reason-error" role="alert">{reasonError}</p>}<div className="flex flex-wrap justify-end gap-3"><button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={returnToDetail} disabled={busy}>Cancelar</button><button className="min-h-10 rounded-control bg-danger px-4 font-semibold text-white" type="button" onClick={continueReject} disabled={busy}>Continuar</button></div></div></Modal>
+    return <Modal title="Rechazar solicitud" onClose={returnToDetail} busy={busy}><div className="space-y-4"><FormField id="rejection-reason" label="Motivo de rechazo" error={reasonError || undefined}><Textarea value={rejectionReason} onChange={(event) => { setRejectionReason(event.target.value); setReasonError('') }} /></FormField><div className="flex flex-wrap justify-end gap-3"><Button variant="outline" type="button" onClick={returnToDetail} disabled={busy}>Cancelar</Button><Button variant="danger" type="button" onClick={continueReject} disabled={busy}>Continuar</Button></div></div></Modal>
   }
 
   return (
@@ -173,7 +175,7 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
         {detailQuery.isPending ? (
           <LoadingState label="Cargando detalle de solicitud..." />
         ) : detailQuery.isError ? (
-          <ErrorState title="No fue posible cargar la solicitud" message={getErrorMessage(detailQuery.error, 'Intente nuevamente.')} action={<button className="min-h-10 rounded-control border border-border-default px-4 font-semibold" type="button" onClick={() => void detailQuery.refetch()}>Reintentar</button>} />
+          <ErrorState title="No fue posible cargar la solicitud" message={getErrorMessage(detailQuery.error, 'Intente nuevamente.')} action={<Button variant="outline" type="button" onClick={() => void detailQuery.refetch()}>Reintentar</Button>} />
         ) : request ? (
             <div className="space-y-7">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-default pb-4">
@@ -182,11 +184,12 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
             </div>
             <StatusMessage error={actionError} success={success} />
              <section aria-labelledby="identity-heading"><h3 id="identity-heading" className="text-heading-3 font-semibold text-text-primary">Identidad</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Identificación" value={request.identification} /><DetailField label="Tipo de identificación" value={request.identificationType} /><DetailField label="Fecha de nacimiento" value={formatBirthDate(request.birthDate)} /><DetailField label="Género" value={request.gender} /></dl></section>
-             <section aria-labelledby="contact-heading"><h3 id="contact-heading" className="text-heading-3 font-semibold text-text-primary">Contacto</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Correo electrónico" value={request.email} /><DetailField label="Teléfono" value={formatPhone(request.phoneCountryCode, request.phoneNationalNumber, request.phone)} /><DetailField label="Dirección" value={request.address} /></dl></section>
+              <section aria-labelledby="contact-heading"><h3 id="contact-heading" className="text-heading-3 font-semibold text-text-primary">Contacto</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Correo electrónico" value={request.email} /><DetailField label="Teléfono" value={formatPhone(request.phoneCountryCode, request.phoneNationalNumber, request.phone)} /><DetailField label="Dirección" value={request.address} /></dl></section>
+              <section aria-labelledby="territory-heading"><h3 id="territory-heading" className="text-heading-3 font-semibold text-text-primary">Referencia territorial declarada</h3><p className="mt-1 text-body-small text-text-secondary">{request.territorialDeclarationStatus === 'UNVERIFIED_DECLARATION' ? 'Información declarada por la persona solicitante. No verifica residencia ni define elegibilidad.' : 'La solicitud histórica no incluye evidencia territorial completa.'}</p>{request.territorialDeclarationStatus === 'UNVERIFIED_DECLARATION' ? <dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Código de provincia" value={request.submittedProvinceCode} /><DetailField label="Código de cantón" value={request.submittedCantonCode} /><DetailField label="Código de distrito" value={request.submittedDistrictCode} /><DetailField label="Comunidad o localidad" value={request.submittedCommunity} /><DetailField label="Categoría de localidad" value={request.submittedLocalityCategory} /><DetailField label="Versión del catálogo" value={request.submittedTerritorialVersion} /></dl> : null}</section>
              <section aria-labelledby="employment-heading"><h3 id="employment-heading" className="text-heading-3 font-semibold text-text-primary">Información laboral</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Ocupación" value={request.occupation} /><DetailField label="Lugar de trabajo" value={request.workplace} /></dl></section>
              <section aria-labelledby="request-heading"><h3 id="request-heading" className="text-heading-3 font-semibold text-text-primary">Solicitud</h3><dl className="mt-3 grid gap-4"><DetailField label="Motivo de afiliación" value={request.affiliationReason} /></dl></section>
              <section aria-labelledby="review-heading"><h3 id="review-heading" className="text-heading-3 font-semibold text-text-primary">Revisión</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Revisada el" value={formatTimestamp(request.reviewedAt)} /><DetailField label="Revisada por" value={request.reviewedBy ? `${request.reviewedBy.fullName} (${request.reviewedBy.email})` : null} />{request.status === 'REJECTED' && <DetailField label="Motivo de rechazo" value={request.rejectionReason} />}</dl></section>
-             {request.status === 'PENDING' && <div className="flex flex-wrap justify-end gap-3 border-t border-border-default pt-4"><Button type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('approve-confirm') } }} disabled={busy}>Aprobar solicitud</Button><Button variant="danger" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('reject-reason') } }} disabled={busy}>Rechazar solicitud</Button></div>}
+              {request.status === 'PENDING' && canApprove && <div className="flex flex-wrap justify-end gap-3 border-t border-border-default pt-4"><Button type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('approve-confirm') } }} disabled={busy}>Aprobar solicitud</Button><Button variant="danger" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('reject-reason') } }} disabled={busy}>Rechazar solicitud</Button></div>}
           </div>
         ) : null}
       </div>

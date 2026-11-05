@@ -3,16 +3,16 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ErpLayout } from './ErpLayout'
 
-const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
+const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'usr.profile.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }))
 vi.mock('@/features/notifications', () => ({ NotificationCenter: () => <button type="button" aria-label="Notificaciones">Notificaciones</button> }))
 
 function renderLayout(initialPath = '/app/dashboard') {
-  return render(<MemoryRouter initialEntries={[initialPath]}><Routes><Route element={<ErpLayout />}><Route path="/app/dashboard" element={<h1>Área de gestión</h1>} /><Route path="/app/profile" element={<h1>Mi perfil</h1>} /><Route path="/inventory" element={<h1>Inventario</h1>} /><Route path="/inventory/items" element={<h1>Artículos</h1>} /><Route path="/app/financial" element={<h1>Finanzas</h1>} /><Route path="/app/financial/movements" element={<h1>Movimientos financieros</h1>} /><Route path="/app/financial/dinadeco" element={<h1>DINADECO</h1>} /></Route><Route path="/login" element={<h1>Iniciar sesión</h1>} /></Routes></MemoryRouter>)
+  return render(<MemoryRouter initialEntries={[initialPath]}><Routes><Route element={<ErpLayout />}><Route path="/app/dashboard" element={<h1>Área de gestión</h1>} /><Route path="/app/profile" element={<h1>Mi perfil</h1>} /><Route path="/inventory" element={<h1>Inventario</h1>} /><Route path="/inventory/items" element={<h1>Artículos</h1>} /><Route path="/app/financial/dashboard" element={<h1>Dashboard financiero</h1>} /><Route path="/app/financial" element={<h1>Finanzas</h1>} /><Route path="/app/financial/movements" element={<h1>Movimientos financieros</h1>} /><Route path="/app/financial/dinadeco" element={<h1>DINADECO</h1>} /></Route><Route path="/login" element={<h1>Iniciar sesión</h1>} /></Routes></MemoryRouter>)
 }
 
 describe('ErpLayout', () => {
-  beforeEach(() => { vi.clearAllMocks(); auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
+  beforeEach(() => { vi.clearAllMocks(); auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'usr.profile.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
 
   it('renders desktop navigation, session context, and public-site actions', () => {
     renderLayout()
@@ -23,6 +23,12 @@ describe('ErpLayout', () => {
     expect(screen.getAllByRole('link', { name: 'Ver sitio público' })[0]).toHaveAttribute('href', '/')
     expect(screen.getAllByRole('main')).toHaveLength(1)
     expect(screen.getByRole('button', { name: 'Notificaciones' })).toBeInTheDocument()
+  })
+
+  it('does not render a global search surface without an approved search contract', () => {
+    renderLayout()
+    expect(screen.queryByRole('search')).not.toBeInTheDocument()
+    expect(screen.queryByText('Buscar en el sistema...')).not.toBeInTheDocument()
   })
 
   it('opens accessible mobile navigation and closes it after navigation', () => {
@@ -60,12 +66,12 @@ describe('ErpLayout', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Finanzas' }))
 
     expect(screen.getAllByRole('button', { name: 'Contraer navegación' }).length).toBeGreaterThan(0)
-    expect(screen.getByRole('link', { name: 'Resumen' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Dashboard financiero' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Movimientos financieros' })).toBeInTheDocument()
   })
 
   it.each([
-    ['fin.movements.read', 'Movimientos financieros'],
+    ['fin.movements.read', 'Dashboard financiero'],
     ['fin.dinadeco.read', 'DINADECO'],
   ])('routes a collapsed finance group to its authorized %s child', (permissionCode, childLabel) => {
     auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: [permissionCode] }
@@ -99,6 +105,35 @@ describe('ErpLayout', () => {
     expect(screen.getByRole('link', { name: 'Artículos' })).toHaveAttribute('aria-current', 'page')
   })
 
+  it('allows an active group to close and reopen without losing its current location', () => {
+    renderLayout('/inventory')
+    const collapse = screen.getByRole('button', { name: 'Contraer Inventario' })
+
+    expect(collapse).toHaveAttribute('aria-expanded', 'true')
+    expect(collapse).toHaveAttribute('aria-controls', 'sidebar-inventario-subnav')
+    expect(document.getElementById('sidebar-inventario-subnav')).toBeInTheDocument()
+    fireEvent.click(collapse)
+
+    expect(screen.getByRole('button', { name: 'Expandir Inventario' })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('link', { name: 'Artículos' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Inventario' })).toHaveAttribute('aria-current', 'page')
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir Inventario' }))
+    expect(screen.getByRole('link', { name: 'Artículos' })).toBeInTheDocument()
+  })
+
+  it('keeps submenus independently expandable', () => {
+    renderLayout()
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir Emprendimientos' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir Finanzas' }))
+
+    expect(screen.getByRole('link', { name: 'Directorio' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Dashboard financiero' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Contraer Emprendimientos' }))
+
+    expect(screen.queryByRole('link', { name: 'Directorio' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Dashboard financiero' })).toBeInTheDocument()
+  })
+
   it('keeps logout working', () => {
     renderLayout()
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
@@ -123,22 +158,22 @@ describe('ErpLayout', () => {
   it('keeps desktop navigation expanded by default', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
-    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(sidebar).toHaveClass('w-64')
     fireEvent.mouseEnter(sidebar)
-    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(sidebar).toHaveClass('w-64')
     fireEvent.mouseLeave(sidebar)
-    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(sidebar).toHaveClass('w-64')
   })
 
   it('keeps the navigation expanded after pointer leaves', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
     fireEvent.mouseLeave(sidebar)
-    expect(sidebar).toHaveClass('w-[15.25rem]')
+    expect(sidebar).toHaveClass('w-64')
     expect(screen.getAllByRole('button', { name: 'Contraer navegación' })[0]).toHaveAttribute('aria-expanded', 'true')
   })
 
-  it('temporarily expands both sidebar and dashboard content on hover after collapse', () => {
+  it('does not expand a collapsed sidebar on hover or focus', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
     const content = document.getElementById('erp-content')!
@@ -146,11 +181,19 @@ describe('ErpLayout', () => {
     expect(sidebar).toHaveClass('w-20')
     expect(content).toHaveClass('md:ml-20')
     fireEvent.mouseEnter(sidebar)
-    expect(sidebar).toHaveClass('w-[15.25rem]')
-    expect(content).toHaveClass('md:ml-[15.25rem]')
-    fireEvent.mouseLeave(sidebar)
+    fireEvent.focusIn(sidebar)
     expect(sidebar).toHaveClass('w-20')
     expect(content).toHaveClass('md:ml-20')
+    expect(screen.getByRole('button', { name: 'Expandir navegación' })).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('expands a collapsed sidebar only through its explicit control', () => {
+    renderLayout()
+    const sidebar = document.getElementById('erp-sidebar-navigation')!
+    fireEvent.click(screen.getByRole('button', { name: 'Contraer navegación' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir navegación' }))
+    expect(sidebar).toHaveClass('w-64')
+    expect(document.getElementById('erp-content')).toHaveClass('md:ml-64')
   })
 
   it('keeps empty mobile groups collapsed and exposes their state to keyboard users', () => {
@@ -167,15 +210,15 @@ describe('ErpLayout', () => {
     expect(screen.getAllByRole('button', { name: 'Contraer navegación' })).toHaveLength(1)
     const pinControl = screen.getByRole('button', { name: 'Contraer navegación' })
     expect(pinControl.querySelector('svg')).not.toBeNull()
-    expect(pinControl).toHaveClass('!border-white/35', '!bg-transparent', '!text-erp-navigation-foreground')
+    expect(pinControl).toHaveClass('!border-white/15', '!bg-white/[0.04]', '!text-erp-navigation-foreground')
     for (const label of ['Expandir Emprendimientos', 'Expandir Inventario', 'Expandir Finanzas']) {
       const control = screen.getByRole('button', { name: label })
       expect(control.querySelector('svg')).not.toBeNull()
-      expect(control).toHaveClass('!bg-transparent', '!text-erp-navigation-foreground')
+      expect(control).toHaveClass('!border-transparent', '!bg-transparent', '!text-erp-navigation-foreground')
     }
     const logout = screen.getAllByRole('button', { name: 'Cerrar sesión' })[0]
     expect(logout).toHaveTextContent('Cerrar sesión')
-    expect(logout).toHaveClass('!border-red-300/70', '!bg-erp-navigation', '!text-red-200')
+    expect(logout).toHaveClass('!border-red-300/40', '!bg-red-500/10', '!text-red-100')
     expect(logout.querySelector('svg')).not.toBeNull()
   })
 })

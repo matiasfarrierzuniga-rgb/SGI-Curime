@@ -1,3 +1,4 @@
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { useState, type FormEvent } from 'react'
 import { CalendarDays, Pencil, Plus, UsersRound } from 'lucide-react'
 import { useAuth } from '@/features/auth'
@@ -31,6 +32,7 @@ export function InstitutionalBoardPage() {
   const [editingTerm, setEditingTerm] = useState(false)
   const [appointment, setAppointment] = useState(emptyAppointment)
   const [editing, setEditing] = useState<BoardAppointment | null>(null)
+  const [replacing, setReplacing] = useState<BoardAppointment | null>(null)
   const [query, setQuery] = useState('')
   const candidates = usePersonCandidates(query)
   const [message, setMessage] = useState('')
@@ -76,9 +78,11 @@ export function InstitutionalBoardPage() {
     }
     try {
       if (editing) await mutations.updateAppointment.mutateAsync({ id: editing.id, input: commonInput })
+      else if (replacing) await mutations.replaceAppointment.mutateAsync({ id: replacing.id, input: { personId: appointment.personId, ...commonInput, replacedEndsOn: replacing.endsOn?.slice(0, 10) ?? '' } })
       else await mutations.createAppointment.mutateAsync({ termId: selected.id, input: { personId: appointment.personId, ...commonInput } })
       setAppointment(emptyAppointment)
       setEditing(null)
+      setReplacing(null)
       setQuery('')
     } catch (error) {
       setMessage(getErrorMessage(error))
@@ -87,6 +91,7 @@ export function InstitutionalBoardPage() {
 
   const edit = (item: BoardAppointment) => {
     setEditing(item)
+    setReplacing(null)
     setQuery('')
     setAppointment({
       personId: item.personId,
@@ -95,6 +100,13 @@ export function InstitutionalBoardPage() {
       startsOn: item.startsOn?.slice(0, 10) ?? '',
       endsOn: item.endsOn?.slice(0, 10) ?? '',
     })
+  }
+
+  const replace = (item: BoardAppointment) => {
+    setEditing(null)
+    setReplacing(item)
+    setQuery('')
+    setAppointment({ ...emptyAppointment, position: item.position, seatNumber: item.seatNumber?.toString() ?? '' })
   }
 
   const beginTermEdit = () => {
@@ -159,16 +171,17 @@ export function InstitutionalBoardPage() {
         <Card>
           <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between"><div><CardTitle>Nombramientos</CardTitle><CardDescription className="mt-1">Período del {dateOnly(selected!.startsOn)} al {dateOnly(selected!.endsOn)}.</CardDescription></div>{canManage ? <Button type="button" variant="outline" size="sm" onClick={beginTermEdit}><Pencil aria-hidden="true" /> Editar período</Button> : null}</CardHeader>
           <CardContent>{selected!.appointments.length === 0 ? <EmptyState title="Sin nombramientos" description={canManage ? 'Agregue un nombramiento cuando disponga de la información confirmada.' : 'Este período no tiene nombramientos disponibles.'} /> : <div className="overflow-x-auto rounded-control border border-border-default">
-            <table className="min-w-[42rem] w-full text-left text-body-small">
-              <thead className="bg-surface-subtle text-text-secondary"><tr><th scope="col" className="p-3 font-semibold">Cargo</th><th scope="col" className="p-3 font-semibold">Persona</th><th scope="col" className="p-3 font-semibold">Plaza</th><th scope="col" className="p-3 font-semibold">Vigencia</th>{canManage ? <th scope="col" className="p-3"><span className="sr-only">Acciones</span></th> : null}</tr></thead>
-              <tbody>{selected!.appointments.map(item => <tr key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-subtle/70"><td className="p-3 font-semibold text-text-primary">{BOARD_POSITION_LABELS[item.position]}</td><td className="p-3 text-text-primary">{personName(item)}</td><td className="p-3 text-text-secondary">{item.seatNumber ?? '—'}</td><td className="p-3 whitespace-nowrap text-text-secondary">{dateOnly(item.startsOn)} — {dateOnly(item.endsOn)}</td>{canManage ? <td className="p-3 text-right"><Button type="button" size="sm" variant="outline" onClick={() => edit(item)}><Pencil aria-hidden="true" /> Editar</Button></td> : null}</tr>)}</tbody>
-            </table>
+            <DataTable className="min-w-[42rem] w-full text-left text-body-small">
+              <DataTableHeader className="bg-surface-subtle text-text-secondary"><DataTableRow><DataTableHead scope="col" className="p-3 font-semibold">Cargo</DataTableHead><DataTableHead scope="col" className="p-3 font-semibold">Persona</DataTableHead><DataTableHead scope="col" className="p-3 font-semibold">Plaza</DataTableHead><DataTableHead scope="col" className="p-3 font-semibold">Vigencia</DataTableHead>{canManage ? <DataTableHead scope="col" className="p-3"><span className="sr-only">Acciones</span></DataTableHead> : null}</DataTableRow></DataTableHeader>
+              <DataTableBody>{selected!.appointments.map(item => <DataTableRow key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-subtle/70"><DataTableCell className="p-3 font-semibold text-text-primary">{BOARD_POSITION_LABELS[item.position]}</DataTableCell><DataTableCell className="p-3 text-text-primary">{personName(item)}</DataTableCell><DataTableCell className="p-3 text-text-secondary">{item.seatNumber ?? '—'}</DataTableCell><DataTableCell className="p-3 whitespace-nowrap text-text-secondary">{dateOnly(item.startsOn)} — {dateOnly(item.endsOn)}</DataTableCell>{canManage ? <DataTableCell className="flex gap-2 p-3 text-right"><Button type="button" size="sm" variant="outline" onClick={() => edit(item)}><Pencil aria-hidden="true" /> Editar</Button>{!item.endsOn ? <Button type="button" size="sm" variant="outline" onClick={() => replace(item)}>Sustituir</Button> : null}</DataTableCell> : null}</DataTableRow>)}</DataTableBody>
+            </DataTable>
           </div>}</CardContent>
         </Card>
 
         {canManage ? <Card>
-          <CardHeader><CardTitle>{editing ? 'Editar nombramiento' : 'Agregar nombramiento'}</CardTitle><CardDescription>{editing ? 'Actualice los datos disponibles para este nombramiento.' : 'Busque y seleccione una persona existente antes de guardar.'}</CardDescription></CardHeader>
+          <CardHeader><CardTitle>{editing ? 'Editar nombramiento' : replacing ? 'Sustituir nombramiento' : 'Agregar nombramiento'}</CardTitle><CardDescription>{editing ? 'Actualice los datos disponibles para este nombramiento.' : replacing ? 'Seleccione la persona sucesora y la fecha en que finaliza el nombramiento anterior.' : 'Busque y seleccione una persona existente antes de guardar.'}</CardDescription></CardHeader>
           <CardContent><form className="grid gap-4 md:grid-cols-2" onSubmit={submitAppointment}>
+            {replacing ? <label className="grid gap-2 text-sm font-semibold md:col-span-2">Finalización del nombramiento anterior<Input type="date" required value={replacing.endsOn?.slice(0, 10) ?? ''} onChange={event => setReplacing({ ...replacing, endsOn: event.target.value || null })} /></label> : null}
             {editing ? <div className="grid gap-2 md:col-span-2"><span className="text-sm font-semibold">Persona</span><p className="rounded-control border border-border-default bg-surface-subtle p-3" aria-label="Persona del nombramiento">{personName(editing)}</p></div> : <>
               <label className="grid gap-2 text-sm font-semibold md:col-span-2">Buscar persona<Input value={query} onChange={event => { setQuery(event.target.value); setAppointment({ ...appointment, personId: 0 }) }} placeholder="Nombre o identificación" aria-describedby="person-help" /><span id="person-help" className="font-normal text-text-secondary">Escriba al menos dos caracteres y seleccione una persona existente.</span></label>
               {query.trim().length >= 2 && candidates.isPending ? <LoadingState className="min-h-11 justify-start md:col-span-2" label="Buscando personas..." /> : null}
@@ -180,7 +193,7 @@ export function InstitutionalBoardPage() {
             <label className="grid gap-2 text-sm font-semibold">Plaza (opcional)<Input type="number" min="1" value={appointment.seatNumber} onChange={event => setAppointment({ ...appointment, seatNumber: event.target.value })} /></label>
             <label className="grid gap-2 text-sm font-semibold">Desde (opcional)<Input type="date" value={appointment.startsOn} onChange={event => setAppointment({ ...appointment, startsOn: event.target.value })} /></label>
             <label className="grid gap-2 text-sm font-semibold">Hasta (opcional)<Input type="date" value={appointment.endsOn} onChange={event => setAppointment({ ...appointment, endsOn: event.target.value })} /></label>
-            <div className="flex flex-wrap gap-2 md:col-span-2"><Button type="submit" disabled={(!editing && !appointment.personId) || mutations.createAppointment.isPending || mutations.updateAppointment.isPending}>{mutations.createAppointment.isPending || mutations.updateAppointment.isPending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar nombramiento'}</Button>{editing ? <Button type="button" variant="outline" onClick={() => { setEditing(null); setAppointment(emptyAppointment); setQuery('') }}>Cancelar</Button> : null}</div>
+            <div className="flex flex-wrap gap-2 md:col-span-2"><Button type="submit" disabled={(!editing && !appointment.personId) || mutations.createAppointment.isPending || mutations.updateAppointment.isPending || mutations.replaceAppointment.isPending}>{mutations.createAppointment.isPending || mutations.updateAppointment.isPending || mutations.replaceAppointment.isPending ? 'Guardando…' : editing ? 'Guardar cambios' : replacing ? 'Confirmar sustitución' : 'Agregar nombramiento'}</Button>{editing || replacing ? <Button type="button" variant="outline" onClick={() => { setEditing(null); setReplacing(null); setAppointment(emptyAppointment); setQuery('') }}>Cancelar</Button> : null}</div>
           </form></CardContent>
         </Card> : null}
       </div>

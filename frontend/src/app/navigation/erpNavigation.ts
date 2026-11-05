@@ -8,7 +8,7 @@ import { hasCapability, type AccessCapability } from '@/shared/security/access'
 
 export type NavigationAccent = 'lime' | 'green' | 'cyan' | 'blue' | 'teal' | 'maize' | 'terracotta' | 'violet'
 
-export type ErpNavigationItem = { label: string; path?: string; capability?: AccessCapability; icon?: LucideIcon; children?: readonly ErpNavigationItem[] }
+export type ErpNavigationItem = { label: string; path?: string; capability?: AccessCapability; anyOfCapabilities?: readonly AccessCapability[]; allOfCapabilities?: readonly AccessCapability[]; icon?: LucideIcon; children?: readonly ErpNavigationItem[] }
 export type ErpNavigationSection = { label: string; accent: NavigationAccent; items: readonly ErpNavigationItem[] }
 
 const navigation: readonly ErpNavigationSection[] = [
@@ -17,7 +17,7 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'Gobierno institucional', accent: 'green', items: [
       { label: 'Perfil institucional', path: '/app/admin/institutional-profile', capability: 'adm.institutional-profile.read', icon: Building2 },
       { label: 'Junta Directiva', path: '/app/admin/institutional-board', capability: 'adm.institutional-board.read', icon: UsersRound },
-      { label: 'Asambleas', path: '/app/admin/assemblies', capability: 'adm.assemblies.read', icon: Presentation },
+      { label: 'Asambleas', path: '/app/admin/assemblies', anyOfCapabilities: ['governance.assembly.session', 'adm.assemblies.read'], icon: Presentation },
       { label: 'Mis asambleas', path: '/app/assemblies/mine', icon: CalendarCheck2 },
     ],
   },
@@ -26,13 +26,13 @@ const navigation: readonly ErpNavigationSection[] = [
       { label: 'Usuarios', path: '/admin/users', capability: 'usr.users.read', icon: UserRoundCog },
       { label: 'Afiliados', path: '/app/admin/affiliates', capability: 'adm.affiliates.read', icon: ContactRound },
       { label: 'Solicitudes de cuenta', path: '/admin/user-requests', capability: 'usr.user-requests.read', icon: UserRoundPlus },
-      { label: 'Solicitudes de afiliación', path: '/app/admin/requests', capability: 'adm.requests.read', icon: ClipboardList },
+       { label: 'Solicitudes de afiliación', path: '/app/admin/requests', capability: 'padron.application.review', icon: ClipboardList },
       { label: 'Justificaciones de ausencia', path: '/app/admin/absence-justifications', capability: 'adm.justifications.read', icon: Files },
     ],
   },
   {
     label: 'Desarrollo comunitario', accent: 'blue', items: [
-      { label: 'Eventos', path: '/app/events', capability: 'pub.events.manage', icon: CalendarDays },
+      { label: 'Eventos', path: '/app/events', anyOfCapabilities: ['events.proposal.create', 'events.proposal.review', 'events.proposal.approve', 'events.publish', 'pub.events.manage'], icon: CalendarDays },
       { label: 'Emprendimientos', path: '/app/admin/ventures/summary', capability: 'ent.ventures.read', icon: Store, children: [{ label: 'Resumen', path: '/app/admin/ventures/summary', capability: 'ent.ventures.read', icon: ChevronRight }, { label: 'Directorio', path: '/app/admin/ventures', capability: 'ent.ventures.read', icon: Store }] },
       { label: 'Voluntariado', path: '/app/admin/volunteering', capability: 'vol.opportunities.read', icon: HandHeart },
     ],
@@ -43,12 +43,16 @@ const navigation: readonly ErpNavigationSection[] = [
       { label: 'Inventario', path: '/inventory', capability: 'inv.inventory.read', icon: Package, children: [{ label: 'Resumen', path: '/inventory', icon: Package }, { label: 'Artículos', path: '/inventory/items', icon: Package }, { label: 'Categorías', path: '/inventory/categories', icon: Tags }, { label: 'Movimientos', path: '/inventory/movements', icon: ArrowLeftRight }, { label: 'Préstamos', path: '/inventory/loans', icon: ContactRound }, { label: 'Alertas', path: '/inventory/alerts', icon: TriangleAlert }, { label: 'Reportes', path: '/inventory/reports', icon: ScrollText }] },
     ],
   },
-  { label: 'Finanzas', accent: 'maize', items: [{ label: 'Finanzas', path: '/app/financial', icon: Wallet, children: [{ label: 'Resumen', path: '/app/financial', capability: 'fin.charges.read', icon: Wallet }, { label: 'Movimientos financieros', path: '/app/financial/movements', capability: 'fin.movements.read', icon: ArrowLeftRight }, { label: 'DINADECO', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: ScrollText }] }, { label: 'Donaciones', path: '/app/donations', capability: 'don.donations.read', icon: HeartHandshake }] },
+  { label: 'Finanzas', accent: 'maize', items: [{ label: 'Finanzas', path: '/app/financial/dashboard', icon: Wallet, children: [{ label: 'Dashboard financiero', path: '/app/financial/dashboard', anyOfCapabilities: ['fin.movements.read', 'fin.charges.read'], icon: Wallet }, { label: 'Resumen', path: '/app/financial', allOfCapabilities: ['fin.movements.read', 'fin.charges.read'], icon: Wallet }, { label: 'Cargos y pagos', path: '/app/financial/charges', capability: 'fin.charges.read', icon: Wallet }, { label: 'Movimientos financieros', path: '/app/financial/movements', capability: 'fin.movements.read', icon: ArrowLeftRight }, { label: 'DINADECO', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: ScrollText }] }, { label: 'Donaciones', path: '/app/donations', capability: 'don.donations.read', icon: HeartHandshake }] },
   { label: 'Seguridad y auditoría', accent: 'terracotta', items: [{ label: 'Bitácora', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: ScrollText }] },
-  { label: 'Mi espacio', accent: 'violet', items: [{ label: 'Mi perfil', path: '/app/profile', icon: CircleUserRound }, { label: 'Enviar justificación', path: '/app/affiliate/absence-justifications/new', icon: FilePenLine }, { label: 'Mis justificaciones', path: '/app/affiliate/justifications', icon: Files }] },
+  { label: 'Mi espacio', accent: 'violet', items: [{ label: 'Mi perfil', path: '/app/profile', capability: 'usr.profile.read', icon: CircleUserRound }, { label: 'Enviar justificación', path: '/app/affiliate/absence-justifications/new', icon: FilePenLine }, { label: 'Mis justificaciones', path: '/app/affiliate/justifications', icon: Files }] },
 ]
 
-function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] | null | undefined) { return item.capability === undefined || hasCapability(permissionCodes, item.capability) }
+function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] | null | undefined) {
+  return (item.capability === undefined || hasCapability(permissionCodes, item.capability))
+    && (item.anyOfCapabilities === undefined || item.anyOfCapabilities.some(capability => hasCapability(permissionCodes, capability)))
+    && (item.allOfCapabilities === undefined || item.allOfCapabilities.every(capability => hasCapability(permissionCodes, capability)))
+}
 
 export function getErpNavigation(permissionCodes: readonly string[] | null | undefined): ErpNavigationSection[] {
   return navigation.flatMap((section) => {
@@ -61,14 +65,20 @@ export function getErpNavigation(permissionCodes: readonly string[] | null | und
   })
 }
 
-export function getErpEntryPath(permissionCodes: readonly string[] | null | undefined): string {
+export function getErpEntryPath(permissionCodes: readonly string[] | null | undefined, roleName?: string): string {
+  // Entry selection is presentation only; RoleRoute still authorizes every destination by capability.
+  if (
+    roleName === 'ROLE_INSTITUTIONAL_TREASURER'
+    && hasCapability(permissionCodes, 'fin.movements.read')
+    && hasCapability(permissionCodes, 'fin.charges.read')
+  ) return '/app/financial'
   if (hasCapability(permissionCodes, 'erp.dashboard.read')) return '/app/dashboard'
-  if (hasCapability(permissionCodes, 'fin.charges.read')) return '/app/financial'
+  if (hasCapability(permissionCodes, 'fin.charges.read')) return '/app/financial/dashboard'
   if (hasCapability(permissionCodes, 'inv.inventory.read')) return '/inventory'
   for (const section of getErpNavigation(permissionCodes)) for (const item of section.items) {
     if (item.capability && item.path) return item.path
     const child = item.children?.find((candidate) => candidate.capability && candidate.path)
     if (child?.path) return child.path
   }
-  return '/app/profile'
+  return '/profile'
 }

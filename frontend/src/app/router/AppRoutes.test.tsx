@@ -70,9 +70,13 @@ beforeEach(() => {
     if (url === '/events') return Promise.resolve({ data: [] })
     if (url === '/public/events') return Promise.resolve({ data: [] })
     if (url === '/public/ventures') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 12 } })
+    if (url === '/public/volunteering/opportunities') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 12 } })
+    if (url === '/public/volunteering/opportunities/7') return Promise.resolve({ data: { id: 7, title: 'Limpieza comunitaria', description: null, location: 'Curime', capacity: null, applicationDeadline: null, acceptingApplications: true } })
     if (url === '/financial/charges') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/financial/movements/summary') return Promise.resolve({ data: { currency: 'CRC', totalIncome: '0.00', totalExpenses: '0.00', balance: '0.00' } })
+    if (url === '/financial/treasury/summary') return Promise.resolve({ data: { currency: 'CRC', period: { dateFrom: null, dateTo: null }, accumulated: { income: '0.00', expenses: '0.00', net: '0.00', bySource: {} }, currentPeriod: { income: '0.00', expenses: '0.00', net: '0.00', bySource: {} }, receivables: { pendingCharges: '0.00', pendingChargeCount: 0 }, openingBalance: { established: false, amount: null, effectiveAt: null }, registeredBalance: null, reconciliation: { reliable: false, reason: 'OPENING_BALANCE_NOT_ESTABLISHED', issues: [], confirmedPayments: '0.00', confirmedPaymentCount: 0, unlinkedConfirmedPayments: '0.00', unlinkedConfirmedPaymentCount: 0, unlinkedConfirmedDonationCount: 0 } } })
+    if (url === '/admin-reports/dashboard') return Promise.resolve({ data: emptyAdminDashboard() })
     if (url === '/financial/reports/dinadeco/annual') return Promise.resolve({ data: responseForDinadeco() })
     if (url === '/donations') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/ventures') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 1 } })
@@ -91,6 +95,20 @@ afterEach(() => {
 })
 
 describe('AppRoutes capability deep links', () => {
+  it('renders the public volunteering directory without a session', async () => {
+    renderRoute('/voluntariado', null)
+    expect(await screen.findByRole('heading', { name: 'Voluntariado' })).toBeInTheDocument()
+    expect(await screen.findByText('No hay oportunidades publicadas')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/public/volunteering/opportunities', { params: { page: 1, limit: 12 } })
+  })
+
+  it('renders a public volunteering detail and optional account links without a session', async () => {
+    renderRoute('/voluntariado/7', null)
+    expect(await screen.findByRole('heading', { name: 'Limpieza comunitaria' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Postularme como voluntario' })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Iniciar sesión' }).some(link => link.getAttribute('href') === '/login')).toBe(true)
+  })
+
   it('renders the anonymous public ventures directory through the public layout', async () => {
     renderRoute('/ventures', null)
 
@@ -118,7 +136,7 @@ describe('AppRoutes capability deep links', () => {
   it('shows services and logout, but no panel or account request, to a general account', async () => {
     renderRoute('/servicios', 'Subscription_L1', false)
 
-    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Servicios para la comunidad' })).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Ver servicios' })).not.toHaveLength(0)
     expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
@@ -128,7 +146,7 @@ describe('AppRoutes capability deep links', () => {
   it('logs out a general account from the mobile public menu', async () => {
     renderRoute('/servicios', 'Subscription_L1', false)
 
-    await screen.findByRole('heading', { name: 'Servicios' })
+    await screen.findByRole('heading', { name: 'Servicios para la comunidad' })
     fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
 
@@ -147,9 +165,15 @@ describe('AppRoutes capability deep links', () => {
   it('redirects a general account deep link to services without rendering internal navigation', async () => {
     renderRoute('/app/admin/affiliates', 'Subscription_L1', false)
 
-    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Servicios para la comunidad' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
     expect(screen.queryByText('Navegación móvil')).not.toBeInTheDocument()
+  })
+
+  it('keeps a community session and redirects /app to Mi Comunidad', async () => {
+    renderRoute('/app', 'Cuenta comunitaria', false)
+    expect(await screen.findByRole('heading', { name: 'Bienvenido a Mi Comunidad' })).toBeInTheDocument()
+    expect(sessionStorage.getItem('sgi-curime-session')).not.toBeNull()
   })
 
   it('redirects anonymous users from /admin/users to login before privileged content renders', () => {
@@ -174,7 +198,7 @@ describe('AppRoutes capability deep links', () => {
   it('allows administrators into event management', async () => {
     renderRoute('/app/events', 'Administrador')
 
-    expect(await screen.findByRole('heading', { name: 'Eventos' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Eventos y propuestas' })).toBeInTheDocument()
     expect(await screen.findByText('No hay eventos registrados')).toBeInTheDocument()
   })
 
@@ -191,9 +215,9 @@ describe('AppRoutes capability deep links', () => {
   })
 
   it('redirects administrators from /app to the dashboard', async () => {
-    renderRoute('/app', 'Administrador')
+    renderRoute('/app', 'Administrador', true, ['erp.dashboard.read'])
 
-    expect(await screen.findByRole('heading', { name: /Buenos días/ }, { timeout: 5000 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /Buenos días/ })).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Inicio' })[0]).toHaveAttribute('href', '/app/dashboard')
   })
 
@@ -203,7 +227,7 @@ describe('AppRoutes capability deep links', () => {
   })
 
   it('denies a dashboard deep link without its read capability', async () => {
-    renderRoute('/app/dashboard', 'Tesorero')
+    renderRoute('/app/dashboard', 'Tesorero', true, [])
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Buenos días/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
@@ -211,7 +235,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('redirects a finance actor without dashboard access from /app to finance', async () => {
     renderRoute('/app', 'Tesorero')
-    expect(await screen.findByRole('heading', { name: 'Cargos de reservas' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Tesorería institucional' }, { timeout: 5000 })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
   })
 
@@ -228,7 +252,7 @@ describe('AppRoutes capability deep links', () => {
   })
 
   it('denies an inventory deep link before rendering its module without the capability', async () => {
-    renderRoute('/inventory', 'Vecino/Afiliado')
+    renderRoute('/inventory', 'Vecino/Afiliado', true, [])
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Inventario' })).not.toBeInTheDocument()
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
@@ -237,17 +261,18 @@ describe('AppRoutes capability deep links', () => {
   it('redirects an ERP affiliate without administrative capabilities to personal profile', async () => {
     renderRoute('/app', 'Vecino/Afiliado')
     expect(await screen.findByRole('heading', { name: 'Mi perfil' }, { timeout: 5000 })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
+    expect(document.getElementById('public-content')).toBeInTheDocument()
+    expect(document.getElementById('erp-content')).not.toBeInTheDocument()
   })
 
   it('keeps Subscription_L1 outside ERP even when a permission is present', async () => {
     renderRoute('/app', 'Subscription_L1', false, ['erp.dashboard.read'])
-    expect(await screen.findByRole('heading', { name: 'Servicios' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Servicios para la comunidad' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Buenos días/ })).not.toBeInTheDocument()
   })
 
   it('renders profile inside the ERP shell while preserving the public profile route', async () => {
-    const user = { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role: 'Administrador', canAccessErp: true, permissionCodes: ['erp.dashboard.read'] }
+    const user = { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role: 'Administrador', canAccessErp: true, permissionCodes: ['erp.dashboard.read', 'usr.profile.read'] }
     sessionStorage.setItem('sgi-curime-session', JSON.stringify({ token: 'test-token', user }))
     vi.spyOn(authService, 'me').mockResolvedValue(user)
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -263,8 +288,22 @@ describe('AppRoutes capability deep links', () => {
     expect(document.getElementById('public-content')).toBeInTheDocument()
   })
 
+  it('denies an ERP profile deep link without the profile capability while keeping community profile access', async () => {
+    renderRoute('/app/profile', 'ROLE_INSTITUTIONAL_PRESIDENT', true, ['erp.dashboard.read'])
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Mi perfil' })).not.toBeInTheDocument()
+  })
+
+  it('does not expose the removed roles placeholder route', async () => {
+    renderRoute('/app/roles', 'ROLE_SYSTEM_ADMIN', true, ['usr.roles.read'])
+
+    expect(await screen.findByRole('heading', { name: 'Página no encontrada' })).toBeInTheDocument()
+    expect(screen.queryByText('Roles')).not.toBeInTheDocument()
+  })
+
   it('preserves the authenticated session when returning to the public portal', async () => {
-    renderRoute('/app/dashboard', 'Administrador')
+    renderRoute('/app/dashboard', 'Administrador', true, ['erp.dashboard.read'])
 
     await screen.findByRole('heading', { name: /Buenos días/ })
     fireEvent.click(screen.getAllByRole('link', { name: 'Ver sitio público' })[0])
@@ -302,6 +341,13 @@ describe('AppRoutes capability deep links', () => {
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Afiliados' })).not.toBeInTheDocument()
+  })
+
+  it('keeps assembly authorization errors separate from render-error recovery', async () => {
+    renderRoute('/app/admin/assemblies/1', 'Vecino/Afiliado')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Algo no salió como esperábamos' })).not.toBeInTheDocument()
   })
 
   it('redirects anonymous users from /app/admin/affiliates to login', () => {
@@ -416,19 +462,25 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.queryByRole('heading', { name: 'Donaciones' })).not.toBeInTheDocument()
   })
 
-  it('renders the real financial page for treasurers using the financial API', async () => {
+  it('renders treasury for treasurers using the consolidated API', async () => {
     renderRoute('/app/financial', 'Tesorero')
 
-    expect(await screen.findByRole('heading', { name: 'Cargos de reservas' })).toBeInTheDocument()
-    expect(await screen.findByText('No hay cargos financieros')).toBeInTheDocument()
-    expect(httpGet).toHaveBeenCalledWith('/financial/charges', { params: expect.objectContaining({ page: 1, limit: 20 }) })
+    expect(await screen.findByRole('heading', { name: 'Tesorería institucional' })).toBeInTheDocument()
+    expect(await screen.findByText('Saldo inicial no establecido')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/financial/treasury/summary', { params: expect.objectContaining({ dateFrom: expect.any(String), dateTo: expect.any(String) }) })
   })
 
   it('renders the real financial page for administrators', async () => {
     renderRoute('/app/financial', 'Administrador')
 
+    expect(await screen.findByRole('heading', { name: 'Tesorería institucional' })).toBeInTheDocument()
+  })
+
+  it('preserves charges and payments on their specialized route', async () => {
+    renderRoute('/app/financial/charges', 'Tesorero')
     expect(await screen.findByRole('heading', { name: 'Cargos de reservas' })).toBeInTheDocument()
     expect(await screen.findByText('No hay cargos financieros')).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/financial/charges', { params: expect.objectContaining({ page: 1, limit: 20 }) })
   })
 
   it('redirects users without financial capability to 403', async () => {
@@ -499,6 +551,13 @@ describe('AppRoutes capability deep links', () => {
 
 function emptyInstitutionalProfile() {
   return { id: 1, legalName: null, legalIdentification: null, dinadecoRegistrationCode: null, dinadecoRegion: null, organizationType: null, province: null, canton: null, district: null, locality: null, correspondenceAddress: null, phone: null, telefax: null, email: null, createdAt: '2026-09-20T00:00:00.000Z', updatedAt: '2026-09-20T00:00:00.000Z' }
+}
+
+function emptyAdminDashboard() {
+  return {
+    metadata: { generatedAt: '2026-11-04T12:00:00.000Z', generatedBy: { id: 1, fullName: 'Ana Pérez' }, period: { from: null, to: null }, appliedFilters: {}, dataSource: [], reportVersion: '1.0' },
+    data: {},
+  }
 }
 
 function responseForDinadeco() {

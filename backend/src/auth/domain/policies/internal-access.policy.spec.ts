@@ -11,13 +11,13 @@ describe('canAccessErp', () => {
 
   const administrator = {
     userStatus: 'ACTIVE',
-    userRoleName: 'Administrador',
+    userRoleName: 'ROLE_SYSTEM_ADMIN',
     userRoleIsActive: true,
     hasPerson: false,
     affiliateStatus: null,
   };
 
-  it('allows an active administrator with an active role without a person or affiliate', () => {
+  it('allows an active canonical administrator without a person or affiliate', () => {
     expect(canAccessErp(administrator)).toBe(true);
   });
 
@@ -42,28 +42,65 @@ describe('canAccessErp', () => {
     ).toBe(false);
   });
 
-  it('denies a treasurer without an affiliate', () => {
+  it('denies a community account even after Person and Affiliate linkage', () => {
     expect(
       canAccessErp({
         ...validAffiliate,
-        userRoleName: 'Tesorero',
-        hasPerson: false,
-        affiliateStatus: null,
+        userRoleName: 'Cuenta comunitaria',
       }),
     ).toBe(false);
   });
 
-  it('allows a treasurer with an active affiliate', () => {
+  it('denies canonical community account even after Person and Affiliate linkage', () => {
+    expect(
+      canAccessErp({
+        ...validAffiliate,
+        userRoleName: 'ROLE_COMMUNITY_USER',
+      }),
+    ).toBe(false);
+  });
+
+  it('admits a V2 technical administrator without an affiliate', () => {
+    expect(
+      canAccessErp({
+        ...validAffiliate,
+        userRoleName: 'ROLE_SYSTEM_ADMIN',
+        hasPerson: false,
+        affiliateStatus: null,
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    'ROLE_INSTITUTIONAL_PRESIDENT',
+    'ROLE_INSTITUTIONAL_SECRETARY',
+    'ROLE_INSTITUTIONAL_TREASURER',
+    'ROLE_INSTITUTIONAL_OPERATOR',
+  ])(
+    'admits active institutional role %s without an affiliate',
+    (userRoleName) => {
+      expect(
+        canAccessErp({
+          ...validAffiliate,
+          userRoleName,
+          hasPerson: false,
+          affiliateStatus: null,
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('denies a historical treasurer even with an active affiliate', () => {
     expect(
       canAccessErp({
         ...validAffiliate,
         userRoleName: 'Tesorero',
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it('allows a Vecino/Afiliado with an active affiliate', () => {
-    expect(canAccessErp(validAffiliate)).toBe(true);
+  it('denies a historical affiliate role even with active affiliation', () => {
+    expect(canAccessErp(validAffiliate)).toBe(false);
   });
 
   it('does not use null or different affiliate legacy roles as ERP authority', () => {
@@ -72,13 +109,13 @@ describe('canAccessErp', () => {
         ...validAffiliate,
         affiliateRoleId: null,
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       canAccessErp({
         ...validAffiliate,
         affiliateRoleId: 999,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it.each([

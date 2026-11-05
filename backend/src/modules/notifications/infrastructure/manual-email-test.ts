@@ -9,6 +9,7 @@ import {
   type NotificationEnvironment,
 } from './config/email.config';
 import { GmailAppPasswordEmailProvider } from './gmail-app-password-email.provider';
+import { ResendEmailProvider } from './resend-email.provider';
 
 const TEST_SUBJECT = 'Prueba de correo SGI-Curime';
 const TEST_TEXT =
@@ -43,13 +44,16 @@ export async function runManualEmailTest(
       'Manual email test refused: EMAIL_SEND_ENABLED must be true.',
     );
   }
-  if (config.provider !== 'gmail-app-password') {
+  if (
+    config.provider !== 'gmail-app-password' &&
+    config.provider !== 'resend'
+  ) {
     throw new ManualEmailTestError(
-      'Manual email test refused: EMAIL_PROVIDER must be gmail-app-password.',
+      'Manual email test refused: EMAIL_PROVIDER must be gmail-app-password or resend.',
     );
   }
 
-  const providerFactory = options.providerFactory ?? createGmailProvider;
+  const providerFactory = options.providerFactory ?? createEmailProvider;
   const provider = providerFactory(config);
 
   options.logger.info('Configuración de correo válida.');
@@ -106,7 +110,17 @@ function safelyLoadConfig(
   }
 }
 
-function createGmailProvider(config: EmailRuntimeConfig): EmailProvider {
+function createEmailProvider(config: EmailRuntimeConfig): EmailProvider {
+  if (config.provider === 'resend') {
+    return new ResendEmailProvider({
+      from: requireValue(config.from, 'EMAIL_FROM'),
+      fromName: config.fromName,
+      replyTo: config.replyTo,
+      apiKey: requireValue(config.resendApiKey, 'RESEND_API_KEY'),
+      qaAllowedRecipient: config.resendQaAllowedRecipient,
+      timeoutMs: config.resendTimeoutMs,
+    });
+  }
   return new GmailAppPasswordEmailProvider({
     from: requireValue(config.from, 'EMAIL_FROM'),
     fromName: config.fromName,

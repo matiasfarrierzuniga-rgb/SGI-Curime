@@ -33,10 +33,12 @@ export interface Assembly {
   convocationsLockedAt: string | null
   _count?: { convocations: number }
 }
+export interface AssemblyCall { id: number; assemblyId: number; callNumber: number; scheduledAt: string; quorumType: AssemblyQuorumType; quorumValue: number; startedAt: string | null }
 
 export interface AttendanceItem extends Convocation { attendance: { id: number; status: AttendanceStatus } | null }
 export interface AttendanceSummary { present: number; absent: number; justified: number; unrecorded: number; data: AttendanceItem[]; quorum: QuorumResult }
-export interface AssemblyDetail extends Assembly { convocations: Convocation[]; quorum: QuorumResult; attendance: AttendanceSummary }
+export interface AssemblyDetail extends Assembly { convocations: Convocation[]; calls: AssemblyCall[]; quorum: QuorumResult; attendance: AttendanceSummary }
+export interface AssemblyCallPayload { callNumber: number; scheduledAt: string; quorumType: AssemblyQuorumType; quorumValue: number }
 export interface EligibleAffiliate { id: number; fullName: string }
 export interface AssemblyPayload { title: string; type?: string; date: string; place: string; description?: string; quorumType: AssemblyQuorumType; quorumValue: number }
 export interface MineAssembly extends Convocation { assembly: Assembly & { attendanceStatus: AttendanceStatus | null; justification: { id: number; status: 'PENDING' | 'APPROVED' | 'REJECTED' } | null } }

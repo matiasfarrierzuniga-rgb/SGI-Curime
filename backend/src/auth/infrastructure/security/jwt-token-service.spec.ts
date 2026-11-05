@@ -7,12 +7,13 @@ describe('JwtTokenService', () => {
     const service = new JwtTokenService(jwtService as unknown as JwtService);
 
     await expect(
-      service.sign({ sub: 1, email: 'a@b.c', role: 'Administrador' }),
+      service.sign({ sub: 1, email: 'a@b.c', role: 'Administrador', sessionGeneration: 0 }),
     ).resolves.toBe('signed');
     expect(jwtService.signAsync).toHaveBeenCalledWith({
       sub: 1,
       email: 'a@b.c',
       role: 'Administrador',
+      sessionGeneration: 0,
     });
   });
 });

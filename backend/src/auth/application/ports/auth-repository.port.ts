@@ -7,10 +7,14 @@ import type {
 export const AUTH_REPOSITORY = Symbol('AUTH_REPOSITORY');
 
 export interface AuthTransaction {
-  claimActivationToken(tokenId: number, now: Date): Promise<boolean>;
+  claimActivationToken(
+    tokenId: number,
+    now: Date,
+    purpose: 'LEGACY_ACCOUNT_ACTIVATION',
+  ): Promise<boolean>;
   activateUser(userId: number, passwordHash: string): Promise<boolean>;
   claimResetToken(tokenId: number, now: Date): Promise<boolean>;
-  setUserPassword(userId: number, passwordHash: string): Promise<void>;
+  setUserPassword(userId: number, passwordHash: string): Promise<boolean>;
   revokeUserSessions(userId: number, reason: string): Promise<number>;
 }
 
@@ -26,12 +30,13 @@ export interface AuthRepository {
     id: number,
     refreshTokenHash: string,
     expiresAt: Date,
-  ): Promise<void>;
+  ): Promise<number>;
   invalidateAndCreateResetToken(
     userId: number,
     tokenHash: string,
     expiresAt: Date,
-  ): Promise<void>;
+    expectedEmail: string,
+  ): Promise<boolean>;
   updatePassword(id: number, passwordHash: string): Promise<void>;
   withTransaction<T>(work: (tx: AuthTransaction) => Promise<T>): Promise<T>;
 }

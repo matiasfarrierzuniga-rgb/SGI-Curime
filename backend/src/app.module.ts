@@ -29,6 +29,8 @@ import { InstitutionalBoardModule } from './institutional-board/institutional-bo
 import { EntrepreneurshipModule } from './entrepreneurship/entrepreneurship.module';
 import { VolunteeringModule } from './volunteering/volunteering.module';
 import { InboxNotificationsModule } from './modules/notifications/inbox-notifications.module';
+import { HealthController } from './health/health.controller';
+import { TerritorialCatalogModule } from './territorial-catalog/territorial-catalog.module';
 
 @Module({
   imports: [
@@ -60,8 +62,9 @@ import { InboxNotificationsModule } from './modules/notifications/inbox-notifica
     EntrepreneurshipModule,
     VolunteeringModule,
     InboxNotificationsModule,
+    TerritorialCatalogModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}

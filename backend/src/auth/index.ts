@@ -12,6 +12,7 @@ export {
   type Capability,
 } from './presentation/capabilities/capability-policy';
 export { RequireCapabilities } from './presentation/decorators/require-capabilities.decorator';
+export { RequireAnyCapabilities } from './presentation/decorators/require-any-capabilities.decorator';
 export { RequireCapabilityByBodyValue } from './presentation/decorators/require-capability-by-body-value.decorator';
 export { RolesGuard } from './presentation/guards/roles.guard';
 export type { AuthenticatedUser } from './domain/entities/auth-user';

@@ -1,6 +1,7 @@
 export enum UserStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
+  PENDING_EMAIL_VERIFICATION = 'PENDING_EMAIL_VERIFICATION',
   BLOCKED = 'BLOCKED',
 }
 
@@ -40,7 +41,7 @@ export interface AdminPersonReadModel {
 export interface User {
   id: number;
   fullName: string;
-  identification: string;
+  identification: string | null;
   identificationType: 'NATIONAL' | 'DIMEX' | null;
   email: string;
   phoneCountryCode: string | null;

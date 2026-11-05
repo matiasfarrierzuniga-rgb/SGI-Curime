@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/require-await */
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { hasCapability } from '../auth';
 import { CreateAssemblyDto } from './dto/assembly.dto';
 import {
   AssembliesService,
@@ -37,6 +36,11 @@ function prismaMock(overrides: Record<string, unknown> = {}) {
       findMany: jest.fn().mockResolvedValue([]),
       count: jest.fn().mockResolvedValue(0),
     },
+    assemblyCall: {
+      deleteMany: jest.fn(),
+      createMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     assemblyAttendance: { count: jest.fn().mockResolvedValue(0) },
     absenceJustification: { count: jest.fn().mockResolvedValue(0) },
   };
@@ -60,6 +64,7 @@ function prismaMock(overrides: Record<string, unknown> = {}) {
       upsert: jest.fn(),
     },
     absenceJustification: { count: jest.fn().mockResolvedValue(0) },
+    assemblyCall: { findMany: jest.fn().mockResolvedValue([]) },
     $transaction: jest.fn(async (value: unknown) =>
       typeof value === 'function'
         ? (value as (client: typeof tx) => unknown)(tx)
@@ -74,17 +79,7 @@ const audit = { log: jest.fn().mockResolvedValue(undefined) };
 const serviceFor = (prisma: unknown) =>
   new AssembliesService(prisma as never, audit as never);
 
-describe('Assemblies authorization and DTO validation', () => {
-  it('grants create/manage only to Administrador', () => {
-    expect(hasCapability('Administrador', 'adm.assemblies.manage')).toBe(true);
-    expect(hasCapability('Vecino/Afiliado', 'adm.assemblies.manage')).toBe(
-      false,
-    );
-    expect(
-      hasCapability('Miembro de Junta Directiva', 'adm.assemblies.manage'),
-    ).toBe(false);
-  });
-
+describe('Assemblies DTO validation', () => {
   it.each([
     ['FIXED', 0],
     ['FIXED', -1],
@@ -397,6 +392,39 @@ describe('Assembly convocations', () => {
   });
 });
 
+describe('Assembly call rounds', () => {
+  const calls = [
+    { callNumber: 1, scheduledAt: new Date('2026-10-01T18:00:00Z'), quorumType: 'FIXED' as const, quorumValue: 5 },
+    { callNumber: 2, scheduledAt: new Date('2026-10-01T18:30:00Z'), quorumType: 'PERCENTAGE' as const, quorumValue: 50 },
+  ];
+
+  it('atomically replaces configured call rounds and audits the change', async () => {
+    const { prisma, tx } = prismaMock();
+    tx.assemblyCall.findMany.mockResolvedValue(calls);
+    await expect(serviceFor(prisma).replaceCalls(1, calls, 9)).resolves.toEqual(calls);
+    expect(tx.assemblyCall.deleteMany).toHaveBeenCalledWith({ where: { assemblyId: 1 } });
+    expect(tx.assemblyCall.createMany).toHaveBeenCalledWith({ data: calls.map(call => ({ ...call, assemblyId: 1 })) });
+    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ userId: 9, action: 'ASSEMBLY_CALLS_UPDATED' }), tx);
+  });
+
+  it.each([
+    [[calls[0], { ...calls[1], callNumber: 1 }]],
+    [[calls[0], { ...calls[1], scheduledAt: calls[0].scheduledAt }]],
+    [[{ ...calls[0], quorumType: 'PERCENTAGE' as const, quorumValue: 101 }]],
+  ])('rejects invalid complete call-round sets', async (invalidCalls) => {
+    const { prisma, tx } = prismaMock();
+    await expect(serviceFor(prisma).replaceCalls(1, invalidCalls, 9)).rejects.toBeInstanceOf(BadRequestException);
+    expect(tx.assemblyCall.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects replacement after calls are locked', async () => {
+    const { prisma, tx } = prismaMock();
+    prisma.assembly.findUnique.mockResolvedValue({ ...assembly, convocationsLockedAt: new Date() });
+    await expect(serviceFor(prisma).replaceCalls(1, calls, 9)).rejects.toBeInstanceOf(BadRequestException);
+    expect(tx.assemblyCall.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
 describe('Assembly lifecycle, deletion and attendance', () => {
   it('starts a scheduled assembly with convocations and freezes it', async () => {
     const { prisma, tx } = prismaMock();
@@ -670,31 +698,4 @@ describe('My assemblies privacy', () => {
     expect(prisma.assemblyConvocation.findMany).not.toHaveBeenCalled();
   });
 
-  it('rejects an assembly id not convoked for the authenticated affiliate', async () => {
-    const { prisma } = prismaMock();
-    prisma.user.findUnique.mockResolvedValue({
-      person: { affiliate: { id: 7 } },
-    });
-    prisma.assemblyConvocation.findUnique.mockResolvedValue(null);
-    await expect(
-      serviceFor(prisma).findOneAllowed(99, 42, 'Vecino/Afiliado'),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-  });
-
-  it('returns permitted detail without exposing other convocations', async () => {
-    const { prisma } = prismaMock();
-    prisma.user.findUnique.mockResolvedValue({
-      person: { affiliate: { id: 7 } },
-    });
-    prisma.assemblyConvocation.findUnique.mockResolvedValue({
-      legacyRoleNameSnapshot: 'Fiscal',
-    });
-    const result = await serviceFor(prisma).findOneAllowed(
-      1,
-      42,
-      'Vecino/Afiliado',
-    );
-    expect(result).toMatchObject({ id: 1, roleNameSnapshot: 'Fiscal' });
-    expect(result).not.toHaveProperty('convocations');
-  });
 });

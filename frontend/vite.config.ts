@@ -16,7 +16,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
-    pool: 'threads',
+    pool: 'vmThreads',
     fileParallelism: true,
     maxWorkers: 2,
     server: { deps: { inline: ['@tanstack/react-query'] } },

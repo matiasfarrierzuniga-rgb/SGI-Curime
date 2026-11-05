@@ -32,6 +32,16 @@ describe('PublicVenturesPage', () => {
     expect(usePublicVentures).toHaveBeenLastCalledWith({ page: 1, limit: 12 })
   })
 
+  it('requests the next page of published ventures without changing the public route', () => {
+    vi.mocked(usePublicVentures).mockReturnValue({ isPending: false, isError: false, data: { data: [venture], total: 13, page: 1, limit: 12 } } as never)
+
+    render(<MemoryRouter><PublicVenturesPage /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+
+    expect(usePublicVentures).toHaveBeenLastCalledWith({ page: 2, limit: 12 })
+    expect(screen.getByRole('link', { name: /ver detalle de café curime/i })).toHaveAttribute('href', '/ventures/7')
+  })
+
   it('shows a retryable error without static fallback ventures', () => {
     vi.mocked(usePublicVentures).mockReturnValue({ isPending: false, isError: true, error: new Error('offline'), refetch: vi.fn() } as never)
 

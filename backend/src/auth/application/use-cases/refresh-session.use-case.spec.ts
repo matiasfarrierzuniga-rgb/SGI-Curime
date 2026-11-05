@@ -13,9 +13,10 @@ const session = {
 const user = {
   id: 1,
   email: 'admin@example.com',
-  roleName: 'Administrador',
+  roleName: 'ROLE_SYSTEM_ADMIN',
   status: 'ACTIVE',
   subscriptionExpirationDate: null,
+  sessionGeneration: 3,
 };
 
 describe('RefreshSessionUseCase', () => {
@@ -63,7 +64,8 @@ describe('RefreshSessionUseCase', () => {
     expect(tokens.sign).toHaveBeenCalledWith({
       sub: 1,
       email: 'admin@example.com',
-      role: 'Administrador',
+      role: 'ROLE_SYSTEM_ADMIN',
+      sessionGeneration: 3,
     });
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: AuditAction.REFRESH_SUCCESS }),

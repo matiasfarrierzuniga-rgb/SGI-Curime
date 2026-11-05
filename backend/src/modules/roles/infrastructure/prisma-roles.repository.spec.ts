@@ -2,19 +2,19 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { PrismaRolesRepository } from './prisma-roles.repository';
 
 describe('PrismaRolesRepository', () => {
-  it('returns active roles ordered by name', async () => {
+  it('returns only active canonical roles ordered by name', async () => {
     const db = {
       role: {
         findMany: jest.fn().mockResolvedValue([
           {
             id: 1,
-            name: 'Administrador',
+            name: 'ROLE_SYSTEM_ADMIN',
             description: 'Root',
             isActive: true,
           },
           {
             id: 2,
-            name: 'Tesorero',
+            name: 'ROLE_INSTITUTIONAL_TREASURER',
             description: null,
             isActive: true,
           },
@@ -26,11 +26,23 @@ describe('PrismaRolesRepository', () => {
     );
 
     await expect(repository.findActive()).resolves.toEqual([
-      { id: 1, name: 'Administrador', description: 'Root', isActive: true },
-      { id: 2, name: 'Tesorero', description: null, isActive: true },
+      { id: 1, name: 'ROLE_SYSTEM_ADMIN', description: 'Root', isActive: true },
+      { id: 2, name: 'ROLE_INSTITUTIONAL_TREASURER', description: null, isActive: true },
     ]);
     expect(db.role.findMany).toHaveBeenCalledWith({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        name: {
+          in: [
+            'ROLE_COMMUNITY_USER',
+            'ROLE_SYSTEM_ADMIN',
+            'ROLE_INSTITUTIONAL_PRESIDENT',
+            'ROLE_INSTITUTIONAL_SECRETARY',
+            'ROLE_INSTITUTIONAL_TREASURER',
+            'ROLE_INSTITUTIONAL_OPERATOR',
+          ],
+        },
+      },
       orderBy: { name: 'asc' },
     });
   });

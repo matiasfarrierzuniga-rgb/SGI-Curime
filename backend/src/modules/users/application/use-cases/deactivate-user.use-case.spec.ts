@@ -1,6 +1,7 @@
 import { AuditAction } from '../../../../audit/audit-actions';
 import { UserStatus } from '../../domain/entities/user';
 import { AccountAlreadyInactiveError } from '../../domain/errors/account-already-inactive.error';
+import { ActivationNotCompletedError } from '../../domain/errors/activation-not-completed.error';
 import { LastAdministratorError } from '../../domain/errors/last-administrator.error';
 import { SelfDeactivationError } from '../../domain/errors/self-deactivation.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
@@ -17,7 +18,7 @@ const adminUser = {
   status: UserStatus.ACTIVE,
   lockedAt: null,
   roleId: 1,
-  role: { id: 1, name: 'Administrador', description: null, isActive: true },
+  role: { id: 1, name: 'ROLE_SYSTEM_ADMIN', description: null, isActive: true },
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -27,7 +28,7 @@ describe('DeactivateUserUseCase', () => {
     withTransaction: jest.fn(),
     findById: jest.fn(),
     countActiveAdministrators: jest.fn(),
-    updateStatus: jest.fn(),
+    deactivateAndRevokeSessions: jest.fn(),
   };
   const audit = { record: jest.fn() };
   let useCase: DeactivateUserUseCase;
@@ -43,7 +44,7 @@ describe('DeactivateUserUseCase', () => {
     );
     repository.findById.mockResolvedValue(adminUser);
     repository.countActiveAdministrators.mockResolvedValue(1);
-    repository.updateStatus.mockResolvedValue(adminUser);
+    repository.deactivateAndRevokeSessions.mockResolvedValue(adminUser);
   });
 
   it('throws UserNotFoundError for an unknown user', async () => {
@@ -63,13 +64,24 @@ describe('DeactivateUserUseCase', () => {
     );
   });
 
+  it('preserves the pending-verification state instead of converting it to inactive', async () => {
+    repository.findById.mockResolvedValueOnce({
+      ...adminUser,
+      status: UserStatus.PENDING_EMAIL_VERIFICATION,
+    });
+    await expect(useCase.execute(1)).rejects.toBeInstanceOf(
+      ActivationNotCompletedError,
+    );
+    expect(repository.deactivateAndRevokeSessions).not.toHaveBeenCalled();
+  });
+
   it('does not deactivate the last active administrator', async () => {
     repository.countActiveAdministrators.mockResolvedValueOnce(0);
 
     await expect(useCase.execute(1)).rejects.toBeInstanceOf(
       LastAdministratorError,
     );
-    expect(repository.updateStatus).not.toHaveBeenCalled();
+    expect(repository.deactivateAndRevokeSessions).not.toHaveBeenCalled();
   });
 
   it('does not let an administrator deactivate themselves', async () => {
@@ -82,10 +94,7 @@ describe('DeactivateUserUseCase', () => {
   it('deactivates the user and records an audit event', async () => {
     const result = await useCase.execute(1, 7, { ipAddress: '127.0.0.1' });
 
-    expect(repository.updateStatus).toHaveBeenCalledWith(
-      1,
-      UserStatus.INACTIVE,
-    );
+    expect(repository.deactivateAndRevokeSessions).toHaveBeenCalledWith(1);
     expect(result).toEqual(adminUser);
     expect(audit.record).toHaveBeenCalledWith({
       userId: 7,

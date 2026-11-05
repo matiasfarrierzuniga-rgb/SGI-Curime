@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { MetricCard } from '@/shared/ui/MetricCard'
+import { buttonVariants } from '@/shared/ui/button'
 import { InventoryPageLayout } from './InventoryPageLayout'
 
 const statLabel: Record<string, string> = {
@@ -69,12 +70,12 @@ export function InventoryDashboardPage() {
       <Card className="overflow-hidden">
         <CardHeader className="pb-3"><CardTitle>Accesos rápidos</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap gap-2 pt-0">
-          <Link className="button-link" to="/inventory/items">Artículos</Link>
-          <Link className="button-link" to="/inventory/categories">Categorías</Link>
-          <Link className="button-link" to="/inventory/movements">Movimientos</Link>
-          <Link className="button-link" to="/inventory/loans">Préstamos</Link>
-          <Link className="button-link" to="/inventory/alerts">Alertas</Link>
-          <Link className="button-link" to="/inventory/reports">Reportes</Link>
+          <Link className={buttonVariants({ variant: 'outline', size: 'sm' })} to="/inventory/items">Artículos</Link>
+          <Link className={buttonVariants({ variant: 'outline', size: 'sm' })} to="/inventory/categories">Categorías</Link>
+          <Link className={buttonVariants({ variant: 'outline', size: 'sm' })} to="/inventory/movements">Movimientos</Link>
+          <Link className={buttonVariants({ variant: 'outline', size: 'sm' })} to="/inventory/loans">Préstamos</Link>
+          <Link className={buttonVariants({ variant: 'outline', size: 'sm' })} to="/inventory/alerts">Alertas</Link>
+          <Link className={buttonVariants({ variant: 'outline', size: 'sm' })} to="/inventory/reports">Reportes</Link>
         </CardContent>
       </Card>
     </InventoryPageLayout>

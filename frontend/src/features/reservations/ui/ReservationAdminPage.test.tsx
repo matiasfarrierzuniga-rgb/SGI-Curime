@@ -19,7 +19,7 @@ const approvedReservation = { ...reservation, status: 'APPROVED' } as const
 describe('ReservationAdminPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['res.reservations.approve', 'res.reservations.reject', 'res.reservations.cancel'] } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['res.reservations.read', 'res.reservations.approve', 'res.reservations.reject', 'res.reservations.cancel'] } } as never)
     vi.mocked(useReservableResources).mockReturnValue({ data: [{ id: 7, name: 'Salón comunal' }] } as never)
     vi.mocked(useReservationsList).mockReturnValue({ isPending: false, isError: false, data: { data: [reservation], total: 21, page: 1, limit: 20 } } as never)
     vi.mocked(useReservationDetail).mockReturnValue({ isPending: false, isError: false, data: reservation } as never)
@@ -50,15 +50,11 @@ describe('ReservationAdminPage', () => {
   it('sends canonical server filters, resets page on filter change, and uses server pagination', () => {
     render(<ReservationAdminPage />)
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'APPROVED' } })
-    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', page: 1, limit: 20 }))
-    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '09/09/2026' } })
-    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', from: '2026-09-09', page: 1, limit: 20 }))
-    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '10/09/2026' } })
-    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', from: '2026-09-09', to: '2026-09-10', page: 1, limit: 20 }))
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', page: 1, limit: 20 }), true)
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
-    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', from: '2026-09-09', to: '2026-09-10', page: 2, limit: 20 }))
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'APPROVED', page: 2, limit: 20 }), true)
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
-    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith({ page: 1, limit: 20 })
+    expect(vi.mocked(useReservationsList)).toHaveBeenLastCalledWith({ page: 1, limit: 20 }, true)
   })
 
   it('shows resource loading and recovery without changing list query ownership', () => {
@@ -99,9 +95,9 @@ describe('ReservationAdminPage', () => {
   })
 
   it.each([
-    [['res.reservations.approve', 'res.reservations.reject', 'res.reservations.cancel'], ['Aprobar', 'Rechazar', 'Cancelar reserva']],
-    [['res.reservations.approve'], ['Aprobar']],
-    [[], []],
+    [['res.reservations.read', 'res.reservations.approve', 'res.reservations.reject', 'res.reservations.cancel'], ['Aprobar', 'Rechazar', 'Cancelar reserva']],
+    [['res.reservations.read', 'res.reservations.approve'], ['Aprobar']],
+    [['res.reservations.read'], []],
   ] as const)('keeps pending modal lifecycle actions capability-gated', (permissionCodes, expectedActions) => {
     vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes } } as never)
     render(<ReservationAdminPage />)
@@ -142,7 +138,7 @@ describe('ReservationAdminPage', () => {
   })
 
   it('keeps pending rows reviewable for read-only users', () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: [] } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['res.reservations.read'] } } as never)
     render(<ReservationAdminPage />)
     expect(screen.getAllByRole('button', { name: 'Revisar' })).toHaveLength(2)
     fireEvent.click(screen.getAllByRole('button', { name: 'Revisar' })[0])

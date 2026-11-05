@@ -5,6 +5,13 @@ import { ToastProvider } from '@/shared/ui/Toast'
 import { usersService } from '../api/users.api'
 import { UsersPage } from './UsersPage'
 
+vi.mock('@/features/auth', () => ({
+  useAuth: () => ({
+    user: { permissionCodes: ['usr.users.read', 'usr.roles.read'] },
+    isLoading: false,
+  }),
+}))
+
 vi.mock('../api/users.api', () => ({
   usersService: {
     list: vi.fn(),
@@ -20,8 +27,12 @@ vi.mock('../api/users.api', () => ({
 vi.mock('@/features/roles', () => ({
   rolesService: {
     listActive: vi.fn().mockResolvedValue([
-      { id: 1, name: 'Usuario' },
-      { id: 2, name: 'Administrador' },
+      { id: 1, name: 'ROLE_COMMUNITY_USER', label: 'Usuario comunitario' },
+      { id: 2, name: 'ROLE_SYSTEM_ADMIN', label: 'Administrador del sistema' },
+      { id: 3, name: 'ROLE_INSTITUTIONAL_PRESIDENT', label: 'Presidencia institucional' },
+      { id: 4, name: 'ROLE_INSTITUTIONAL_SECRETARY', label: 'Secretaría institucional' },
+      { id: 5, name: 'ROLE_INSTITUTIONAL_TREASURER', label: 'Tesorería institucional' },
+      { id: 6, name: 'ROLE_INSTITUTIONAL_OPERATOR', label: 'Operador institucional' },
     ]),
   },
 }))
@@ -39,13 +50,13 @@ const personWithAccountAndAffiliation = {
   address: 'CR',
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-  access: { id: 7, email: 'ana.cuenta@test.com', status: 'ACTIVE', subscriptionExpirationDate: null, lockedAt: null, roleId: 1, role: { id: 1, name: 'Administradora', description: null, isActive: true }, personId: '101', isBlocked: false, isTemporarilyLocked: false, isAdministrativelyBlocked: false },
+  access: { id: 7, email: 'ana.cuenta@test.com', status: 'ACTIVE', subscriptionExpirationDate: null, lockedAt: null, roleId: 1, role: { id: 1, name: 'ROLE_SYSTEM_ADMIN', label: 'Administrador del sistema', description: null, isActive: true }, personId: '101', isBlocked: false, isTemporarilyLocked: false, isAdministrativelyBlocked: false },
   affiliate: { id: '44', status: 'ACTIVE', legacyRoleId: 999 },
   affiliateId: '44',
   actions: { read: true, update: false, changeRole: false, manageLifecycle: false, unlock: false },
 } as const
 
-const personWithAccount = { ...personWithAccountAndAffiliation, id: '102', personId: '102', fullName: 'Bruno Cuenta', person: { id: '102', contactEmail: null }, access: { ...personWithAccountAndAffiliation.access, id: 8, email: 'bruno.cuenta@test.com', personId: '102', role: { ...personWithAccountAndAffiliation.access.role, name: 'Usuario SGI' } }, affiliate: null, affiliateId: null } as const
+const personWithAccount = { ...personWithAccountAndAffiliation, id: '102', personId: '102', fullName: 'Bruno Cuenta', person: { id: '102', contactEmail: null }, access: { ...personWithAccountAndAffiliation.access, id: 8, email: 'bruno.cuenta@test.com', personId: '102', role: { ...personWithAccountAndAffiliation.access.role, name: 'ROLE_COMMUNITY_USER', label: 'Usuario comunitario' } }, affiliate: null, affiliateId: null } as const
 const personWithAffiliation = { ...personWithAccountAndAffiliation, id: '103', personId: '103', fullName: 'Carla Afiliada', person: { id: '103', contactEmail: 'carla.contacto@test.com' }, access: null, affiliate: { id: '45', status: 'INACTIVE', legacyRoleId: 1 }, affiliateId: '45' } as const
 const personOnly = { ...personWithAccountAndAffiliation, id: '104', personId: '104', fullName: 'Diego Persona', person: { id: '104', contactEmail: null }, access: null, affiliate: null, affiliateId: null } as const
 
@@ -134,6 +145,24 @@ describe('UsersPage', () => {
     expect(screen.getAllByText('ana.cuenta@test.com')).toHaveLength(2)
   })
 
+  it('shows the six canonical roles with friendly labels', async () => {
+    page()
+    await screen.findByText('Ana Pérez')
+
+    const roleFilter = screen.getByLabelText('Rol')
+    for (const label of [
+      'Usuario comunitario',
+      'Administrador del sistema',
+      'Presidencia institucional',
+      'Secretaría institucional',
+      'Tesorería institucional',
+      'Operador institucional',
+    ]) {
+      expect(within(roleFilter).getByRole('option', { name: label })).toBeInTheDocument()
+    }
+    expect(screen.queryByRole('option', { name: 'ROLE_SYSTEM_ADMIN' })).not.toBeInTheDocument()
+  })
+
   it('renders uniform View, Edit, and More controls for arbitrary Person rows while guarding account operations', async () => {
     const fixtures = [personWithAccountAndAffiliation, personWithAccount, personWithAffiliation, personOnly]
     vi.mocked(usersService.list).mockResolvedValue({ data: fixtures as never, total: fixtures.length, page: 1, limit: 10 })
@@ -179,6 +208,20 @@ describe('UsersPage', () => {
 
     expect(await screen.findByRole('dialog', { name: 'Cambiar rol de cuenta' })).toBeInTheDocument()
     expect(screen.getByLabelText('Nuevo rol de cuenta')).toHaveValue('1')
+  })
+
+  it('closes account actions with Escape and restores focus to its trigger', async () => {
+    page()
+    await screen.findByText('Ana Pérez')
+
+    const trigger = screen.getByRole('button', { name: 'Más acciones para Ana Pérez' })
+    fireEvent.click(trigger)
+    expect(screen.getByRole('menu', { name: 'Acciones de cuenta para Ana Pérez' })).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(screen.queryByRole('menu', { name: 'Acciones de cuenta para Ana Pérez' })).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
   })
 
   it('uses numeric access ID for eligible profile edits and invalidates Person-root users cache', async () => {

@@ -15,6 +15,7 @@ import {
   CreateBoardTermDto,
   UpdateBoardTermDto,
 } from './dto/board-term.dto';
+import { ReplaceBoardAppointmentDto } from './dto/replace-board-appointment.dto';
 
 const PROFILE_ID = 1;
 const personProjection = {
@@ -262,6 +263,73 @@ export class InstitutionalBoardService {
         context,
       );
       return this.toLegacyAppointment(appointment, person);
+    });
+  }
+
+  replaceAppointment(
+    id: number,
+    dto: ReplaceBoardAppointmentDto,
+    actorId: number,
+    context: AuditContext,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.governanceMembership.findUnique({
+        where: { id },
+        include: { term: true },
+      });
+      if (
+        !current ||
+        current.term.legacyInstitutionalProfileId !== PROFILE_ID
+      )
+        throw new NotFoundException('Nombramiento no encontrado');
+      if (current.endedAt)
+        throw new BadRequestException('El nombramiento ya tiene una fecha de finalización');
+
+      const term = {
+        startsOn: current.term.startDate,
+        endsOn: current.term.endDate,
+      };
+      this.assertAppointmentDates(term, current.startedAt, dto.replacedEndsOn);
+      this.assertAppointmentDates(term, dto.startsOn, dto.endsOn);
+      const person = await this.assertPerson(tx, dto.personId);
+      const previous = await tx.governanceMembership.update({
+        where: { id },
+        data: { endedAt: new Date(dto.replacedEndsOn) },
+        select: membershipSelect,
+      });
+      const successor = await tx.governanceMembership.create({
+        data: {
+          termId: current.termId,
+          legacyPersonId: dto.personId,
+          legacyPosition: dto.position,
+          seatNumber: dto.seatNumber,
+          startedAt: dto.startsOn ? new Date(dto.startsOn) : null,
+          endedAt: dto.endsOn ? new Date(dto.endsOn) : null,
+        },
+        select: membershipSelect,
+      });
+      await this.log(
+        tx,
+        actorId,
+        AuditAction.BOARD_APPOINTMENT_UPDATED,
+        'BoardAppointment',
+        previous.id,
+        ['endsOn'],
+        context,
+      );
+      await this.log(
+        tx,
+        actorId,
+        AuditAction.BOARD_APPOINTMENT_CREATED,
+        'BoardAppointment',
+        successor.id,
+        ['boardTermId', 'personId', 'position', 'replacedAppointmentId'],
+        context,
+      );
+      return {
+        previous: this.toLegacyAppointment(previous, null),
+        successor: this.toLegacyAppointment(successor, person),
+      };
     });
   }
 

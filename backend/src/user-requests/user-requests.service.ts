@@ -19,6 +19,7 @@ import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { RuntimePersonResolverService } from '../identity/runtime-person-resolver.service';
 import { InboxNotificationService } from '../modules/notifications/application/inbox-notification.service';
+import { isCanonicalRoleCode } from '../auth/domain/policies/canonical-role-catalog';
 import {
   IDENTITY_NORMALIZATION_VERSION,
   RECONCILIATION_DECISION_VERSION,
@@ -305,6 +306,11 @@ export class UserRequestsService {
     const role = await tx.role.findUnique({ where: { id: roleId } });
     if (!role) throw new NotFoundException('Role not found');
     if (!role.isActive) throw new ConflictException('Role is inactive');
+    if (!isCanonicalRoleCode(role.name)) {
+      throw new ConflictException(
+        'Role is not part of the canonical assignable catalog',
+      );
+    }
 
     const resolution = await this.resolvePersonForApproval(tx, userRequest);
     if (resolution.status !== 'PERSON_REUSED') {

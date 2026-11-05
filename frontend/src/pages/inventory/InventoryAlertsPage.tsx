@@ -10,6 +10,7 @@ import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { MetricCard } from '@/shared/ui/MetricCard'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { buttonVariants } from '@/shared/ui/button'
 import { InventoryPageLayout } from './InventoryPageLayout'
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString('es-CR')
@@ -22,7 +23,7 @@ function LoanAlertRow({ alert }: { alert: InventoryLoanAlert }) {
         <span className="muted">Artículo: {alert.item.name} ({alert.item.code}) · Cantidad: {alert.quantity} {alert.item.unit} · Devuelve el {formatDate(alert.expectedReturnDate)}</span>
       </div>
       <div className="alert-actions">
-        <Link className="button-link" to={`/inventory/loans?highlight=${alert.id}`}>Ver préstamo</Link>
+        <Link className={buttonVariants({ variant: 'outline', size: 'sm' })} to={`/inventory/loans?highlight=${alert.id}`}>Ver préstamo</Link>
       </div>
     </div>
   )
@@ -104,7 +105,7 @@ export function InventoryAlertsPage() {
                           </span>
                         </div>
                         <div className="alert-actions">
-                          <Link className="button-link" to={`/inventory/items?highlight=${item.id}`}>Ver artículo</Link>
+                          <Link className={buttonVariants({ variant: 'outline', size: 'sm' })} to={`/inventory/items?highlight=${item.id}`}>Ver artículo</Link>
                         </div>
                       </div>
                     ))}

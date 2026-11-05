@@ -1,104 +1,341 @@
-import { useEffect, useState } from 'react'
-import { ArrowRight, Boxes, CalendarDays, CalendarPlus, ClipboardList, FileCheck2, FileClock, Package, TriangleAlert, UserRound, Users } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '@/features/auth'
-import { AdminDashboard } from '@/features/admin-dashboard'
-import { getRoleName } from '@/shared/security/roles'
-import { inventoryReportsService } from '@/services/inventoryReportsService'
-import type { InventoryReportSummary } from '@/types/inventory'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
-import { PageContainer } from '@/shared/ui/PageContainer'
-import { Skeleton } from '@/shared/ui/skeleton'
+import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  Boxes,
+  CalendarDays,
+  CalendarPlus,
+  ClipboardList,
+  FileCheck2,
+  FileClock,
+  Package,
+  TriangleAlert,
+  UserRound,
+  Users,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/features/auth";
+import { AdminDashboard } from "@/features/admin-dashboard";
+import { getRoleName } from "@/shared/security/roles";
+import { hasCapability } from "@/shared/security/access";
+import { getErpNavigation } from "@/app/navigation/erpNavigation";
+import { inventoryReportsService } from "@/services/inventoryReportsService";
+import type { InventoryReportSummary } from "@/types/inventory";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/ui/card";
+import { PageContainer } from "@/shared/ui/PageContainer";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 const communityActions = [
-  { label: 'Solicitar una reserva', description: 'Pida el uso de un espacio comunitario.', path: '/servicios/reservas', icon: CalendarPlus },
-  { label: 'Enviar justificación', description: 'Justifique una ausencia a una asamblea.', path: '/app/affiliate/absence-justifications/new', icon: FileCheck2 },
-  { label: 'Mis justificaciones', description: 'Revise el estado de lo que ha enviado.', path: '/app/affiliate/justifications', icon: ClipboardList },
-] as const
+  {
+    label: "Solicitar una reserva",
+    description: "Pida el uso de un espacio comunitario.",
+    path: "/servicios/reservas",
+    icon: CalendarPlus,
+  },
+  {
+    label: "Enviar justificación",
+    description: "Justifique una ausencia a una asamblea.",
+    path: "/app/affiliate/absence-justifications/new",
+    icon: FileCheck2,
+  },
+  {
+    label: "Mis justificaciones",
+    description: "Revise el estado de lo que ha enviado.",
+    path: "/app/affiliate/justifications",
+    icon: ClipboardList,
+  },
+] as const;
 
 const communityLinks = [
-  { label: 'Mi perfil', path: '/profile', icon: UserRound },
-  { label: 'Afiliación', path: '/afiliacion', icon: Users },
-  { label: 'Eventos', path: '/eventos', icon: CalendarDays },
-] as const
+  { label: "Mi perfil", path: "/profile", icon: UserRound },
+  { label: "Afiliación", path: "/afiliacion", icon: Users },
+  { label: "Eventos", path: "/eventos", icon: CalendarDays },
+] as const;
 
 export function AppHomePage() {
-  const { user } = useAuth()
-  const roleName = getRoleName(user?.role)
-  const isCommunityUser = roleName === 'Vecino/Afiliado'
-  const isAdministrator = roleName === 'Administrador'
-  const canViewInventory = roleName === 'Gestor de Inventario'
-  const [summary, setSummary] = useState<InventoryReportSummary | null>(null)
-  const [loading, setLoading] = useState(canViewInventory)
-  const [summaryUnavailable, setSummaryUnavailable] = useState(false)
+  const { user } = useAuth();
+  const roleName = getRoleName(user?.role);
+  const isCommunityUser =
+    roleName === "Vecino/Afiliado" || roleName === "ROLE_COMMUNITY_USER";
+  const canViewInventory = hasCapability(
+    user?.permissionCodes,
+    "inv.inventory.read",
+  );
+  const canViewDashboard = hasCapability(
+    user?.permissionCodes,
+    "erp.dashboard.read",
+  );
+  const showStandaloneInventorySummary =
+    canViewInventory && !canViewDashboard;
+  const authorizedDestinations = getErpNavigation(user?.permissionCodes)
+    .flatMap((section) => section.items)
+    .flatMap((item) => (item.children?.length ? item.children : [item]))
+    .filter(
+      (item): item is typeof item & { path: string } =>
+        item.path !== undefined && item.path !== "/app/dashboard",
+    );
+  const [summary, setSummary] = useState<InventoryReportSummary | null>(null);
+  const [loading, setLoading] = useState(showStandaloneInventorySummary);
+  const [summaryUnavailable, setSummaryUnavailable] = useState(false);
 
   useEffect(() => {
-    if (!canViewInventory) return
-    let active = true
-    inventoryReportsService.summary()
-      .then((data) => { if (active) setSummary(data) })
-      .catch(() => { if (active) setSummaryUnavailable(true) })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [canViewInventory])
+    if (!showStandaloneInventorySummary) return;
+    let active = true;
+    inventoryReportsService
+      .summary()
+      .then((data) => {
+        if (active) setSummary(data);
+      })
+      .catch(() => {
+        if (active) setSummaryUnavailable(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [showStandaloneInventorySummary]);
 
-  const firstName = user?.fullName?.trim().split(/\s+/)[0]
+  const firstName = user?.fullName?.trim().split(/\s+/)[0];
 
   return (
-    <PageContainer className={isAdministrator ? 'max-w-none !p-0' : 'max-w-[1440px] space-y-10'}>
-      {isAdministrator ? <AdminDashboard permissionCodes={user?.permissionCodes} userName={user?.fullName} /> : <header><h1 className="font-sans text-heading-1 font-bold text-text-primary">Dashboard</h1><p className="mt-1 text-body text-text-secondary">{isCommunityUser ? `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Desde aquí puede solicitar servicios y consultar la información de su cuenta.` : `Bienvenido de nuevo${firstName ? `, ${firstName}` : ''}. Consulte el resumen general de las áreas disponibles para su trabajo en SGI-Curime.`}</p></header>}
+    <PageContainer
+      className={
+        canViewDashboard ? "max-w-none !p-0" : "max-w-[1440px] space-y-10"
+      }
+    >
+      {canViewDashboard ? (
+        <AdminDashboard
+          permissionCodes={user?.permissionCodes}
+          userName={user?.fullName}
+        />
+      ) : (
+        <header>
+          <h1 className="font-sans text-heading-1 font-bold text-text-primary">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-body text-text-secondary">
+            {isCommunityUser
+              ? `Bienvenido de nuevo${firstName ? `, ${firstName}` : ""}. Desde aquí puede solicitar servicios y consultar la información de su cuenta.`
+              : `Bienvenido de nuevo${firstName ? `, ${firstName}` : ""}. Consulte el resumen general de las áreas disponibles para su trabajo en SGI-Curime.`}
+          </p>
+        </header>
+      )}
 
-      {canViewInventory && (
+      {showStandaloneInventorySummary && (
         <section aria-labelledby="summary-title">
           <div className="mb-4 flex items-center justify-between gap-4">
-            <div><h2 id="summary-title" className="text-xl font-bold text-brand-ink">Resumen de inventario</h2><p className="mt-1 text-sm text-foreground-muted">Datos actuales del módulo de inventario.</p></div>
-            <Link to="/inventory" className="hidden items-center gap-1 text-sm font-bold text-brand-primary underline-offset-4 hover:underline sm:flex">Ver detalle <ArrowRight className="size-4" aria-hidden="true" /></Link>
+            <div>
+              <h2
+                id="summary-title"
+                className="text-xl font-bold text-brand-ink"
+              >
+                Resumen de inventario
+              </h2>
+              <p className="mt-1 text-sm text-foreground-muted">
+                Datos actuales del módulo de inventario.
+              </p>
+            </div>
+            <Link
+              to="/inventory"
+              className="hidden items-center gap-1 text-sm font-bold text-brand-primary underline-offset-4 hover:underline sm:flex"
+            >
+              Ver detalle <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
           </div>
           {loading ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Cargando resumen"><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
+            <div
+              className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+              aria-label="Cargando resumen"
+            >
+              <Skeleton className="h-28" />
+              <Skeleton className="h-28" />
+              <Skeleton className="h-28" />
+              <Skeleton className="h-28" />
+            </div>
           ) : summary ? (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Metric label="Artículos activos" value={summary.activeItems} icon={Package} />
-              <Metric label="Stock bajo" value={summary.lowStockCount} icon={TriangleAlert} attention={summary.lowStockCount > 0} />
-              <Metric label="Artículos agotados" value={summary.outOfStockCount} icon={Boxes} attention={summary.outOfStockCount > 0} />
-              <Metric label="Préstamos vencidos" value={summary.overdueLoans} icon={FileClock} attention={summary.overdueLoans > 0} />
+              <Metric
+                label="Artículos activos"
+                value={summary.activeItems}
+                icon={Package}
+              />
+              <Metric
+                label="Stock bajo"
+                value={summary.lowStockCount}
+                icon={TriangleAlert}
+                attention={summary.lowStockCount > 0}
+              />
+              <Metric
+                label="Artículos agotados"
+                value={summary.outOfStockCount}
+                icon={Boxes}
+                attention={summary.outOfStockCount > 0}
+              />
+              <Metric
+                label="Préstamos vencidos"
+                value={summary.overdueLoans}
+                icon={FileClock}
+                attention={summary.overdueLoans > 0}
+              />
             </div>
           ) : (
-            <Card><CardContent className="text-sm text-foreground-muted">{summaryUnavailable ? 'El resumen no está disponible en este momento. Puede consultar el módulo de Inventario.' : 'No hay datos de inventario para mostrar.'}</CardContent></Card>
+            <Card>
+              <CardContent className="text-sm text-foreground-muted">
+                {summaryUnavailable
+                  ? "El resumen no está disponible en este momento. Puede consultar el módulo de Inventario."
+                  : "No hay datos de inventario para mostrar."}
+              </CardContent>
+            </Card>
           )}
+        </section>
+      )}
+
+      {canViewDashboard && (
+        <section aria-labelledby="authorized-destinations-title">
+          <Card>
+            <CardContent className="p-5">
+              <h2
+                id="authorized-destinations-title"
+                className="text-xl font-bold text-brand-ink"
+              >
+                Accesos autorizados
+              </h2>
+              {authorizedDestinations.length ? (
+                <nav
+                  aria-label="Accesos autorizados"
+                  className="mt-4 flex flex-wrap gap-2"
+                >
+                  {authorizedDestinations.map((destination) => (
+                    <Link
+                      key={destination.path}
+                      to={destination.path}
+                      className="inline-flex min-h-11 items-center rounded-lg border border-border bg-surface-card px-4 font-semibold text-brand-deep hover:border-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"
+                    >
+                      {destination.label}
+                    </Link>
+                  ))}
+                </nav>
+              ) : (
+                <p className="mt-2 text-sm text-foreground-muted">
+                  No hay módulos con una ruta funcional equivalente a sus
+                  capacidades institucionales.
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </section>
       )}
 
       {isCommunityUser && (
         <>
           <section aria-labelledby="community-actions-title">
-            <h2 id="community-actions-title" className="text-xl font-bold text-brand-ink">¿Qué desea hacer?</h2>
+            <h2
+              id="community-actions-title"
+              className="text-xl font-bold text-brand-ink"
+            >
+              ¿Qué desea hacer?
+            </h2>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              {communityActions.map((action) => <ActionCard key={action.path} action={action} />)}
+              {communityActions.map((action) => (
+                <ActionCard key={action.path} action={action} />
+              ))}
             </div>
           </section>
 
           <section aria-labelledby="community-links-title">
-            <h2 id="community-links-title" className="text-xl font-bold text-brand-ink">También puede consultar</h2>
-            <nav aria-label="Consultas de la comunidad" className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <h2
+              id="community-links-title"
+              className="text-xl font-bold text-brand-ink"
+            >
+              También puede consultar
+            </h2>
+            <nav
+              aria-label="Consultas de la comunidad"
+              className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap"
+            >
               {communityLinks.map((item) => {
-                const Icon = item.icon
-                return <Link key={item.path} to={item.path} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-card px-4 font-semibold text-brand-deep hover:border-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"><Icon className="size-4" aria-hidden="true" />{item.label}</Link>
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-card px-4 font-semibold text-brand-deep hover:border-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"
+                  >
+                    <Icon className="size-4" aria-hidden="true" />
+                    {item.label}
+                  </Link>
+                );
               })}
             </nav>
           </section>
         </>
       )}
-
     </PageContainer>
-  )
+  );
 }
 
-function ActionCard({ action }: { action: { label: string; description: string; path: string; icon: typeof Package } }) {
-  const Icon = action.icon
-  return <Link to={action.path} className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"><Card className="h-full transition-colors group-hover:border-brand-soft"><CardHeader><div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-brand-soft/25 text-brand-deep"><Icon className="size-5" aria-hidden="true" /></div><CardTitle>{action.label}</CardTitle><CardDescription>{action.description}</CardDescription></CardHeader></Card></Link>
+function ActionCard({
+  action,
+}: {
+  action: {
+    label: string;
+    description: string;
+    path: string;
+    icon: typeof Package;
+  };
+}) {
+  const Icon = action.icon;
+  return (
+    <Link
+      to={action.path}
+      className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep"
+    >
+      <Card className="h-full transition-colors group-hover:border-brand-soft">
+        <CardHeader>
+          <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-brand-soft/25 text-brand-deep">
+            <Icon className="size-5" aria-hidden="true" />
+          </div>
+          <CardTitle>{action.label}</CardTitle>
+          <CardDescription>{action.description}</CardDescription>
+        </CardHeader>
+      </Card>
+    </Link>
+  );
 }
 
-function Metric({ label, value, icon: Icon, attention = false }: { label: string; value: number; icon: typeof Package; attention?: boolean }) {
-  return <Card size="sm" className={attention ? 'border-warning/60' : ''}><CardHeader className="grid grid-cols-[1fr_auto]"><div><CardDescription>{label}</CardDescription><CardTitle className="mt-2 text-3xl font-bold tabular-nums">{value}</CardTitle></div><div className={`flex size-9 items-center justify-center rounded-lg ${attention ? 'bg-warning-bg text-warning' : 'bg-brand-soft/20 text-brand-deep'}`}><Icon className="size-5" aria-hidden="true" /></div></CardHeader></Card>
+function Metric({
+  label,
+  value,
+  icon: Icon,
+  attention = false,
+}: {
+  label: string;
+  value: number;
+  icon: typeof Package;
+  attention?: boolean;
+}) {
+  return (
+    <Card size="sm" className={attention ? "border-warning/60" : ""}>
+      <CardHeader className="grid grid-cols-[1fr_auto]">
+        <div>
+          <CardDescription>{label}</CardDescription>
+          <CardTitle className="mt-2 text-3xl font-bold tabular-nums">
+            {value}
+          </CardTitle>
+        </div>
+        <div
+          className={`flex size-9 items-center justify-center rounded-lg ${attention ? "bg-warning-bg text-warning" : "bg-brand-soft/20 text-brand-deep"}`}
+        >
+          <Icon className="size-5" aria-hidden="true" />
+        </div>
+      </CardHeader>
+    </Card>
+  );
 }

@@ -20,6 +20,7 @@ Documentos vigentes:
 
 - [`architecture/overview.md`](./architecture/overview.md): vista general vigente de la arquitectura.
 - [`architecture/frontend-as-is.md`](./architecture/frontend-as-is.md): arquitectura frontend actual, incluyendo vertical slices, `shared/`, routing y límites automatizados.
+- [`architecture/error-boundary-navigation.md`](./architecture/error-boundary-navigation.md): causa raíz y política de recuperación contextual ante errores de renderizado.
 - [`architecture/backend-as-is.md`](./architecture/backend-as-is.md): arquitectura backend actual, incluyendo módulos de Sprint 2 y la transición estructural del backend.
 - `architecture/frontend-slice-rules.md`: reglas de organización y dependencias del frontend.
 - `architecture/backend-layer-rules.md`: reglas arquitectónicas del backend.
