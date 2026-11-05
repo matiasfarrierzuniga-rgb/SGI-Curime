@@ -6,6 +6,11 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { CommunityAccountsService } from '../src/user-requests/community-accounts.service';
 
 const connectionString = process.env.TEST_DATABASE_URL;
+// This legacy suite deletes rows and predates the disposable-target guard.
+// Fail closed until it has been adapted and independently reviewed.
+if (connectionString) {
+  throw new Error('Legacy community PostgreSQL suite is disabled pending isolation review.');
+}
 const describeIntegration = connectionString ? describe : describe.skip;
 
 describeIntegration('community account PostgreSQL', () => {

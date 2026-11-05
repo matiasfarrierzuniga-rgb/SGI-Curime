@@ -4,6 +4,7 @@ export interface TokenClaims {
   sub: number;
   email: string;
   role: string;
+  sessionGeneration: number;
 }
 
 export interface TokenService {

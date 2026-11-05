@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { ConflictException, Injectable, Optional } from '@nestjs/common';
 import {
   Prisma,
   PrismaClient,
@@ -334,15 +334,62 @@ export class PrismaUsersRepository implements UsersRepository {
     return user?.passwordHash ?? null;
   }
 
+  async communityVerificationEvidence(id: number): Promise<Date | null> {
+    return (
+      (
+        await this.db.user.findUnique({
+          where: { id },
+          select: { communityEmailVerifiedAt: true },
+        })
+      )?.communityEmailVerifiedAt ?? null
+    );
+  }
+
+  async deactivateAndRevokeSessions(id: number): Promise<User> {
+    const now = new Date();
+    const user = await this.db.user.update({
+      where: { id },
+      data: {
+        status: 'INACTIVE',
+        sessionsInvalidBefore: now,
+        sessionGeneration: { increment: 1 },
+      },
+      select: userSelect,
+    });
+    await this.db.session.updateMany({
+      where: { userId: id, revokedAt: null },
+      data: { revokedAt: now, revocationReason: 'account-deactivated' },
+    });
+    await this.db.passwordResetToken.updateMany({
+      where: { userId: id, usedAt: null },
+      data: { usedAt: now },
+    });
+    return toUser(user);
+  }
+
   async updateProfile(id: number, data: UserUpdateData): Promise<User> {
     try {
       const user = await this.db.user.update({
-        where: { id },
+        where: {
+          id,
+          ...(data.email !== undefined
+            ? { status: { not: UserStatus.PENDING_EMAIL_VERIFICATION } }
+            : {}),
+        },
         data,
         select: userSelect,
       });
       return toUser(user);
     } catch (error) {
+      if (
+        data.email !== undefined &&
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new ConflictException(
+          'El correo de una cuenta pendiente debe corregirse mediante verificación institucional.',
+        );
+      }
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
@@ -375,10 +422,19 @@ export class PrismaUsersRepository implements UsersRepository {
   }
 
   async updateRole(id: number, roleId: number): Promise<User> {
+    const now = new Date();
     const user = await this.db.user.update({
       where: { id },
-      data: { roleId },
+      data: {
+        roleId,
+        sessionGeneration: { increment: 1 },
+        sessionsInvalidBefore: now,
+      },
       select: userSelect,
+    });
+    await this.db.session.updateMany({
+      where: { userId: id, revokedAt: null },
+      data: { revokedAt: now, revocationReason: 'role-changed' },
     });
     return toUser(user);
   }

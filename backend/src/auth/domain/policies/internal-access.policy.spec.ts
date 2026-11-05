@@ -90,17 +90,17 @@ describe('canAccessErp', () => {
     },
   );
 
-  it('allows a treasurer with an active affiliate', () => {
+  it('denies a historical treasurer even with an active affiliate', () => {
     expect(
       canAccessErp({
         ...validAffiliate,
         userRoleName: 'Tesorero',
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it('allows a Vecino/Afiliado with an active affiliate', () => {
-    expect(canAccessErp(validAffiliate)).toBe(true);
+  it('denies a historical affiliate role even with active affiliation', () => {
+    expect(canAccessErp(validAffiliate)).toBe(false);
   });
 
   it('does not use null or different affiliate legacy roles as ERP authority', () => {
@@ -109,13 +109,13 @@ describe('canAccessErp', () => {
         ...validAffiliate,
         affiliateRoleId: null,
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       canAccessErp({
         ...validAffiliate,
         affiliateRoleId: 999,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it.each([

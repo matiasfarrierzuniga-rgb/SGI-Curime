@@ -33,6 +33,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { toAuthHttpError } from '../errors/auth-http-error.mapper';
 import { assertCookieRequestOrigin } from '../security/cookie-origin.policy';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
@@ -138,6 +139,7 @@ export class AuthController {
 
   @Post('auth/forgot-password')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.handle(() =>
       this.requestPasswordResetUseCase.execute(dto.email),

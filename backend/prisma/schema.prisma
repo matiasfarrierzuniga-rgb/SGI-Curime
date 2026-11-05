@@ -109,11 +109,17 @@ model RolePermission {
 model User {
   id                          Int                      @id @default(autoincrement())
   fullName                    String
+  firstName                   String?
+  firstSurname                String?
+  secondSurname               String?
   identification              String?                  @unique
   email                       String                   @unique
   phone                       String?
   address                     String?
   passwordHash                String?
+  communityEmailVerifiedAt    DateTime?
+  sessionsInvalidBefore       DateTime?
+  sessionGeneration           Int                      @default(0)
   status                      UserStatus               @default(ACTIVE)
   failedLoginAttempts         Int                      @default(0)
   lockedAt                    DateTime?

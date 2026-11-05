@@ -30,6 +30,7 @@ describe('ResetPasswordUseCase', () => {
       (work: (t: typeof tx) => Promise<unknown>) => work(tx),
     );
     tx.claimResetToken.mockResolvedValue(true);
+    tx.setUserPassword.mockResolvedValue(true);
     hasher.hash.mockResolvedValue('hashed-password');
     tx.revokeUserSessions.mockResolvedValue(1);
   });
@@ -110,5 +111,13 @@ describe('ResetPasswordUseCase', () => {
     expect(tx.claimResetToken).toHaveBeenCalled();
     expect(tx.setUserPassword).toHaveBeenCalled();
     expect(audit.record).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reset if the account is no longer active inside the transaction', async () => {
+    tx.setUserPassword.mockResolvedValueOnce(false);
+    await expect(
+      useCase.execute('token', 'Password1!', 'Password1!'),
+    ).rejects.toMatchObject({ code: 'RESET_TOKEN_NO_LONGER_VALID' });
+    expect(tx.revokeUserSessions).not.toHaveBeenCalled();
   });
 });

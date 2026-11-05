@@ -1,8 +1,12 @@
 export interface CreateCommunityAccount {
-  fullName: string
+  firstName: string
+  firstSurname: string
+  secondSurname?: string
+  identificationType: 'NATIONAL' | 'DIMEX'
+  identification: string
   email: string
-  password: string
-  passwordConfirmation: string
+  phoneCountryCode?: string
+  phoneNationalNumber?: string
   privacyAcknowledgement: boolean
 }
 

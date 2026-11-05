@@ -21,6 +21,7 @@ describe('PrismaUsersRepository registration methods', () => {
     },
     user: {
       create: jest.fn(),
+      update: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
@@ -35,6 +36,23 @@ describe('PrismaUsersRepository registration methods', () => {
   );
 
   beforeEach(() => jest.clearAllMocks());
+
+  it('atomically rejects profile email updates when the account is pending verification', async () => {
+    db.user.update.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('not found', {
+        code: 'P2025',
+        clientVersion: 'test',
+      }),
+    );
+    await expect(
+      repository.updateProfile(7, { email: 'new@example.test' }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(db.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 7, status: { not: 'PENDING_EMAIL_VERIFICATION' } },
+      }),
+    );
+  });
 
   it('resolves the registration role by semantic name', async () => {
     db.role.findUnique.mockResolvedValue({

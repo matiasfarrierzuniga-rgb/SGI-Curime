@@ -15,6 +15,7 @@ test('rejects unsafe and ambiguous disposable PostgreSQL configuration', () => {
     { ...safe, TEST_DATABASE_URL: undefined },
     { ...safe, TEST_DATABASE_URL: undefined, DATABASE_URL: safe.TEST_DATABASE_URL },
     { ...safe, TEST_DATABASE_URL: safe.TEST_DATABASE_URL.replace(':55432', ':5432') },
+    { ...safe, TEST_DATABASE_URL: safe.TEST_DATABASE_URL.replace(':55432', ':5433') },
     { ...safe, TEST_DATABASE_URL: safe.TEST_DATABASE_URL.replace('127.0.0.1', 'db.example.com') },
     { ...safe, TEST_DATABASE_URL: safe.TEST_DATABASE_URL.replace('integration_test', 'development') },
     { ...safe, DATABASE_URL: 'postgresql://sgi_curime_test:sgi_curime_test_password@127.0.0.1:55433/sgi_curime_integration_test' },

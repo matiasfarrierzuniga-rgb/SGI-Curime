@@ -12,12 +12,10 @@ export type RoleLike =
   | null
   | undefined;
 
-export const ADMIN_ROLES: readonly string[] = [ROLE_ADMIN];
-
-export const INVENTORY_ROLES: readonly string[] = [
-  ROLE_ADMIN,
-  ROLE_INVENTORY_MANAGER,
-];
+/** @deprecated Historical labels are presentation-only and never authorize UI. */
+export const ADMIN_ROLES: readonly string[] = [];
+/** @deprecated Inventory mutations have no approved endpoint capability mapping. */
+export const INVENTORY_ROLES: readonly string[] = [];
 
 export function getRoleName(role: RoleLike): string | undefined {
   if (!role) return undefined;
@@ -30,13 +28,13 @@ export function getRoleName(role: RoleLike): string | undefined {
 }
 
 export function isAdmin(role: RoleLike): boolean {
-  return getRoleName(role) === ROLE_ADMIN;
+  void role;
+  return false;
 }
 
 export function canManageInventory(role: RoleLike): boolean {
-  const roleName = getRoleName(role);
-
-  return roleName !== undefined && INVENTORY_ROLES.includes(roleName);
+  void role;
+  return false;
 }
 
 export function homePathForRole(role: RoleLike, canAccessErp = false): string {

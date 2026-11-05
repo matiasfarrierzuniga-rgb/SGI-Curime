@@ -1,17 +1,25 @@
 import {
   CANONICAL_ROLE_CODES,
+  type CanonicalRoleCode,
   SYSTEM_ADMIN_ROLE,
 } from './canonical-role-catalog';
 
 export const GENERAL_ACCOUNT_ROLE = 'Subscription_L1';
 export const COMMUNITY_ACCOUNT_ROLE = 'ROLE_COMMUNITY_USER';
 export const LEGACY_COMMUNITY_ACCOUNT_ROLE = 'Cuenta comunitaria';
+export const COMMUNITY_ACCOUNT_ROLES = [
+  COMMUNITY_ACCOUNT_ROLE,
+  LEGACY_COMMUNITY_ACCOUNT_ROLE,
+];
+export function isCommunityAccountRole(role: string): boolean {
+  return COMMUNITY_ACCOUNT_ROLES.includes(role);
+}
 export const ERP_ADMITTED_V2_ROLES = [
   SYSTEM_ADMIN_ROLE,
   ...CANONICAL_ROLE_CODES.filter(
     (role) => role !== COMMUNITY_ACCOUNT_ROLE && role !== SYSTEM_ADMIN_ROLE,
   ),
-] as const;
+] as const satisfies readonly CanonicalRoleCode[];
 
 export interface InternalAccessContext {
   userStatus: string;
@@ -26,22 +34,10 @@ export function canAccessErp(context: InternalAccessContext): boolean {
     return false;
   }
 
-  if (
-    ERP_ADMITTED_V2_ROLES.some((role) => role === context.userRoleName)
-  ) {
-    return true;
-  }
-
-  if (
-    context.userRoleName === COMMUNITY_ACCOUNT_ROLE ||
-    context.userRoleName === LEGACY_COMMUNITY_ACCOUNT_ROLE
-  ) {
-    return false;
-  }
-
-  return (
-    context.hasPerson &&
-    context.affiliateStatus === 'ACTIVE' &&
-    context.userRoleName !== GENERAL_ACCOUNT_ROLE
+  // ERP admission is determined exclusively by the active canonical role.
+  // Retained Person/Affiliate fields are compatibility context only; they never
+  // grant administrative access.
+  return ERP_ADMITTED_V2_ROLES.includes(
+    context.userRoleName as (typeof ERP_ADMITTED_V2_ROLES)[number],
   );
 }

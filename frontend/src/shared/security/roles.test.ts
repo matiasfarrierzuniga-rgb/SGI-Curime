@@ -14,12 +14,12 @@ describe("shared security role policy", () => {
   it("exposes the exact backend role names", () => {
     expect(ROLE_ADMIN).toBe("Administrador");
     expect(ROLE_INVENTORY_MANAGER).toBe("Gestor de Inventario");
-    expect(ADMIN_ROLES).toEqual(["Administrador"]);
-    expect(INVENTORY_ROLES).toEqual(["Administrador", "Gestor de Inventario"]);
+    expect(ADMIN_ROLES).toEqual([]);
+    expect(INVENTORY_ROLES).toEqual([]);
   });
 
   it("derives admin access", () => {
-    expect(isAdmin("Administrador")).toBe(true);
+    expect(isAdmin("Administrador")).toBe(false);
     expect(isAdmin("Gestor de Inventario")).toBe(false);
     expect(isAdmin(undefined)).toBe(false);
     expect(isAdmin(null)).toBe(false);
@@ -27,8 +27,8 @@ describe("shared security role policy", () => {
 
   it("derives access from role objects by name", () => {
     expect(getRoleName({ name: "Administrador" })).toBe("Administrador");
-    expect(isAdmin({ name: "Administrador" })).toBe(true);
-    expect(canManageInventory({ name: "Gestor de Inventario" })).toBe(true);
+    expect(isAdmin({ name: "Administrador" })).toBe(false);
+    expect(canManageInventory({ name: "Gestor de Inventario" })).toBe(false);
   });
 
   it("handles nullish and empty role values safely", () => {
@@ -43,8 +43,8 @@ describe("shared security role policy", () => {
   });
 
   it("derives inventory access for admin and gestor only", () => {
-    expect(canManageInventory("Gestor de Inventario")).toBe(true);
-    expect(canManageInventory("Administrador")).toBe(true);
+    expect(canManageInventory("Gestor de Inventario")).toBe(false);
+    expect(canManageInventory("Administrador")).toBe(false);
     expect(canManageInventory("Vecino/Afiliado")).toBe(false);
     expect(canManageInventory(null)).toBe(false);
   });

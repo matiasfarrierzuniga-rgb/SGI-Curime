@@ -1,6 +1,8 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../../audit/audit-actions';
-import { User } from '../../domain/entities/user';
+import { isCommunityAccountRole } from '../../../../auth/domain/policies/internal-access.policy';
+import { User, UserStatus } from '../../domain/entities/user';
+import { ActivationNotCompletedError } from '../../domain/errors/activation-not-completed.error';
 import { InactiveRoleError } from '../../domain/errors/inactive-role.error';
 import { RoleNotFoundError } from '../../domain/errors/role-not-found.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
@@ -41,6 +43,13 @@ export class ChangeUserRoleUseCase {
         tx.findRoleById(roleId),
       ]);
       if (!user) throw new UserNotFoundError();
+      if (user.status === UserStatus.PENDING_EMAIL_VERIFICATION)
+        throw new ActivationNotCompletedError();
+      if (
+        isCommunityAccountRole(user.role.name) &&
+        !(await tx.communityVerificationEvidence(id))
+      )
+        throw new ActivationNotCompletedError();
       if (!role) throw new RoleNotFoundError();
       if (!role.isActive) throw new InactiveRoleError();
       if (!isCanonicalRoleCode(role.name)) throw new NonAssignableRoleError();

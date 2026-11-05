@@ -314,6 +314,21 @@ describe("AdminDashboard", () => {
     });
   });
 
+  it("does not expose administrative quick actions without their effective capabilities", async () => {
+    vi.mocked(httpClient.get).mockResolvedValue({ data: response });
+    renderDashboard([]);
+
+    expect(
+      await screen.findByText("No hay accesos disponibles."),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("navigation", {
+        name: "Accesos rápidos administrativos",
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows an accessible retry state when dashboard endpoint fails", async () => {
     vi.mocked(httpClient.get).mockRejectedValue(new Error("network"));
     renderDashboard();

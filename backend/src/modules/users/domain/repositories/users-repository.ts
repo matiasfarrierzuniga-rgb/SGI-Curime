@@ -104,6 +104,8 @@ export interface UsersRepository {
     input: RuntimePersonIdentityInput,
   ): Promise<RuntimePersonResolutionResult>;
   getPasswordHash(id: number): Promise<string | null>;
+  communityVerificationEvidence(id: number): Promise<Date | null>;
+  deactivateAndRevokeSessions(id: number): Promise<User>;
   updateProfile(id: number, data: UserUpdateData): Promise<User>;
   updateStatus(id: number, status: UserStatus): Promise<User>;
   updateSubscriptionExpirationDate(id: number, value: Date): Promise<User>;

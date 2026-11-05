@@ -2,6 +2,7 @@ import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../../audit/audit-actions';
 import { User, UserStatus } from '../../domain/entities/user';
 import { AccountAlreadyInactiveError } from '../../domain/errors/account-already-inactive.error';
+import { ActivationNotCompletedError } from '../../domain/errors/activation-not-completed.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
 import { SelfDeactivationError } from '../../domain/errors/self-deactivation.error';
 import {
@@ -35,6 +36,8 @@ export class DeactivateUserUseCase {
     const result = await this.repository.withTransaction(async (tx) => {
       const user = await tx.findById(id);
       if (!user) throw new UserNotFoundError();
+      if (user.status === UserStatus.PENDING_EMAIL_VERIFICATION)
+        throw new ActivationNotCompletedError();
       if (user.status === UserStatus.INACTIVE) {
         throw new AccountAlreadyInactiveError();
       }
@@ -42,7 +45,7 @@ export class DeactivateUserUseCase {
         const count = await tx.countActiveAdministrators(id);
         assertAnotherActiveAdministrator(count);
       }
-      return tx.updateStatus(id, UserStatus.INACTIVE);
+      return tx.deactivateAndRevokeSessions(id);
     });
     await this.audit?.record({
       userId: actorId,

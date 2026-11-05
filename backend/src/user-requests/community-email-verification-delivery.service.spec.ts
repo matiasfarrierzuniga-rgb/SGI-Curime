@@ -46,4 +46,16 @@ describe('CommunityEmailVerificationDeliveryService', () => {
     ).resolves.toBe(false);
     expect(log.mock.calls.flat().join(' ')).not.toContain('raw-token');
   });
+
+  it('reports failure when a provider does not accept the message', async () => {
+    notifications.send.mockResolvedValue({
+      messageId: 'not-accepted',
+      accepted: false,
+    });
+    await expect(
+      new CommunityEmailVerificationDeliveryService(
+        notifications as never,
+      ).deliver(delivery),
+    ).resolves.toBe(false);
+  });
 });
