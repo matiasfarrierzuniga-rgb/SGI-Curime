@@ -3,6 +3,10 @@ import {
   isTemporaryLockActive,
 } from '../../../../auth';
 import {
+  getCanonicalRoleLabel,
+  isCanonicalRoleCode,
+} from '../../../../auth/domain/policies/canonical-role-catalog';
+import {
   AdminPersonReadModel,
   User,
   UserStatus,
@@ -18,6 +22,12 @@ export function toUserResponse(user: User) {
   const isAdministrativelyBlocked = user.status === UserStatus.BLOCKED;
   return {
     ...user,
+    role: {
+      ...user.role,
+      label: isCanonicalRoleCode(user.role.name)
+        ? getCanonicalRoleLabel(user.role.name)
+        : user.role.name,
+    },
     isBlocked: isAdministrativelyBlocked || isTemporarilyLocked,
     isTemporarilyLocked,
     isAdministrativelyBlocked,

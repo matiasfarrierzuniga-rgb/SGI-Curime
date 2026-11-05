@@ -1,6 +1,8 @@
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { Button } from '@/shared/ui/button'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useAuth } from '@/features/auth'
+import { canManageInventory } from '@/shared/security/roles'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -25,6 +27,9 @@ const limit = 10
 const emptyForm = { name: '', description: '' }
 
 export function InventoryCategoriesPage() {
+  const { user } = useAuth()
+  // UI mirrors legacy endpoint policy; server RolesGuard remains authoritative.
+  const mayManageInventory = canManageInventory(user?.role)
   const { notify } = useToast()
   const [categories, setCategories] = useState<InventoryCategory[]>([])
   const [total, setTotal] = useState(0)
@@ -124,7 +129,7 @@ export function InventoryCategoriesPage() {
             label="Buscar y filtrar categorías"
             controlsClassName="md:grid-cols-[minmax(0,1fr)_12rem]"
             onSubmit={(e) => { e.preventDefault(); setPage(1); void load() }}
-            actions={<><Button type="submit">Buscar</Button><Button type="button" variant="outline" onClick={openCreate}>Nueva categoría</Button></>}
+            actions={<><Button type="submit">Buscar</Button>{mayManageInventory ? <Button type="button" variant="outline" onClick={openCreate}>Nueva categoría</Button> : null}</>}
           >
             <FormField id="inventory-category-search" label="Búsqueda por nombre">
               <Input maxLength={100} value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -157,12 +162,12 @@ export function InventoryCategoriesPage() {
                     <DataTableCell>{c.description || '—'}</DataTableCell>
                     <DataTableCell><StatusBadge variant={c.isActive ? 'success' : 'neutral'}>{c.isActive ? 'Activa' : 'Inactiva'}</StatusBadge></DataTableCell>
                     <DataTableCell>
-                      <div className="actions">
+                      {mayManageInventory ? <div className="actions">
                         <Button type="button" variant="outline" size="sm" onClick={() => openEdit(c)}>Editar</Button>
                         {c.isActive
                           ? <Button type="button" variant="danger" size="sm" onClick={() => setConfirm({ category: c, action: 'deactivate' })}>Inactivar</Button>
                           : <Button type="button" size="sm" onClick={() => setConfirm({ category: c, action: 'activate' })}>Activar</Button>}
-                      </div>
+                      </div> : null}
                     </DataTableCell>
                   </DataTableRow>
                 ))}

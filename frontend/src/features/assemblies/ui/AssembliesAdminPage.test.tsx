@@ -10,13 +10,18 @@ const hooks = vi.hoisted(() => ({
   create: { mutateAsync: vi.fn(), isPending: false }, update: { mutateAsync: vi.fn(), isPending: false }, convocations: { mutateAsync: vi.fn(), isPending: false }, calls: { mutateAsync: vi.fn(), isPending: false }, start: { mutateAsync: vi.fn(), isPending: false }, complete: { mutateAsync: vi.fn(), isPending: false }, remove: { mutateAsync: vi.fn(), isPending: false }, attendance: { mutateAsync: vi.fn(), isPending: false },
 }))
 const toast = vi.hoisted(() => ({ notify: vi.fn() }))
-const auth = vi.hoisted(() => ({ permissionCodes: ['adm.assemblies.read', 'adm.assemblies.manage'] }))
+const auth = vi.hoisted(() => ({ permissionCodes: ['governance.assembly.create', 'governance.assembly.session', 'governance.attendance.scan'] }))
 vi.mock('../hooks/useAssembliesQueries', () => ({
   useAssemblies: hooks.useAssemblies, useAssembly: hooks.useAssembly, useEligibleAffiliates: hooks.useEligibleAffiliates,
   useAssemblyMutations: () => ({ create: hooks.create, update: hooks.update, convocations: hooks.convocations, calls: hooks.calls, start: hooks.start, complete: hooks.complete, remove: hooks.remove, attendance: hooks.attendance }),
 }))
 vi.mock('@/shared/ui/Toast', () => ({ useToast: () => toast }))
 vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes: auth.permissionCodes } }) }))
+vi.mock('@/shared/ui/checkbox', () => ({
+  Checkbox: ({ checked, onCheckedChange, ...props }: { checked?: boolean; onCheckedChange?: (checked: boolean) => void; 'aria-label'?: string }) => (
+    <input type="checkbox" checked={checked} onChange={(event) => onCheckedChange?.(event.target.checked)} {...props} />
+  ),
+}))
 
 const item = { id: 1, title: 'Asamblea general', type: null, date: '2026-09-20T18:00:00.000Z', place: 'Salón comunal', description: 'Informe anual', status: 'SCHEDULED', quorumType: 'PERCENTAGE', quorumValue: 50, convocationsLockedAt: null }
 const person = { id: 3, affiliateId: 7, roleNameSnapshot: 'Fiscal', affiliate: { id: 7, fullName: 'Ana Pérez', status: 'ACTIVE' } }
@@ -43,7 +48,7 @@ const renderList = () => render(<MemoryRouter><AssembliesAdminPage /></MemoryRou
 describe('AssembliesAdminPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    auth.permissionCodes = ['adm.assemblies.read', 'adm.assemblies.manage']
+    auth.permissionCodes = ['governance.assembly.create', 'governance.assembly.session', 'governance.attendance.scan']
     hooks.useAssemblies.mockReturnValue({ isPending: false, data: [item] })
     hooks.useAssembly.mockReturnValue({ isPending: false, data: undefined })
     hooks.useEligibleAffiliates.mockReturnValue({ data: eligibleAffiliates })
@@ -175,10 +180,9 @@ describe('AssembliesAdminPage', () => {
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/app/admin/assemblies/1'))
   })
 
-  it('does not expose management controls without manage permission', () => {
-    auth.permissionCodes = ['adm.assemblies.read']
+  it('does not expose notice controls without assembly-create permission', () => {
+    auth.permissionCodes = ['governance.assembly.session']
     renderList()
-    expect(screen.getByText(/Tiene acceso de consulta/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Crear asamblea' })).not.toBeInTheDocument()
   })
 
@@ -227,10 +231,11 @@ describe('AssembliesAdminPage', () => {
     expect(andrea).toHaveFocus()
     fireEvent.keyDown(andrea, { key: ' ' })
     fireEvent.keyUp(andrea, { key: ' ' })
+    fireEvent.click(andrea)
     expect(andrea).toBeChecked()
   })
 
-  it('shows attendance and completion controls only to a manager', async () => {
+  it('shows attendance and completion controls to Secretariat capabilities', async () => {
     hooks.useAssembly.mockReturnValue({ isPending: false, data: { ...detail, status: 'IN_PROGRESS', attendance: { ...detail.attendance, unrecorded: 0, present: 1, data: [{ ...person, attendance: { id: 1, status: 'PRESENT' } }] } } })
     render(<MemoryRouter><AssembliesAdminPage assemblyId={1} /></MemoryRouter>)
     fireEvent.click(screen.getByRole('button', { name: 'Presente' }))
@@ -242,14 +247,25 @@ describe('AssembliesAdminPage', () => {
     expect(toast.notify).toHaveBeenCalledWith('Asamblea finalizada correctamente.', 'success')
   })
 
+  it('keeps attendance controls hidden for Presidency capabilities', () => {
+    auth.permissionCodes = ['governance.assembly.create', 'governance.assembly.session']
+    hooks.useAssembly.mockReturnValue({ isPending: false, data: { ...detail, status: 'IN_PROGRESS' } })
+
+    render(<MemoryRouter><AssembliesAdminPage assemblyId={1} /></MemoryRouter>)
+
+    expect(screen.getByRole('button', { name: 'Finalizar asamblea' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Presente' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ausente' })).not.toBeInTheDocument()
+  })
+
   it.each(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'] as const)('renders %s state with its accessible status label', (status) => {
     hooks.useAssembly.mockReturnValue({ isPending: false, data: { ...detail, status } })
     render(<MemoryRouter><AssembliesAdminPage assemblyId={1} /></MemoryRouter>)
     expect(screen.getByText(status === 'SCHEDULED' ? 'Programada' : status === 'IN_PROGRESS' ? 'En curso' : 'Finalizada')).toBeInTheDocument()
   })
 
-  it('keeps scheduled and in-progress detail read-only without mutation controls', () => {
-    auth.permissionCodes = ['adm.assemblies.read']
+  it('limits a session-only user to session completion controls', () => {
+    auth.permissionCodes = ['governance.assembly.session']
     hooks.useAssembly.mockReturnValue({ isPending: false, data: { ...detail, status: 'IN_PROGRESS' } })
     render(<MemoryRouter><AssembliesAdminPage assemblyId={1} /></MemoryRouter>)
     expect(screen.getByText('Personas convocadas')).toBeInTheDocument()
@@ -259,15 +275,15 @@ describe('AssembliesAdminPage', () => {
     expect(screen.queryByRole('button', { name: 'Iniciar asamblea' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Presente' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ausente' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Finalizar asamblea' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Finalizar asamblea' })).toBeInTheDocument()
     expect(hooks.convocations.mutateAsync).not.toHaveBeenCalled()
     expect(hooks.start.mutateAsync).not.toHaveBeenCalled()
     expect(hooks.attendance.mutateAsync).not.toHaveBeenCalled()
     expect(hooks.complete.mutateAsync).not.toHaveBeenCalled()
   })
 
-  it('shows scheduled convocations without selection or workflow actions to a read-only user', () => {
-    auth.permissionCodes = ['adm.assemblies.read']
+  it('shows scheduled convocations without notice-management actions to a session-only user', () => {
+    auth.permissionCodes = ['governance.assembly.session']
     hooks.useAssembly.mockReturnValue({ isPending: false, data: detail })
     render(<MemoryRouter><AssembliesAdminPage assemblyId={1} /></MemoryRouter>)
     expect(screen.getByText(/Rol al momento de la convocatoria: Fiscal/)).toBeInTheDocument()

@@ -17,8 +17,6 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  Roles,
-  RolesGuard,
 } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { CorrectCommunityEmailDto } from './dto/correct-community-email.dto';
@@ -35,17 +33,15 @@ export class CommunityAccountsController {
   constructor(private readonly service: CommunityAccountsService) {}
 
   @Get('pending')
-  @Roles('Administrador', 'ROLE_SYSTEM_ADMIN')
   @RequireCapabilities('usr.users.read')
-  @UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   findPending(@Query('identification') identification: string) {
     return this.service.findPendingByIdentification(identification);
   }
 
   @Post(':id/correct-email')
-  @Roles('Administrador', 'ROLE_SYSTEM_ADMIN')
   @RequireCapabilities('usr.users.update')
-  @UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   correctEmail(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CorrectCommunityEmailDto,
@@ -60,9 +56,8 @@ export class CommunityAccountsController {
   }
 
   @Post(':id/reverify')
-  @Roles('Administrador', 'ROLE_SYSTEM_ADMIN')
   @RequireCapabilities('usr.users.lifecycle.manage')
-  @UseGuards(JwtAuthGuard, RolesGuard, CapabilityGuard)
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   reverify(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request & { user: AuthenticatedUser },

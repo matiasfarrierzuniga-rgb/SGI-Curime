@@ -5,6 +5,7 @@ import { ActivationNotCompletedError } from '../../domain/errors/activation-not-
 import { LastAdministratorError } from '../../domain/errors/last-administrator.error';
 import { RoleNotFoundError } from '../../domain/errors/role-not-found.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
+import { NonAssignableRoleError } from '../../domain/errors/non-assignable-role.error';
 import type { UsersRepository } from '../../domain/repositories/users-repository';
 import { ChangeUserRoleUseCase } from './change-user-role.use-case';
 
@@ -18,14 +19,14 @@ const adminUser = {
   status: UserStatus.ACTIVE,
   lockedAt: null,
   roleId: 1,
-  role: { id: 1, name: 'Administrador', description: null, isActive: true },
+  role: { id: 1, name: 'ROLE_SYSTEM_ADMIN', description: null, isActive: true },
   createdAt: new Date(),
   updatedAt: new Date(),
 };
 
 const treasurer = {
   id: 2,
-  name: 'Tesorero',
+  name: 'ROLE_INSTITUTIONAL_TREASURER',
   description: null,
   isActive: true,
 };
@@ -111,6 +112,18 @@ describe('ChangeUserRoleUseCase', () => {
     );
   });
 
+  it('rejects an active legacy role', async () => {
+    repository.findRoleById.mockResolvedValueOnce({
+      ...treasurer,
+      name: 'Tesorero',
+    });
+
+    await expect(useCase.execute(1, 3)).rejects.toBeInstanceOf(
+      NonAssignableRoleError,
+    );
+    expect(repository.updateRole).not.toHaveBeenCalled();
+  });
+
   it('does not demote the last active administrator', async () => {
     repository.countActiveAdministrators.mockResolvedValueOnce(0);
 
@@ -140,5 +153,10 @@ describe('ChangeUserRoleUseCase', () => {
       details: { previousRoleId: 1, newRoleId: 2 },
       ipAddress: '127.0.0.1',
     });
+  });
+
+  it('delegates session invalidation to the atomic role update', async () => {
+    await useCase.execute(1, 2);
+    expect(repository.updateRole).toHaveBeenCalledWith(1, 2);
   });
 });

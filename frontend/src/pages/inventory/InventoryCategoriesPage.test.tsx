@@ -4,6 +4,8 @@ import { ToastProvider } from '@/shared/ui/Toast'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import { InventoryCategoriesPage } from './InventoryCategoriesPage'
 
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
+
 vi.mock('../../services/inventoryCategoriesService', () => ({
   inventoryCategoriesService: {
     list: vi.fn(),

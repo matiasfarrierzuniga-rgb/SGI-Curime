@@ -38,8 +38,8 @@ export class AffiliatesController {
     return this.service.findOne(id);
   }
   @Patch(':id')
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequireCapabilities('padron.affiliate.update')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAffiliateDto,

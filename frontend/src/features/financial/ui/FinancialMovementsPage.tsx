@@ -29,11 +29,13 @@ export function FinancialMovementsPage() {
     return Number.isInteger(id) && id > 0 ? id : null
   })
   const [creating, setCreating] = useState(false)
-  const list = useFinancialMovementsList(filters)
-  const summary = useFinancialMovementSummary({ dateFrom: filters.dateFrom, dateTo: filters.dateTo })
+  const canReadMovements = hasCapability(user?.permissionCodes, 'fin.movements.read')
+  const list = useFinancialMovementsList(filters, canReadMovements)
+  const summary = useFinancialMovementSummary({ dateFrom: filters.dateFrom, dateTo: filters.dateTo }, canReadMovements)
   const hasActiveFilters = Boolean(filters.type || filters.dateFrom || filters.dateTo)
   const update = (change: Partial<FinancialMovementListFilters>) => setFilters(current => ({ ...current, ...change, page: 1 }))
   const mayCreate = hasCapability(user?.permissionCodes, 'fin.movements.create')
+  if (!canReadMovements) return <ErrorState title="Acceso restringido" message="No tiene permiso para consultar movimientos financieros." />
   return <section className="space-y-6">
     <PageHeader context="Gestión financiera" title="Movimientos financieros" description="Registre ingresos y egresos manuales, consulte su historial y balance." actions={mayCreate ? <Button type="button" onClick={() => setCreating(true)}>Registrar movimiento</Button> : undefined} />
     <FinancialSectionNav />

@@ -9,9 +9,28 @@ import { InventoryReportsService } from '../inventory-reports/inventory-reports.
 import { PrismaService } from '../prisma/prisma.service';
 import {
   buildReportMetadata,
+  type ReportDataSource,
   type ReportGeneratedBy,
 } from '../reporting/report-metadata';
 import { AttendanceReportQueryDto } from './dto/report-query.dto';
+
+type DashboardData = Partial<{
+  affiliates: { total: number; active: number; inactive: number };
+  affiliateRequests: { pending: number };
+  reservations: { total: number } & Record<string, number>;
+  financial: Awaited<ReturnType<FinancialService['summarizeMovements']>>;
+  donations: { total: number } & Record<string, number>;
+  inventory: {
+    totalItems: number;
+    lowStockItems: number;
+    outOfStockItems: number;
+    activeLoans: number;
+    overdueLoans: number;
+  };
+  assemblies: { total: number } & Record<string, number>;
+  justifications: { pending: number };
+}>;
+
 @Injectable()
 export class AdminReportsService {
   constructor(
@@ -20,81 +39,127 @@ export class AdminReportsService {
     private readonly inventoryReportsService: InventoryReportsService,
   ) {}
 
-  async dashboard(generatedBy: ReportGeneratedBy | null = null) {
-    const [
-      affiliatesReport,
-      financial,
-      inventoryReport,
-      justificationsReport,
-      reservationGroups,
-      assemblyGroups,
-      donationGroups,
-    ] = await Promise.all([
-      this.affiliatesSummary(),
-      this.financialService.summarizeMovements({}),
-      this.inventoryReportsService.summary(),
-      this.justificationsSummary(),
-      this.prisma.reservation.groupBy({
-        by: ['status'],
-        _count: { _all: true },
-      }),
-      this.prisma.assembly.groupBy({
-        by: ['status'],
-        _count: { _all: true },
-      }),
-      this.prisma.donation.groupBy({
-        by: ['status'],
-        _count: { _all: true },
-      }),
-    ]);
+  async dashboard(
+    generatedBy: ReportGeneratedBy | null = null,
+    permissionCodes: readonly string[] = [],
+  ) {
+    const canRead = (capability: string) =>
+      permissionCodes.includes(capability);
+    const affiliates = canRead('adm.affiliates.read')
+      ? Promise.all([
+          this.prisma.affiliate.count(),
+          this.prisma.affiliate.count({ where: { status: 'ACTIVE' } }),
+          this.prisma.affiliate.count({ where: { status: 'INACTIVE' } }),
+        ])
+      : undefined;
+    const affiliateRequests = canRead('padron.application.review')
+      ? this.prisma.affiliateRequest.count({ where: { status: 'PENDING' } })
+      : undefined;
+    const reservations = canRead('res.reservations.read')
+      ? this.prisma.reservation.groupBy({
+          by: ['status'],
+          _count: { _all: true },
+        })
+      : undefined;
+    const financial = canRead('fin.movements.read')
+      ? this.financialService.summarizeMovements({})
+      : undefined;
+    const donations = canRead('don.donations.read')
+      ? this.prisma.donation.groupBy({ by: ['status'], _count: { _all: true } })
+      : undefined;
+    const inventory = canRead('inv.inventory.read')
+      ? this.inventoryReportsService.summary()
+      : undefined;
+    const assemblies =
+      canRead('governance.assembly.session') || canRead('adm.assemblies.read')
+      ? this.prisma.assembly.groupBy({ by: ['status'], _count: { _all: true } })
+      : undefined;
+    const justifications = canRead('adm.justifications.read')
+      ? this.prisma.absenceJustification.groupBy({
+          by: ['status'],
+          _count: { _all: true },
+        })
+      : undefined;
 
-    const reservations = this.countStatuses(
-      Object.values(ReservationStatus),
+    const [
+      affiliateCounts,
+      pendingAffiliateRequests,
       reservationGroups,
-    );
-    const assemblies = this.countStatuses(
-      Object.values(AssemblyStatus),
-      assemblyGroups,
-    );
-    const donations = this.countStatuses(
-      Object.values(DonationStatus),
+      financialSummary,
       donationGroups,
-    );
-    const { pendingRequests, ...affiliates } = affiliatesReport.data;
-    const inventory = inventoryReport.data;
+      inventoryReport,
+      assemblyGroups,
+      justificationGroups,
+    ] = await Promise.all([
+      affiliates,
+      affiliateRequests,
+      reservations,
+      financial,
+      donations,
+      inventory,
+      assemblies,
+      justifications,
+    ]);
+    const dataSource: ReportDataSource[] = [];
+    const data: DashboardData = {};
+
+    if (affiliateCounts) {
+      const [total, active, inactive] = affiliateCounts;
+      data.affiliates = { total, active, inactive };
+      dataSource.push('AFFILIATE');
+    }
+    if (pendingAffiliateRequests !== undefined) {
+      data.affiliateRequests = { pending: pendingAffiliateRequests };
+      dataSource.push('AFFILIATE_REQUEST');
+    }
+    if (reservationGroups) {
+      data.reservations = this.countStatuses(
+        Object.values(ReservationStatus),
+        reservationGroups,
+      );
+      dataSource.push('RESERVATION');
+    }
+    if (financialSummary) {
+      data.financial = financialSummary;
+      dataSource.push('FINANCIAL_MOVEMENT');
+    }
+    if (donationGroups) {
+      data.donations = this.countStatuses(
+        Object.values(DonationStatus),
+        donationGroups,
+      );
+      dataSource.push('DONATION');
+    }
+    if (inventoryReport) {
+      const summary = inventoryReport.data;
+      data.inventory = {
+        totalItems: summary.totalItems,
+        lowStockItems: summary.lowStockCount,
+        outOfStockItems: summary.outOfStockCount,
+        activeLoans: summary.activeLoans,
+        overdueLoans: summary.overdueLoans,
+      };
+      dataSource.push('INVENTORY_ITEM', 'INVENTORY_CATEGORY', 'INVENTORY_LOAN');
+    }
+    if (assemblyGroups) {
+      data.assemblies = this.countStatuses(
+        Object.values(AssemblyStatus),
+        assemblyGroups,
+      );
+      dataSource.push('ASSEMBLY');
+    }
+    if (justificationGroups) {
+      const counts = { PENDING: 0, APPROVED: 0, REJECTED: 0 };
+      for (const group of justificationGroups) {
+        counts[group.status] = group._count._all;
+      }
+      data.justifications = { pending: counts.PENDING };
+      dataSource.push('ABSENCE_JUSTIFICATION');
+    }
 
     return {
-      metadata: buildReportMetadata({
-        generatedBy,
-        dataSource: [
-          'AFFILIATE',
-          'AFFILIATE_REQUEST',
-          'RESERVATION',
-          'FINANCIAL_MOVEMENT',
-          'DONATION',
-          'INVENTORY_ITEM',
-          'INVENTORY_CATEGORY',
-          'INVENTORY_LOAN',
-          'ASSEMBLY',
-          'ABSENCE_JUSTIFICATION',
-        ],
-      }),
-      data: {
-        affiliates,
-        affiliateRequests: { pending: pendingRequests },
-        reservations,
-        financial,
-        donations,
-        inventory: {
-          totalItems: inventory.totalItems,
-          lowStockItems: inventory.lowStockCount,
-          outOfStockItems: inventory.outOfStockCount,
-          activeLoans: inventory.activeLoans,
-          overdueLoans: inventory.overdueLoans,
-        },
-        assemblies,
-        justifications: { pending: justificationsReport.data.PENDING },
-      },
+      metadata: buildReportMetadata({ generatedBy, dataSource }),
+      data,
     };
   }
   async affiliatesSummary(generatedBy: ReportGeneratedBy | null = null) {
@@ -143,13 +208,9 @@ export class AdminReportsService {
       const attendances = a.convocations.flatMap((item) =>
           item.attendance ? [item.attendance] : [],
         ),
-        present = attendances.filter(
-          (x) => x.status === 'PRESENT',
-        ).length,
+        present = attendances.filter((x) => x.status === 'PRESENT').length,
         absent = attendances.filter((x) => x.status === 'ABSENT').length,
-        justified = attendances.filter(
-          (x) => x.status === 'JUSTIFIED',
-        ).length;
+        justified = attendances.filter((x) => x.status === 'JUSTIFIED').length;
       return {
         id: a.id,
         title: a.title,

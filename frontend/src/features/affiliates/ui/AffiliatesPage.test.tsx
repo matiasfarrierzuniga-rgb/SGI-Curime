@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { affiliatesService } from '../api/affiliates.api'
 import { AffiliatesPage } from './AffiliatesPage'
 
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role: 'Administrador', permissionCodes: ['adm.affiliates.read', 'padron.affiliate.update'] } }) }))
+
 vi.mock('../api/affiliates.api', () => ({
   affiliatesService: { list: vi.fn() },
 }))

@@ -15,7 +15,7 @@ const account = {
   lockedAt: null,
   failedLoginAttempts: 0,
   lastLoginAt: null,
-  roleName: 'Administrador',
+  roleName: 'ROLE_SYSTEM_ADMIN',
   roleId: 2,
   roleIsActive: true,
   permissionCodes: ['usr.users.read'],
@@ -40,7 +40,7 @@ describe('JwtStrategy persisted RBAC mapping', () => {
     findCredentialsById.mockResolvedValue(account);
   });
 
-  it('returns persisted permission codes without changing authentication fields', async () => {
+  it('returns current canonical role and persisted permission codes', async () => {
     await expect(
       strategy.validate({
         sub: 1,
@@ -52,7 +52,7 @@ describe('JwtStrategy persisted RBAC mapping', () => {
       fullName: 'Admin',
       email: 'admin@example.com',
       status: 'ACTIVE',
-      role: 'Administrador',
+      role: 'ROLE_SYSTEM_ADMIN',
       permissionCodes: ['usr.users.read'],
       canAccessErp: true,
     });
@@ -119,6 +119,16 @@ describe('JwtStrategy persisted RBAC mapping', () => {
         role: account.roleName,
       }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('does not admit an active account whose persisted role is inactive', async () => {
+    findCredentialsById.mockResolvedValueOnce({
+      ...account,
+      roleIsActive: false,
+    });
+    await expect(
+      strategy.validate({ sub: 1, email: account.email, role: account.roleName, sessionGeneration: 0 }),
+    ).resolves.toMatchObject({ canAccessErp: false });
   });
 
   it('fails authentication when permission lookup fails', async () => {

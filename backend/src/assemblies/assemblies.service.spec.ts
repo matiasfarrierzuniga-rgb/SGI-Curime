@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/require-await */
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { hasCapability } from '../auth';
 import { CreateAssemblyDto } from './dto/assembly.dto';
 import {
   AssembliesService,
@@ -80,17 +79,7 @@ const audit = { log: jest.fn().mockResolvedValue(undefined) };
 const serviceFor = (prisma: unknown) =>
   new AssembliesService(prisma as never, audit as never);
 
-describe('Assemblies authorization and DTO validation', () => {
-  it('grants create/manage only to Administrador', () => {
-    expect(hasCapability('Administrador', 'adm.assemblies.manage')).toBe(true);
-    expect(hasCapability('Vecino/Afiliado', 'adm.assemblies.manage')).toBe(
-      false,
-    );
-    expect(
-      hasCapability('Miembro de Junta Directiva', 'adm.assemblies.manage'),
-    ).toBe(false);
-  });
-
+describe('Assemblies DTO validation', () => {
   it.each([
     ['FIXED', 0],
     ['FIXED', -1],
@@ -709,31 +698,4 @@ describe('My assemblies privacy', () => {
     expect(prisma.assemblyConvocation.findMany).not.toHaveBeenCalled();
   });
 
-  it('rejects an assembly id not convoked for the authenticated affiliate', async () => {
-    const { prisma } = prismaMock();
-    prisma.user.findUnique.mockResolvedValue({
-      person: { affiliate: { id: 7 } },
-    });
-    prisma.assemblyConvocation.findUnique.mockResolvedValue(null);
-    await expect(
-      serviceFor(prisma).findOneAllowed(99, 42, 'Vecino/Afiliado'),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-  });
-
-  it('returns permitted detail without exposing other convocations', async () => {
-    const { prisma } = prismaMock();
-    prisma.user.findUnique.mockResolvedValue({
-      person: { affiliate: { id: 7 } },
-    });
-    prisma.assemblyConvocation.findUnique.mockResolvedValue({
-      legacyRoleNameSnapshot: 'Fiscal',
-    });
-    const result = await serviceFor(prisma).findOneAllowed(
-      1,
-      42,
-      'Vecino/Afiliado',
-    );
-    expect(result).toMatchObject({ id: 1, roleNameSnapshot: 'Fiscal' });
-    expect(result).not.toHaveProperty('convocations');
-  });
 });

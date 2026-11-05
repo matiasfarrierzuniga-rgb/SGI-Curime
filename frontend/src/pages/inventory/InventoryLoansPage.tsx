@@ -6,6 +6,7 @@ import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { useToast } from '@/shared/ui/Toast'
 import { useAuth } from '@/features/auth'
+import { canManageInventory } from '@/shared/security/roles'
 import { affiliatesService } from '../../services/affiliatesService'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryLoansService } from '../../services/inventoryLoansService'
@@ -41,6 +42,8 @@ const emptyReturnForm = { returnNotes: '', condition: '' }
 export function InventoryLoansPage() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'Administrador'
+  // UI mirrors legacy endpoint policy; server RolesGuard remains authoritative.
+  const mayManageInventory = canManageInventory(user?.role)
   const { notify } = useToast()
   const [loans, setLoans] = useState<InventoryLoan[]>([])
   const [items, setItems] = useState<InventoryItem[]>([])
@@ -265,7 +268,7 @@ export function InventoryLoansPage() {
             </FormField>
             <div className="flex w-full flex-wrap items-end gap-2 border-t border-border-subtle pt-2 md:col-span-2 xl:col-span-1 xl:w-auto xl:self-end xl:border-t-0 xl:border-l xl:pl-2 xl:pt-0">
               <Button type="submit">Aplicar filtros</Button>
-              <Button type="button" variant="outline" onClick={openCreate}>Nuevo préstamo</Button>
+              {mayManageInventory ? <Button type="button" variant="outline" onClick={openCreate}>Nuevo préstamo</Button> : null}
             </div>
             <fieldset className="grid min-w-0 gap-1.5 md:col-span-2 xl:col-span-5">
               <legend className="text-label font-semibold text-foreground">Vencimiento</legend>
@@ -300,7 +303,7 @@ export function InventoryLoansPage() {
                     <DataTableCell>
                       <div className="actions">
                         <Button type="button" variant="outline" size="sm" onClick={() => void openDetail(loan.id)}>Ver detalle</Button>
-                        {loan.status === 'ACTIVE' && <Button type="button" size="sm" onClick={() => openReturn(loan)}>Devolver</Button>}
+                        {mayManageInventory && loan.status === 'ACTIVE' ? <Button type="button" size="sm" onClick={() => openReturn(loan)}>Devolver</Button> : null}
                       </div>
                     </DataTableCell>
                   </DataTableRow>
@@ -359,7 +362,7 @@ export function InventoryLoansPage() {
             <div><dt>Registrado por</dt><dd>{selected.createdBy?.fullName ?? '—'}</dd></div>
             {selected.receivedBy && <div><dt>Recibido por</dt><dd>{selected.receivedBy.fullName}</dd></div>}
           </dl>
-          {selected.status === 'ACTIVE' && (
+          {mayManageInventory && selected.status === 'ACTIVE' && (
             <div className="actions">
               <Button type="button" onClick={() => openReturn(selected)}>Devolver</Button>
               <Button type="button" variant="danger" onClick={() => { setConfirmCancel(selected); setMode(null) }}>Cancelar</Button>

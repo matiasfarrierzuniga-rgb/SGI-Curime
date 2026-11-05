@@ -7,6 +7,7 @@ import {
   type CapabilityByBodyValueRequirement,
 } from '../decorators/require-capability-by-body-value.decorator';
 import { CAPABILITIES_KEY } from '../decorators/require-capabilities.decorator';
+import { ANY_CAPABILITIES_KEY } from '../decorators/require-any-capabilities.decorator';
 import type { AuthenticatedUser } from '../../domain/entities/auth-user';
 
 function isBodyValueRequirement(
@@ -39,8 +40,16 @@ export class CapabilityGuard implements CanActivate {
     )
       ? bodyValueRequirementMetadata
       : undefined;
+    const anyCapabilities = this.reflector.getAllAndOverride<string[]>(
+      ANY_CAPABILITIES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
-    if (!requiredCapabilities?.length && !bodyValueRequirement) {
+    if (
+      !requiredCapabilities?.length &&
+      !anyCapabilities?.length &&
+      !bodyValueRequirement
+    ) {
       return true;
     }
 
@@ -65,6 +74,10 @@ export class CapabilityGuard implements CanActivate {
         (requiredCapabilities ?? []).every((capability) =>
           hasPersistedCapability(user.permissionCodes, capability),
         ) &&
+        (!anyCapabilities?.length ||
+          anyCapabilities.some((capability) =>
+            hasPersistedCapability(user.permissionCodes, capability),
+          )) &&
         (!requiredCapability ||
           hasPersistedCapability(user.permissionCodes, requiredCapability)),
     );

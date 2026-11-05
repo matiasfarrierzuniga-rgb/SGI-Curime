@@ -17,7 +17,7 @@ import type { Request } from 'express';
 import {
   CapabilityGuard,
   JwtAuthGuard,
-  RequireCapabilities,
+  RequireAnyCapabilities,
   type AuthenticatedUser,
 } from '../auth';
 import { AssembliesService } from './assemblies.service';
@@ -35,13 +35,13 @@ export class AssembliesController {
   constructor(private readonly service: AssembliesService) {}
 
   @Post()
-  @RequireCapabilities('adm.assemblies.manage')
+  @RequireAnyCapabilities('governance.assembly.create', 'adm.assemblies.manage')
   create(@Body() dto: CreateAssemblyDto, @Req() req: AuthRequest) {
     return this.service.create(dto, req.user.id, this.context(req));
   }
 
   @Get()
-  @RequireCapabilities('adm.assemblies.read')
+  @RequireAnyCapabilities('governance.assembly.session', 'adm.assemblies.read')
   findAll(@Query() query: QueryAssembliesDto) {
     return this.service.findAll(query);
   }
@@ -54,20 +54,19 @@ export class AssembliesController {
   }
 
   @Get('eligible-affiliates')
-  @RequireCapabilities('adm.assemblies.read')
+  @RequireAnyCapabilities('governance.assembly.create', 'adm.assemblies.manage')
   eligibleAffiliates() {
     return this.service.listEligibleAffiliates();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
-    if (!req.user.canAccessErp)
-      throw new ForbiddenException('Internal access required');
-    return this.service.findOneAllowed(id, req.user.id, req.user.role);
+  @RequireAnyCapabilities('governance.assembly.session', 'adm.assemblies.read')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.service.detail(id);
   }
 
   @Patch(':id')
-  @RequireCapabilities('adm.assemblies.manage')
+  @RequireAnyCapabilities('governance.assembly.create', 'adm.assemblies.manage')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAssemblyDto,
@@ -77,19 +76,19 @@ export class AssembliesController {
   }
 
   @Get(':id/convocations')
-  @RequireCapabilities('adm.assemblies.read')
+  @RequireAnyCapabilities('governance.assembly.session', 'adm.assemblies.read')
   convocations(@Param('id', ParseIntPipe) id: number) {
     return this.service.getConvocations(id);
   }
 
   @Get(':id/calls')
-  @RequireCapabilities('adm.assemblies.read')
+  @RequireAnyCapabilities('governance.assembly.session', 'adm.assemblies.read')
   calls(@Param('id', ParseIntPipe) id: number) {
     return this.service.getCalls(id);
   }
 
   @Put(':id/calls')
-  @RequireCapabilities('adm.assemblies.manage')
+  @RequireAnyCapabilities('governance.assembly.create', 'adm.assemblies.manage')
   replaceCalls(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAssemblyCallsDto,
@@ -99,7 +98,7 @@ export class AssembliesController {
   }
 
   @Put(':id/convocations')
-  @RequireCapabilities('adm.assemblies.manage')
+  @RequireAnyCapabilities('governance.assembly.create', 'adm.assemblies.manage')
   replaceConvocations(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateConvocationsDto,
@@ -114,37 +113,37 @@ export class AssembliesController {
   }
 
   @Post(':id/start')
-  @RequireCapabilities('adm.assemblies.manage')
+  @RequireAnyCapabilities('governance.assembly.session', 'adm.assemblies.manage')
   start(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.start(id, req.user.id, this.context(req));
   }
 
   @Post(':id/complete')
-  @RequireCapabilities('adm.assemblies.manage')
+  @RequireAnyCapabilities('governance.assembly.session', 'adm.assemblies.manage')
   complete(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.complete(id, req.user.id, this.context(req));
   }
 
   @Delete(':id')
-  @RequireCapabilities('adm.assemblies.manage')
+  @RequireAnyCapabilities('governance.assembly.create', 'adm.assemblies.manage')
   remove(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.remove(id, req.user.id, this.context(req));
   }
 
   @Get(':id/quorum')
-  @RequireCapabilities('adm.assemblies.read')
+  @RequireAnyCapabilities('governance.assembly.session', 'adm.assemblies.read')
   quorum(@Param('id', ParseIntPipe) id: number) {
     return this.service.getQuorum(id);
   }
 
   @Get(':id/attendance')
-  @RequireCapabilities('adm.assemblies.read')
+  @RequireAnyCapabilities('governance.assembly.session', 'adm.assemblies.read')
   attendance(@Param('id', ParseIntPipe) id: number) {
     return this.service.getAttendance(id);
   }
 
   @Put(':id/attendance')
-  @RequireCapabilities('adm.assemblies.manage')
+  @RequireAnyCapabilities('governance.attendance.scan', 'adm.assemblies.manage')
   record(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RecordAttendanceDto,

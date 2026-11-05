@@ -7,6 +7,9 @@ import { AdministrativeListLayout, AdministrativeListResults } from '@/shared/ui
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Button } from '@/shared/ui/button'
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
+import { isAdmin } from '@/shared/security/roles'
 import { useAffiliatesList } from '../hooks/useAffiliatesQueries'
 import type { Affiliate, AffiliateStatus } from '../model/affiliates.types'
 import { AffiliateFilters } from './AffiliateFilters'
@@ -17,6 +20,9 @@ import { AffiliatesTable } from './AffiliatesTable'
 const limit = 20
 
 export function AffiliatesPage() {
+  const { user } = useAuth()
+  const canUpdateAffiliate = hasCapability(user?.permissionCodes, 'padron.affiliate.update')
+  const canManageAffiliateLifecycle = isAdmin(user?.role)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<AffiliateStatus | ''>('')
@@ -62,7 +68,7 @@ export function AffiliatesPage() {
           <Pagination page={page} total={total} limit={limit} onChange={setPage} />
         </AdministrativeListResults>
       )}
-      {selectedId !== null && <AffiliateDetailsModal id={selectedId} onClose={() => setSelectedId(null)} onEdit={(affiliate) => { setSelectedId(null); setEditingAffiliate(affiliate) }} />}
+      {selectedId !== null && <AffiliateDetailsModal id={selectedId} canUpdate={canUpdateAffiliate} canManageLifecycle={canManageAffiliateLifecycle} onClose={() => setSelectedId(null)} onEdit={(affiliate) => { setSelectedId(null); setEditingAffiliate(affiliate) }} />}
       {editingAffiliate && <EditAffiliateModal affiliate={editingAffiliate} onClose={() => setEditingAffiliate(null)} />}
     </AdministrativeListLayout>
   )

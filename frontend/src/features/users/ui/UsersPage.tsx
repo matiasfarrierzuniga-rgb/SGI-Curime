@@ -21,6 +21,8 @@ import { UserManagementDialogs } from "./UserManagementDialogs";
 import { usersService } from "../api/users.api";
 import { usersKeys } from "../hooks/useUsersQueries";
 import { useToast } from "@/shared/ui/Toast";
+import { useAuth } from "@/features/auth";
+import { hasCapability } from "@/shared/security/access";
 
 type ManagementAction = "edit" | "role" | "activate" | "deactivate" | "unlock";
 
@@ -36,15 +38,19 @@ export function UsersPage() {
   const [management, setManagement] = useState<{ user: User; action: ManagementAction } | null>(null);
   const queryClient = useQueryClient();
   const { notify } = useToast();
+  const { user, isLoading: isSessionLoading } = useAuth();
+  const mayReadUsers = hasCapability(user?.permissionCodes, "usr.users.read");
+  const mayReadRoles = hasCapability(user?.permissionCodes, "usr.roles.read");
+  const queriesEnabled = !isSessionLoading && mayReadUsers;
 
   const filters = { page, limit, name: query, status: status || undefined, roleId: roleId ? Number(roleId) : 0 };
-  const listQuery = useUsersList(filters);
-  const rolesQuery = useRolesOptions();
-  const detailQuery = useUserDetail(selectedId);
+  const listQuery = useUsersList(filters, queriesEnabled);
+  const rolesQuery = useRolesOptions(!isSessionLoading && mayReadRoles);
+  const detailQuery = useUserDetail(selectedId, queriesEnabled);
 
   const users = listQuery.data?.data ?? [];
   const total = listQuery.data?.total ?? 0;
-  const loading = listQuery.isPending;
+  const loading = isSessionLoading || listQuery.isPending;
   const error =
     listQuery.error
       ? getErrorMessage(listQuery.error, "No fue posible cargar los usuarios.")
@@ -144,7 +150,7 @@ export function UsersPage() {
           selected={selected}
           loading={detailQuery.isPending}
           error={detailQuery.error ? getErrorMessage(detailQuery.error, "No fue posible cargar el detalle de la persona.") : null}
-          onRetry={() => { void detailQuery.refetch(); }}
+        onRetry={() => { if (queriesEnabled) void detailQuery.refetch(); }}
           onClose={() => {
             setSelectedId(null);
           }}

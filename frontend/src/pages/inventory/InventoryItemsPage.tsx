@@ -1,6 +1,8 @@
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { Button } from '@/shared/ui/button'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useAuth } from '@/features/auth'
+import { canManageInventory } from '@/shared/security/roles'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -48,6 +50,9 @@ const emptyAdjustmentForm = { newQuantity: '', reason: '', notes: '' }
 type ModalMode = null | 'detail' | 'create' | 'edit' | 'entry' | 'exit' | 'adjustment' | 'movements'
 
 export function InventoryItemsPage() {
+  const { user } = useAuth()
+  // UI mirrors legacy endpoint policy; server RolesGuard remains authoritative.
+  const mayManageInventory = canManageInventory(user?.role)
   const { notify } = useToast()
   const [items, setItems] = useState<InventoryItem[]>([])
   const [categories, setCategories] = useState<InventoryCategory[]>([])
@@ -348,7 +353,7 @@ export function InventoryItemsPage() {
             label="Buscar y filtrar artículos"
             controlsClassName="md:grid-cols-2 xl:grid-cols-[minmax(16rem,2fr)_minmax(12rem,1fr)_10rem_11rem]"
             onSubmit={applyFilters}
-            actions={<><Button type="submit">Buscar</Button><Button type="button" variant="outline" onClick={openCreate}>Nuevo artículo</Button></>}
+            actions={<><Button type="submit">Buscar</Button>{mayManageInventory ? <Button type="button" variant="outline" onClick={openCreate}>Nuevo artículo</Button> : null}</>}
           >
             <FormField id="inventory-item-search" label="Búsqueda (nombre o código)">
               <Input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -403,8 +408,8 @@ export function InventoryItemsPage() {
                     <DataTableCell>
                       <div className="actions">
                         <Button type="button" variant="outline" size="sm" onClick={() => void openDetail(item.id)}>Ver detalle</Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => { setSelected(item); openMovement('entry') }}>Entrada</Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => { setSelected(item); openMovement('exit') }}>Salida</Button>
+                        {mayManageInventory ? <><Button type="button" variant="outline" size="sm" onClick={() => { setSelected(item); openMovement('entry') }}>Entrada</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => { setSelected(item); openMovement('exit') }}>Salida</Button></> : null}
                       </div>
                     </DataTableCell>
                   </DataTableRow>
@@ -429,14 +434,14 @@ export function InventoryItemsPage() {
             <div><dt>Descripción</dt><dd>{selected.description || '—'}</dd></div>
           </dl>
           <div className="actions">
-            <Button type="button" variant="outline" onClick={() => openEdit(selected)}>Editar</Button>
+            {mayManageInventory ? <><Button type="button" variant="outline" onClick={() => openEdit(selected)}>Editar</Button>
             <Button type="button" onClick={() => openMovement('entry')}>Registrar entrada</Button>
             <Button type="button" onClick={() => openMovement('exit')}>Registrar salida</Button>
-            <Button type="button" variant="outline" onClick={() => openMovement('adjustment')}>Realizar ajuste</Button>
+            <Button type="button" variant="outline" onClick={() => openMovement('adjustment')}>Realizar ajuste</Button></> : null}
             <Button type="button" variant="outline" onClick={() => void openMovements(selected)}>Ver movimientos</Button>
-            {selected.status === 'ACTIVE'
+            {mayManageInventory && (selected.status === 'ACTIVE'
               ? <Button type="button" variant="danger" onClick={() => setConfirm({ item: selected, action: 'deactivate' })}>Inactivar</Button>
-              : <Button type="button" onClick={() => setConfirm({ item: selected, action: 'activate' })}>Activar</Button>}
+              : <Button type="button" onClick={() => setConfirm({ item: selected, action: 'activate' })}>Activar</Button>)}
           </div>
         </Modal>
       )}

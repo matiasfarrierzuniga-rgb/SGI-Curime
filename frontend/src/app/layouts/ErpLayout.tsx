@@ -5,7 +5,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAuth } from '@/features/auth'
 import { NotificationCenter } from '@/features/notifications'
 import { getErpNavigation, type ErpNavigationItem, type ErpNavigationSection, type NavigationAccent } from '@/app/navigation/erpNavigation'
-import { getRoleName } from '@/shared/security/roles'
+import { getRoleLabel } from '@/shared/security/roles'
 import { Button } from '@/shared/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/ui/sheet'
 
@@ -27,7 +27,7 @@ export function ErpLayout() {
   const navigation = getErpNavigation(user?.permissionCodes)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [sidebarPinned, setSidebarPinned] = useState(true)
-  const roleName = getRoleName(user?.role)
+  const roleName = getRoleLabel(user?.role)
   const sidebarExpanded = sidebarPinned
   const pageLabel = findCurrentLabel(navigation, location.pathname)
 

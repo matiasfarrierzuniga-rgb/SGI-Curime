@@ -17,11 +17,12 @@ export const donationsKeys = {
   detail: (id: number) => [...donationsKeys.details(), id] as const,
 }
 
-export function useDonationsList(filters: DonationListFilters = {}) {
+export function useDonationsList(filters: DonationListFilters = {}, enabled = true) {
   const normalizedFilters = normalizeDonationListFilters(filters)
   return useQuery({
     queryKey: donationsKeys.list(normalizedFilters),
     queryFn: () => donationsApi.getDonations(normalizedFilters),
+    enabled,
   })
 }
 

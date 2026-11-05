@@ -15,18 +15,24 @@ describe('getErpNavigation', () => {
     expect(getErpEntryPath(['fin.movements.read'])).toBe('/app/financial/movements')
     expect(getErpEntryPath(['inv.inventory.read'])).toBe('/inventory')
     expect(getErpEntryPath(['inv.inventory.read', 'fin.charges.read'])).toBe('/app/financial/dashboard')
-    expect(getErpEntryPath([])).toBe('/app/profile')
+    expect(getErpEntryPath([])).toBe('/profile')
+  })
+
+  it('sends treasurers with both required read capabilities to the financial summary', () => {
+    expect(getErpEntryPath(['erp.dashboard.read', 'fin.movements.read', 'fin.charges.read'], 'ROLE_INSTITUTIONAL_TREASURER')).toBe('/app/financial')
+    expect(getErpEntryPath(['erp.dashboard.read', 'fin.movements.read', 'fin.charges.read'], 'ROLE_SYSTEM_ADMIN')).toBe('/app/dashboard')
   })
 
   it('organizes ERP destinations into institutional sidebar sections', () => {
     const navigation = getErpNavigation([
       'erp.dashboard.read',
+      'usr.profile.read',
       'usr.users.read',
       'adm.affiliates.read',
-      'adm.requests.read',
+       'padron.application.review',
       'usr.user-requests.read',
       'adm.justifications.read',
-      'adm.assemblies.read',
+       'governance.assembly.session',
       'adm.institutional-profile.read',
       'adm.institutional-board.read',
       'pub.events.manage',
@@ -98,9 +104,9 @@ describe('getErpNavigation', () => {
   })
 
   it('uses delivered permission codes for capability-gated navigation', () => {
-    const items = getErpNavigation(['adm.assemblies.read', 'adm.justifications.read', 'ent.ventures.read', 'vol.opportunities.read'])
+    const items = getErpNavigation(['governance.assembly.session', 'adm.justifications.read', 'ent.ventures.read', 'vol.opportunities.read'])
       .flatMap(section => section.items)
-    expect(items.find(item => item.label === 'Asambleas')).toMatchObject({ capability: 'adm.assemblies.read' })
+    expect(items.find(item => item.label === 'Asambleas')).toMatchObject({ anyOfCapabilities: ['governance.assembly.session', 'adm.assemblies.read'] })
     expect(items.find(item => item.label === 'Justificaciones de ausencia')).toMatchObject({ capability: 'adm.justifications.read' })
     expect(items.find(item => item.label === 'Usuarios')).toBeUndefined()
     expect(items.find(item => item.label === 'Emprendimientos')).toMatchObject({
@@ -118,13 +124,33 @@ describe('getErpNavigation', () => {
     expect(getErpNavigation('Administrador' as unknown as string[]).flatMap(section => section.items).find(item => item.label === 'Asambleas')).toBeUndefined()
   })
 
-  it('keeps the account profile inside the ERP route context', () => {
-    const profile = getErpNavigation([]).flatMap(section => section.items).find(item => item.label === 'Mi perfil')
-    expect(profile).toMatchObject({ path: '/app/profile' })
+  it('shows the ERP profile only with its persisted capability', () => {
+    const emptyProfile = getErpNavigation([]).flatMap(section => section.items).find(item => item.label === 'Mi perfil')
+    const profile = getErpNavigation(['usr.profile.read']).flatMap(section => section.items).find(item => item.label === 'Mi perfil')
+    expect(emptyProfile).toBeUndefined()
+    expect(profile).toMatchObject({ path: '/app/profile', capability: 'usr.profile.read' })
+  })
+
+  it.each([
+    ['Presidency', ['erp.dashboard.read', 'usr.profile.read']],
+    ['Secretariat', ['erp.dashboard.read', 'usr.profile.read']],
+    ['Treasury', ['erp.dashboard.read', 'usr.profile.read', 'fin.charges.read', 'fin.movements.read']],
+    ['Operator', ['erp.dashboard.read', 'usr.profile.read', 'inv.inventory.read']],
+    ['System administrator', ['erp.dashboard.read', 'usr.profile.read', 'usr.users.read']],
+    ['Community user', []],
+  ])('keeps %s navigation limited to implemented capability-backed destinations', (_role, codes) => {
+    const destinations = getErpNavigation(codes)
+      .flatMap(section => section.items)
+      .flatMap(item => [item, ...(item.children ?? [])])
+      .map(item => item.path)
+
+    expect(destinations).not.toContain('/app/roles')
+    expect(destinations).not.toContain('/app/documents')
+    expect(destinations).not.toContain('/app/maintenance')
   })
 
   it('keeps public routes out of ERP navigation while preserving administrative routes', () => {
-    const items = getErpNavigation(['res.reservations.read', 'adm.affiliates.read', 'adm.requests.read', 'pub.events.manage'])
+    const items = getErpNavigation(['res.reservations.read', 'adm.affiliates.read', 'padron.application.review', 'pub.events.manage'])
       .flatMap(section => section.items)
     expect(items.some(item => item.path === '/servicios/reservas' || item.path === '/afiliacion' || item.path === '/eventos')).toBe(false)
     expect(items).toEqual(expect.arrayContaining([

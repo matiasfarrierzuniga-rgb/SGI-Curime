@@ -7,7 +7,7 @@ import {
 
 const admin = {
   status: UserStatus.ACTIVE,
-  role: { id: 1, name: 'Administrador', description: null, isActive: true },
+  role: { id: 1, name: 'ROLE_SYSTEM_ADMIN', description: null, isActive: true },
 };
 
 describe('administrator-continuity.policy', () => {
@@ -17,11 +17,13 @@ describe('administrator-continuity.policy', () => {
     });
 
     it('is required when demoting an active administrator to a non-admin role', () => {
-      expect(requiresAdminContinuity(admin, 'Tesorero')).toBe(true);
+      expect(
+        requiresAdminContinuity(admin, 'ROLE_INSTITUTIONAL_TREASURER'),
+      ).toBe(true);
     });
 
     it('is not required when keeping the administrator role', () => {
-      expect(requiresAdminContinuity(admin, 'Administrador')).toBe(false);
+      expect(requiresAdminContinuity(admin, 'ROLE_SYSTEM_ADMIN')).toBe(false);
     });
 
     it('is not required for an inactive administrator', () => {

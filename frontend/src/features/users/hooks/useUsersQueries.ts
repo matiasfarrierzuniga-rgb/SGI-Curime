@@ -16,7 +16,7 @@ export const usersKeys = {
   detail: (personId: string) => [...usersKeys.all, "detail", personId] as const,
 };
 
-export function useUsersList(filters: UserListFilters) {
+export function useUsersList(filters: UserListFilters, enabled: boolean) {
   return useQuery({
     queryKey: usersKeys.list(filters),
     queryFn: () =>
@@ -27,21 +27,23 @@ export function useUsersList(filters: UserListFilters) {
         status: filters.status || undefined,
         roleId: filters.roleId || undefined,
       }),
+    enabled,
   });
 }
 
-export function useRolesOptions() {
+export function useRolesOptions(enabled: boolean) {
   return useQuery({
     queryKey: ["roles", "active"],
     queryFn: () => rolesService.listActive(),
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 
-export function useUserDetail(personId: string | null) {
+export function useUserDetail(personId: string | null, enabled: boolean) {
   return useQuery({
     queryKey: usersKeys.detail(personId ?? ''),
     queryFn: () => usersService.get(personId!),
-    enabled: personId !== null,
+    enabled: enabled && personId !== null,
   });
 }

@@ -51,7 +51,7 @@ function getMutationErrorMessage(error: unknown) {
   return getErrorMessage(error, 'No fue posible procesar la solicitud. Intente nuevamente.')
 }
 
-export function AffiliateRequestDetail({ requestId, onClose }: { requestId: number; onClose: () => void }) {
+export function AffiliateRequestDetail({ requestId, canApprove, onClose }: { requestId: number; canApprove: boolean; onClose: () => void }) {
   const detailQuery = useAffiliateRequestDetail(requestId)
   const { approve, reject } = useAffiliateRequestMutations()
   const [dialog, setDialog] = useState<'detail' | 'approve-confirm' | 'reject-reason' | 'reject-confirm'>('detail')
@@ -189,7 +189,7 @@ export function AffiliateRequestDetail({ requestId, onClose }: { requestId: numb
              <section aria-labelledby="employment-heading"><h3 id="employment-heading" className="text-heading-3 font-semibold text-text-primary">Información laboral</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Ocupación" value={request.occupation} /><DetailField label="Lugar de trabajo" value={request.workplace} /></dl></section>
              <section aria-labelledby="request-heading"><h3 id="request-heading" className="text-heading-3 font-semibold text-text-primary">Solicitud</h3><dl className="mt-3 grid gap-4"><DetailField label="Motivo de afiliación" value={request.affiliationReason} /></dl></section>
              <section aria-labelledby="review-heading"><h3 id="review-heading" className="text-heading-3 font-semibold text-text-primary">Revisión</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Revisada el" value={formatTimestamp(request.reviewedAt)} /><DetailField label="Revisada por" value={request.reviewedBy ? `${request.reviewedBy.fullName} (${request.reviewedBy.email})` : null} />{request.status === 'REJECTED' && <DetailField label="Motivo de rechazo" value={request.rejectionReason} />}</dl></section>
-             {request.status === 'PENDING' && <div className="flex flex-wrap justify-end gap-3 border-t border-border-default pt-4"><Button type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('approve-confirm') } }} disabled={busy}>Aprobar solicitud</Button><Button variant="danger" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('reject-reason') } }} disabled={busy}>Rechazar solicitud</Button></div>}
+              {request.status === 'PENDING' && canApprove && <div className="flex flex-wrap justify-end gap-3 border-t border-border-default pt-4"><Button type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('approve-confirm') } }} disabled={busy}>Aprobar solicitud</Button><Button variant="danger" type="button" onClick={() => { if (!isLocked()) { setActionError(''); setDialog('reject-reason') } }} disabled={busy}>Rechazar solicitud</Button></div>}
           </div>
         ) : null}
       </div>

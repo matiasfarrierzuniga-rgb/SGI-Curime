@@ -53,7 +53,7 @@ export function UserDetailsModal({
           </div>
           <div className="min-w-0 rounded-control bg-surface-muted p-3">
             <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Cuenta SGI</dt>
-            <dd className="mt-1">{selected.access ? <div className="grid gap-1"><Badge variant={selected.access.isBlocked ? "warning" : selected.access.status === "ACTIVE" ? "success" : "neutral"}>{statusLabel(selected.access)}</Badge><span className="break-all font-medium text-text-primary">{selected.access.email}</span><span className="text-text-secondary">Rol: {selected.access.role.name}</span></div> : <span className="font-medium text-text-primary">No existe cuenta SGI</span>}</dd>
+            <dd className="mt-1">{selected.access ? <div className="grid gap-1"><Badge variant={selected.access.isBlocked ? "warning" : selected.access.status === "ACTIVE" ? "success" : "neutral"}>{statusLabel(selected.access)}</Badge><span className="break-all font-medium text-text-primary">{selected.access.email}</span><span className="text-text-secondary">Rol: {selected.access.role.label}</span></div> : <span className="font-medium text-text-primary">No existe cuenta SGI</span>}</dd>
           </div>
           <div className="min-w-0 rounded-control bg-surface-muted p-3">
             <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Afiliación</dt>

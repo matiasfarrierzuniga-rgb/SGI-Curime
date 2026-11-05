@@ -10,25 +10,36 @@ import { Modal } from '@/shared/ui/Modal'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Pagination } from '@/shared/ui/Pagination'
 import { useToast } from '@/shared/ui/Toast'
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { auditLogsService } from '../../services/auditLogsService'
 import type { AuditLog, AuditQuery } from '../../types/audit'
 
 const limit = 20
-const safeDetails = (value: unknown) => typeof value === 'object' && value !== null ? JSON.stringify(value, null, 2) : String(value ?? '—')
+const sensitiveDetailKey = /password|token|jwt|secret|database_url|admin_password/i
+const redactDetails = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(redactDetails)
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, sensitiveDetailKey.test(key) ? '[REDACTED]' : redactDetails(entry)]))
+  return value
+}
+const safeDetails = (value: unknown) => typeof value === 'object' && value !== null ? JSON.stringify(redactDetails(value), null, 2) : String(value ?? '—')
 
 export function AuditLogsPage() {
   const { notify } = useToast()
+  const { user, isLoading: isSessionLoading } = useAuth()
+  const mayReadAudit = hasCapability(user?.permissionCodes, 'aud.logs.read')
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
-  const [form, setForm] = useState({ action: '', module: '', dateFrom: '', dateTo: '' })
+  const [form, setForm] = useState({ userId: '', action: '', module: '', dateFrom: '', dateTo: '' })
   const [filters, setFilters] = useState<AuditQuery>({})
   const [selected, setSelected] = useState<AuditLog | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (isSessionLoading || !mayReadAudit) return
     let active = true
     setLoading(true)
     setError('')
@@ -42,7 +53,7 @@ export function AuditLogsPage() {
       .catch((cause) => active && setError(getErrorMessage(cause)))
       .finally(() => active && setLoading(false))
     return () => { active = false }
-  }, [filters, page])
+  }, [filters, isSessionLoading, mayReadAudit, page])
 
   const detail = async (id: number) => {
     try {
@@ -56,6 +67,7 @@ export function AuditLogsPage() {
     event.preventDefault()
     setPage(1)
     setFilters({
+      userId: form.userId ? Number(form.userId) : undefined,
       action: form.action || undefined,
       module: form.module || undefined,
       dateFrom: form.dateFrom ? new Date(`${form.dateFrom}T00:00:00`).toISOString() : undefined,
@@ -65,14 +77,15 @@ export function AuditLogsPage() {
 
   return (
     <AdministrativeListLayout header={<PageHeader context="Administración" title="Bitácora" />}>
-      <form className="filters card" onSubmit={submit}>
+      <form className="filters card" onSubmit={submit} aria-label="Filtrar bitácora">
+        <label>Usuario (ID)<input type="number" min="1" inputMode="numeric" value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })} /></label>
         <label>Acción<input maxLength={100} value={form.action} onChange={(event) => setForm({ ...form, action: event.target.value })} /></label>
         <label>Módulo<input maxLength={100} value={form.module} onChange={(event) => setForm({ ...form, module: event.target.value })} /></label>
         <label>Desde<input type="date" value={form.dateFrom} onChange={(event) => setForm({ ...form, dateFrom: event.target.value })} /></label>
         <label>Hasta<input type="date" value={form.dateTo} onChange={(event) => setForm({ ...form, dateTo: event.target.value })} /></label>
         <div className="actions"><Button type="submit">Aplicar filtros</Button></div>
       </form>
-      {error ? <ErrorState message={error} /> : loading ? <LoadingState label="Cargando bitácora…" /> : logs.length === 0 ? (
+      {error ? <ErrorState message={error} /> : loading || isSessionLoading ? <LoadingState label="Cargando bitácora…" /> : logs.length === 0 ? (
         <EmptyState title="Sin eventos" description="No hay eventos que coincidan con los filtros." />
       ) : (
         <AdministrativeListResults count={`${total} ${total === 1 ? 'evento encontrado' : 'eventos encontrados'}`}>

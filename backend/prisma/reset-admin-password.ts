@@ -2,8 +2,8 @@ import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
+import { SYSTEM_ADMIN_ROLE } from '../src/auth/domain/policies/canonical-role-catalog';
 
-const ADMIN_ROLE = 'Administrador';
 const BCRYPT_ROUNDS = 12;
 
 function requiredEnvironmentVariable(name: string): string {
@@ -38,7 +38,7 @@ async function main(): Promise<void> {
       throw new Error('Initial administrator was not found.');
     }
 
-    if (administrator.role.name !== ADMIN_ROLE) {
+    if (administrator.role.name !== SYSTEM_ADMIN_ROLE) {
       throw new Error('The configured user is not an administrator.');
     }
 
@@ -62,7 +62,7 @@ async function main(): Promise<void> {
 
     if (
       updatedAdministrator.status !== 'ACTIVE' ||
-      updatedAdministrator.role.name !== ADMIN_ROLE ||
+      updatedAdministrator.role.name !== SYSTEM_ADMIN_ROLE ||
       updatedAdministrator.failedLoginAttempts !== 0 ||
       updatedAdministrator.lockedAt !== null
     ) {

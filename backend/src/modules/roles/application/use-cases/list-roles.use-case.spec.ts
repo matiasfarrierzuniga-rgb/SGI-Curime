@@ -12,7 +12,7 @@ describe('ListRolesUseCase', () => {
 
   it('returns the active roles from the repository', async () => {
     const roles: Role[] = [
-      { id: 1, name: 'Administrador', description: null, isActive: true },
+      { id: 1, name: 'ROLE_SYSTEM_ADMIN', description: null, isActive: true },
     ];
     repository.findActive.mockResolvedValue(roles);
 

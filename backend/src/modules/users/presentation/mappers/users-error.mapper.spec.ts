@@ -7,6 +7,7 @@ import { AccountAlreadyActiveError } from '../../domain/errors/account-already-a
 import { EmptyUpdateError } from '../../domain/errors/empty-update.error';
 import { RoleNotFoundError } from '../../domain/errors/role-not-found.error';
 import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
+import { NonAssignableRoleError } from '../../domain/errors/non-assignable-role.error';
 import { toHttpError } from './users-error.mapper';
 
 describe('users-error.mapper', () => {
@@ -24,6 +25,12 @@ describe('users-error.mapper', () => {
 
   it('maps EmptyUpdateError to 400', () => {
     expect(() => toHttpError(new EmptyUpdateError())).toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('maps a non-assignable legacy role to 400', () => {
+    expect(() => toHttpError(new NonAssignableRoleError())).toThrow(
       BadRequestException,
     );
   });

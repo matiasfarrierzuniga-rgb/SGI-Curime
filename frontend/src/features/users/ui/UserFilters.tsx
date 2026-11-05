@@ -70,7 +70,7 @@ export function UserFilters({
           <option value="">Todos</option>
           {roles.map((r) => (
             <option key={r.id} value={r.id}>
-              {r.name}
+              {r.label}
             </option>
           ))}
         </Select>

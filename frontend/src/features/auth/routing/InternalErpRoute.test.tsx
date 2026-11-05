@@ -39,8 +39,8 @@ describe('InternalErpRoute', () => {
     expect(screen.queryByText('Interno')).not.toBeInTheDocument()
   })
 
-  it('allows a current valid affiliate session without administrative capabilities', () => {
-    state.value = { isLoading: false, isAuthenticated: true, user: { canAccessErp: true, permissionCodes: [] } }
+  it('allows an ERP-admitted canonical session without rendering decisions from labels', () => {
+    state.value = { isLoading: false, isAuthenticated: true, user: { role: 'ROLE_INSTITUTIONAL_PRESIDENT', canAccessErp: true, permissionCodes: [] } }
     renderRoute('/app')
     expect(screen.getByText('Interno')).toBeInTheDocument()
   })

@@ -51,8 +51,10 @@ function formatDate(value: string) {
 
 export function UserRequestsPage() {
   const { notify } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: isSessionLoading } = useAuth();
+  const canRead = hasCapability(user?.permissionCodes, "usr.user-requests.read");
   const canReview = hasCapability(user?.permissionCodes, "usr.user-requests.review");
+  const canReadRoles = hasCapability(user?.permissionCodes, "usr.roles.read");
   const [items, setItems] = useState<UserRequest[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [roleId, setRoleId] = useState("");
@@ -66,6 +68,7 @@ export function UserRequestsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const load = useCallback(async () => {
+    if (isSessionLoading || !canRead) return;
     setLoading(true);
     setError("");
     try {
@@ -77,16 +80,16 @@ export function UserRequestsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, status]);
+  }, [canRead, isSessionLoading, page, status]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
-    if (!canReview) return;
+    if (isSessionLoading || !canReview || !canReadRoles) return;
     rolesService.listActive().then(setRoles).catch((reason) => setError(getErrorMessage(reason, "No fue posible cargar los roles.")));
-  }, [canReview]);
+  }, [canReadRoles, canReview, isSessionLoading]);
 
   const run = async () => {
-    if (!canReview || !selected || !action || (action === "approve" && !roleId) || (action === "reject" && !reason.trim())) return;
+    if (!canReview || !selected || !action || (action === "approve" && (!canReadRoles || !roleId)) || (action === "reject" && !reason.trim())) return;
     setBusy(true);
     try {
       if (action === "approve") await userRequestsService.approve(selected.id, Number(roleId));
@@ -122,9 +125,9 @@ export function UserRequestsPage() {
     >
 
       {error ? <ErrorState message={error} action={<Button type="button" variant="outline" onClick={() => void load()}>Reintentar</Button>} /> : null}
-      {loading ? <LoadingState label="Cargando solicitudes de registro..." /> : null}
-      {!loading && !error && items.length === 0 ? <EmptyState title="No hay solicitudes para mostrar" description="Las solicitudes de registro recibidas aparecerán en este listado." /> : null}
-      {!loading && !error && items.length > 0 ? <AdministrativeListResults count={`${total} ${total === 1 ? "solicitud encontrada" : "solicitudes encontradas"}`} actions="Seleccione una solicitud para revisar sus datos.">
+      {loading || isSessionLoading ? <LoadingState label="Cargando solicitudes de registro..." /> : null}
+      {!loading && !isSessionLoading && !error && items.length === 0 ? <EmptyState title="No hay solicitudes para mostrar" description="Las solicitudes de registro recibidas aparecerán en este listado." /> : null}
+      {!loading && !isSessionLoading && !error && items.length > 0 ? <AdministrativeListResults count={`${total} ${total === 1 ? "solicitud encontrada" : "solicitudes encontradas"}`} actions="Seleccione una solicitud para revisar sus datos.">
         <DataTable className="min-w-[44rem]" scrollLabel="En pantallas estrechas, desplaza horizontalmente para ver más columnas de solicitudes de registro">
             <caption className="sr-only">Listado de solicitudes de registro</caption>
             <DataTableHeader>
@@ -168,11 +171,10 @@ export function UserRequestsPage() {
         {canReview && selected.status === "PENDING" ? <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border-subtle pt-5 sm:flex-row sm:justify-end"><Button type="button" variant="danger" onClick={() => setAction("reject")}>Rechazar</Button><Button type="button" onClick={() => setAction("approve")}>Aprobar</Button></div> : null}
       </Modal> : null}
       {action === "approve" ? <Modal title="Aprobar solicitud" onClose={() => setAction(null)} busy={busy}>
-        <p className="text-text-secondary">Seleccione el rol que tendrá la nueva cuenta y confirme la aprobación.</p>
-        <label className="mt-5 flex flex-col gap-1 text-label font-semibold text-text-primary">Rol
-          <Select value={roleId} onChange={(event) => setRoleId(event.target.value)}><option value="">Seleccione un rol</option>{roles.map((role) => <option value={role.id} key={role.id}>{role.name}</option>)}</Select>
-        </label>
-        <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border-subtle pt-5 sm:flex-row sm:justify-end"><Button type="button" variant="outline" onClick={() => setAction(null)} disabled={busy}>Cancelar</Button><Button type="button" loading={busy} disabled={!roleId || busy} onClick={() => void run()}>{busy ? "Aprobando…" : "Aprobar solicitud"}</Button></div>
+        <p className="text-text-secondary">Seleccione el rol asignable. La aprobación crea una cuenta inactiva y envía su enlace de activación; no inicia una sesión.</p>
+        {canReadRoles ? <><label className="mt-5 flex flex-col gap-1 text-label font-semibold text-text-primary">Rol
+          <Select value={roleId} onChange={(event) => setRoleId(event.target.value)}><option value="">Seleccione un rol</option>{roles.map((role) => <option value={role.id} key={role.id}>{role.label}</option>)}</Select>
+        </label><div className="mt-6 flex flex-col-reverse gap-3 border-t border-border-subtle pt-5 sm:flex-row sm:justify-end"><Button type="button" variant="outline" onClick={() => setAction(null)} disabled={busy}>Cancelar</Button><Button type="button" loading={busy} disabled={!roleId || busy} onClick={() => void run()}>{busy ? "Aprobando…" : "Aprobar solicitud"}</Button></div></> : <p className="mt-5 rounded-control border border-status-warning-border bg-status-warning-surface px-3 py-2 text-body-small text-status-warning-foreground" role="alert">No se puede mostrar el catálogo de roles asignables sin permiso de lectura de roles.</p>}
       </Modal> : null}
       {action === "reject" ? <Modal title="Rechazar solicitud" onClose={() => setAction(null)}>
         <FormField id="user-request-rejection-reason" label="Motivo del rechazo" description="El motivo es obligatorio.">

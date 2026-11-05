@@ -26,11 +26,14 @@ export function FinancialPage() {
   const [filters, setFilters] = useState<FinancialChargeListFilters>(initialFilters)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [payingCharge, setPayingCharge] = useState<FinancialCharge | null>(null)
-  const list = useFinancialChargesList(filters)
+  const canReadCharges = hasCapability(user?.permissionCodes, 'fin.charges.read')
+  const list = useFinancialChargesList(filters, canReadCharges)
   const hasActiveFilters = filters.status !== undefined || filters.reservationId !== undefined
 
   const updateFilter = (update: Partial<Pick<FinancialChargeListFilters, 'status' | 'reservationId'>>) => setFilters(current => ({ ...current, ...update, page: 1 }))
   const clearFilters = () => setFilters(initialFilters)
+
+  if (!canReadCharges) return <ErrorState title="Acceso restringido" message="No tiene permiso para consultar cargos financieros." />
 
   return <section className="space-y-6">
     <PageHeader context="Gestión financiera" title="Cargos de reservas" description="Consulte cargos de reserva, revise su detalle y registre pagos autorizados." />
