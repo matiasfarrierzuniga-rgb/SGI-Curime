@@ -7,6 +7,7 @@ import { ErrorState } from '@/shared/ui/ErrorState'
 import { Input } from '@/shared/ui/input'
 import { LoadingState } from '@/shared/ui/LoadingState'
 import { Pagination } from '@/shared/ui/Pagination'
+import { PublicPageContent, PublicPageHeader } from '@/shared/ui/PublicPageLayout'
 import { usePublicVentures } from '../hooks/usePublicVentures'
 import type { PublicVenturesQuery } from '../model/publicVentures.types'
 
@@ -41,22 +42,18 @@ export function PublicVenturesPage() {
   }
 
   return (
-    <section className="bg-brand-ivory py-14 md:py-20">
-      <div className="public-container">
-        <header className="max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">Directorio comunitario</p>
-          <h1 className="mt-3 font-heading text-heading-1 font-bold text-brand-ink">Emprendimientos</h1>
-          <p className="mt-4 text-body-large text-brand-ink/75">Conozca los emprendimientos locales publicados por la Asociación.</p>
-        </header>
+    <>
+      <PublicPageHeader breadcrumb="Emprendimientos" eyebrow="Directorio comunitario" title="Emprendimientos" intro="Conozca los emprendimientos locales publicados por la Asociación." />
+      <PublicPageContent className="bg-brand-ivory">
 
-        <form className="mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row" onSubmit={submitSearch} role="search">
+        <form className="flex max-w-2xl flex-col gap-3 sm:flex-row" onSubmit={submitSearch} role="search">
           <label className="sr-only" htmlFor="venture-search">Buscar emprendimientos</label>
           <Input id="venture-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre o descripción" />
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-brand-deep px-5 font-semibold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" type="submit"><Search className="size-4" aria-hidden="true" />Buscar</button>
           {hasSearch ? <button className="min-h-11 rounded-control border border-brand-deep px-4 font-semibold text-brand-deep transition-colors hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" type="button" onClick={clearSearch}>Limpiar</button> : null}
         </form>
 
-        <section aria-label="Emprendimientos publicados" className="mt-10">
+        <section aria-label="Emprendimientos publicados" className="mt-8 md:mt-10">
           {venturesQuery.isPending ? <LoadingState label="Cargando emprendimientos publicados..." /> : null}
           {venturesQuery.isError ? <ErrorState message={getErrorMessage(venturesQuery.error, 'No fue posible cargar los emprendimientos publicados.')} action={<button className="min-h-11 rounded-md border border-border px-4 font-semibold" type="button" onClick={() => void venturesQuery.refetch()}>Reintentar</button>} /> : null}
           {!venturesQuery.isPending && !venturesQuery.isError && venturesQuery.data.data.length === 0 ? <EmptyState title={hasSearch ? 'No hay emprendimientos para esta búsqueda' : 'No hay emprendimientos publicados en este momento'} description={hasSearch ? 'Pruebe con otro término o limpie la búsqueda.' : 'Cuando la Asociación publique un emprendimiento, aparecerá en este directorio.'} action={hasSearch ? <button className="min-h-11 rounded-md border border-border px-4 font-semibold" type="button" onClick={clearSearch}>Limpiar búsqueda</button> : undefined} /> : null}
@@ -73,7 +70,7 @@ export function PublicVenturesPage() {
             <Pagination className="mt-8" label="Paginación de emprendimientos" page={venturesQuery.data.page} total={venturesQuery.data.total} limit={venturesQuery.data.limit} onChange={(page) => setQuery((current) => ({ ...current, page }))} />
           </> : null}
         </section>
-      </div>
-    </section>
+      </PublicPageContent>
+    </>
   )
 }

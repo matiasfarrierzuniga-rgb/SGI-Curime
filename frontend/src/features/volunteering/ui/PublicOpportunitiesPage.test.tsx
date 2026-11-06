@@ -17,6 +17,8 @@ describe('public volunteering pages', () => {
   it('shows published opportunities and searches via the public query', () => {
     vi.mocked(usePublicOpportunities).mockReturnValue({ isPending: false, isError: false, data: { data: [item], total: 1, page: 1, limit: 12 } } as never)
     render(<MemoryRouter><PublicOpportunitiesPage /></MemoryRouter>)
+    expect(screen.getByRole('navigation', { name: 'Ruta de navegación' })).toHaveTextContent('Voluntariado')
+    expect(screen.getByRole('heading', { name: 'Voluntariado', level: 1 })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ver detalle' })).toHaveAttribute('href', '/voluntariado/7')
     fireEvent.change(screen.getByLabelText('Buscar oportunidades'), { target: { value: 'parque' } })
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }))

@@ -38,7 +38,7 @@ export function ServicesSection() {
                 <Icon className="size-5" aria-hidden="true" />
               </span>
               <h3 className="mt-5 font-heading text-heading-2 font-normal text-brand-ink">{title}</h3>
-              <p className="mt-3 max-w-[34ch] flex-1 text-body-small leading-relaxed text-brand-ink/75">{text}</p>
+              <p className="mt-3 max-w-[34ch] flex-1 text-pretty text-body-small leading-relaxed text-brand-ink/75">{text}</p>
               <Link
                 to={to}
                 className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-control border border-brand-deep bg-brand-deep px-4 text-body-small font-bold text-brand-ivory transition-[background-color,border-color,box-shadow] duration-200 hover:border-brand-primary hover:bg-brand-primary hover:shadow-sm focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring"
