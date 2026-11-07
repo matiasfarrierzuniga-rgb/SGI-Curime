@@ -92,6 +92,16 @@ describe('community account registration and activation', () => {
         }) as unknown,
       }),
     );
+    expect(tx.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({ personId: expect.anything() }),
+      }),
+    );
+    expect(tx.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({ affiliate: expect.anything() }),
+      }),
+    );
     expect(hasher.hash).not.toHaveBeenCalled();
     expect(delivery.deliver).toHaveBeenCalledTimes(1);
   });
