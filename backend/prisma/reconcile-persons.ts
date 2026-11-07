@@ -13,6 +13,10 @@ import {
   type IdentitySource,
   type ReconciliationCluster,
 } from '../src/identity-reconciliation/identity-reconciliation';
+import {
+  isUserReconciliationCandidate,
+  toSource,
+} from '../src/identity-reconciliation/reconciliation-source-adapter';
 
 const ADVISORY_LOCK_ID = 915202605;
 
@@ -245,47 +249,6 @@ async function reconcile(tx: Prisma.TransactionClient): Promise<RunSummary> {
     personRowsAfter,
     selectedPersonIds,
   );
-}
-
-export function isUserReconciliationCandidate(row: {
-  personId: number | null;
-  fullName: string | null;
-}): boolean {
-  // A verified community account may intentionally have neither Person nor
-  // asserted name. It has no identity evidence for this legacy backfill.
-  return row.personId !== null || hasAssertedName(row.fullName);
-}
-
-export function toSource(
-  row: {
-    id: number;
-    identification: string | null;
-    identificationType: string | null;
-    fullName: string | null;
-    email: string | null;
-    phoneCountryCode: string | null;
-    phoneNationalNumber: string | null;
-    address: string | null;
-  },
-  sourceModel: IdentitySource['sourceModel'],
-  birthDate: Date | null,
-): IdentitySource {
-  return {
-    sourceModel,
-    sourceId: row.id,
-    identification: row.identification,
-    identificationType: row.identificationType,
-    fullName: row.fullName,
-    birthDate,
-    email: row.email,
-    phoneCountryCode: row.phoneCountryCode,
-    phoneNationalNumber: row.phoneNationalNumber,
-    address: row.address,
-  };
-}
-
-function hasAssertedName(fullName: string | null): boolean {
-  return Boolean(fullName?.trim());
 }
 
 async function resolveOrCreatePerson(

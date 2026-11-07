@@ -1,9 +1,9 @@
 import {
   isUserReconciliationCandidate,
   toSource,
-} from './reconcile-persons';
+} from './reconciliation-source-adapter';
 
-describe('reconcile-persons source adaptation', () => {
+describe('reconciliation source adapter', () => {
   it('excludes an unlinked email-only account without asserted identity name', () => {
     expect(
       isUserReconciliationCandidate({ personId: null, fullName: null }),
