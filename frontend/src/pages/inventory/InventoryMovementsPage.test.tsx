@@ -2,13 +2,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryMovementsService } from '../../services/inventoryMovementsService'
-import { usersService } from '@/features/users'
 import { InventoryMovementsPage } from './InventoryMovementsPage'
 
-vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
 vi.mock('../../services/inventoryItemsService', () => ({ inventoryItemsService: { list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), activate: vi.fn(), deactivate: vi.fn(), entry: vi.fn(), exit: vi.fn(), adjustment: vi.fn(), itemMovements: vi.fn() } }))
 vi.mock('../../services/inventoryMovementsService', () => ({ inventoryMovementsService: { list: vi.fn() } }))
-vi.mock('@/features/users', () => ({ usersService: { list: vi.fn(), get: vi.fn(), update: vi.fn(), changeRole: vi.fn(), activate: vi.fn(), deactivate: vi.fn(), unlock: vi.fn() } }))
 
 const itemRef = { id: 1, code: 'HER-001', name: 'Martillo', unit: 'unidad' }
 const movement = {
@@ -31,7 +28,6 @@ describe('InventoryMovementsPage', () => {
     vi.clearAllMocks()
     vi.mocked(inventoryMovementsService.list).mockResolvedValue({ data: [movement], total: 1, page: 1, limit: 20 })
     vi.mocked(inventoryItemsService.list).mockResolvedValue({ data: [{ id: 1, name: 'Martillo', code: 'HER-001' }] as never, total: 1, page: 1, limit: 100 })
-    vi.mocked(usersService.list).mockResolvedValue({ data: [{ id: 1, fullName: 'Ana Pérez', person: { id: 1, contactEmail: 'ana@test.com' }, access: { id: 10 } } as never], total: 1, page: 1, limit: 100 })
   })
 
   it('lists movements with readable Spanish labels', async () => {
@@ -55,16 +51,10 @@ describe('InventoryMovementsPage', () => {
     )
   })
 
-  it('filters movements with account ID from person-root users', async () => {
+  it('does not expose legacy user filtering', async () => {
     page()
-    await screen.findByRole('option', { name: 'Ana Pérez' })
-    fireEvent.change(screen.getByLabelText('Registrado por'), { target: { value: '10' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }))
-    await waitFor(() =>
-      expect(inventoryMovementsService.list).toHaveBeenLastCalledWith(
-        expect.objectContaining({ userId: 10 }),
-      ),
-    )
+    await screen.findByText('Martillo')
+    expect(screen.queryByLabelText('Registrado por')).not.toBeInTheDocument()
   })
 
   it('shows an empty state and an error state', async () => {

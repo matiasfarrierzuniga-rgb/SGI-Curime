@@ -35,11 +35,13 @@ No cambiar branding confirmado sin una instrucción explícita.
 
 ## Tipografía institucional
 
-- Usar DM Sans como familia única en portal público, autenticación, ERP, módulos,
-  formularios, tablas, navegación y componentes compartidos.
-- Los tokens `--font-sans` y `--font-heading` son alias semánticos de la misma
-  familia. Construir la jerarquía con tamaño, peso, line-height, spacing y color,
-  no alternando tipografías entre áreas del producto.
+- Usar DM Sans en portal público, autenticación, ERP, módulos, formularios, tablas,
+  navegación, controles, diálogos, reportes y cuerpo de contenido.
+- Reservar DM Serif Display para headings display o institucionales expresivos
+  aprobados mediante `--font-heading`. `--font-sans` sigue siendo la fuente
+  primaria de interfaz.
+- Construir la jerarquía con tokens semánticos, tamaño, peso, line-height, spacing
+  y color; no alternar familias de forma decorativa entre áreas del producto.
 - Usar la escala tipográfica compartida: display, H1, H2, H3, body large, body,
   body small, label, caption y navigation. Evitar tamaños arbitrarios por página.
 - No superar dos familias aprobadas ni agregar fuentes, cargas remotas o

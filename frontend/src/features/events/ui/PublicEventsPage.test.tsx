@@ -13,6 +13,8 @@ describe('PublicEventsPage', () => {
   it('shows empty state instead of static events', () => {
     vi.mocked(usePublicEvents).mockReturnValue({ isPending: false, isError: false, data: [] } as never)
     renderPage()
+    expect(screen.getByRole('navigation', { name: 'Ruta de navegación' })).toHaveTextContent('Eventos')
+    expect(screen.getByRole('heading', { name: 'Eventos', level: 1 })).toBeInTheDocument()
     expect(screen.getByText('No hay eventos publicados en este momento')).toBeInTheDocument()
     expect(screen.queryByText('Agenda comunitaria en preparación')).not.toBeInTheDocument()
   })

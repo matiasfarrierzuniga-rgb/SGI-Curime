@@ -28,3 +28,7 @@ None.
 - Frontend: User/Affiliate forms, types, listings, detail projections, request submission/review views, and API client transition.
 - Data operations: normalized identity preflight, duplicate/conflict quarantine, null-link handling, evidence-backed backfill, rollback, and certification.
 - Dependencies: no production dependency is planned. Frozen decisions require evidence-led reconciliation, staged compatibility, and certification before any physical retirement or required Person link.
+
+## C3-DB-01 Code Checkpoint
+
+Commit `77a8fc0` rejects an AffiliateRequest link when a reused Person requires profile enrichment. It preserves Person as canonical identity, User as digital access, and Affiliate as institutional affiliation. The checkpoint adds focused mock-based tests; it does not change schema or PostgreSQL data, create disposable infrastructure, synchronize User and Person email, infer links by name/email, or complete Stage C/D/E certification.

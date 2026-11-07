@@ -1,5 +1,5 @@
 import { Link, Navigate, useParams } from "react-router-dom";
-import { BarChart3, Building2, CalendarDays, Camera, ClipboardList, FileText, FolderOpen, HandHeart, HeartHandshake, Landmark, Mail, Newspaper, Store, Target, UsersRound, type LucideIcon } from "lucide-react";
+import { BarChart3, Building2, CalendarDays, Camera, ClipboardList, Eye, FileText, FolderOpen, HandHeart, HeartHandshake, Landmark, Mail, Newspaper, Store, Target, UsersRound, type LucideIcon } from "lucide-react";
 import { moduleAvailability, services, site } from "../../content/publicSiteContent";
 import { publicContentService } from "../../services/publicContentService";
 import {
@@ -30,12 +30,11 @@ export function AboutPage() {
     { title: "Visión", icon: Building2, description: "Ser una Asociación reconocida por su liderazgo, transparencia y capacidad de gestión, contribuyendo al desarrollo sostenible de Curime y sus alrededores." },
     { title: "Objetivos", icon: HandHeart, description: "Impulsar el desarrollo social, económico y cultural, fortalecer la participación comunal y administrar los recursos con eficiencia y transparencia." },
   ] as const;
-  const historySteps = ["Hito 01", "Hito 02", "Hito 03", "Hito 04"] as const;
-
   return (
     <>
       <Seo title="Nosotros" description="Conozca el espacio institucional de ADI Curime." />
-      <section className="public-container pt-4 md:pt-6" aria-labelledby="about-title">
+      <section className="public-container" aria-labelledby="about-title">
+        <Breadcrumbs current="Nosotros" variant="hero" />
         <div className="relative isolate overflow-hidden rounded-surface bg-brand-ivory">
           <picture className="absolute inset-0">
             <source media="(max-width: 767px)" srcSet="/images/public/home/hero-curime-mobile.webp" type="image/webp" />
@@ -53,21 +52,20 @@ export function AboutPage() {
           </div>
         </div>
       </section>
-      <Breadcrumbs current="Nosotros" />
-      <SectionContainer className="space-y-16 md:space-y-20">
-        <section aria-labelledby="about-intro" className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-12">
+      <SectionContainer className="space-y-10 md:space-y-16">
+        <section aria-labelledby="about-intro" className="grid gap-7 border-b border-brand-sage/70 pb-10 lg:grid-cols-[minmax(14rem,4fr)_minmax(0,6fr)] lg:gap-12 lg:pb-14">
           <div><p className="public-eyebrow text-brand-primary">La Asociación</p><h2 id="about-intro" className="public-heading mt-3 text-brand-ink">Quiénes somos</h2></div>
-          <div className="space-y-4 text-body-large leading-relaxed text-foreground-muted"><p>La Asociación de Desarrollo Integral de Curime cuenta con este espacio para presentar su identidad, historia y organización a la comunidad.</p><p>Los datos institucionales específicos se publicarán cuando hayan sido revisados y autorizados por la Asociación.</p></div>
+          <div className="max-w-3xl space-y-4 text-pretty text-body-large leading-relaxed text-foreground-muted"><p>La Asociación de Desarrollo Integral de Curime cuenta con este espacio para presentar su identidad, historia y organización a la comunidad.</p><p>Los datos institucionales específicos se publicarán cuando hayan sido revisados y autorizados por la Asociación.</p></div>
         </section>
         <section aria-labelledby="about-values">
-          <div className="mb-7"><p className="public-eyebrow text-brand-primary">Identidad institucional</p><h2 id="about-values" className="public-heading mt-3 text-brand-ink">Valores por validar</h2><p className="mt-3 max-w-2xl text-body text-foreground-muted">Estas categorías son una propuesta de presentación. Su contenido institucional está pendiente de validación con la ADI.</p></div>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)] lg:items-stretch">
-            <div className="grid gap-3 rounded-surface border border-brand-sage/70 bg-card-white p-4 shadow-sm">{valueCards.map(({ title, description, icon: Icon }) => <article key={title} className="flex items-center gap-4 rounded-control bg-brand-ivory p-4"><span className="grid size-12 shrink-0 place-items-center rounded-full bg-brand-deep text-brand-ivory"><Icon className="size-6" aria-hidden="true" /></span><div><h3 className="font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-1 text-body-small text-foreground-muted">{description}</p></div></article>)}</div>
-            <img src="/images/public/home/community-curime-fallback.jpg" alt="Espacio de encuentro comunitario en Curime." width="1500" height="1000" loading="lazy" className="h-64 w-full rounded-surface object-cover md:h-80 lg:h-full" />
+          <div className="mb-8 grid gap-4 lg:grid-cols-[minmax(14rem,4fr)_minmax(0,6fr)] lg:gap-12"><div><p className="public-eyebrow text-brand-primary">Identidad institucional</p><h2 id="about-values" className="public-heading mt-3 text-brand-ink">Valores por validar</h2></div><p className="max-w-2xl text-pretty text-body leading-relaxed text-foreground-muted">Estas categorías son una propuesta de presentación. Su contenido institucional está pendiente de validación con la ADI.</p></div>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:items-stretch">
+            <div className="divide-y divide-brand-sage/70 border-y border-brand-sage/70">{valueCards.map(({ title, description, icon: Icon }) => <article key={title} className="flex items-center gap-4 py-5 first:pt-0 last:pb-0"><span className="grid size-12 shrink-0 place-items-center rounded-full bg-brand-deep text-brand-ivory"><Icon className="size-6" aria-hidden="true" /></span><div><h3 className="font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-1 text-body-small text-foreground-muted">{description}</p></div></article>)}</div>
+            <figure className="min-h-64 overflow-hidden rounded-surface border border-brand-sage/70 bg-surface-muted shadow-surface"><img src="/images/public/home/community-curime-fallback.jpg" alt="Espacio de encuentro comunitario en Curime." width="1500" height="1000" loading="lazy" className="size-full object-cover" /></figure>
           </div>
         </section>
-        <section aria-labelledby="identity-title"><div className="mb-7"><p className="public-eyebrow text-brand-primary">Nuestra identidad</p><h2 id="identity-title" className="public-heading mt-3 text-brand-ink">Misión, visión y objetivos</h2><p className="mt-3 max-w-2xl text-body text-foreground-muted">Textos propuestos, pendientes de validación institucional.</p></div><div className="grid gap-5 md:grid-cols-3">{identityCards.map(({ title, icon: Icon, description }) => <article key={title} className="rounded-surface border border-brand-sage/70 bg-card-white p-6 shadow-sm"><span className="mb-5 grid size-14 place-items-center rounded-full bg-brand-deep text-brand-ivory"><Icon className="size-6" aria-hidden="true" /></span><h3 className="font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-4 text-body-small leading-relaxed text-foreground-muted">{description}</p></article>)}</div></section>
-        <section aria-labelledby="history-title"><div className="mb-7"><p className="public-eyebrow text-brand-primary">Trayectoria</p><h2 id="history-title" className="public-heading mt-3 text-brand-ink">Nuestra historia</h2><p className="mt-3 text-body text-foreground-muted">Fechas y acontecimientos pendientes de validación con la ADI.</p></div><ol className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">{historySteps.map(step => <li key={step} className="rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-sm"><span className="mb-4 grid size-12 place-items-center rounded-full bg-brand-deep text-brand-ivory"><CalendarDays className="size-5" aria-hidden="true" /></span><span className="font-heading text-heading-2 text-brand-deep">{step}</span><p className="mt-3 text-body-small text-foreground-muted">{site.pending}</p></li>)}</ol></section>
+        <section aria-labelledby="identity-title"><div className="mb-8"><p className="public-eyebrow text-brand-primary">Nuestra identidad</p><h2 id="identity-title" className="public-heading mt-3 text-brand-ink">Misión, visión y objetivos</h2><p className="mt-3 max-w-2xl text-body text-foreground-muted">Textos propuestos, pendientes de validación institucional.</p></div><div className="grid divide-y divide-brand-sage/70 border-y border-brand-sage/70 md:grid-cols-3 md:divide-x md:divide-y-0">{identityCards.map(({ title, icon: Icon, description }) => <article key={title} className="py-6 md:px-6 md:first:pl-0 md:last:pr-0"><span className="grid size-12 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Icon className="size-5" aria-hidden="true" /></span><h3 className="mt-5 font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-3 text-body-small leading-relaxed text-foreground-muted">{description}</p></article>)}</div></section>
+        <section aria-labelledby="history-title" className="grid gap-6 border-y border-brand-sage/70 py-8 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-8 md:py-10"><span aria-hidden="true" className="grid size-14 place-items-center rounded-full bg-brand-accent/25 text-brand-deep"><CalendarDays className="size-7" /></span><div><p className="public-eyebrow text-brand-primary">Trayectoria</p><h2 id="history-title" className="public-heading mt-3 text-brand-ink">Nuestra historia</h2><p className="mt-3 max-w-3xl text-pretty text-body leading-relaxed text-foreground-muted">La historia institucional se publicará cuando las fechas y acontecimientos hayan sido revisados con la ADI. Por ahora, no se presentan hitos ni cronologías sin validación.</p></div></section>
         <section aria-labelledby="governance-title" className="grid gap-7 rounded-surface bg-brand-deep p-6 text-brand-ivory md:p-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-12"><div><p className="public-eyebrow text-brand-accent">Organización</p><h2 id="governance-title" className="public-heading mt-3 text-brand-ivory">Junta Directiva</h2></div><div className="flex items-center gap-5 rounded-surface border border-brand-ivory/30 p-5"><span className="grid size-14 shrink-0 place-items-center rounded-full bg-brand-ivory/15"><UsersRound className="size-7" aria-hidden="true" /></span><p className="text-body leading-relaxed text-brand-ivory">Integrantes, cargos y período pendientes de validación con la ADI. No se publica una nómina sin confirmación institucional.</p></div></section>
       </SectionContainer>
       <CTASection />
@@ -79,14 +77,14 @@ export function CommunityPage() {
     <>
       <Seo title="Comunidad" description="Espacio comunitario de Curime." />
       <section aria-labelledby="community-title" className="relative isolate overflow-hidden bg-brand-ivory">
+        <div className="public-container relative z-20"><Breadcrumbs current="Comunidad" variant="hero" /></div>
         <figure className="relative mx-4 mt-8 aspect-[16/10] overflow-hidden rounded-surface border border-brand-sage/70 bg-surface-muted shadow-surface lg:absolute lg:inset-y-0 lg:right-0 lg:mx-0 lg:mt-0 lg:h-full lg:w-[62%] lg:aspect-auto lg:rounded-none lg:border-0 lg:shadow-none">
           <picture className="block size-full"><source media="(max-width: 767px)" srcSet="/images/public/home/community-curime-mobile.webp" type="image/webp" /><source srcSet="/images/public/home/community-curime-wide.webp" type="image/webp" /><img src="/images/public/home/community-curime-fallback.jpg" alt="Actividad comunitaria en la cancha de la comunidad." width="1500" height="1000" className="size-full object-cover object-[50%_42%]" /></picture>
           <div aria-hidden="true" className="absolute inset-y-0 -left-1/4 hidden w-1/2 bg-gradient-to-r from-brand-ivory via-brand-ivory/90 to-transparent lg:block" />
         </figure>
         <div className="public-container relative z-10 grid gap-8 py-12 md:py-16 lg:min-h-[34rem] lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-center"><div className="max-w-xl"><p className="public-eyebrow text-brand-primary">ADI Curime · Nicoya · Guanacaste</p><h1 id="community-title" className="public-heading mt-4 text-display text-brand-ink">Un espacio para encontrarnos</h1><p className="mt-5 max-w-xl text-body-large leading-relaxed text-foreground-muted">Conozca los espacios, actividades e iniciativas que fortalecen la participación y el encuentro en Curime.</p><Link to="/contacto" className="mt-7 inline-flex min-h-12 items-center justify-center rounded-control bg-primary px-6 py-3 font-bold text-primary-foreground transition-colors hover:bg-interaction-primary-hover focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">Contáctenos</Link></div></div>
       </section>
-      <Breadcrumbs current="Comunidad" />
-      <SectionContainer className="space-y-16 md:space-y-20">
+      <SectionContainer className="space-y-10 md:space-y-16">
         <section aria-labelledby="community-overview" className="grid gap-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:items-center lg:gap-12"><div><p className="public-eyebrow text-brand-primary">Curime, Nicoya</p><h2 id="community-overview" className="public-heading mt-3 text-brand-ink">Una comunidad que crece en conjunto</h2><p className="mt-5 text-body leading-relaxed text-foreground-muted">Este espacio reúne información sobre iniciativas, proyectos y actividades comunitarias de Curime. Algunos contenidos se encuentran en preparación.</p></div><div className="grid gap-4 sm:grid-cols-2"><article className="rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-sm sm:col-span-2"><UsersRound className="size-7 text-brand-primary" aria-hidden="true" /><h3 className="mt-4 font-heading text-heading-3 text-brand-ink">Participación comunitaria</h3><p className="mt-2 text-body-small text-foreground-muted">Explore las formas de participar en las actividades de la Asociación.</p><Link to="/voluntariado" className="mt-4 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">Ver oportunidades de voluntariado</Link></article><article className="rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-sm"><Store className="size-7 text-brand-primary" aria-hidden="true" /><h3 className="mt-4 font-heading text-heading-3 text-brand-ink">Emprendimientos</h3><p className="mt-2 text-body-small text-foreground-muted">Conozca los emprendimientos publicados.</p><Link to="/ventures" className="mt-4 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">Ver emprendimientos</Link></article><article className="rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-sm"><CalendarDays className="size-7 text-brand-primary" aria-hidden="true" /><h3 className="mt-4 font-heading text-heading-3 text-brand-ink">Actividades</h3><p className="mt-2 text-body-small text-foreground-muted">Consulte la agenda comunitaria.</p><Link to="/eventos" className="mt-4 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">Ver eventos</Link></article></div></section>
         <section aria-labelledby="community-areas">
           <div className="mb-7"><p className="public-eyebrow text-brand-primary">Vida comunitaria</p><h2 id="community-areas" className="public-heading mt-3 text-brand-ink">Iniciativas y proyectos</h2><p className="mt-4 max-w-2xl text-body text-foreground-muted">Conozca los espacios donde la comunidad se organiza, comparte y construye oportunidades.</p></div>
@@ -105,16 +103,18 @@ export function NewsPage() {
     <>
       <Seo title="Noticias" description="Noticias y comunicados verificados de ADI Curime." />
       <header className="border-b border-brand-sage/70 bg-surface-muted">
-        <div className="public-container grid gap-7 py-12 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:py-16">
-          <div className="max-w-2xl">
+        <div className="public-container">
+          <Breadcrumbs current="Noticias" variant="simple" />
+          <div className="grid gap-7 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+            <div className="max-w-2xl">
             <p className="public-eyebrow text-brand-primary">ADI Curime · Actualidad</p>
             <h1 className="public-heading mt-4 text-display text-brand-ink">Noticias</h1>
             <p className="mt-5 text-body-large leading-relaxed text-foreground-muted">Comunicados y novedades oficiales de la Asociación, publicados después de su verificación.</p>
+            </div>
+            <span aria-hidden="true" className="hidden size-28 place-items-center rounded-surface border border-brand-sage/70 bg-card-white text-brand-primary md:grid"><Newspaper className="size-12" strokeWidth={1.4} /></span>
           </div>
-          <span aria-hidden="true" className="hidden size-28 place-items-center rounded-surface border border-brand-sage/70 bg-card-white text-brand-primary md:grid"><Newspaper className="size-12" strokeWidth={1.4} /></span>
         </div>
       </header>
-      <Breadcrumbs current="Noticias" />
       <SectionContainer className="space-y-7">
         <div><p className="public-eyebrow text-brand-primary">Información verificada</p><h2 className="public-heading mt-3 text-brand-ink">Comunicados publicados</h2></div>
         {verifiedNews.length === 0 ? <div className="grid gap-6 rounded-surface bg-brand-ivory p-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:p-8"><span aria-hidden="true" className="grid size-14 place-items-center rounded-full bg-brand-accent/30 text-brand-deep"><Newspaper className="size-7" /></span><EmptyContentState title="No hay noticias verificadas publicadas" text="Los comunicados y noticias oficiales aparecerán aquí cuando la Asociación los autorice." /></div> : <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{verifiedNews.map((item) => <NewsCard key={item.slug} item={item} />)}</div>}
@@ -130,7 +130,7 @@ export function NewsDetailPage() {
   return (
     <>
       <Seo title={isPending ? 'Noticia en preparación' : item.title} description={isPending ? 'Contenido pendiente de autorización institucional.' : item.excerpt} />
-      <Breadcrumbs current="Noticias" />
+      <div className="public-container"><Breadcrumbs current="Noticias" variant="simple" /></div>
       <SectionContainer className="max-w-3xl">
         {isPending ? <><EmptyContentState title="Esta noticia está en preparación" text="El contenido de esta ruta aún no corresponde a un comunicado publicado. Consulte el listado de noticias para futuras publicaciones autorizadas." /><Link className="mt-6 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/noticias">Volver a noticias</Link></> : <>
         <p className="public-eyebrow text-brand-primary">
@@ -207,6 +207,7 @@ export function ServicesPage() {
     <>
       <Seo title="Servicios" description="Servicios digitales de ADI Curime." />
       <section aria-labelledby="services-title" className="relative isolate overflow-hidden bg-brand-ivory">
+        <div className="public-container relative z-20"><Breadcrumbs current="Servicios" variant="hero" /></div>
         <picture className="relative mx-4 mt-8 block aspect-[16/10] overflow-hidden rounded-surface border border-brand-sage/70 shadow-surface lg:absolute lg:inset-y-0 lg:right-0 lg:mx-0 lg:mt-0 lg:h-full lg:w-[62%] lg:aspect-auto lg:rounded-none lg:border-0 lg:shadow-none">
           <source media="(max-width: 767px)" srcSet="/images/public/home/hero-curime-mobile.webp" />
           <source srcSet="/images/public/home/hero-curime-wide.webp" />
@@ -222,7 +223,6 @@ export function ServicesPage() {
           </div>
         </div>
       </section>
-      <Breadcrumbs current="Servicios" />
       <section id="servicios-disponibles" aria-labelledby="available-services-title" className="border-b border-brand-sage/70 bg-surface-muted py-12 md:py-16">
         <div className="public-container">
           <header className="mb-8 max-w-3xl md:mb-10">
@@ -299,38 +299,32 @@ export function TransparencyPage() {
     "Reportes financieros autorizados": "Reportes económicos autorizados por la Asociación.",
     "Información relacionada con DINADECO": "Documentación vinculada con la Dirección Nacional de Desarrollo de la Comunidad.",
   };
-  const categories = transparencyGroups.flatMap((group) => group.items.map((title) => ({ title, group: group.title })));
-
   return (
     <>
       <Seo title="Transparencia" description="Información pública y transparencia de ADI Curime." />
       <header className="border-b border-brand-sage/70 bg-surface-muted">
-        <div className="public-container grid gap-8 py-10 md:py-14 lg:min-h-[24rem] lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] lg:items-center lg:gap-14">
-          <div>
+        <div className="public-container">
+          <Breadcrumbs current="Transparencia" variant="hero" />
+          <div className="grid gap-8 lg:min-h-[24rem] lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] lg:items-center lg:gap-14">
+            <div>
             <p className="public-eyebrow text-brand-primary">ADI Curime · Información pública</p>
             <h1 className="public-heading mt-4 text-display text-brand-ink">Transparencia</h1>
             <p className="mt-5 max-w-xl text-body-large leading-relaxed text-foreground-muted">Un espacio preparado para publicar información institucional cuando cuente con autorización de la Asociación.</p>
-          </div>
-          <picture className="block overflow-hidden rounded-surface bg-surface-muted shadow-surface">
+            </div>
+            <picture className="block overflow-hidden rounded-surface bg-surface-muted shadow-surface">
             <source media="(max-width: 767px)" srcSet="/images/public/home/hero-curime-mobile.webp" type="image/webp" />
             <source srcSet="/images/public/home/hero-curime-wide.webp" type="image/webp" />
             <img src="/images/public/home/hero-curime-fallback.jpg" alt="Paisaje rural de Curime, Guanacaste." width="1600" height="1200" className="aspect-[16/10] w-full object-cover" />
-          </picture>
+            </picture>
+          </div>
         </div>
       </header>
-      <Breadcrumbs current="Transparencia" />
-      <SectionContainer className="space-y-9">
-        <section className="max-w-3xl border-l-2 border-brand-accent pl-5"><p className="text-body-large leading-relaxed text-foreground-muted">La información se publica únicamente cuando cuenta con autorización institucional. Por el momento, no hay documentos disponibles para descarga.</p></section>
+      <SectionContainer className="space-y-10 md:space-y-16">
+        <section aria-labelledby="transparency-status" className="grid gap-5 border-y border-brand-sage/70 py-7 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-6"><span aria-hidden="true" className="grid size-12 place-items-center rounded-control bg-brand-accent/25 text-brand-deep"><Eye className="size-6" /></span><div><p className="public-eyebrow text-brand-primary">Estado de publicación</p><h2 id="transparency-status" className="mt-2 font-heading text-heading-2 text-brand-ink">No hay documentos publicados por el momento</h2><p className="mt-2 max-w-3xl text-pretty text-body leading-relaxed text-foreground-muted">La información se publica únicamente cuando cuenta con autorización institucional. Cuando existan documentos disponibles, se mostrarán aquí con su información de consulta.</p></div></section>
         <section aria-labelledby="transparency-areas">
-          <div className="mb-7"><p className="public-eyebrow text-brand-primary">Consulta pública</p><h2 id="transparency-areas" className="public-heading mt-3 text-brand-ink">Áreas de información</h2></div>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {categories.map(({ title, group }) => {
-              const Icon = categoryIcons[title];
-              return <article key={title} className="flex min-w-0 flex-col rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-sm sm:flex-row sm:gap-5 sm:p-6">
-                <span aria-hidden="true" className="mb-4 grid size-12 shrink-0 place-items-center rounded-control bg-brand-accent/25 text-brand-deep sm:mb-0"><Icon className="size-6" /></span>
-                <div className="min-w-0"><p className="public-eyebrow text-brand-primary">{group}</p><h3 className="mt-2 font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-2 text-body-small leading-relaxed text-foreground-muted">{categoryDescriptions[title]}</p><p className="mt-3 text-body-small font-semibold text-brand-primary">Información en preparación</p></div>
-              </article>;
-            })}
+          <div className="mb-8 max-w-3xl"><p className="public-eyebrow text-brand-primary">Consulta pública</p><h2 id="transparency-areas" className="public-heading mt-3 text-brand-ink">Áreas previstas de información</h2><p className="mt-4 text-pretty text-body leading-relaxed text-foreground-muted">Estas áreas orientan la publicación futura. No representan documentos, informes ni datos disponibles actualmente.</p></div>
+          <div className="grid gap-8 lg:grid-cols-3">
+            {transparencyGroups.map((group) => <section key={group.title} aria-labelledby={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="border-t-2 border-brand-accent pt-5"><h3 id={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="font-heading text-heading-3 text-brand-ink">{group.title}</h3><ul className="mt-4 divide-y divide-brand-sage/70 border-y border-brand-sage/70">{group.items.map((title) => { const Icon = categoryIcons[title]; return <li key={title} className="flex gap-3 py-4"><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Icon className="size-4" /></span><div><h4 className="font-semibold text-brand-ink">{title}</h4><p className="mt-1 text-body-small leading-relaxed text-foreground-muted">{categoryDescriptions[title]}</p><p className="mt-2 text-caption font-bold uppercase tracking-[0.12em] text-brand-primary">En preparación</p></div></li> })}</ul></section>)}
           </div>
         </section>
       </SectionContainer>
@@ -380,28 +374,25 @@ export function ContactPage() {
       <PublicPageHeader
         title="Contacto"
         intro="Canales de contacto confirmados de la Asociación."
+        breadcrumb="Contacto"
       />
-      <Breadcrumbs current="Contacto" />
       <SectionContainer>
         <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:gap-12 xl:gap-16">
           <div className="min-w-0 lg:py-4">
-            <p className="eyebrow">Contacto</p>
-            <h2 className="mt-2 text-heading-1 text-brand-deep">Contáctese con nosotros</h2>
-            <h3 className="mt-5 text-heading-3 text-brand-primary">Consultas generales</h3>
-            <p className="mt-3 max-w-xl text-body-large text-foreground-muted">
-              Este formulario permite preparar consultas dirigidas a la Asociación de Desarrollo Integral de Curime.
-            </p>
-            <div className="mt-8 grid gap-4" aria-label="Canales oficiales de contacto">
+            <p className="public-eyebrow text-brand-primary">Canales confirmados</p>
+            <h2 className="public-heading mt-3 text-brand-ink">Contáctese con nosotros</h2>
+            <p className="mt-4 max-w-xl text-pretty text-body-large leading-relaxed text-foreground-muted">Use estos canales oficiales para realizar una consulta directamente con la Asociación.</p>
+            <div className="mt-8 divide-y divide-brand-sage/70 border-y border-brand-sage/70" aria-label="Canales oficiales de contacto">
               {channels.map(({ name, detail, action, ariaLabel, href, icon: Icon, external }) => (
-                <article key={name} className="grid min-w-0 grid-cols-[auto_1fr] gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm">
-                  <div aria-hidden="true" className="grid size-11 place-items-center rounded-lg bg-brand-soft/20 text-brand-deep">
+                <article key={name} className="grid min-w-0 grid-cols-[auto_1fr] gap-4 py-5 first:pt-0 last:pb-0">
+                  <div aria-hidden="true" className="grid size-11 place-items-center rounded-control bg-brand-soft/20 text-brand-deep">
                     <Icon className="size-5" strokeWidth={1.8} />
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-semibold text-brand-deep">{name}</h4>
                     <p className="mt-1 [overflow-wrap:anywhere] text-body-small text-foreground-muted">{detail}</p>
                     <a
-                      className="mt-2 inline-flex min-h-11 items-center rounded-md font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-deep"
+                      className="mt-2 inline-flex min-h-11 items-center rounded-control font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring"
                       href={href}
                       aria-label={ariaLabel}
                       target={external ? "_blank" : undefined}

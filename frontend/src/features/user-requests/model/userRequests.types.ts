@@ -1,17 +1,4 @@
 export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
-export interface CreateUserRequest {
-  fullName: string
-  firstName?: string
-  firstSurname?: string
-  secondSurname?: string
-  identificationType: 'NATIONAL' | 'DIMEX'
-  identification: string
-  email: string
-  phoneCountryCode?: string
-  phoneNationalNumber?: string
-  address?: string
-  reason: string
-}
 
 export type IdentityLookupResult =
   | {
@@ -32,7 +19,7 @@ export type IdentityLookupResult =
       message: string
     }
 
-/** Public POST /register result and administrative UserRequest read model. */
+/** Historical and administrative UserRequest read model. */
 export interface UserRequest {
   id: number
   fullName: string

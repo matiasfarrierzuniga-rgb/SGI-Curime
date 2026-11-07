@@ -39,11 +39,7 @@ export interface UserAffiliationContext {
 }
 
 export interface UserUpdateData {
-  fullName?: string;
   email?: string;
-  phoneCountryCode?: string;
-  phoneNationalNumber?: string;
-  address?: string;
 }
 
 export interface UserCreateData {

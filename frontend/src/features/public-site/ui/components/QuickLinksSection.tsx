@@ -18,7 +18,7 @@ const quickLinks = [
     icon: HandHeart,
     title: 'Voluntariado',
     text: 'Súmese a acciones que fortalecen el bienestar de la comunidad.',
-    to: '/comunidad',
+    to: '/voluntariado',
   },
   {
     icon: CalendarDays,
@@ -31,13 +31,13 @@ const quickLinks = [
 export function QuickLinksSection() {
   return (
     <nav aria-label="Accesos comunitarios" className="border-y border-brand-sage/70 bg-surface-muted">
-      <div className="public-container py-4 md:py-5">
-        <ul className="grid gap-px overflow-hidden rounded-surface border border-brand-sage/70 bg-brand-sage/70 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="public-container py-5 md:py-6">
+        <ul className="grid overflow-hidden rounded-surface border border-brand-sage/70 bg-card-white sm:grid-cols-2 lg:grid-cols-4">
           {quickLinks.map(({ icon: Icon, title, text, to }) => (
-            <li key={title} className="min-w-0 bg-card-white">
+            <li key={title} className="min-w-0 border-b border-brand-sage/70 last:border-b-0 sm:border-r sm:[&:nth-child(2n)]:border-r-0 sm:[&:nth-last-child(-n+2)]:border-b-0 lg:border-b-0 lg:[&:nth-child(2n)]:border-r lg:[&:last-child]:border-r-0">
               <Link
                 to={to}
-                className="group flex min-h-36 flex-col p-4 transition-[background-color,color] duration-200 hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-ring md:min-h-40 md:p-5"
+                className="group flex min-h-32 flex-col p-4 transition-[background-color,color] duration-200 hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-ring md:min-h-36 md:p-5"
               >
                 <span className="flex items-center justify-between gap-4 text-brand-primary">
                   <Icon className="size-5" aria-hidden="true" />

@@ -273,6 +273,19 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
     await expect(service.create(dto)).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('rejects an incomplete reused Person before persisting a request link', async () => {
+    personResolver.resolveWithinTransaction.mockResolvedValue({
+      status: 'PERSON_REUSED',
+      person: { ...person, firstSurname: null },
+      profileEnrichmentRequired: true,
+    });
+
+    await expect(service.create(dto)).rejects.toBeInstanceOf(ConflictException);
+
+    expect(tx.affiliateRequest.create).not.toHaveBeenCalled();
+    expect(tx.person.update).not.toHaveBeenCalled();
+  });
+
   it('approves only PENDING request and creates Affiliate without roleId', async () => {
     const result = await service.approve(10, 99, {});
 

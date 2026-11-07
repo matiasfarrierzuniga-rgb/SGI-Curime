@@ -19,7 +19,6 @@ import { CommunityEmailVerificationDeliveryService } from './community-email-ver
 import { CreateCommunityAccountDto } from './dto/create-community-account.dto';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
-import { isValidPhone } from '../common/validation/identity-contact.validation';
 import { CorrectCommunityEmailDto } from './dto/correct-community-email.dto';
 import {
   COMMUNITY_ACCOUNT_ROLE,
@@ -34,6 +33,7 @@ const ACKNOWLEDGEMENT = {
 };
 const RESEND_LIMIT = 3;
 const RESEND_WINDOW_MS = 60 * 60 * 1000;
+const COMMUNITY_RECIPIENT_NAME = 'persona de la comunidad';
 
 type PendingDelivery = {
   userId: number;
@@ -54,31 +54,6 @@ export class CommunityAccountsService {
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     @Optional() private readonly audit?: AuditService,
   ) {}
-
-  async findPendingByIdentification(identification: string) {
-    if (
-      typeof identification !== 'string' ||
-      !identification.trim() ||
-      identification.length > 30
-    )
-      throw new BadRequestException('Indique una identificación válida.');
-    return this.prisma.user.findMany({
-      where: {
-        identification: identification.trim(),
-        status: 'PENDING_EMAIL_VERIFICATION',
-        role: { name: { in: COMMUNITY_ACCOUNT_ROLES } },
-      },
-      select: {
-        id: true,
-        fullName: true,
-        identification: true,
-        identificationType: true,
-        email: true,
-        status: true,
-      },
-      take: 2,
-    });
-  }
 
   async correctEmail(
     id: number,
@@ -106,7 +81,6 @@ export class CommunityAccountsService {
             select: {
               id: true,
               email: true,
-              fullName: true,
               status: true,
               role: { select: { name: true } },
             },
@@ -181,7 +155,7 @@ export class CommunityAccountsService {
           return {
             userId: id,
             email,
-            fullName: user.fullName,
+            fullName: COMMUNITY_RECIPIENT_NAME,
             token: generated.token,
             expiresAt: generated.expiresAt,
           };
@@ -218,7 +192,7 @@ export class CommunityAccountsService {
       async (tx) => {
         const user = await tx.user.findUnique({
           where: { id },
-          select: { id: true, email: true, fullName: true },
+          select: { id: true, email: true },
         });
         if (!user)
           throw new ConflictException('La cuenta no permite reverificación.');
@@ -272,7 +246,7 @@ export class CommunityAccountsService {
         return {
           userId: id,
           email: user.email,
-          fullName: user.fullName,
+          fullName: COMMUNITY_RECIPIENT_NAME,
           token: generated.token,
           expiresAt: generated.expiresAt,
         };
@@ -287,17 +261,6 @@ export class CommunityAccountsService {
   }
 
   async register(dto: CreateCommunityAccountDto, context: AuditContext = {}) {
-    const fullName = [dto.firstName, dto.firstSurname, dto.secondSurname]
-      .filter(Boolean)
-      .join(' ');
-    if (fullName.length > 150) {
-      throw new BadRequestException(
-        'El nombre completo no puede superar 150 caracteres.',
-      );
-    }
-    if (!isValidPhone(dto.phoneCountryCode, dto.phoneNationalNumber)) {
-      throw new BadRequestException('El teléfono no es válido.');
-    }
     const generated = this.tokens.generate();
     let pending: PendingDelivery | null = null;
 
@@ -309,11 +272,6 @@ export class CommunityAccountsService {
             select: { id: true },
           });
           if (existing) return null;
-          const existingIdentification = await tx.user.findUnique({
-            where: { identification: dto.identification },
-            select: { id: true },
-          });
-          if (existingIdentification) return null;
           const role = await tx.role.findUnique({
             where: { name: COMMUNITY_ROLE },
             select: {
@@ -325,26 +283,19 @@ export class CommunityAccountsService {
           if (!role || !role.isActive || role.permissions.length > 0) {
             throw new Error('Community account role is not configured.');
           }
+          // `fullName` becomes nullable in the pending human-approved migration.
+          // Do not synthesize identity data for a community email-only account.
+          const communityUserData = {
+            email: dto.email,
+            passwordHash: null,
+            status: 'PENDING_EMAIL_VERIFICATION' as const,
+            roleId: role.id,
+          } as Prisma.UserUncheckedCreateInput;
           const user = await tx.user.create({
             data: {
-              fullName,
-              firstName: dto.firstName,
-              firstSurname: dto.firstSurname,
-              secondSurname: dto.secondSurname,
-              email: dto.email,
-              identification: dto.identification,
-              identificationType: dto.identificationType,
-              phoneCountryCode: dto.phoneCountryCode,
-              phoneNationalNumber: dto.phoneNationalNumber,
-              phone:
-                dto.phoneCountryCode && dto.phoneNationalNumber
-                  ? `${dto.phoneCountryCode}${dto.phoneNationalNumber}`
-                  : null,
-              passwordHash: null,
-              status: 'PENDING_EMAIL_VERIFICATION',
-              roleId: role.id,
+              ...communityUserData,
             },
-            select: { id: true, email: true, fullName: true },
+            select: { id: true, email: true },
           });
           await tx.accountActivationToken.create({
             data: {
@@ -357,7 +308,7 @@ export class CommunityAccountsService {
           return {
             userId: user.id,
             email: user.email,
-            fullName: user.fullName,
+            fullName: COMMUNITY_RECIPIENT_NAME,
             token: generated.token,
             expiresAt: generated.expiresAt,
           };
@@ -506,7 +457,7 @@ export class CommunityAccountsService {
         async (tx) => {
           const user = await tx.user.findUnique({
             where: { email },
-            select: { id: true, email: true, fullName: true, status: true },
+            select: { id: true, email: true, status: true },
           });
           if (!user || user.status !== 'PENDING_EMAIL_VERIFICATION')
             return null;
@@ -540,7 +491,7 @@ export class CommunityAccountsService {
           return {
             userId: user.id,
             email: user.email,
-            fullName: user.fullName,
+            fullName: COMMUNITY_RECIPIENT_NAME,
             token: generated.token,
             expiresAt: generated.expiresAt,
           };

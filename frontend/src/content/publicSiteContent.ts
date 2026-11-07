@@ -22,6 +22,7 @@ export const site = {
     { label: "Nosotros", to: "/nosotros" },
     { label: "Comunidad", to: "/comunidad" },
     { label: "Emprendimientos", to: "/ventures" },
+    { label: "Voluntariado", to: "/voluntariado" },
     { label: "Noticias", to: "/noticias" },
     { label: "Eventos", to: "/eventos" },
     { label: "Servicios", to: "/servicios" },

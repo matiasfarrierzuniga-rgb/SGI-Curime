@@ -28,6 +28,7 @@ import { RefreshTokenService } from './infrastructure/security/refresh-token.ser
 import { AuthController } from './presentation/controllers/auth.controller';
 import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
 import { CapabilityGuard } from './presentation/guards/capability.guard';
+import { UnsupportedOperationGuard } from './presentation/guards/unsupported-operation.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
 import { JwtStrategy } from './presentation/strategies/jwt.strategy';
 import { NotificationsModule } from '../modules/notifications/notifications.module';
@@ -94,6 +95,7 @@ import { PublicRequestRateLimitModule } from '../common/rate-limit/public-reques
     JwtAuthGuard,
     CapabilityGuard,
     RolesGuard,
+    UnsupportedOperationGuard,
   ],
   exports: [PASSWORD_HASHER],
 })

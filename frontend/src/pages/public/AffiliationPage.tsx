@@ -16,7 +16,7 @@ import { Input } from '@/shared/ui/input'
 import { Select } from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
 import { affiliateRequestsService } from '../../services/affiliateRequestsService'
-import { SectionContainer, Seo } from '../../components/public/PublicComponents'
+import { PublicPageHeader, SectionContainer, Seo } from '../../components/public/PublicComponents'
 
 const emptyValues: AffiliationFormValues = {
   identificationType: 'NATIONAL', identification: '', firstName: '', firstSurname: '', secondSurname: '', birthDate: '', gender: '',
@@ -129,7 +129,8 @@ export function AffiliationPage() {
 
   return <>
     <Seo title="Afiliación | ADI Curime" description="Solicitud de afiliación a la Asociación de Desarrollo Integral de Curime." />
-    <SectionContainer spacing="compact" className="pt-4 pb-8 min-[375px]:pt-5 md:pt-6 md:pb-10 lg:pb-12">
+    <PublicPageHeader breadcrumb="Afiliación" eyebrow="ADI Curime · Solicitudes" title="Solicitud de afiliación" intro="Complete su información en tres pasos para que la Asociación revise su solicitud." />
+    <SectionContainer spacing="compact" className="bg-brand-ivory pb-8 md:pb-10 lg:pb-12">
       {success ? <Success /> : (
         <div className="mx-auto grid max-w-[68.75rem] gap-3 sm:gap-4">
           <AffiliationIntro />
@@ -161,17 +162,10 @@ export function AffiliationPage() {
 }
 
 function AffiliationIntro() {
-  return <header className="grid gap-3 pb-0 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_15.5rem] lg:items-center">
-    <div>
-      <p className="public-eyebrow text-brand-primary">ADI Curime · Solicitudes</p>
-      <h1 className="public-heading mt-2 text-brand-ink">Solicitud de afiliación</h1>
-      <p className="mt-2 max-w-2xl text-body leading-relaxed text-foreground-muted">Complete su información en tres pasos para que la Asociación revise su solicitud.</p>
-    </div>
-    <aside className="flex items-center gap-3 rounded-surface border border-brand-accent/25 bg-brand-accent/10 p-3.5 text-brand-ink sm:max-w-md lg:mb-0">
+  return <aside className="flex items-center gap-3 rounded-surface border border-brand-accent/25 bg-brand-accent/10 p-3.5 text-brand-ink sm:max-w-md">
       <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-full border border-brand-accent/35 bg-brand-ivory text-brand-brown"><UsersRound className="size-6" /></span>
       <div><h2 className="text-body-small font-bold leading-tight">Forme parte de nuestra comunidad</h2><p className="mt-1 text-caption leading-snug text-foreground-secondary">Su participación fortalece el desarrollo de Curime.</p></div>
     </aside>
-  </header>
 }
 
 function Stepper({ currentStep }: { currentStep: number }) {

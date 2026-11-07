@@ -27,6 +27,10 @@
 
 - [x] 5.1 Execute Prisma validate, focused backend unit tests, focused disposable-PostgreSQL E2E tests, backend build, focused ESLint, frontend focused tests, and `git diff --check`; record actual command outcomes.
 - [x] 5.2 Produce `SGI_RBAC_V2_DEFINITIVE_CONSOLIDATION_REPORT` with decisions, modified files, correction state, catalog deltas, OpenSpec state, exact test evidence, safe verification commands, and residual risks.
+  - [x] 5.3 C3-SEC-01: validate JWT subject and HS256 constraint; verify persisted role/permissions override JWT role claims and stale session generations reject existing bearers.
+  - [x] 5.4 C3-SEC-01: preserve atomic role-change/account-deactivation generation increment plus refresh-session revocation; verify refresh rotation and reuse denial with isolated unit tests.
+  - [x] 5.5 C3-SEC-01: decouple Affiliate deactivation from software roles, Users, and sessions; verify an Affiliate without a User can deactivate atomically and audit failure rolls back.
+  - [ ] 5.6 Human-run database-mutating integration certification remains required before asserting production data/session behavior. No PostgreSQL write was run for C3-SEC-01.
 
 ## Workflow follow-up
 

@@ -12,6 +12,7 @@ The persisted development database contains an unversioned RBAC V2 role and perm
 - Replace verified role-name endpoint guards with persisted capability guards where an approved capability represents the same operation; retain explicitly documented role-name policy only until an approved capability exists.
 - Align TypeScript policy, Prisma seed definitions, existing permission records, frontend access constants, tests, and operator migration procedure without automatically granting every persisted V2 permission.
 - Preserve legacy account-request approval, activation tokens, sessions, software-role assignments, governance separation, and community self-service behavior.
+- Harden JWT validation and session revocation without changing persisted roles, permissions, schema, or operational data. Access tokens are validated against current persisted account state and session generation; refresh credentials remain individually revocable server-side.
 
 ## Capabilities
 

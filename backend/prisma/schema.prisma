@@ -41,6 +41,7 @@ model OrganizationProfile {
   canonicalNotificationEmail        String?                        @db.VarChar(254)
   createdAt                         DateTime                       @default(now())
   updatedAt                         DateTime                       @updatedAt
+  governanceTerms                  GovernanceTerm[]
 
   @@map("InstitutionalProfile")
 }
@@ -70,6 +71,7 @@ model Person {
   volunteerParticipations       VolunteerParticipation[]
   ventureAssociations           VentureAssociation[]
   ventureRequests               VentureRequest[]
+  governanceMemberships         GovernanceMembership[]
   reconciliationManifestEntries IdentityReconciliationManifest[] @relation("ManifestSelectedPerson")
 
   @@unique([identificationType, normalizedIdentification])
@@ -108,7 +110,9 @@ model RolePermission {
 
 model User {
   id                          Int                      @id @default(autoincrement())
-  fullName                    String
+  // Transitional legacy identity snapshots. Person is canonical whenever
+  // personId is present; removal requires human-approved reconciliation.
+  fullName                    String?
   firstName                   String?
   firstSurname                String?
   secondSurname               String?
@@ -280,6 +284,7 @@ model UserRequest {
 
 model Affiliate {
   id                    Int                    @id @default(autoincrement())
+  // Transitional personal snapshots. Person is canonical after reconciliation.
   fullName              String
   identification        String                 @unique
   birthDate             DateTime
@@ -396,22 +401,23 @@ model GovernancePosition {
 
 model GovernanceTerm {
   id                           Int                    @id @default(autoincrement())
-  legacyInstitutionalProfileId Int                    @map("institutionalProfileId")
+  institutionalProfileId       Int                    @map("institutionalProfileId")
   startDate                    DateTime               @map("startsOn") @db.Date
   endDate                      DateTime               @map("endsOn") @db.Date
   status                       GovernanceTermStatus?
   createdAt                    DateTime               @default(now())
   updatedAt                    DateTime               @updatedAt
   memberships                  GovernanceMembership[]
+  institutionalProfile         OrganizationProfile    @relation(fields: [institutionalProfileId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  @@index([legacyInstitutionalProfileId, startDate], map: "BoardTerm_institutionalProfileId_startsOn_idx")
+  @@index([institutionalProfileId, startDate], map: "BoardTerm_institutionalProfileId_startsOn_idx")
   @@map("BoardTerm")
 }
 
 model GovernanceMembership {
   id                    Int                   @id @default(autoincrement())
   termId                Int                   @map("boardTermId")
-  legacyPersonId        Int                   @map("personId")
+  personId              Int                   @map("personId")
   legacyPosition        BoardPosition         @map("position")
   positionId            Int?
   affiliateId           Int?
@@ -422,13 +428,14 @@ model GovernanceMembership {
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
   term                  GovernanceTerm        @relation(fields: [termId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  person                Person                @relation(fields: [personId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   position              GovernancePosition?   @relation(fields: [positionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   affiliate             Affiliate?            @relation(fields: [affiliateId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   appointedByAssembly   Assembly?             @relation("AssemblyAppointments", fields: [appointedByAssemblyId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   convocations          AssemblyConvocation[]
 
   @@index([termId], map: "BoardAppointment_boardTermId_idx")
-  @@index([legacyPersonId], map: "BoardAppointment_personId_idx")
+  @@index([personId], map: "BoardAppointment_personId_idx")
   @@index([legacyPosition, seatNumber], map: "BoardAppointment_position_seatNumber_idx")
   @@index([positionId])
   @@index([affiliateId])

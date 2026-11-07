@@ -315,6 +315,27 @@ describe('UserRequestsService', () => {
     expect(result.userRequest.status).toBe('APPROVED');
   });
 
+  it('preserves absent legacy account name for delivery presentation fallback', async () => {
+    tx.user.create.mockResolvedValue({
+      id: 22,
+      fullName: null,
+      email: pending.email,
+      status: 'INACTIVE',
+      roleId: 2,
+    });
+
+    await service.approve(10, { roleId: 2 }, 1);
+
+    expect(delivery.deliver).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 22,
+        email: pending.email,
+        fullName: null,
+        token: rawToken,
+      }),
+    );
+  });
+
   it('validates an already linked Person without invoking creation-capable resolution', async () => {
     await service.approve(10, { roleId: 2 }, 1);
 

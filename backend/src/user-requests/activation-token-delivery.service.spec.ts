@@ -35,6 +35,17 @@ describe('ActivationTokenDeliveryService', () => {
     });
   });
 
+  it('uses a generic presentation greeting when the historical account has no name', async () => {
+    await new ActivationTokenDeliveryService(notifications as never).deliver({
+      ...delivery,
+      fullName: null,
+    });
+
+    expect(notifications.send).toHaveBeenCalledWith(
+      expect.objectContaining({ recipientName: 'persona de la comunidad' }),
+    );
+  });
+
   it('logs a sanitized operational error and exposes no provider details', async () => {
     const log = jest.spyOn(Logger.prototype, 'error').mockImplementation();
     notifications.send.mockRejectedValue(

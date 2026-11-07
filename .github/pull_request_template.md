@@ -2,6 +2,13 @@
 
 Describe the problem/change and why it is needed.
 
+## Target branch
+
+- [ ] Integration PR: target `development`
+- [ ] Promotion PR: `development` → stable `main`
+
+Repository policy uses reviewed PRs for integration and promotion. Confirm remote protection or Ruleset status separately; this template does not assert it is enabled.
+
 ## Scope
 
 ### In scope

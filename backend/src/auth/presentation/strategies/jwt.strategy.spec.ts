@@ -59,6 +59,36 @@ describe('JwtStrategy persisted RBAC mapping', () => {
     expect(findCredentialsById).toHaveBeenCalledWith(1);
   });
 
+  it('ignores a historical or manipulated role claim in favor of persisted access', async () => {
+    await expect(
+      strategy.validate({
+        sub: 1,
+        email: account.email,
+        role: 'ROLE_COMMUNITY_USER',
+        sessionGeneration: 0,
+      }),
+    ).resolves.toMatchObject({
+      role: 'ROLE_SYSTEM_ADMIN',
+      permissionCodes: ['usr.users.read'],
+      canAccessErp: true,
+    });
+  });
+
+  it.each([0, -1, 1.5, Number.NaN])(
+    'rejects invalid JWT subject %s before querying persisted access',
+    async (sub) => {
+      await expect(
+        strategy.validate({
+          sub,
+          email: account.email,
+          role: account.roleName,
+          sessionGeneration: 0,
+        }),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+      expect(findCredentialsById).not.toHaveBeenCalled();
+    },
+  );
+
   it('revokes prior generations across same-second deactivation and reactivation', async () => {
     findCredentialsById.mockResolvedValue({
       ...account,

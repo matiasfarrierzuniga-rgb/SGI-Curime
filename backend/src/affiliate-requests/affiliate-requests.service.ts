@@ -473,6 +473,9 @@ export class AffiliateRequestsService {
     ) {
       throw new ConflictException('Unable to process affiliation request');
     }
+    if (resolution.profileEnrichmentRequired) {
+      throw new ConflictException('Unable to process affiliation request');
+    }
     return resolution;
   }
 }

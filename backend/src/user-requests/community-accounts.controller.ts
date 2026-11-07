@@ -1,13 +1,11 @@
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   HttpStatus,
   Post,
   Param,
   ParseIntPipe,
-  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -31,13 +29,6 @@ import {
 @Controller('community-accounts')
 export class CommunityAccountsController {
   constructor(private readonly service: CommunityAccountsService) {}
-
-  @Get('pending')
-  @RequireCapabilities('usr.users.read')
-  @UseGuards(JwtAuthGuard, CapabilityGuard)
-  findPending(@Query('identification') identification: string) {
-    return this.service.findPendingByIdentification(identification);
-  }
 
   @Post(':id/correct-email')
   @RequireCapabilities('usr.users.update')

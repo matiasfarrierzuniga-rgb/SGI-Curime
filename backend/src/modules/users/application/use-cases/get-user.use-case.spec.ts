@@ -42,7 +42,7 @@ describe('GetUserUseCase', () => {
     await expect(useCase.execute(99)).rejects.toBeInstanceOf(UserNotFoundError);
   });
 
-  it('projects authoritative ERP access with the affiliation context', async () => {
+  it('denies ERP access to a historical role despite active affiliation', async () => {
     repository.findById.mockResolvedValue(domainUser);
     repository.findAffiliationContext.mockResolvedValue({
       affiliateId: 8,
@@ -53,7 +53,7 @@ describe('GetUserUseCase', () => {
     });
 
     await expect(useCase.executeWithAffiliation(2)).resolves.toMatchObject({
-      affiliation: { affiliateId: 8, canAccessErp: true },
+      affiliation: { affiliateId: 8, canAccessErp: false },
     });
   });
 });

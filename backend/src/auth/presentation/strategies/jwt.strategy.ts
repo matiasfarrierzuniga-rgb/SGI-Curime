@@ -37,12 +37,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: getJwtSecret(),
+      algorithms: ['HS256'],
     });
     this.lockoutMinutes = getAccountLockoutPolicy().lockoutMinutes;
   }
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     let account: Awaited<ReturnType<AuthRepository['findCredentialsById']>>;
+
+    if (!Number.isSafeInteger(payload.sub) || payload.sub <= 0) {
+      throw new UnauthorizedException('Unauthorized');
+    }
 
     try {
       account = await this.repository.findCredentialsById(payload.sub);

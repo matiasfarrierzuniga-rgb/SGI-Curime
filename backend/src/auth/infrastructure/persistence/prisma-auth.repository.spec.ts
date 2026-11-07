@@ -122,6 +122,24 @@ describe('PrismaAuthRepository', () => {
     ).resolves.toBeNull();
   });
 
+  it('uses structured Person name as authenticated display identity', async () => {
+    db.user.findUnique.mockResolvedValueOnce({
+      ...userRow,
+      fullName: 'Snapshot antiguo',
+      person: {
+        firstName: 'Ana',
+        firstSurname: 'Pérez',
+        secondSurname: 'Mora',
+        legacyFullName: null,
+        affiliate: null,
+      },
+    });
+
+    await expect(
+      repository.findCredentialsByEmail('admin@example.com'),
+    ).resolves.toMatchObject({ fullName: 'Ana Pérez Mora' });
+  });
+
   it('maps a user found by id to the auth account model', async () => {
     db.user.findUnique.mockResolvedValueOnce(userRow);
 

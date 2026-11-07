@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
+import { Breadcrumbs, PublicPageContent } from '@/shared/ui/PublicPageLayout'
 import { usePublicEvent } from '../hooks/useEventsQueries'
 import { getPublicEventPresentation } from '../model/publicEventPresentation'
 
@@ -21,8 +22,8 @@ export function PublicEventDetailPage() {
   }, [eventQuery.data])
 
   return (
-    <section className="bg-brand-ivory py-14 md:py-20">
-      <div className="public-container max-w-4xl">
+    <><div className="public-container"><Breadcrumbs current="Eventos" variant="simple" /></div>
+    <PublicPageContent className="max-w-4xl bg-brand-ivory" spacing="normal">
         <Link className="inline-flex min-h-11 items-center gap-2 rounded-sm font-semibold text-brand-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to="/eventos"><ChevronLeft className="size-4" aria-hidden="true" />Volver a eventos</Link>
         {eventQuery.isPending ? <LoadingState className="mt-10" label="Cargando evento..." /> : null}
         {eventQuery.isError ? <ErrorState className="mt-10" title="Evento no disponible" message={getErrorMessage(eventQuery.error, 'El evento solicitado no está disponible.')} action={<Link className="inline-flex min-h-11 items-center rounded-md border border-border px-4 font-semibold" to="/eventos">Ver eventos</Link>} /> : null}
@@ -40,7 +41,6 @@ export function PublicEventDetailPage() {
             {eventQuery.data.description ? <div className="mt-8 whitespace-pre-line leading-relaxed text-brand-ink/80">{eventQuery.data.description}</div> : null}
           </article>
         })() : null}
-      </div>
-    </section>
+    </PublicPageContent></>
   )
 }

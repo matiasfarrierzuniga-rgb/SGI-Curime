@@ -16,6 +16,8 @@ describe('PublicVenturesPage', () => {
 
     render(<MemoryRouter><PublicVenturesPage /></MemoryRouter>)
 
+    expect(screen.getByRole('navigation', { name: 'Ruta de navegación' })).toHaveTextContent('Emprendimientos')
+    expect(screen.getByRole('heading', { name: 'Emprendimientos', level: 1 })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Café Curime' })).toBeInTheDocument()
     expect(screen.getByText('Curime, Nicoya')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /ver detalle de café curime/i })).toHaveAttribute('href', '/ventures/7')

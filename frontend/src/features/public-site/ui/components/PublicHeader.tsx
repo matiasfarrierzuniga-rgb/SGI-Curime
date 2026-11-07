@@ -7,7 +7,7 @@ import { Button } from '@/shared/ui/button'
 
 type Group = 'Comunidad' | 'Servicios'
 const groups: Record<Group, readonly string[]> = {
-  Comunidad: ['Comunidad', 'Emprendimientos', 'Noticias', 'Eventos'],
+  Comunidad: ['Comunidad', 'Emprendimientos', 'Voluntariado', 'Noticias', 'Eventos'],
   Servicios: ['Servicios', 'Transparencia'],
 }
 const mainItems = ['Inicio', 'Nosotros', 'Comunidad', 'Servicios', 'Contacto'] as const

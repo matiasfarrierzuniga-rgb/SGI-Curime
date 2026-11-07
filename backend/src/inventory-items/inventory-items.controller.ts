@@ -15,8 +15,7 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  Roles,
-  RolesGuard,
+  UnsupportedOperationGuard,
 } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
@@ -30,11 +29,8 @@ type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 export class InventoryItemsController {
   constructor(private readonly itemsService: InventoryItemsService) {}
 
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   create(
     @Body() dto: CreateInventoryItemDto,
     @Req() req: AuthenticatedRequest,
@@ -42,8 +38,6 @@ export class InventoryItemsController {
     return this.itemsService.create(dto, req.user.id, this.context(req));
   }
 
-  @RequireCapabilities('inv.inventory.read')
-  @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get()
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
@@ -51,8 +45,6 @@ export class InventoryItemsController {
     return this.itemsService.findAll(query);
   }
 
-  @RequireCapabilities('inv.inventory.read')
-  @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get(':id')
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
@@ -60,11 +52,8 @@ export class InventoryItemsController {
     return this.itemsService.findOne(id);
   }
 
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateInventoryItemDto,
@@ -73,11 +62,8 @@ export class InventoryItemsController {
     return this.itemsService.update(id, dto, req.user.id, this.context(req));
   }
 
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/activate')
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   activate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,
@@ -90,11 +76,8 @@ export class InventoryItemsController {
     );
   }
 
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/deactivate')
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   deactivate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,

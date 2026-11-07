@@ -7,7 +7,7 @@ import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { Prisma } from '../../generated/prisma/client';
-import { CapabilityGuard, JwtAuthGuard, RolesGuard } from '../auth';
+import { CapabilityGuard, JwtAuthGuard } from '../auth';
 import { CommunityAccountsController } from './community-accounts.controller';
 import { CommunityAccountsService } from './community-accounts.service';
 import { CorrectCommunityEmailDto } from './dto/correct-community-email.dto';
@@ -60,37 +60,35 @@ describe('administrative community email correction', () => {
       audit as never,
     );
   });
-  it('requires administrator role, persisted capability and all guards on both routes', () => {
+  it('requires JWT authentication and persisted capability on both administrative routes', () => {
     for (const [method, capability] of [
       ['correctEmail', 'usr.users.update'],
-      ['findPending', 'usr.users.read'],
+      ['reverify', 'usr.users.lifecycle.manage'],
     ] as const) {
       const handler = Object.getOwnPropertyDescriptor(
         CommunityAccountsController.prototype,
         method,
       )!.value as object;
-      expect(Reflect.getMetadata('roles', handler)).toEqual([
-        'Administrador',
-        'ROLE_SYSTEM_ADMIN',
-      ]);
+      expect(Reflect.getMetadata('roles', handler)).toBeUndefined();
       expect(Reflect.getMetadata('capabilities', handler)).toEqual([
         capability,
       ]);
       expect(Reflect.getMetadata(GUARDS_METADATA, handler)).toEqual([
         JwtAuthGuard,
-        RolesGuard,
         CapabilityGuard,
       ]);
     }
   });
+
   it.each([
-    ['Administrador', true, ['usr.users.update'], true],
     ['ROLE_SYSTEM_ADMIN', true, ['usr.users.update'], true],
     ['ROLE_SYSTEM_ADMIN', true, [], false],
+    ['ROLE_SYSTEM_ADMIN', false, ['usr.users.update'], false],
+    ['Administrador', false, ['usr.users.update'], false],
     ['ROLE_COMMUNITY_USER', false, ['usr.users.update'], false],
-    ['ROLE_INSTITUTIONAL_OPERATOR', true, ['usr.users.update'], false],
+    ['ROLE_INSTITUTIONAL_OPERATOR', true, [], false],
   ])(
-    'requires both administrator role and persisted capability for %s',
+    'requires ERP admission and persisted capability for %s',
     (role, canAccessErp, permissionCodes, allowed) => {
       const context = {
         getHandler: () => null,
@@ -99,19 +97,14 @@ describe('administrative community email correction', () => {
           getRequest: () => ({ user: { role, canAccessErp, permissionCodes } }),
         }),
       };
-      const roleGuard = new RolesGuard({
-        getAllAndOverride: () => ['Administrador', 'ROLE_SYSTEM_ADMIN'],
-      } as never);
       const capabilityGuard = new CapabilityGuard({
         getAllAndOverride: (key: string) =>
           key === 'capabilities' ? ['usr.users.update'] : undefined,
       } as never);
-      expect(
-        roleGuard.canActivate(context as never) &&
-          capabilityGuard.canActivate(context as never),
-      ).toBe(allowed);
+      expect(capabilityGuard.canActivate(context as never)).toBe(allowed);
     },
   );
+
   it('normalizes and validates input and requires recorded identity attestation', async () => {
     const parsed = plainToInstance(CorrectCommunityEmailDto, {
       ...dto,
