@@ -46,6 +46,10 @@ The system SHALL execute Person resolution/creation and its linked User, Affilia
 - **WHEN** two approval attempts process the same unresolved identity concurrently
 - **THEN** at most one canonical outcome commits and the other receives a documented conflict or idempotent result
 
+#### Scenario: Incomplete reused Person for affiliation request
+- **WHEN** an affiliation submission resolves to one existing Person that requires profile enrichment
+- **THEN** the system MUST NOT persist the request-to-Person link or mutate that Person, and institutional review/correction remains available before a later safe submission
+
 ### Requirement: Compatibility, constraints, and retirement certification
 The system MUST NOT make Person links required, remove a duplicate field, or remove a compatibility API alias until recorded certification proves data population classification, zero productive legacy writers, zero productive legacy readers, Person-derived mapping, no frontend legacy semantics, API/frontend consumer migration, conflict handling, reconciliation independence, rollback readiness, snapshot preservation, focused backend/frontend tests, build, and E2E certification. Database compatibility and API compatibility SHALL be staged separately. A temporary API shape MAY project values from Person only inside this staged change; a V1.1 compatibility window SHALL exist only for an actual documented external consumer.
 
