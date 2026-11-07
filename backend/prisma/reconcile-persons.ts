@@ -124,6 +124,7 @@ async function reconcile(tx: Prisma.TransactionClient): Promise<RunSummary> {
       tx.user.findMany({
         select: {
           id: true,
+          personId: true,
           identification: true,
           identificationType: true,
           fullName: true,
@@ -175,7 +176,9 @@ async function reconcile(tx: Prisma.TransactionClient): Promise<RunSummary> {
     ]);
 
   const sources: IdentitySource[] = [
-    ...users.map((row) => toSource(row, 'User', null)),
+    ...users
+      .filter(isUserReconciliationCandidate)
+      .map((row) => toSource(row, 'User', null)),
     ...affiliates.map((row) => toSource(row, 'Affiliate', row.birthDate)),
     ...userRequests.map((row) => toSource(row, 'UserRequest', null)),
     ...affiliateRequests.map((row) =>
@@ -244,12 +247,21 @@ async function reconcile(tx: Prisma.TransactionClient): Promise<RunSummary> {
   );
 }
 
-function toSource(
+export function isUserReconciliationCandidate(row: {
+  personId: number | null;
+  fullName: string | null;
+}): boolean {
+  // A verified community account may intentionally have neither Person nor
+  // asserted name. It has no identity evidence for this legacy backfill.
+  return row.personId !== null || hasAssertedName(row.fullName);
+}
+
+export function toSource(
   row: {
     id: number;
     identification: string | null;
     identificationType: string | null;
-    fullName: string;
+    fullName: string | null;
     email: string | null;
     phoneCountryCode: string | null;
     phoneNationalNumber: string | null;
@@ -270,6 +282,10 @@ function toSource(
     phoneNationalNumber: row.phoneNationalNumber,
     address: row.address,
   };
+}
+
+function hasAssertedName(fullName: string | null): boolean {
+  return Boolean(fullName?.trim());
 }
 
 async function resolveOrCreatePerson(
@@ -503,7 +519,9 @@ function isTransactionWriteConflict(error: unknown): boolean {
   );
 }
 
-main().catch((error: unknown) => {
-  console.error('Identity reconciliation failed.', error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error: unknown) => {
+    console.error('Identity reconciliation failed.', error);
+    process.exitCode = 1;
+  });
+}

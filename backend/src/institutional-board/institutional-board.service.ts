@@ -33,7 +33,8 @@ const candidateProjection = {
 const membershipSelect = {
   id: true,
   termId: true,
-  legacyPersonId: true,
+  personId: true,
+  person: { select: personProjection },
   legacyPosition: true,
   seatNumber: true,
   startedAt: true,
@@ -51,7 +52,7 @@ export class InstitutionalBoardService {
 
   async listTerms() {
     const terms = await this.prisma.governanceTerm.findMany({
-      where: { legacyInstitutionalProfileId: PROFILE_ID },
+      where: { institutionalProfileId: PROFILE_ID },
       include: {
         memberships: {
           select: membershipSelect,
@@ -65,7 +66,7 @@ export class InstitutionalBoardService {
 
   async getTerm(id: number) {
     const term = await this.prisma.governanceTerm.findFirst({
-      where: { id, legacyInstitutionalProfileId: PROFILE_ID },
+      where: { id, institutionalProfileId: PROFILE_ID },
       include: {
         memberships: {
           select: membershipSelect,
@@ -83,7 +84,7 @@ export class InstitutionalBoardService {
     return this.prisma.$transaction(async (tx) => {
       const term = await tx.governanceTerm.create({
         data: {
-          legacyInstitutionalProfileId: PROFILE_ID,
+          institutionalProfileId: PROFILE_ID,
           startDate: new Date(dto.startsOn),
           endDate: new Date(dto.endsOn),
         },
@@ -109,7 +110,7 @@ export class InstitutionalBoardService {
   ) {
     return this.prisma.$transaction(async (tx) => {
       const current = await tx.governanceTerm.findFirst({
-        where: { id, legacyInstitutionalProfileId: PROFILE_ID },
+        where: { id, institutionalProfileId: PROFILE_ID },
       });
       if (!current)
         throw new NotFoundException('Período de Junta Directiva no encontrado');
@@ -163,7 +164,7 @@ export class InstitutionalBoardService {
   ) {
     return this.prisma.$transaction(async (tx) => {
       const term = await tx.governanceTerm.findFirst({
-        where: { id: termId, legacyInstitutionalProfileId: PROFILE_ID },
+        where: { id: termId, institutionalProfileId: PROFILE_ID },
       });
       if (!term)
         throw new NotFoundException('Período de Junta Directiva no encontrado');
@@ -176,7 +177,7 @@ export class InstitutionalBoardService {
       const appointment = await tx.governanceMembership.create({
         data: {
           termId,
-          legacyPersonId: dto.personId,
+          personId: dto.personId,
           legacyPosition: dto.position,
           seatNumber: dto.seatNumber,
           startedAt: dto.startsOn ? new Date(dto.startsOn) : null,
@@ -217,10 +218,10 @@ export class InstitutionalBoardService {
       });
       if (
         !current ||
-        current.term.legacyInstitutionalProfileId !== PROFILE_ID
+        current.term.institutionalProfileId !== PROFILE_ID
       )
         throw new NotFoundException('Nombramiento no encontrado');
-      const personId = dto.personId ?? current.legacyPersonId;
+      const personId = dto.personId ?? current.personId;
       const person = await this.assertPerson(tx, personId);
       const startsOn =
         dto.startsOn === undefined
@@ -245,7 +246,7 @@ export class InstitutionalBoardService {
       const appointment = await tx.governanceMembership.update({
         where: { id },
         data: {
-          legacyPersonId: dto.personId,
+          personId: dto.personId,
           legacyPosition: dto.position,
           seatNumber: dto.seatNumber,
           startedAt: startsOn,
@@ -279,7 +280,7 @@ export class InstitutionalBoardService {
       });
       if (
         !current ||
-        current.term.legacyInstitutionalProfileId !== PROFILE_ID
+        current.term.institutionalProfileId !== PROFILE_ID
       )
         throw new NotFoundException('Nombramiento no encontrado');
       if (current.endedAt)
@@ -300,7 +301,7 @@ export class InstitutionalBoardService {
       const successor = await tx.governanceMembership.create({
         data: {
           termId: current.termId,
-          legacyPersonId: dto.personId,
+          personId: dto.personId,
           legacyPosition: dto.position,
           seatNumber: dto.seatNumber,
           startedAt: dto.startsOn ? new Date(dto.startsOn) : null,
@@ -384,14 +385,8 @@ export class InstitutionalBoardService {
     },
   >(term: T) {
     const { memberships, ...fields } = term;
-    const appointments = await Promise.all(
-      memberships.map(async (membership) => {
-        const person = await this.prisma.person.findUnique({
-          where: { id: membership.legacyPersonId },
-          select: personProjection,
-        });
-        return this.toLegacyAppointment(membership, person);
-      }),
+    const appointments = memberships.map((membership) =>
+      this.toLegacyAppointment(membership, membership.person),
     );
     return { ...this.toLegacyTermFields(fields), appointments };
   }
@@ -399,15 +394,17 @@ export class InstitutionalBoardService {
   private toLegacyAppointment<
     T extends {
       termId: number;
-      legacyPersonId: number;
+      personId: number;
       legacyPosition: string;
       startedAt: Date | null;
       endedAt: Date | null;
+      person?: unknown;
     },
   >(appointment: T, person: unknown) {
     const {
       termId,
-      legacyPersonId,
+      personId,
+      person: _canonicalPerson,
       legacyPosition,
       startedAt,
       endedAt,
@@ -416,7 +413,7 @@ export class InstitutionalBoardService {
     return {
       ...rest,
       boardTermId: termId,
-      personId: legacyPersonId,
+      personId,
       position: legacyPosition,
       startsOn: startedAt,
       endsOn: endedAt,

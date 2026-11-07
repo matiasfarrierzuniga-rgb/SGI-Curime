@@ -12,35 +12,33 @@ vi.mock('@/shared/ui/resultDialog', () => dialog)
 
 describe('CommunityRegistrationPage', () => {
   beforeEach(() => { vi.clearAllMocks(); dialog.showResultDialog.mockResolvedValue({ isConfirmed: true }) })
-  it('requires minimum fields and privacy acknowledgement', () => {
+  it('requires only a valid email address', () => {
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(screen.getByText('Debe aceptar el uso de sus datos para crear la cuenta.')).toBeInTheDocument()
+    expect(screen.getByText('Ingrese un correo electrónico válido.')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Nombre/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/identificación/i)).not.toBeInTheDocument()
   })
   it('submits normalized public data and shows the email confirmation', async () => {
     vi.mocked(communityAccountsService.register).mockResolvedValue({ message: 'neutral' })
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
-    fireEvent.change(screen.getByLabelText(/Nombre\(s\)/), { target: { value: ' Ana ' } })
-    fireEvent.change(screen.getByLabelText(/Primer apellido/), { target: { value: ' Pérez ' } })
-    fireEvent.change(screen.getByLabelText(/Número de identificación/), { target: { value: '123456789' } })
     fireEvent.change(screen.getByLabelText(/Correo electrónico/), { target: { value: ' ANA@EXAMPLE.TEST ' } })
-    fireEvent.click(screen.getByRole('checkbox'))
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(await screen.findByRole('heading', { name: 'Confirme su correo electrónico' })).toBeInTheDocument()
-    expect(communityAccountsService.register).toHaveBeenCalledWith(expect.objectContaining({ firstName: 'Ana', firstSurname: 'Pérez', identification: '123456789', email: 'ana@example.test', privacyAcknowledgement: true }))
+    expect(await screen.findByRole('heading', { name: 'Revisá tu correo electrónico' })).toBeInTheDocument()
+    expect(communityAccountsService.register).toHaveBeenCalledWith({ email: 'ana@example.test' })
     expect(vi.mocked(communityAccountsService.register).mock.calls[0][0]).not.toHaveProperty('password')
     expect(dialog.showResultDialog).toHaveBeenCalledWith({
-      icon: 'info', title: 'Solicitud recibida',
-      text: 'Si los datos permiten continuar, recibirás instrucciones. Revisá tu correo o solicitá ayuda para recuperar el acceso.',
+      icon: 'info', title: 'Revisá tu correo',
+      text: 'Si el correo puede continuar el proceso, recibirás instrucciones para verificar tu cuenta. Este registro no crea afiliación ni acceso administrativo.',
       confirmButtonText: 'Entendido',
     })
     expect(toast.notify).not.toHaveBeenCalled()
   })
-  it('shows identification feedback inline without submitting', () => {
+  it('shows email feedback inline without submitting', () => {
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
-    fireEvent.change(screen.getByLabelText(/Número de identificación/), { target: { value: '123' } })
+    fireEvent.change(screen.getByLabelText(/Correo electrónico/), { target: { value: 'invalid' } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(screen.getByText('Cédula nacional: debe contener exactamente 9 dígitos y no iniciar en 0.')).toBeInTheDocument()
+    expect(screen.getByText('Ingrese un correo electrónico válido.')).toBeInTheDocument()
     expect(communityAccountsService.register).not.toHaveBeenCalled()
   })
 })

@@ -51,7 +51,7 @@ describe('UpdateUserUseCase', () => {
     repository.findById.mockResolvedValue(null);
 
     await expect(
-      useCase.execute(99, { fullName: 'Nuevo' }),
+      useCase.execute(99, { email: 'nuevo@example.com' }),
     ).rejects.toBeInstanceOf(UserNotFoundError);
   });
 
@@ -64,13 +64,13 @@ describe('UpdateUserUseCase', () => {
   });
 
   it('updates the profile and records an audit event', async () => {
-    const result = await useCase.execute(2, { fullName: 'Nombre Nuevo' }, 1, {
+    const result = await useCase.execute(2, { email: 'nuevo@example.com' }, 1, {
       ipAddress: '127.0.0.1',
       userAgent: 'test',
     });
 
     expect(repository.updateProfile).toHaveBeenCalledWith(2, {
-      fullName: 'Nombre Nuevo',
+      email: 'nuevo@example.com',
     });
     expect(result).toEqual(domainUser);
     expect(audit.record).toHaveBeenCalledWith({
@@ -79,7 +79,7 @@ describe('UpdateUserUseCase', () => {
       module: 'USERS',
       entityType: 'User',
       entityId: 2,
-      details: { changedFields: ['fullName'] },
+      details: { changedFields: ['email'] },
       ipAddress: '127.0.0.1',
       userAgent: 'test',
     });

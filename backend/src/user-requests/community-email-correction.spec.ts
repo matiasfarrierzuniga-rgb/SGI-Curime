@@ -63,7 +63,7 @@ describe('administrative community email correction', () => {
   it('requires JWT authentication and persisted capability on both administrative routes', () => {
     for (const [method, capability] of [
       ['correctEmail', 'usr.users.update'],
-      ['findPending', 'usr.users.read'],
+      ['reverify', 'usr.users.lifecycle.manage'],
     ] as const) {
       const handler = Object.getOwnPropertyDescriptor(
         CommunityAccountsController.prototype,

@@ -9,7 +9,7 @@ import { NotificationEventType } from '../modules/notifications/domain/notificat
 export type ActivationDelivery = {
   userId: number;
   email: string;
-  fullName: string;
+  fullName: string | null;
   token: string;
   expiresAt: Date;
 };
@@ -26,7 +26,7 @@ export class ActivationTokenDeliveryService {
         type: NotificationEventType.ACCOUNT_ACTIVATION_REQUESTED,
         userId: delivery.userId,
         to: delivery.email,
-        recipientName: delivery.fullName,
+        recipientName: displayRecipientName(delivery.fullName),
         token: delivery.token,
         expiresAt: delivery.expiresAt,
       });
@@ -39,4 +39,8 @@ export class ActivationTokenDeliveryService {
       );
     }
   }
+}
+
+function displayRecipientName(fullName: string | null): string {
+  return fullName?.trim() || 'persona de la comunidad';
 }
