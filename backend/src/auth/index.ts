@@ -2,6 +2,7 @@ export { AuthModule } from './auth.module';
 export { Roles } from './presentation/decorators/roles.decorator';
 export { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
 export { CapabilityGuard } from './presentation/guards/capability.guard';
+export { UnsupportedOperationGuard } from './presentation/guards/unsupported-operation.guard';
 export {
   CAPABILITIES,
   ROLE_CAPABILITIES,

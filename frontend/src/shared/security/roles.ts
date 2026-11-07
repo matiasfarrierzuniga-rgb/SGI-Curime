@@ -1,6 +1,3 @@
-export const ROLE_ADMIN = "Administrador";
-export const ROLE_INVENTORY_MANAGER = "Gestor de Inventario";
-export const ROLE_TREASURER = "Tesorero";
 export const ROLE_COMMUNITY_ACCOUNT = "ROLE_COMMUNITY_USER";
 export const LEGACY_ROLE_COMMUNITY_ACCOUNT = "Cuenta comunitaria";
 
@@ -12,11 +9,6 @@ export type RoleLike =
   | null
   | undefined;
 
-/** @deprecated Historical labels are presentation-only and never authorize UI. */
-export const ADMIN_ROLES: readonly string[] = [];
-/** @deprecated Inventory mutations have no approved endpoint capability mapping. */
-export const INVENTORY_ROLES: readonly string[] = [];
-
 export function getRoleName(role: RoleLike): string | undefined {
   if (!role) return undefined;
 
@@ -25,16 +17,6 @@ export function getRoleName(role: RoleLike): string | undefined {
   }
 
   return role.name ?? undefined;
-}
-
-export function isAdmin(role: RoleLike): boolean {
-  void role;
-  return false;
-}
-
-export function canManageInventory(role: RoleLike): boolean {
-  void role;
-  return false;
 }
 
 export function homePathForRole(role: RoleLike, canAccessErp = false): string {

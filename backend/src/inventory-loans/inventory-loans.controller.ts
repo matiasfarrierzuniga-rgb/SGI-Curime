@@ -15,8 +15,7 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  Roles,
-  RolesGuard,
+  UnsupportedOperationGuard,
 } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { CreateLoanDto } from './dto/create-loan.dto';
@@ -30,17 +29,12 @@ type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 export class InventoryLoansController {
   constructor(private readonly loansService: InventoryLoansService) {}
 
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   create(@Body() dto: CreateLoanDto, @Req() req: AuthenticatedRequest) {
     return this.loansService.create(dto, req.user.id, this.context(req));
   }
 
-  @RequireCapabilities('inv.inventory.read')
-  @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get()
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
@@ -48,8 +42,6 @@ export class InventoryLoansController {
     return this.loansService.findAll(query);
   }
 
-  @RequireCapabilities('inv.inventory.read')
-  @UseGuards(JwtAuthGuard, CapabilityGuard)
   @Get(':id')
   @RequireCapabilities('inv.inventory.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
@@ -57,11 +49,8 @@ export class InventoryLoansController {
     return this.loansService.findOne(id);
   }
 
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/return')
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   return(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ReturnLoanDto,
@@ -70,11 +59,8 @@ export class InventoryLoansController {
     return this.loansService.return(id, dto, req.user.id, this.context(req));
   }
 
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/cancel')
-  @Roles('Administrador', 'Gestor de Inventario')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   cancel(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,

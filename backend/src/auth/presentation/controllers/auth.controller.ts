@@ -22,7 +22,6 @@ import { getRefreshCookiePolicy } from '../../application/config/refresh-token.c
 import { RequestPasswordResetUseCase } from '../../application/use-cases/request-password-reset.use-case';
 import { ResetPasswordUseCase } from '../../application/use-cases/reset-password.use-case';
 import { AuthApplicationError } from '../../application/errors/auth.errors';
-import { Roles } from '../decorators/roles.decorator';
 import { ActivateAccountDto } from '../dto/activate-account.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
@@ -30,7 +29,7 @@ import { LoginDto } from '../dto/login.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { RolesGuard } from '../guards/roles.guard';
+import { UnsupportedOperationGuard } from '../guards/unsupported-operation.guard';
 import { toAuthHttpError } from '../errors/auth-http-error.mapper';
 import { assertCookieRequestOrigin } from '../security/cookie-origin.policy';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -183,8 +182,7 @@ export class AuthController {
   }
 
   @Get('auth/admin-test')
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   adminTest() {
     return { message: 'Administrator access granted.' };
   }
