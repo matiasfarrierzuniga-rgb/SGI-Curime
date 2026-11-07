@@ -92,16 +92,10 @@ describe('community account registration and activation', () => {
         }) as unknown,
       }),
     );
-    expect(tx.user.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.not.objectContaining({ personId: expect.anything() }),
-      }),
-    );
-    expect(tx.user.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.not.objectContaining({ affiliate: expect.anything() }),
-      }),
-    );
+    // eslint-disable-next-line prettier/prettier -- Tuple cast prevents unsafe mock-data access in this assertion.
+    const [[createArgument]] = tx.user.create.mock.calls as unknown as Array<[{ data: Record<string, unknown> }]>;
+    expect(createArgument.data).not.toHaveProperty('personId');
+    expect(createArgument.data).not.toHaveProperty('affiliate');
     expect(hasher.hash).not.toHaveBeenCalled();
     expect(delivery.deliver).toHaveBeenCalledTimes(1);
   });
