@@ -30,6 +30,13 @@ export interface UserPage {
   limit: number;
 }
 
+export interface AccountPage {
+  data: User[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface UserAffiliationContext {
   affiliateId: number | null;
   affiliateStatus: 'ACTIVE' | 'INACTIVE' | null;
@@ -85,6 +92,7 @@ export interface UsersRepository {
     work: (repo: UsersRepository) => Promise<T>,
   ): Promise<T>;
   findPage(query: UserQuery): Promise<UserPage>;
+  findAccountsPage(query: UserQuery): Promise<AccountPage>;
   findById(id: number): Promise<User | null>;
   findAdminPersonById(id: number): Promise<AdminPersonReadModel | null>;
   findAffiliationContext(id: number): Promise<UserAffiliationContext>;

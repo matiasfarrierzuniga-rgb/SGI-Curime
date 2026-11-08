@@ -8,5 +8,6 @@ export function useBoardMutations() { const client = useQueryClient(); const ref
   updateTerm: useMutation({ mutationFn: ({ id, input }: { id: number; input: { startsOn?: string; endsOn?: string } }) => institutionalBoardApi.updateTerm(id, input), onSuccess: refresh }),
   createAppointment: useMutation({ mutationFn: ({ termId, input }: { termId: number; input: AppointmentInput }) => institutionalBoardApi.createAppointment(termId, input), onSuccess: refresh }),
   updateAppointment: useMutation({ mutationFn: ({ id, input }: { id: number; input: UpdateAppointmentInput }) => institutionalBoardApi.updateAppointment(id, input), onSuccess: refresh }),
+  revokeAppointment: useMutation({ mutationFn: ({ id, input }: { id: number; input: { endsOn: string } }) => institutionalBoardApi.revokeAppointment(id, input), onSuccess: refresh }),
   replaceAppointment: useMutation({ mutationFn: ({ id, input }: { id: number; input: ReplaceAppointmentInput }) => institutionalBoardApi.replaceAppointment(id, input), onSuccess: refresh }),
 } }

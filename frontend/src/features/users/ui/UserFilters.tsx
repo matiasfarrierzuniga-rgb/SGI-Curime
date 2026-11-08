@@ -50,7 +50,7 @@ export function UserFilters({
       <FormField id="user-search" label="Buscar por nombre" className="min-w-0 md:col-span-2 xl:col-span-1">
         <SearchInput
           value={name}
-          placeholder="Nombre de la persona"
+          placeholder="Nombre o correo de la cuenta"
           onChange={(e) => onNameChange(e.target.value)}
         />
       </FormField>
@@ -61,7 +61,8 @@ export function UserFilters({
         >
           <option value="">Todos</option>
           <option value="ACTIVE">Activo</option>
-          <option value="INACTIVE">Inactivo</option>
+           <option value="INACTIVE">Inactivo</option>
+           <option value="PENDING_EMAIL_VERIFICATION">Correo pendiente de verificación</option>
           <option value="BLOCKED">Bloqueado administrativo</option>
         </Select>
       </FormField>

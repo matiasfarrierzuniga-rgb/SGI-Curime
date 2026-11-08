@@ -10,8 +10,10 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { Input } from '@/shared/ui/input'
 import { LoadingState } from '@/shared/ui/LoadingState'
+import { Modal } from '@/shared/ui/Modal'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Select } from '@/shared/ui/select'
+import { useToast } from '@/shared/ui/Toast'
 import { useBoardMutations, useBoardTerms, usePersonCandidates } from '../hooks/institutionalBoard.queries'
 import { BOARD_POSITIONS, BOARD_POSITION_LABELS, type BoardAppointment, type BoardPosition } from '../model/institutionalBoard.types'
 
@@ -19,10 +21,12 @@ const emptyAppointment = { personId: 0, position: 'PRESIDENT' as BoardPosition, 
 const emptyTerm = { startsOn: '', endsOn: '' }
 const dateOnly = (value: string | null) => value ? value.slice(0, 10) : 'No especificada'
 const personName = (appointment: BoardAppointment) => [appointment.person.firstName, appointment.person.firstSurname, appointment.person.secondSurname].filter(Boolean).join(' ') || appointment.person.legacyFullName || `Persona ${appointment.personId}`
+const toDate = (value: string) => new Date(`${value}T00:00:00`)
 
 export function InstitutionalBoardPage() {
   const terms = useBoardTerms()
   const mutations = useBoardMutations()
+  const { notify } = useToast()
   const { user } = useAuth()
   const canManage = hasCapability(user?.permissionCodes, 'adm.institutional-board.manage')
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -33,9 +37,12 @@ export function InstitutionalBoardPage() {
   const [appointment, setAppointment] = useState(emptyAppointment)
   const [editing, setEditing] = useState<BoardAppointment | null>(null)
   const [replacing, setReplacing] = useState<BoardAppointment | null>(null)
+  const [revoking, setRevoking] = useState<BoardAppointment | null>(null)
+  const [revokeDate, setRevokeDate] = useState('')
   const [query, setQuery] = useState('')
   const candidates = usePersonCandidates(query)
   const [message, setMessage] = useState('')
+  const mutationBusy = mutations.createTerm.isPending || mutations.updateTerm.isPending || mutations.createAppointment.isPending || mutations.updateAppointment.isPending || mutations.replaceAppointment.isPending || mutations.revokeAppointment.isPending
 
   const submitTerm = async (event: FormEvent) => {
     event.preventDefault()
@@ -68,7 +75,33 @@ export function InstitutionalBoardPage() {
 
   const submitAppointment = async (event: FormEvent) => {
     event.preventDefault()
-    if (!canManage || !selected || (!editing && !appointment.personId)) return
+    if (mutationBusy) return
+    setMessage('')
+    if (!canManage) return
+    if (!selected) {
+      setMessage('Seleccione un período antes de agregar un nombramiento.')
+      return
+    }
+    if (!editing && (!Number.isInteger(appointment.personId) || appointment.personId <= 0)) {
+      setMessage('Seleccione una persona existente de la lista de resultados.')
+      return
+    }
+    if (appointment.seatNumber && (!Number.isInteger(Number(appointment.seatNumber)) || Number(appointment.seatNumber) <= 0)) {
+      setMessage('La plaza debe ser un número entero positivo.')
+      return
+    }
+    if (appointment.startsOn && appointment.endsOn && toDate(appointment.startsOn) >= toDate(appointment.endsOn)) {
+      setMessage('La fecha inicial debe ser anterior a la fecha final.')
+      return
+    }
+    const termStart = new Date(selected.startsOn)
+    const termEnd = new Date(selected.endsOn)
+    const effectiveStart = appointment.startsOn ? toDate(appointment.startsOn) : termStart
+    const effectiveEnd = appointment.endsOn ? toDate(appointment.endsOn) : termEnd
+    if (effectiveStart > termEnd || effectiveEnd < termStart) {
+      setMessage('La vigencia del nombramiento debe coincidir con el período seleccionado.')
+      return
+    }
     setMessage('')
     const commonInput = {
       position: appointment.position,
@@ -80,12 +113,15 @@ export function InstitutionalBoardPage() {
       if (editing) await mutations.updateAppointment.mutateAsync({ id: editing.id, input: commonInput })
       else if (replacing) await mutations.replaceAppointment.mutateAsync({ id: replacing.id, input: { personId: appointment.personId, ...commonInput, replacedEndsOn: replacing.endsOn?.slice(0, 10) ?? '' } })
       else await mutations.createAppointment.mutateAsync({ termId: selected.id, input: { personId: appointment.personId, ...commonInput } })
+      notify(editing ? 'Nombramiento actualizado correctamente.' : replacing ? 'Nombramiento sustituido correctamente.' : 'Nombramiento agregado correctamente.', 'success')
       setAppointment(emptyAppointment)
       setEditing(null)
       setReplacing(null)
       setQuery('')
     } catch (error) {
-      setMessage(getErrorMessage(error))
+      const errorMessage = getErrorMessage(error, 'No fue posible guardar el nombramiento. Revise los datos e intente nuevamente.')
+      setMessage(errorMessage)
+      notify(errorMessage, 'error')
     }
   }
 
@@ -107,6 +143,36 @@ export function InstitutionalBoardPage() {
     setReplacing(item)
     setQuery('')
     setAppointment({ ...emptyAppointment, position: item.position, seatNumber: item.seatNumber?.toString() ?? '' })
+  }
+
+  const openRevoke = (item: BoardAppointment) => {
+    setMessage('')
+    setRevoking(item)
+    setRevokeDate('')
+  }
+
+  const submitRevoke = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!revoking || !selected || mutationBusy || !revokeDate) return
+    const endDate = toDate(revokeDate)
+    const termStart = new Date(selected.startsOn)
+    const termEnd = new Date(selected.endsOn)
+    const appointmentStart = revoking.startsOn ? new Date(revoking.startsOn) : termStart
+    if ((revoking.startsOn ? endDate <= appointmentStart : endDate < appointmentStart) || endDate < termStart || endDate > termEnd) {
+      setMessage('La fecha de revocación debe estar dentro del período y después del inicio del nombramiento.')
+      return
+    }
+    setMessage('')
+    try {
+      await mutations.revokeAppointment.mutateAsync({ id: revoking.id, input: { endsOn: revokeDate } })
+      notify('Nombramiento revocado correctamente.', 'success')
+      setRevoking(null)
+      setRevokeDate('')
+    } catch (error) {
+      const errorMessage = getErrorMessage(error, 'No fue posible revocar el nombramiento.')
+      setMessage(errorMessage)
+      notify(errorMessage, 'error')
+    }
   }
 
   const beginTermEdit = () => {
@@ -173,12 +239,12 @@ export function InstitutionalBoardPage() {
           <CardContent>{selected!.appointments.length === 0 ? <EmptyState title="Sin nombramientos" description={canManage ? 'Agregue un nombramiento cuando disponga de la información confirmada.' : 'Este período no tiene nombramientos disponibles.'} /> : <div className="overflow-x-auto rounded-control border border-border-default">
             <DataTable className="min-w-[42rem] w-full text-left text-body-small">
               <DataTableHeader className="bg-surface-subtle text-text-secondary"><DataTableRow><DataTableHead scope="col" className="p-3 font-semibold">Cargo</DataTableHead><DataTableHead scope="col" className="p-3 font-semibold">Persona</DataTableHead><DataTableHead scope="col" className="p-3 font-semibold">Plaza</DataTableHead><DataTableHead scope="col" className="p-3 font-semibold">Vigencia</DataTableHead>{canManage ? <DataTableHead scope="col" className="p-3"><span className="sr-only">Acciones</span></DataTableHead> : null}</DataTableRow></DataTableHeader>
-              <DataTableBody>{selected!.appointments.map(item => <DataTableRow key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-subtle/70"><DataTableCell className="p-3 font-semibold text-text-primary">{BOARD_POSITION_LABELS[item.position]}</DataTableCell><DataTableCell className="p-3 text-text-primary">{personName(item)}</DataTableCell><DataTableCell className="p-3 text-text-secondary">{item.seatNumber ?? '—'}</DataTableCell><DataTableCell className="p-3 whitespace-nowrap text-text-secondary">{dateOnly(item.startsOn)} — {dateOnly(item.endsOn)}</DataTableCell>{canManage ? <DataTableCell className="flex gap-2 p-3 text-right"><Button type="button" size="sm" variant="outline" onClick={() => edit(item)}><Pencil aria-hidden="true" /> Editar</Button>{!item.endsOn ? <Button type="button" size="sm" variant="outline" onClick={() => replace(item)}>Sustituir</Button> : null}</DataTableCell> : null}</DataTableRow>)}</DataTableBody>
+               <DataTableBody>{selected!.appointments.map(item => <DataTableRow key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-subtle/70"><DataTableCell className="p-3 font-semibold text-text-primary">{BOARD_POSITION_LABELS[item.position]}</DataTableCell><DataTableCell className="p-3 text-text-primary">{personName(item)}</DataTableCell><DataTableCell className="p-3 text-text-secondary">{item.seatNumber ?? '—'}</DataTableCell><DataTableCell className="p-3 whitespace-nowrap text-text-secondary">{dateOnly(item.startsOn)} — {dateOnly(item.endsOn)}</DataTableCell>{canManage ? <DataTableCell className="flex gap-2 p-3 text-right"><Button type="button" size="sm" variant="outline" onClick={() => edit(item)}><Pencil aria-hidden="true" /> Editar</Button>{!item.endsOn ? <><Button type="button" size="sm" variant="outline" onClick={() => replace(item)}>Sustituir</Button><Button type="button" size="sm" variant="danger" onClick={() => openRevoke(item)}>Revocar</Button></> : null}</DataTableCell> : null}</DataTableRow>)}</DataTableBody>
             </DataTable>
           </div>}</CardContent>
         </Card>
 
-        {canManage ? <Card>
+       {canManage ? <Card>
           <CardHeader><CardTitle>{editing ? 'Editar nombramiento' : replacing ? 'Sustituir nombramiento' : 'Agregar nombramiento'}</CardTitle><CardDescription>{editing ? 'Actualice los datos disponibles para este nombramiento.' : replacing ? 'Seleccione la persona sucesora y la fecha en que finaliza el nombramiento anterior.' : 'Busque y seleccione una persona existente antes de guardar.'}</CardDescription></CardHeader>
           <CardContent><form className="grid gap-4 md:grid-cols-2" onSubmit={submitAppointment}>
             {replacing ? <label className="grid gap-2 text-sm font-semibold md:col-span-2">Finalización del nombramiento anterior<Input type="date" required value={replacing.endsOn?.slice(0, 10) ?? ''} onChange={event => setReplacing({ ...replacing, endsOn: event.target.value || null })} /></label> : null}
@@ -193,9 +259,17 @@ export function InstitutionalBoardPage() {
             <label className="grid gap-2 text-sm font-semibold">Plaza (opcional)<Input type="number" min="1" value={appointment.seatNumber} onChange={event => setAppointment({ ...appointment, seatNumber: event.target.value })} /></label>
             <label className="grid gap-2 text-sm font-semibold">Desde (opcional)<Input type="date" value={appointment.startsOn} onChange={event => setAppointment({ ...appointment, startsOn: event.target.value })} /></label>
             <label className="grid gap-2 text-sm font-semibold">Hasta (opcional)<Input type="date" value={appointment.endsOn} onChange={event => setAppointment({ ...appointment, endsOn: event.target.value })} /></label>
-            <div className="flex flex-wrap gap-2 md:col-span-2"><Button type="submit" disabled={(!editing && !appointment.personId) || mutations.createAppointment.isPending || mutations.updateAppointment.isPending || mutations.replaceAppointment.isPending}>{mutations.createAppointment.isPending || mutations.updateAppointment.isPending || mutations.replaceAppointment.isPending ? 'Guardando…' : editing ? 'Guardar cambios' : replacing ? 'Confirmar sustitución' : 'Agregar nombramiento'}</Button>{editing || replacing ? <Button type="button" variant="outline" onClick={() => { setEditing(null); setReplacing(null); setAppointment(emptyAppointment); setQuery('') }}>Cancelar</Button> : null}</div>
+             <div className="flex flex-wrap gap-2 md:col-span-2"><Button type="submit" disabled={mutationBusy}>{mutationBusy ? 'Guardando…' : editing ? 'Guardar cambios' : replacing ? 'Confirmar sustitución' : 'Agregar nombramiento'}</Button>{editing || replacing ? <Button type="button" variant="outline" onClick={() => { setEditing(null); setReplacing(null); setAppointment(emptyAppointment); setQuery('') }} disabled={mutationBusy}>Cancelar</Button> : null}</div>
           </form></CardContent>
-        </Card> : null}
+       </Card> : null}
+        {revoking ? <Modal title="Revocar nombramiento" onClose={() => { if (!mutations.revokeAppointment.isPending) setRevoking(null) }} busy={mutations.revokeAppointment.isPending}>
+          <form className="grid gap-4" onSubmit={(event) => void submitRevoke(event)}>
+            <p className="text-body-small text-text-secondary">El registro se conservará y se establecerá una fecha de finalización para la persona nombrada.</p>
+            <label className="grid gap-2 text-sm font-semibold">Fecha efectiva de revocación<Input type="date" required value={revokeDate} onChange={event => setRevokeDate(event.target.value)} /></label>
+            {message ? <p className="text-body-small text-status-danger" role="alert">{message}</p> : null}
+            <div className="flex flex-wrap gap-2"><Button type="submit" variant="danger" disabled={mutationBusy}>{mutations.revokeAppointment.isPending ? 'Revocando…' : 'Confirmar revocación'}</Button><Button type="button" variant="outline" onClick={() => setRevoking(null)} disabled={mutationBusy}>Cancelar</Button></div>
+          </form>
+        </Modal> : null}
       </div>
     </div> : null}
   </section>

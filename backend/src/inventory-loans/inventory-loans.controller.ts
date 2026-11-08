@@ -15,7 +15,6 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  UnsupportedOperationGuard,
 } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { CreateLoanDto } from './dto/create-loan.dto';
@@ -30,7 +29,8 @@ export class InventoryLoansController {
   constructor(private readonly loansService: InventoryLoansService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.loan.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   create(@Body() dto: CreateLoanDto, @Req() req: AuthenticatedRequest) {
     return this.loansService.create(dto, req.user.id, this.context(req));
   }
@@ -50,7 +50,8 @@ export class InventoryLoansController {
   }
 
   @Patch(':id/return')
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.loan.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   return(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ReturnLoanDto,
@@ -60,7 +61,8 @@ export class InventoryLoansController {
   }
 
   @Patch(':id/cancel')
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.loan.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   cancel(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,

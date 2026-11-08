@@ -10,5 +10,6 @@ export const institutionalBoardApi = {
   async candidates(query: string) { return (await httpClient.get<PersonCandidate[]>('/institutional-board/person-candidates', { params: { query } })).data },
   async createAppointment(termId: number, input: AppointmentInput) { return (await httpClient.post<BoardAppointment>(`/institutional-board/terms/${termId}/appointments`, input)).data },
   async updateAppointment(id: number, input: UpdateAppointmentInput) { return (await httpClient.patch<BoardAppointment>(`/institutional-board/appointments/${id}`, input)).data },
+  async revokeAppointment(id: number, input: { endsOn: string }) { return (await httpClient.patch<BoardAppointment>(`/institutional-board/appointments/${id}/revoke`, input)).data },
   async replaceAppointment(id: number, input: ReplaceAppointmentInput) { return (await httpClient.post(`/institutional-board/appointments/${id}/replacement`, input)).data },
 }

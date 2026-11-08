@@ -27,6 +27,8 @@ import { SearchFilterBar } from '@/shared/ui/SearchFilterBar'
 import { Select } from '@/shared/ui/select'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { InventoryPageContainer } from './InventoryPageLayout'
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 
 const limit = 10
 
@@ -48,8 +50,8 @@ const emptyAdjustmentForm = { newQuantity: '', reason: '', notes: '' }
 type ModalMode = null | 'detail' | 'create' | 'edit' | 'entry' | 'exit' | 'adjustment' | 'movements'
 
 export function InventoryItemsPage() {
-  // Inventory mutations remain hidden until an approved canonical capability maps to them.
-  const mayManageInventory = false
+  const { user } = useAuth()
+  const mayManageInventory = hasCapability(user?.permissionCodes, 'inventory.item.manage')
   const { notify } = useToast()
   const [items, setItems] = useState<InventoryItem[]>([])
   const [categories, setCategories] = useState<InventoryCategory[]>([])

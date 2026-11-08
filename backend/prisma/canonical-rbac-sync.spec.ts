@@ -5,9 +5,12 @@ import {
 
 describe('canonical RBAC synchronizer', () => {
   const roles = [
-    'ROLE_SYSTEM_ADMIN', 'ROLE_INSTITUTIONAL_PRESIDENT',
-    'ROLE_INSTITUTIONAL_SECRETARY', 'ROLE_INSTITUTIONAL_TREASURER',
-    'ROLE_INSTITUTIONAL_OPERATOR', 'ROLE_COMMUNITY_USER',
+    'ROLE_SYSTEM_ADMIN',
+    'ROLE_INSTITUTIONAL_PRESIDENT',
+    'ROLE_INSTITUTIONAL_SECRETARY',
+    'ROLE_INSTITUTIONAL_TREASURER',
+    'ROLE_INSTITUTIONAL_OPERATOR',
+    'ROLE_COMMUNITY_USER',
   ].map((name, id) => ({ id, name, isActive: true, permissionCodes: [] }));
 
   it('plans all reviewed grants without applying them', () => {
@@ -19,22 +22,30 @@ describe('canonical RBAC synchronizer', () => {
 
   it('detects active historical roles and unexpected community grants', () => {
     const plan = inspectCanonicalRbac([
-      ...roles.map((role) => role.name === 'ROLE_COMMUNITY_USER'
-        ? { ...role, permissionCodes: ['erp.dashboard.read'] }
-        : role),
+      ...roles.map((role) =>
+        role.name === 'ROLE_COMMUNITY_USER'
+          ? { ...role, permissionCodes: ['erp.dashboard.read'] }
+          : role,
+      ),
       { id: 99, name: 'Administrador', isActive: true, permissionCodes: [] },
     ]);
     expect(plan.historicalActiveRoles).toEqual(['Administrador']);
     expect(plan.unexpectedGrants).toContainEqual({
-      role: 'ROLE_COMMUNITY_USER', capability: 'erp.dashboard.read',
+      role: 'ROLE_COMMUNITY_USER',
+      capability: 'erp.dashboard.read',
     });
   });
 
-  it('applies only additive approved differences', async () => {
-    const writer = { ensurePermission: jest.fn(), ensureRolePermission: jest.fn() };
+  it('applies canonical additions and revokes unexpected canonical grants', async () => {
+    const writer = {
+      ensurePermission: jest.fn(),
+      ensureRolePermission: jest.fn(),
+      revokeRolePermission: jest.fn(),
+    };
     const plan = inspectCanonicalRbac(roles);
     await applyCanonicalRbacPlan(writer, plan);
     expect(writer.ensurePermission).toHaveBeenCalled();
     expect(writer.ensureRolePermission).toHaveBeenCalledTimes(107);
+    expect(writer.revokeRolePermission).not.toHaveBeenCalled();
   });
 });

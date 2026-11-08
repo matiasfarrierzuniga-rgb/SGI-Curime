@@ -20,7 +20,7 @@ const actor: AuthenticatedUser = {
   email: 'ana@example.test',
   status: 'ACTIVE',
   role: 'Administrador',
-  permissionCodes: ['usr.user-requests.read'],
+  permissionCodes: [],
   canAccessErp: true,
 };
 
@@ -71,7 +71,7 @@ describe('InboxNotificationService', () => {
       total: 1,
       page: 2,
       limit: 10,
-      data: [{ id: notification.id, action: { href: '/admin/user-requests' } }],
+      data: [{ id: notification.id, action: null }],
     });
     expect(prisma.notification.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -202,32 +202,6 @@ describe('InboxNotificationService', () => {
     await expect(
       service.list(restrictedActor, { page: 1, limit: 20, filter: 'ALL' }),
     ).resolves.toMatchObject({ data: [{ id: notification.id, action: null }] });
-  });
-
-  it('creates recipient-specific deduplicated producer records with retention', async () => {
-    const tx = {
-      user: { findMany: jest.fn().mockResolvedValue([{ id: 4 }, { id: 9 }]) },
-      notification: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
-    };
-    await service.notifyUserRequestSubmitted(tx as never, 42);
-
-    expect(tx.notification.createMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        skipDuplicates: true,
-        data: expect.arrayContaining([
-          expect.objectContaining({
-            recipientUserId: 4,
-            deduplicationKey: 'v1:4:USER_REQUEST_SUBMITTED:USER_REQUEST:42',
-            expiresAt: expect.any(Date),
-          }),
-          expect.objectContaining({
-            recipientUserId: 9,
-            deduplicationKey: 'v1:9:USER_REQUEST_SUBMITTED:USER_REQUEST:42',
-            expiresAt: expect.any(Date),
-          }),
-        ]),
-      }),
-    );
   });
 });
 

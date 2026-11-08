@@ -14,7 +14,6 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  UnsupportedOperationGuard,
 } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { CreateAdjustmentDto } from './dto/create-adjustment.dto';
@@ -30,7 +29,8 @@ export class InventoryItemOperationsController {
   constructor(private readonly movementsService: InventoryMovementsService) {}
 
   @Post(':id/entries')
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.item.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   recordEntry(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateEntryDto,
@@ -45,7 +45,8 @@ export class InventoryItemOperationsController {
   }
 
   @Post(':id/exits')
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.item.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   recordExit(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateExitDto,
@@ -60,7 +61,8 @@ export class InventoryItemOperationsController {
   }
 
   @Post(':id/adjustments')
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.item.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   recordAdjustment(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateAdjustmentDto,

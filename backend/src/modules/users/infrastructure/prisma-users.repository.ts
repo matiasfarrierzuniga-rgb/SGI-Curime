@@ -20,6 +20,7 @@ import {
 import { EmailAlreadyRegisteredError } from '../domain/errors/email-already-registered.error';
 import {
   UserCreateData,
+  AccountPage,
   UserPage,
   UserAffiliationContext,
   UserQuery,
@@ -65,6 +66,7 @@ const userSelect = {
       name: true,
       description: true,
       isActive: true,
+      permissions: { select: { permission: { select: { code: true } } } },
     },
   },
   createdAt: true,
@@ -134,6 +136,7 @@ function toUser(user: SafeUser): User {
       : null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+    effectiveCapabilities: user.role.permissions.map((entry) => entry.permission.code),
   };
 }
 
@@ -240,6 +243,22 @@ export class PrismaUsersRepository implements UsersRepository {
       page: query.page,
       limit: query.limit,
     };
+  }
+
+  async findAccountsPage(query: UserQuery): Promise<AccountPage> {
+    const where = this.toAccountWhere(query);
+    const skip = (query.page - 1) * query.limit;
+    const [accounts, total] = await Promise.all([
+      this.db.user.findMany({
+        where,
+        select: userSelect,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: query.limit,
+      }),
+      this.db.user.count({ where }),
+    ]);
+    return { data: accounts.map(toUser), total, page: query.page, limit: query.limit };
   }
 
   async findById(id: number): Promise<User | null> {
@@ -544,6 +563,30 @@ export class PrismaUsersRepository implements UsersRepository {
               },
             }
           : undefined,
+    };
+  }
+
+  private toAccountWhere(query: UserQuery): Prisma.UserWhereInput {
+    const cutoff = lockoutCutoff(this.lockoutMinutes);
+    const textConditions: Prisma.UserWhereInput[] = [];
+    if (query.name) {
+      textConditions.push({
+        OR: [
+          { fullName: { contains: query.name, mode: 'insensitive' } },
+          { person: { is: { legacyFullName: { contains: query.name, mode: 'insensitive' } } } },
+          { person: { is: { firstName: { contains: query.name, mode: 'insensitive' } } } },
+          { person: { is: { firstSurname: { contains: query.name, mode: 'insensitive' } } } },
+        ],
+      });
+    }
+    if (query.email) textConditions.push({ email: { contains: query.email, mode: 'insensitive' } });
+    return {
+      AND: textConditions.length ? textConditions : undefined,
+      identification: query.identification ? { contains: query.identification, mode: 'insensitive' } : undefined,
+      status: query.status,
+      roleId: query.roleId,
+      ...(query.blocked === true ? { OR: [{ status: UserStatus.BLOCKED }, { lockedAt: { gt: cutoff } }] } : {}),
+      ...(query.blocked === false ? { AND: [...textConditions, { status: { not: UserStatus.BLOCKED } }, { OR: [{ lockedAt: null }, { lockedAt: { lte: cutoff } }] }] } : {}),
     };
   }
 }

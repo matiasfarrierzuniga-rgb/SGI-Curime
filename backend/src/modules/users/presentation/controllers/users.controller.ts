@@ -24,6 +24,7 @@ import { ChangeUserRoleUseCase } from '../../application/use-cases/change-user-r
 import { DeactivateUserUseCase } from '../../application/use-cases/deactivate-user.use-case';
 import { GetUserUseCase } from '../../application/use-cases/get-user.use-case';
 import { ListUsersUseCase } from '../../application/use-cases/list-users.use-case';
+import { ListAccountsUseCase } from '../../application/use-cases/list-accounts.use-case';
 import { UnlockUserUseCase } from '../../application/use-cases/unlock-user.use-case';
 import { UpdateUserUseCase } from '../../application/use-cases/update-user.use-case';
 import { UpdateSubscriptionExpirationUseCase } from '../../application/use-cases/update-subscription-expiration.use-case';
@@ -43,6 +44,7 @@ import { toHttpError } from '../mappers/users-error.mapper';
 export class UsersController {
   constructor(
     private readonly listUsers: ListUsersUseCase,
+    private readonly listAccounts: ListAccountsUseCase,
     private readonly getUser: GetUserUseCase,
     private readonly updateUser: UpdateUserUseCase,
     private readonly changeUserRole: ChangeUserRoleUseCase,
@@ -80,6 +82,36 @@ export class UsersController {
         ...affiliation,
         permissionCodes: [...(req.user.permissionCodes ?? [])],
       };
+    });
+  }
+
+  /** Account-root administrative view. GET /users remains Person-root for compatibility. */
+  @Get('accounts')
+  @RequireCapabilities('usr.users.read')
+  findAccounts(
+    @Query() query: QueryUsersDto,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
+    return this.run(async () => {
+      const page = await this.listAccounts.execute(this.toQuery(query));
+      return {
+        data: page.data.map((account) => this.toAccountResponse(account, req.user)),
+        total: page.total,
+        page: page.page,
+        limit: page.limit,
+      };
+    });
+  }
+
+  @Get('accounts/:id')
+  @RequireCapabilities('usr.users.read')
+  findAccount(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
+    return this.run(async () => {
+      const account = await this.getUser.execute(id);
+      return this.toAccountResponse(account, req.user);
     });
   }
 
@@ -259,6 +291,36 @@ export class UsersController {
         unlock:
           person.access !== null &&
           hasPersistedCapability(actor.permissionCodes, 'usr.users.unlock'),
+      },
+    };
+  }
+
+  private toAccountResponse(
+    account: Awaited<ReturnType<ListAccountsUseCase['execute']>>['data'][number],
+    actor: AuthenticatedUser,
+  ) {
+    const response = toUserResponse(account);
+    return {
+      id: String(response.id),
+      fullName: response.fullName,
+      identification: response.identification,
+      identificationType: response.identificationType,
+      phoneCountryCode: response.phoneCountryCode,
+      phoneNationalNumber: response.phoneNationalNumber,
+      address: response.address,
+      personId: response.personId,
+      person: response.person,
+      access: response,
+      affiliate: response.affiliate,
+      createdAt: response.createdAt,
+      updatedAt: response.updatedAt,
+      effectiveCapabilities: [...(account.effectiveCapabilities ?? [])],
+      actions: {
+        read: hasPersistedCapability(actor.permissionCodes, 'usr.users.read'),
+        update: hasPersistedCapability(actor.permissionCodes, 'usr.users.update'),
+        changeRole: hasPersistedCapability(actor.permissionCodes, 'usr.users.role.change'),
+        manageLifecycle: hasPersistedCapability(actor.permissionCodes, 'usr.users.lifecycle.manage'),
+        unlock: hasPersistedCapability(actor.permissionCodes, 'usr.users.unlock'),
       },
     };
   }

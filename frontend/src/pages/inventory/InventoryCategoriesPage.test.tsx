@@ -4,6 +4,12 @@ import { ToastProvider } from '@/shared/ui/Toast'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import { InventoryCategoriesPage } from './InventoryCategoriesPage'
 
+const authState = vi.hoisted(() => ({ permissionCodes: [] as string[] }))
+
+vi.mock('@/features/auth', () => ({
+  useAuth: () => ({ user: { permissionCodes: authState.permissionCodes } }),
+}))
+
 vi.mock('../../services/inventoryCategoriesService', () => ({
   inventoryCategoriesService: {
     list: vi.fn(),
@@ -27,6 +33,7 @@ const page = () =>
 describe('InventoryCategoriesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    authState.permissionCodes = ['inv.inventory.read']
     vi.mocked(inventoryCategoriesService.list).mockResolvedValue({ data: [category], total: 1, page: 1, limit: 10 })
   })
 
@@ -37,7 +44,7 @@ describe('InventoryCategoriesPage', () => {
     expect(screen.getByText('Activa')).toBeInTheDocument()
   })
 
-  it('hides unsupported category mutations', async () => {
+  it('keeps category mutations hidden for read-only users', async () => {
     page()
     await screen.findByText('Herramientas')
     for (const action of ['Nueva categoría', 'Editar', 'Activar', 'Inactivar']) {
@@ -47,5 +54,15 @@ describe('InventoryCategoriesPage', () => {
     expect(inventoryCategoriesService.update).not.toHaveBeenCalled()
     expect(inventoryCategoriesService.activate).not.toHaveBeenCalled()
     expect(inventoryCategoriesService.deactivate).not.toHaveBeenCalled()
+  })
+
+  it('shows category operations with inventory.item.manage', async () => {
+    authState.permissionCodes = ['inv.inventory.read', 'inventory.item.manage']
+    page()
+
+    await screen.findByText('Herramientas')
+    expect(screen.getByRole('button', { name: 'Nueva categoría' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Inactivar' })).toBeInTheDocument()
   })
 })

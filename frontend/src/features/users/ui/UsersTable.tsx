@@ -11,7 +11,7 @@ type ManagementAction = "edit" | "role" | "activate" | "deactivate" | "unlock";
 
 interface UsersTableProps {
   users: User[];
-  onOpen: (personId: string) => void;
+  onOpen: (accountId: string) => void;
   onManage: (user: User, action: ManagementAction) => void;
 }
 
@@ -99,8 +99,8 @@ export function UsersTable({ users, onOpen, onManage }: UsersTableProps) {
     <DataTable className="min-w-[980px]" scrollLabel="En pantallas estrechas, desplaza horizontalmente para ver más columnas de usuarios">
       <DataTableHeader>
         <DataTableRow>
-          <DataTableHead>Persona</DataTableHead>
-          <DataTableHead>Contacto personal</DataTableHead>
+          <DataTableHead>Cuenta</DataTableHead>
+          <DataTableHead>Vinculación personal</DataTableHead>
           <DataTableHead>Cuenta SGI</DataTableHead>
           <DataTableHead>Rol de cuenta</DataTableHead>
           <DataTableHead>Afiliación</DataTableHead>
@@ -113,10 +113,10 @@ export function UsersTable({ users, onOpen, onManage }: UsersTableProps) {
             <DataTableCell>
               <div className="flex min-w-48 items-center gap-3">
                 <PersonAvatar name={user.fullName} />
-                <span className="min-w-0 break-words font-semibold text-text-primary">{user.fullName || "Persona sin nombre registrado"}</span>
+                <span className="min-w-0 break-words font-semibold text-text-primary">{user.fullName || "Cuenta sin nombre registrado"}</span>
               </div>
             </DataTableCell>
-            <DataTableCell className="w-56 max-w-56 overflow-hidden text-ellipsis whitespace-nowrap text-text-secondary">{user.person.contactEmail || "Sin correo de contacto"}</DataTableCell>
+            <DataTableCell className="w-56 max-w-56 overflow-hidden text-ellipsis whitespace-nowrap text-text-secondary">{user.person ? user.person.contactEmail || "Persona vinculada sin correo" : "Sin persona vinculada"}</DataTableCell>
             <DataTableCell className="w-56 max-w-56">
               {user.access ? <div className="grid gap-1"><Badge variant={user.access.isBlocked ? "warning" : user.access.status === "ACTIVE" ? "success" : "neutral"}>{statusLabel(user.access)}</Badge><span className="overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text-secondary">{user.access.email}</span></div> : <span className="text-text-secondary">Sin cuenta SGI</span>}
             </DataTableCell>
@@ -127,7 +127,7 @@ export function UsersTable({ users, onOpen, onManage }: UsersTableProps) {
                 user={user}
                 menuOpen={menuFor === user.id}
                 menuTriggerRef={(node) => { menuTriggerRefs.current[user.id] = node; }}
-                onOpen={() => onOpen(user.personId)}
+                onOpen={() => onOpen(user.id)}
                 onManage={(action) => { setMenuFor(null); onManage(user, action); }}
                 onToggleMenu={() => setMenuFor(menuFor === user.id ? null : user.id)}
               />

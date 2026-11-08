@@ -1,18 +1,18 @@
 # SGI-Curime — Contrato propuesto: registro comunitario de autoservicio
 
-- **Estado:** PROPOSED — análisis funcional; NO IMPLEMENTADO / NO APROBADO COMO CAMBIO PRODUCTIVO.
+- **Estado:** IMPLEMENTED ON `feat/p0-governance-inventory-rbac-v2-3` — C3-AUTH-01; pendiente de integración y certificación PostgreSQL desechable.
 - **Tipo:** Decisión transversal de identidad, autenticación, permisos y experiencia comunitaria.
 - **Referencia técnica AS-IS:** SGI-Curime V1 en `main@52361bedd4a66c1069a1d944380f528792bf215f` (PR #114). Volver a auditar al comenzar APPLY.
 - **Referencia de requisitos:** especificación V2 v0.1 (13-10-2026), 15 DCU y 155 CU; documento en revisión, no código V1 ni aprobación institucional.
-- **Proceso de trabajo:** OpenSpec EXPLORE -> PROPOSE -> APPLY -> VERIFY -> ARCHIVE; APPLY solo tras autorización explícita.
+- **Proceso de trabajo:** OpenSpec EXPLORE -> PROPOSE -> APPLY -> VERIFY -> ARCHIVE. APPLY autorizado para C3-AUTH-01.
 
 ## Problema y objetivo
 
-AS-IS: el formulario público `/register` crea `UserRequest(PENDING)` y espera revisión. Un operador con `usr.user-requests.review` aprueba una solicitud vinculando una `Person` preexistente, eligiendo rol activo y creando `User(INACTIVE)` más token. El usuario recibe un enlace, fija contraseña y activa su cuenta. Solicitudes no vinculables a `Person` existente quedan bloqueadas para revisión institucional.
+Retirado: el formulario público V1 creaba `UserRequest(PENDING)` y dependía de revisión administrativa. Sus datos históricos se conservan, pero ya no existen endpoints ni UI para aprobar/rechazar solicitudes nuevas o pendientes.
 
-TO-BE: cualquier persona elegible puede abrir una **cuenta comunitaria básica** con nombre, correo y contraseña, confirmar control del buzón mediante enlace temporal y activar su cuenta, sin esperar aprobación de la Junta Directiva. Conservar controles separados para afiliación, emprendimientos, acceso administrativo y representación institucional.
+Implementado: una persona abre una **cuenta comunitaria básica** con correo, confirma control del buzón mediante enlace temporal, crea contraseña y activa la cuenta sin aprobación administrativa. Afiliación, emprendimientos, acceso administrativo y representación institucional permanecen separados.
 
-## Flujo básico objetivo (sin implementación autorizada aún)
+## Flujo C3-AUTH-01 implementado
 
 1. Visitante abre `/register` y completa datos mínimos, acepta aviso de privacidad y envía.
 2. Backend valida campos y abuso, comprobando unicidad/estado de cuenta mediante tratamiento seguro contra enumeración; registra cuenta no autenticable **pendiente de verificación**. No concede permisos privilegiados ni sesión.
@@ -82,7 +82,7 @@ TO-BE: cualquier persona elegible puede abrir una **cuenta comunitaria básica**
 
 ## Estado y requisito de aprobación
 
-**Esto es un borrador compartible con el equipo, no una orden de implementar.** La revisión formal de OpenSpec deberá aceptar el contrato, decisiones abiertas, cambios de identidad/DB y pruebas antes de habilitar APPLY. Una vez aprobado, actualizar estado, referencias y trazabilidad a la versión aceptada.
+El contrato C3-AUTH-01 fue aplicado en la rama indicada. No hubo cambios de Prisma, migraciones ni operaciones sobre bases reales. La certificación PostgreSQL desechable y la integración siguen pendientes.
 
 ## Catálogo V2 y revisiones documentales
 

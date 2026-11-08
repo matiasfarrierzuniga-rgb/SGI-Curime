@@ -16,6 +16,7 @@ import {
   UpdateBoardTermDto,
 } from './dto/board-term.dto';
 import { ReplaceBoardAppointmentDto } from './dto/replace-board-appointment.dto';
+import { RevokeBoardAppointmentDto } from './dto/revoke-board-appointment.dto';
 
 const PROFILE_ID = 1;
 const personProjection = {
@@ -261,6 +262,46 @@ export class InstitutionalBoardService {
         'BoardAppointment',
         id,
         changedFields,
+        context,
+      );
+      return this.toLegacyAppointment(appointment, person);
+    });
+  }
+
+  revokeAppointment(
+    id: number,
+    dto: RevokeBoardAppointmentDto,
+    actorId: number,
+    context: AuditContext,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.governanceMembership.findUnique({
+        where: { id },
+        include: { term: true },
+      });
+      if (!current || current.term.institutionalProfileId !== PROFILE_ID)
+        throw new NotFoundException('Nombramiento no encontrado');
+      if (current.endedAt)
+        throw new BadRequestException('El nombramiento ya tiene una fecha de finalización');
+
+      this.assertAppointmentDates(
+        { startsOn: current.term.startDate, endsOn: current.term.endDate },
+        current.startedAt,
+        dto.endsOn,
+      );
+      const person = await this.assertPerson(tx, current.personId);
+      const appointment = await tx.governanceMembership.update({
+        where: { id },
+        data: { endedAt: new Date(dto.endsOn) },
+        select: membershipSelect,
+      });
+      await this.log(
+        tx,
+        actorId,
+        AuditAction.BOARD_APPOINTMENT_REVOKED,
+        'BoardAppointment',
+        id,
+        ['endsOn'],
         context,
       );
       return this.toLegacyAppointment(appointment, person);

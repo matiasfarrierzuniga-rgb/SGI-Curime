@@ -371,10 +371,10 @@ Una propuesta de OpenSpec no sustituye un contrato implementado ni modifica deci
 
 ## Contrato transversal de identidad y registro comunitario
 
-Antes de tocar `/register`, `UserRequest`, `Person`, `User`, `Role`, `Permission`, `AccountActivationToken`, correo o autenticación, lee **`docs/decisions/community-account-registration.md`**. Es un **contrato objetivo en estado PROPUESTO**, no evidencia de que el comportamiento ya cambió.
+Antes de tocar `/register`, `UserRequest`, `Person`, `User`, `Role`, `Permission`, `AccountActivationToken`, correo o autenticación, lee **`docs/decisions/community-account-registration.md`**. C3-AUTH-01 está implementado en la rama de trabajo; certificación PostgreSQL desechable e integración permanecen pendientes.
 
-- **Comportamiento actual verificado en V1 (baseline PR #114):** el `/register` público genera `UserRequest(PENDING)`; una revisión con `usr.user-requests.review` aprueba, resuelve una `Person` existente y crea `User(INACTIVE)` más token; la activación establece contraseña y permite iniciar sesión. La aprobación puede bloquearse si la `Person` no existe o es ambigua.
-- **Cambio objetivo sujeto a OpenSpec y aprobación:** registro comunitario abierto con nombre, correo, contraseña, verificación de correo y activación **sin aprobación administrativa de una cuenta básica**.
+- **C3-AUTH-01 implementado:** `POST /community-accounts/register` crea una cuenta comunitaria pendiente de verificación; enlace con token hasheado y vencible permite establecer contraseña en `POST /community-accounts/verify-email`, activar la cuenta y luego iniciar sesión sin aprobación administrativa. El rol inicial no tiene grants ERP.
+- **Flujo V1 retirado:** no hay endpoints, UI ni grants `usr.user-requests.read`/`usr.user-requests.review` para aprobar registros comunitarios. Registros `UserRequest` históricos permanecen como datos sin operaciones nuevas.
 - Verificar un correo demuestra control del buzón, **no identidad legal, afiliación a la ADI, cargo en Junta Directiva ni autorización sobre otras personas o recursos**.
 - `Person` (identidad física), `User` (acceso), `Affiliate` (afiliación), `Role`/`Permission` (autorización), `Venture` (emprendimiento), `VolunteerApplication` (postulación) y relaciones de negocio tienen responsabilidades diferentes.
 - La cuenta comunitaria no obtiene capacidades de administración del ERP. Las aprobaciones de afiliación, publicación de emprendimientos, representación institucional y permisos privilegiados son procesos independientes.

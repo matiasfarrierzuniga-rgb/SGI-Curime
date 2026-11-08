@@ -136,27 +136,6 @@ describe("AdminDashboard", () => {
     expect(httpClient.get).toHaveBeenCalledWith("/admin-reports/dashboard");
   });
 
-  it("requests account-pending count only with its authorized capability", async () => {
-    vi.mocked(httpClient.get).mockImplementation((url: string) => {
-      if (url === "/admin-reports/dashboard")
-        return Promise.resolve({ data: response });
-      if (url === "/user-requests")
-        return Promise.resolve({
-          data: { data: [], total: 6, page: 1, limit: 1 },
-        });
-      return Promise.reject(new Error("unexpected endpoint"));
-    });
-    renderDashboard(["usr.user-requests.read"]);
-    const card = await screen.findByRole("heading", {
-      name: "Solicitudes pendientes",
-      level: 2,
-    });
-    expect(within(card.closest("article")!).getByText("6")).toBeInTheDocument();
-    expect(httpClient.get).toHaveBeenCalledWith("/user-requests", {
-      params: { page: 1, limit: 1, status: "PENDING" },
-    });
-  });
-
   it("filters quick actions by route capability", async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response });
     renderDashboard(["padron.application.review", "inv.inventory.read"]);

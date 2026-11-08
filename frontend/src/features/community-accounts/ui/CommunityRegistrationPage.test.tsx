@@ -15,7 +15,7 @@ describe('CommunityRegistrationPage', () => {
   it('requires only a valid email address', () => {
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(screen.getByText('Ingrese un correo electrónico válido.')).toBeInTheDocument()
+    expect(screen.getByText('Correo electrónico inválido.')).toBeInTheDocument()
     expect(screen.queryByLabelText(/Nombre/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/identificación/i)).not.toBeInTheDocument()
   })
@@ -38,7 +38,7 @@ describe('CommunityRegistrationPage', () => {
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/Correo electrónico/), { target: { value: 'invalid' } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    expect(screen.getByText('Ingrese un correo electrónico válido.')).toBeInTheDocument()
+    expect(screen.getByText('Correo electrónico inválido.')).toBeInTheDocument()
     expect(communityAccountsService.register).not.toHaveBeenCalled()
   })
 })

@@ -4,8 +4,6 @@
 export const ACCESS_CAPABILITIES = [
   "erp.dashboard.read",
   "usr.users.read",
-  "usr.user-requests.read",
-  "usr.user-requests.review",
   "usr.users.update",
   "usr.users.role.change",
   "usr.users.lifecycle.manage",

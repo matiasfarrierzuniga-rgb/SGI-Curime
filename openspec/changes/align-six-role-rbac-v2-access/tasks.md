@@ -3,7 +3,7 @@
 ## 1. Freeze authorized evidence
 
 - [x] 1.1 Activate the APPLY skills listed in `design.md`, read root/frontend/backend instructions plus `docs/architecture/backend-layer-rules.md`, and verify branch `fix/consolidate-canonical-role-catalog`, initial HEAD `871f834`, clean worktree, and comparison with `development`; stop on drift and record actual Git evidence without switching, merging, stashing, or importing work.
-- [x] 1.2 Re-run the repository's read-only canonical matrix export only against the reviewed environment, verify active-role counts `16/24/26/12/29/0` and 107 non-null assignments, and stop without editing persistence if any count or code differs.
+- [x] 1.2 Re-run the repository's read-only canonical matrix export only against the reviewed environment, verify active-role counts `16/24/26/12/27/0` and 105 non-null assignments after C3-AUTH-01 retirement; do not execute persistence changes without an identified safe environment.
 - [ ] 1.3 Recheck every matrix row against current controllers, guard metadata, business rules, routes, screens and action controls; verify each remains classified `ALIGNED`, `MISALIGNED`, or `UNSUPPORTED` and that no V2/legacy equivalence relies only on naming.
 
 ## 2. Correct dashboard backend authorization
@@ -42,9 +42,9 @@
 
 ## 8. Gate 05 — System Administrator
 
-- [ ] 8.1 Validate System Administrator's 29-row fixture across administrative dashboard, users, account requests, read-only institutional modules, finance, inventory, reservations, audit and volunteering; verify each action follows its split legacy capability rather than broad `system.*` codes.
+- [ ] 8.1 Validate System Administrator's 27-row fixture across administrative dashboard, users, read-only institutional modules, finance, inventory, reservations, audit and volunteering; verify retired account-request operations remain unavailable and each remaining action follows its split legacy capability rather than broad `system.*` codes.
 - [ ] 8.2 Extend user-management tests for read/update/role-change/lifecycle/unlock separation, non-assignable roles, own-account continuity and privilege-escalation denial; verify direct API negatives remain `403` and frontend actions match backend capabilities.
-- [ ] 8.3 Verify `usr.roles.read` retains its backend read contract while `/app/roles` no longer presents a placeholder, and verify `system.audit.read`, `system.identity.manage`, `system.maintenance.operate`, and `system.rbac.manage` expose no substituted route or operation.
+- [x] 8.3 Retire `usr.user-requests.read` and `usr.user-requests.review`: no controller, route, navigation item, dashboard request, approval UI, or notification action remains. Verify `usr.roles.read` retains its backend read contract while `/app/roles` no longer presents a placeholder, and verify `system.audit.read`, `system.identity.manage`, `system.maintenance.operate`, and `system.rbac.manage` expose no substituted route or operation.
 
 ## 9. Gate 06 — Community User
 
@@ -56,7 +56,7 @@
 - [x] 10.1 Run focused backend controller/guard suites, then backend build and non-mutating focused lint commands; record exact commands/results as `PASSED`, `FAILED`, or `NOT_EXECUTED` and do not run seeds, migrations, resets, backfills, PostgreSQL-mutating tests, or lint commands that apply fixes.
 - [ ] 10.2 Run focused frontend tests for routes, navigation, dashboards and affected screens, then `npm run verify` under repository test policy; validate keyboard/focus/semantics and `320/375/768/1024/1440` layouts, recording pre-existing failures separately without fixing unrelated debt.
 - [ ] 10.3 Inspect final diff against `development` and checkpoint evidence; verify no changes under `backend/prisma/**`, no grant/catalog expansion, no identity/affiliation/accounting changes, no fictional data, no unsupported V2 route, and no unrelated source file.
-- [ ] 10.4 Produce final execution evidence in the delivery response: updated 107-row status summary, corrected access, reused screens, unsupported capabilities, tests/results, modified files, regression risks and rollback command/commit reference; verify no capability is marked functional when its route returns `403` or its operation is absent.
+- [ ] 10.4 Produce final execution evidence in the delivery response: updated 105-row status summary, corrected access, reused screens, unsupported capabilities, tests/results, modified files, regression risks and rollback command/commit reference; verify no capability is marked functional when its route returns `403` or its operation is absent.
 - [ ] 10.5 Declare GO only if all six role gates, negative authorization cases, builds, focused checks and scope review pass; otherwise declare NO-GO with blockers and leave integration to `development` untouched.
 
 ## Workflow follow-up

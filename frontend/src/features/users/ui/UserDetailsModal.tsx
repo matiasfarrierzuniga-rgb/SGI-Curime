@@ -25,10 +25,10 @@ export function UserDetailsModal({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{selected ? `Persona: ${selected.fullName || "Sin nombre registrado"}` : "Detalle de persona"}</DialogTitle>
-          <DialogDescription>Identidad, cuenta SGI y afiliación se muestran como registros independientes y de solo lectura.</DialogDescription>
+          <DialogTitle>{selected ? `Cuenta: ${selected.fullName || "Sin nombre registrado"}` : "Detalle de cuenta"}</DialogTitle>
+          <DialogDescription>Cuenta, identidad vinculada, afiliación y capacidades efectivas se muestran por separado.</DialogDescription>
         </DialogHeader>
-        {loading ? <LoadingState label="Cargando detalle de la persona…" /> : error ? (
+        {loading ? <LoadingState label="Cargando detalle de la cuenta…" /> : error ? (
           <ErrorState message={error} action={<Button type="button" variant="outline" onClick={onRetry}>Reintentar</Button>} />
         ) : selected ? <dl className="grid grid-cols-1 gap-4 text-body-small sm:grid-cols-2">
           <div className="min-w-0 rounded-control bg-surface-muted p-3">
@@ -36,7 +36,7 @@ export function UserDetailsModal({
             <dd className="mt-1 break-words font-medium text-text-primary">{selected.identification || "Sin identificación registrada"}</dd>
           </div>
           <div className="min-w-0 rounded-control bg-surface-muted p-3">
-            <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Teléfono de persona</dt>
+            <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Teléfono</dt>
             <dd className="mt-1 break-words font-medium text-text-primary">
             {selected.phoneCountryCode && selected.phoneNationalNumber
               ? `${selected.phoneCountryCode} ${selected.phoneNationalNumber}`
@@ -44,16 +44,20 @@ export function UserDetailsModal({
             </dd>
           </div>
           <div className="min-w-0 rounded-control bg-surface-muted p-3 sm:col-span-2">
-            <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Dirección de persona</dt>
+            <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Dirección</dt>
             <dd className="mt-1 break-words font-medium text-text-primary">{selected.address || "—"}</dd>
           </div>
           <div className="rounded-control bg-surface-muted p-3">
-            <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Correo de contacto personal</dt>
-            <dd className="mt-1 break-all font-medium text-text-primary">{selected.person.contactEmail || "Sin correo de contacto"}</dd>
+            <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Persona vinculada</dt>
+            <dd className="mt-1 break-all font-medium text-text-primary">{selected.person?.contactEmail || "Sin persona vinculada"}</dd>
           </div>
           <div className="min-w-0 rounded-control bg-surface-muted p-3">
             <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Cuenta SGI</dt>
             <dd className="mt-1">{selected.access ? <div className="grid gap-1"><Badge variant={selected.access.isBlocked ? "warning" : selected.access.status === "ACTIVE" ? "success" : "neutral"}>{statusLabel(selected.access)}</Badge><span className="break-all font-medium text-text-primary">{selected.access.email}</span><span className="text-text-secondary">Rol: {selected.access.role.label}</span></div> : <span className="font-medium text-text-primary">No existe cuenta SGI</span>}</dd>
+          </div>
+          <div className="min-w-0 rounded-control bg-surface-muted p-3 sm:col-span-2">
+            <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Capacidades efectivas</dt>
+            <dd className="mt-1 break-words font-medium text-text-primary">{selected.effectiveCapabilities?.length ? selected.effectiveCapabilities.join(", ") : "Sin capacidades ERP"}</dd>
           </div>
           <div className="min-w-0 rounded-control bg-surface-muted p-3">
             <dt className="text-caption font-semibold uppercase tracking-wide text-text-secondary">Afiliación</dt>

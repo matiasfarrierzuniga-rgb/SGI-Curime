@@ -2,13 +2,13 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { userRequestsService } from '@/features/user-requests'
+import { identityLookupService } from '@/features/identity'
 import { httpClient } from '@/shared/api/httpClient'
 import { affiliateRequestsService } from '../../services/affiliateRequestsService'
 import { AffiliationPage } from './AffiliationPage'
 
 vi.mock('../../services/affiliateRequestsService', () => ({ affiliateRequestsService: { create: vi.fn() } }))
-vi.mock('@/features/user-requests', () => ({ userRequestsService: { lookupIdentity: vi.fn() } }))
+vi.mock('@/features/identity', () => ({ identityLookupService: { lookup: vi.fn() } }))
 vi.mock('@/shared/api/httpClient', () => ({ httpClient: { get: vi.fn() } }))
 
 const renderPage = () => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemoryRouter><AffiliationPage /></MemoryRouter></QueryClientProvider>)
@@ -38,7 +38,7 @@ describe('AffiliationPage public flow', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(affiliateRequestsService.create).mockResolvedValue({} as never)
-    vi.mocked(userRequestsService.lookupIdentity).mockResolvedValue({ found: false } as never)
+    vi.mocked(identityLookupService.lookup).mockResolvedValue({ found: false } as never)
     vi.mocked(httpClient.get).mockImplementation((url) => {
       const path = String(url)
       const data = path.endsWith('/provinces') ? { catalogVersion: 'fixture-v1', items: [{ code: '5', name: 'GUANACASTE' }] }

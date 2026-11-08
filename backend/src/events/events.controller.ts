@@ -15,25 +15,25 @@ export class EventsController {
   @RequireAnyCapabilities(
     'events.proposal.review',
     'events.proposal.approve',
+    'events.proposal.create',
     'events.publish',
-    'pub.events.manage',
   )
   findAll() { return this.service.findAll(); }
 
   @Post()
-  @RequireAnyCapabilities('events.proposal.create', 'pub.events.manage')
+  @RequireCapabilities('events.proposal.create')
   create(@Body() dto: CreateEventDto, @Req() req: AuthRequest) { return this.service.create(dto, req.user.id, this.context(req)); }
 
   @Patch(':id')
-  @RequireCapabilities('pub.events.manage')
+  @RequireCapabilities('events.proposal.create')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateEventDto, @Req() req: AuthRequest) { return this.service.update(id, dto, req.user.id, this.context(req)); }
 
   @Patch(':id/publish')
-  @RequireAnyCapabilities('events.publish', 'pub.events.publish')
+  @RequireAnyCapabilities('events.proposal.approve', 'events.publish')
   publish(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) { return this.service.publish(id, req.user.id, this.context(req)); }
 
   @Patch(':id/review')
-  @RequireCapabilities('pub.events.manage')
+  @RequireCapabilities('events.proposal.create')
   submitForReview(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthRequest,
@@ -42,7 +42,7 @@ export class EventsController {
   }
 
   @Patch(':id/draft')
-  @RequireCapabilities('pub.events.manage')
+  @RequireCapabilities('events.proposal.review')
   returnToDraft(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthRequest,
@@ -51,7 +51,7 @@ export class EventsController {
   }
 
   @Patch(':id/archive')
-  @RequireCapabilities('pub.events.publish')
+  @RequireAnyCapabilities('events.proposal.approve', 'events.publish')
   archive(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) { return this.service.archive(id, req.user.id, this.context(req)); }
 
   private context(req: Request) { return { ipAddress: req.ip, userAgent: req.get('user-agent') }; }

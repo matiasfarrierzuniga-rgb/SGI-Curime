@@ -9,7 +9,6 @@ import { rolesService } from '@/features/roles'
 import { auditLogsService } from '@/services/auditLogsService'
 import { inventoryReportsService } from '@/services/inventoryReportsService'
 import { httpClient } from '@/shared/api/httpClient'
-import { userRequestsService } from '@/features/user-requests'
 import { AppRoutes } from './AppRoutes'
 import { ToastProvider } from '@/shared/ui/Toast'
 
@@ -27,7 +26,7 @@ vi.mock('@/services/inventoryReportsService', () => ({
 
 let httpGet: ReturnType<typeof vi.spyOn>
 
-const SYSTEM_ADMIN_CAPABILITIES = ['adm.affiliates.read', 'adm.institutional-profile.read', 'aud.logs.read', 'don.donations.read', 'ent.ventures.read', 'erp.dashboard.read', 'fin.charges.read', 'fin.dinadeco.read', 'fin.movements.read', 'usr.profile.read', 'usr.user-requests.read', 'usr.users.read', 'vol.opportunities.read']
+const SYSTEM_ADMIN_CAPABILITIES = ['adm.affiliates.read', 'adm.institutional-profile.read', 'aud.logs.read', 'don.donations.read', 'ent.ventures.read', 'erp.dashboard.read', 'fin.charges.read', 'fin.dinadeco.read', 'fin.movements.read', 'usr.profile.read', 'usr.users.read', 'vol.opportunities.read']
 const TREASURER_CAPABILITIES = ['don.donations.cancel', 'don.donations.create', 'don.donations.read', 'don.donations.update', 'erp.dashboard.read', 'fin.charges.read', 'fin.dinadeco.read', 'fin.movements.create', 'fin.movements.read', 'fin.payments.record', 'usr.profile.read']
 const SECRETARY_CAPABILITIES = ['erp.dashboard.read', 'events.proposal.create', 'padron.application.review', 'usr.profile.read']
 const PRESIDENT_CAPABILITIES = ['erp.dashboard.read', 'events.proposal.approve', 'usr.profile.read']
@@ -70,7 +69,6 @@ beforeEach(() => {
   vi.mocked(rolesService.listActive).mockResolvedValue([])
   vi.mocked(auditLogsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
   vi.mocked(inventoryReportsService.summary).mockResolvedValue({ activeItems: 0, lowStockCount: 0, outOfStockCount: 0, overdueLoans: 0 })
-  vi.spyOn(userRequestsService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
   httpGet = vi.spyOn(httpClient, 'get').mockImplementation((url) => {
     if (url === '/affiliate-requests') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/events') return Promise.resolve({ data: [] })
@@ -425,25 +423,6 @@ describe('AppRoutes capability deep links', () => {
     renderRoute('/app/admin/requests', 'Rol desconocido')
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
-  })
-
-  it('denies anonymous access to UserRequest review before rendering data', () => {
-    renderRoute('/admin/user-requests', null)
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
-    expect(userRequestsService.list).not.toHaveBeenCalled()
-  })
-
-  it('denies UserRequest review to actors without its own read capability', async () => {
-    renderRoute('/admin/user-requests', 'Gestor de Inventario')
-    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
-    expect(userRequestsService.list).not.toHaveBeenCalled()
-  })
-
-  it('keeps legacy user requests separate from affiliate requests', async () => {
-    renderRoute('/admin/user-requests', 'ROLE_SYSTEM_ADMIN')
-
-    expect(await screen.findByRole('heading', { name: 'Solicitudes de registro' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Solicitudes de afiliación' })).not.toBeInTheDocument()
   })
 
   it('redirects anonymous users from /app/financial to login', () => {

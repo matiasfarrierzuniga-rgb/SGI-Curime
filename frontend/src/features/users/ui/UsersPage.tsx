@@ -102,7 +102,7 @@ export function UsersPage() {
         className="gap-4 pb-5"
         context="Administración"
         title="Usuarios"
-        description="Consulte personas, sus cuentas SGI y la afiliación disponible."
+        description="Administre cuentas SGI, incluidos registros comunitarios sin persona vinculada."
       />}
       filters={<UserFilters
         name={name}
@@ -130,12 +130,12 @@ export function UsersPage() {
         <LoadingState label="Cargando usuarios…" />
       ) : !error && users.length === 0 ? (
         <EmptyState
-          title={hasActiveFilters ? "No hay coincidencias" : "No hay personas registradas"}
-          description={hasActiveFilters ? "Ajuste la búsqueda o limpie los filtros para consultar nuevamente." : "Las personas registradas aparecerán en este listado."}
+          title={hasActiveFilters ? "No hay coincidencias" : "No hay cuentas registradas"}
+          description={hasActiveFilters ? "Ajuste la búsqueda o limpie los filtros para consultar nuevamente." : "Las cuentas SGI aparecerán en este listado."}
           action={hasActiveFilters ? <Button type="button" variant="outline" onClick={clearFilters}>Limpiar filtros</Button> : undefined}
         />
       ) : (
-        <AdministrativeListResults count={loading ? "Cargando resultados…" : `${total} ${total === 1 ? "persona encontrada" : "personas encontradas"}`}>
+          <AdministrativeListResults count={loading ? "Cargando resultados…" : `${total} ${total === 1 ? "cuenta encontrada" : "cuentas encontradas"}`}>
           <UsersTable users={users} onOpen={setSelectedId} onManage={(user, action) => setManagement({ user, action })} />
           <Pagination
             page={page}
@@ -149,7 +149,7 @@ export function UsersPage() {
         <UserDetailsModal
           selected={selected}
           loading={detailQuery.isPending}
-          error={detailQuery.error ? getErrorMessage(detailQuery.error, "No fue posible cargar el detalle de la persona.") : null}
+          error={detailQuery.error ? getErrorMessage(detailQuery.error, "No fue posible cargar el detalle de la cuenta.") : null}
         onRetry={() => { if (queriesEnabled) void detailQuery.refetch(); }}
           onClose={() => {
             setSelectedId(null);
