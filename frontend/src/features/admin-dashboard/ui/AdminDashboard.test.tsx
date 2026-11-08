@@ -63,7 +63,11 @@ function renderDashboard(permissionCodes?: readonly string[]) {
     <MemoryRouter>
       <QueryClientProvider client={client}>
         <AdminDashboard
-          permissionCodes={permissionCodes}
+          permissionCodes={[
+            "erp.dashboard.read",
+            "adm.affiliates.read",
+            ...(permissionCodes ?? []),
+          ]}
           userName="Ana Pérez"
         />
       </QueryClientProvider>
@@ -314,18 +318,22 @@ describe("AdminDashboard", () => {
     });
   });
 
-  it("does not expose administrative quick actions without their effective capabilities", async () => {
+  it("does not expose broader administrative quick actions without their effective capabilities", async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response });
     renderDashboard([]);
 
     expect(
-      await screen.findByText("No hay accesos disponibles."),
+      await screen.findByRole("link", { name: "Gestionar afiliados" }),
     ).toBeInTheDocument();
 
     expect(
-      screen.queryByRole("navigation", {
-        name: "Accesos rápidos administrativos",
-      }),
+      screen.queryByRole("link", { name: "Inventario" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Gestionar reservas" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Registrar donación" }),
     ).not.toBeInTheDocument();
   });
 

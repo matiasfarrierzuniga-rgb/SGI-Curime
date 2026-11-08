@@ -15,6 +15,14 @@ vi.mock("@/features/admin-dashboard", () => ({
       <p>Afiliados activos</p>
     </section>
   ),
+  InstitutionalDashboardWelcome: ({ fullName }: { fullName?: string }) => (
+    <section>
+      <h1>Buenos días{fullName ? `, ${fullName.split(" ")[0]}` : ""}</h1>
+    </section>
+  ),
+  canUseAdministrativeDashboard: (permissionCodes?: readonly string[]) =>
+    permissionCodes?.includes("erp.dashboard.read") === true &&
+    permissionCodes.includes("adm.affiliates.read"),
 }));
 vi.mock("@/services/inventoryReportsService", () => ({
   inventoryReportsService: { summary: vi.fn() },
@@ -37,11 +45,11 @@ describe("AppHomePage", () => {
     vi.mocked(inventoryReportsService.summary).mockResolvedValue(summary);
   });
 
-  it("renders V1 administrative dashboard without broad legacy quick actions", async () => {
+  it("renders administrative metrics only for a dashboard session with the affiliated registry read capability", async () => {
     auth.user = {
       fullName: "Ana Pérez",
       role: "Administrador",
-      permissionCodes: ["erp.dashboard.read"],
+      permissionCodes: ["erp.dashboard.read", "adm.affiliates.read"],
     };
     render(
       <MemoryRouter>
@@ -68,7 +76,7 @@ describe("AppHomePage", () => {
     auth.user = {
       fullName: "Ana Pérez",
       role: "ROLE_SYSTEM_ADMIN",
-      permissionCodes: ["erp.dashboard.read"],
+      permissionCodes: ["erp.dashboard.read", "adm.affiliates.read"],
     };
     render(
       <MemoryRouter>
@@ -78,7 +86,7 @@ describe("AppHomePage", () => {
     expect(await screen.findByText("Afiliados activos")).toBeInTheDocument();
   });
 
-  it("prioritizes the capability-scoped dashboard when Operator has dashboard access", async () => {
+  it("keeps Operator on the shared shell and inventory summary without requesting administrative metrics", async () => {
     auth.user = {
       fullName: "Luis Mora",
       role: "ROLE_INSTITUTIONAL_OPERATOR",
@@ -89,7 +97,7 @@ describe("AppHomePage", () => {
         <AppHomePage />
       </MemoryRouter>,
     );
-    expect(await screen.findByText("Afiliados activos")).toBeInTheDocument();
+    expect(await screen.findByText("Artículos activos")).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Accesos rápidos" }),
     ).not.toBeInTheDocument();
@@ -99,12 +107,12 @@ describe("AppHomePage", () => {
       }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Indicadores administrativos" }),
-    ).toBeInTheDocument();
-    expect(inventoryReportsService.summary).not.toHaveBeenCalled();
+      screen.queryByRole("heading", { name: "Indicadores administrativos" }),
+    ).not.toBeInTheDocument();
+    expect(inventoryReportsService.summary).toHaveBeenCalledTimes(1);
   });
 
-  it("reuses the capability-scoped dashboard for a canonical institutional profile", () => {
+  it("keeps Presidency on the shared institutional shell without administrative data", () => {
     auth.user = {
       fullName: "Sofía Rojas",
       role: "ROLE_INSTITUTIONAL_PRESIDENT",
@@ -116,8 +124,9 @@ describe("AppHomePage", () => {
       </MemoryRouter>,
     );
     expect(
-      screen.getByRole("heading", { name: "Indicadores administrativos" }),
+      screen.getByRole("heading", { name: "Buenos días, Sofía" }),
     ).toBeInTheDocument();
+    expect(inventoryReportsService.summary).not.toHaveBeenCalled();
   });
 
   it("shows a clear set of real account actions to community users", () => {
@@ -162,8 +171,17 @@ describe("AppHomePage", () => {
     expect(inventoryReportsService.summary).not.toHaveBeenCalled();
   });
 
-  it("omits legacy financial actions and cumulative financial metrics for treasurers", () => {
-    auth.user = { fullName: "Carlos Ruiz", role: "Tesorero" };
+  it("keeps Treasury on the shared shell without administrative metrics", () => {
+    auth.user = {
+      fullName: "Carlos Ruiz",
+      role: "ROLE_INSTITUTIONAL_TREASURER",
+      permissionCodes: [
+        "erp.dashboard.read",
+        "usr.profile.read",
+        "fin.charges.read",
+        "fin.movements.read",
+      ],
+    };
     render(
       <MemoryRouter>
         <AppHomePage />
@@ -173,10 +191,11 @@ describe("AppHomePage", () => {
       screen.queryByRole("heading", { name: "Accesos rápidos" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("link", {
-        name: /Cargos financieros|Movimientos financieros|Informe DINADECO/,
-      }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("link", { name: "Cargos y pagos" }),
+    ).toHaveAttribute("href", "/app/financial/charges");
+    expect(
+      screen.getByRole("link", { name: "Movimientos financieros" }),
+    ).toHaveAttribute("href", "/app/financial/movements");
     expect(screen.queryByText("Ingresos")).not.toBeInTheDocument();
     expect(screen.queryByText("Egresos")).not.toBeInTheDocument();
     expect(screen.queryByText("Balance")).not.toBeInTheDocument();
@@ -186,5 +205,6 @@ describe("AppHomePage", () => {
     expect(
       screen.queryByRole("heading", { name: "Indicadores administrativos" }),
     ).not.toBeInTheDocument();
+    expect(inventoryReportsService.summary).not.toHaveBeenCalled();
   });
 });

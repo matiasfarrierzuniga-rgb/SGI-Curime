@@ -9,15 +9,15 @@
 ## 2. Correct dashboard backend authorization
 
 - [x] 2.1 Update `backend/src/admin-reports/admin-reports.controller.ts` so `GET /admin-reports/dashboard` requires `erp.dashboard.read` plus capabilities for every protected metric domain it returns, removing nominal-only authorization for that method while leaving unrelated reports unchanged; verify no canonical institutional role with dashboard-only access can retrieve unauthorized metrics.
-- [ ] 2.2 Update `backend/src/admin-reports/admin-reports.controller.spec.ts` with positive legacy/system-administrator fixtures and negative missing-dashboard/missing-domain capability cases; verify unauthenticated access is `401`, insufficient persisted access is `403`, and the focused Jest suite passes.
+- [x] 2.2 Update `backend/src/admin-reports/admin-reports.controller.spec.ts` with positive legacy/system-administrator fixtures and negative missing-dashboard/missing-domain capability cases; verify unauthenticated access is `401`, insufficient persisted access is `403`, and the focused Jest suite passes.
 - [x] 2.3 Extend `backend/src/auth/presentation/guards/controller-capability-contracts.spec.ts` to lock exact dashboard metadata and assert reviewed V2 codes are not silently attached to legacy operations; verify the focused guard-contract suite passes.
 
 ## 3. Align shared route and navigation policy
 
 - [x] 3.1 Update `frontend/src/app/router/AppRoutes.tsx` to protect only ERP profile route `/app/profile` with `usr.profile.read`, preserve authenticated community `/profile`, and remove `/app/roles` placeholder; verify `AppRoutes.test.tsx` covers allowed/denied deep links and no placeholder is presented as functional.
 - [x] 3.2 Update `frontend/src/app/navigation/erpNavigation.ts` so Profile visibility and entry fallback match implemented routes while unsupported V2 capabilities create no destination; verify `erpNavigation.test.ts` uses exact fixtures for all six roles, removes empty groups, and preserves personal routes under their independent contracts.
-- [ ] 3.3 Refine `frontend/src/features/admin-dashboard/ui/AdminDashboard.tsx` and its public export only as needed to reuse approved welcome/shell presentation without exposing administrative metrics; verify `AdminDashboard.test.tsx` proves each query, card, link and action is capability-safe.
-- [ ] 3.4 Update `frontend/src/pages/erp/AppHomePage.tsx` to compose the shared institutional shell, financial entry, and inventory summary from real authorized data without new role-specific dashboards; verify `AppHomePage.test.tsx` covers the six canonical profiles and asserts unauthorized admin-report requests never occur.
+- [x] 3.3 Refine `frontend/src/features/admin-dashboard/ui/AdminDashboard.tsx` and its public export only as needed to reuse approved welcome/shell presentation without exposing administrative metrics; verify `AdminDashboard.test.tsx` proves each query, card, link and action is capability-safe.
+- [x] 3.4 Update `frontend/src/pages/erp/AppHomePage.tsx` to compose the shared institutional shell, financial entry, and inventory summary from real authorized data without new role-specific dashboards; verify `AppHomePage.test.tsx` covers the six canonical profiles and asserts unauthorized admin-report requests never occur.
 
 ## 4. Gate 01 — Presidency institutional
 

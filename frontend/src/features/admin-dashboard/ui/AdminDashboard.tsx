@@ -58,6 +58,7 @@ import {
 } from "@/shared/lib/calendar";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
 import type { AdminDashboardData } from "../model/adminDashboard.types";
+import { canUseAdministrativeDashboard } from "../model/canUseAdministrativeDashboard";
 
 type AdminDashboardProps = {
   permissionCodes?: readonly string[];
@@ -136,7 +137,27 @@ export function AdminDashboard({
   permissionCodes,
   userName,
 }: AdminDashboardProps) {
-  const dashboard = useAdminDashboard();
+  const canReadAdministrativeMetrics = canUseAdministrativeDashboard(
+    permissionCodes,
+  );
+
+  if (!canReadAdministrativeMetrics) {
+    return <InstitutionalDashboardWelcome fullName={userName} />;
+  }
+
+  return (
+    <AdminDashboardContent
+      permissionCodes={permissionCodes}
+      userName={userName}
+    />
+  );
+}
+
+function AdminDashboardContent({
+  permissionCodes,
+  userName,
+}: AdminDashboardProps) {
+  const dashboard = useAdminDashboard(true);
   const events = usePublicEvents();
   const [calendarMonth, setCalendarMonth] = useState(() =>
     currentCostaRicaMonth(),
@@ -168,14 +189,14 @@ export function AdminDashboard({
   if (dashboard.isPending)
     return (
       <section aria-busy="true">
-        <InstitutionalWelcome fullName={userName} />
+        <InstitutionalDashboardWelcome fullName={userName} />
         <DashboardSkeleton />
       </section>
     );
   if (dashboard.isError)
     return (
       <section>
-        <InstitutionalWelcome fullName={userName} />
+        <InstitutionalDashboardWelcome fullName={userName} />
         <ErrorState
           className="mt-5"
           title="No fue posible cargar los indicadores"
@@ -198,7 +219,7 @@ export function AdminDashboard({
   if (!hasData(data))
     return (
       <section>
-        <InstitutionalWelcome
+        <InstitutionalDashboardWelcome
           fullName={userName}
           generatedAt={metadata.generatedAt}
         />
@@ -217,7 +238,7 @@ export function AdminDashboard({
   };
   return (
     <section className="space-y-4">
-      <InstitutionalWelcome
+      <InstitutionalDashboardWelcome
         fullName={userName}
         generatedAt={metadata.generatedAt}
       />
@@ -287,7 +308,7 @@ export function AdminDashboard({
   );
 }
 
-function InstitutionalWelcome({
+export function InstitutionalDashboardWelcome({
   fullName,
   generatedAt,
 }: {
