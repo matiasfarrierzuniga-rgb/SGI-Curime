@@ -138,7 +138,7 @@ export function AppRoutes() {
               <Route path="/app/admin/ventures" element={<VenturesPage />} />
               <Route path="/app/admin/ventures/summary" element={<VenturesSummaryPage />} />
             </Route>
-           <Route element={<RoleRoute capability="vol.opportunities.read" />}>
+            <Route element={<RoleRoute anyOfCapabilities={['vol.opportunities.read', 'volunteer.campaign.manage']} />}>
              <Route path="/app/admin/volunteering" element={<OpportunitiesPage />} />
            </Route>
           <Route path="/app/affiliate/absence-justifications/new" element={<AffiliateAbsenceJustificationPage />} />

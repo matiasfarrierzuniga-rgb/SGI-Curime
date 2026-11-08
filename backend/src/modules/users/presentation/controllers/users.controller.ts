@@ -35,6 +35,9 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { UpdateIsActiveDto } from '../dto/update-is-active.dto';
 import { UpdateSubscriptionExpirationDto } from '../dto/update-subscription-expiration.dto';
 import { PersonLinkCandidatesQueryDto } from '../dto/person-link-candidates-query.dto';
+import { QueryBoardPrivilegeReviewsDto } from '../dto/query-board-privilege-reviews.dto';
+import { ResolveBoardPrivilegeReviewDto } from '../dto/resolve-board-privilege-review.dto';
+import { ResolveBoardPrivilegeReviewUseCase } from '../../application/use-cases/resolve-board-privilege-review.use-case';
 import {
   toAdminUserResponse,
   toUserResponse,
@@ -55,6 +58,7 @@ export class UsersController {
     private readonly unlockUser: UnlockUserUseCase,
     private readonly updateSubscriptionExpiration: UpdateSubscriptionExpirationUseCase,
     private readonly listPersonLinkCandidates: ListPersonLinkCandidatesUseCase,
+    private readonly resolveBoardPrivilegeReview: ResolveBoardPrivilegeReviewUseCase,
   ) {}
 
   @Get()
@@ -122,6 +126,29 @@ export class UsersController {
   @RequireCapabilities('system.identity.manage')
   findPersonLinkCandidates(@Query() query: PersonLinkCandidatesQueryDto) {
     return this.run(() => this.listPersonLinkCandidates.execute(query.query));
+  }
+
+  @Get('privilege-reviews')
+  @RequireCapabilities('usr.users.read')
+  findPrivilegeReviews(@Query() query: QueryBoardPrivilegeReviewsDto) {
+    return this.resolveBoardPrivilegeReview.list(query.page, query.limit);
+  }
+
+  @Patch('privilege-reviews/:reviewId/resolve')
+  @RequireCapabilities('usr.users.role.change')
+  resolvePrivilegeReview(
+    @Param('reviewId', ParseIntPipe) reviewId: number,
+    @Body() dto: ResolveBoardPrivilegeReviewDto,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
+    return this.run(() =>
+      this.resolveBoardPrivilegeReview.execute(
+        reviewId,
+        dto,
+        req.user.id,
+        this.context(req),
+      ),
+    );
   }
 
   @Get(':personId')

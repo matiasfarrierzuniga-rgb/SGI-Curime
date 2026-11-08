@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma } from '../../generated/prisma/client';
+import { GovernanceTermStatus } from '../../generated/prisma/enums';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditService, type AuditContext } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -88,6 +89,7 @@ export class InstitutionalBoardService {
           institutionalProfileId: PROFILE_ID,
           startDate: new Date(dto.startsOn),
           endDate: new Date(dto.endsOn),
+          status: GovernanceTermStatus.PLANNED,
         },
       });
       await this.log(
@@ -115,9 +117,23 @@ export class InstitutionalBoardService {
       });
       if (!current)
         throw new NotFoundException('Período de Junta Directiva no encontrado');
+      if (current.status === null)
+        throw new BadRequestException(
+          'No se puede modificar un período histórico sin estado institucional.',
+        );
+      if (
+        current.status === GovernanceTermStatus.CLOSED ||
+        current.status === GovernanceTermStatus.CANCELLED
+      ) {
+        throw new BadRequestException(
+          'No se puede modificar un período institucional finalizado o cancelado.',
+        );
+      }
       const startsOn = dto.startsOn ? new Date(dto.startsOn) : current.startDate;
       const endsOn = dto.endsOn ? new Date(dto.endsOn) : current.endDate;
       this.assertDates(startsOn, endsOn);
+      const status = dto.status ?? current.status;
+      this.assertTermStatusTransition(current.status, status, endsOn);
       const appointments = await tx.governanceMembership.findMany({
         where: { termId: id },
         select: { startedAt: true, endedAt: true },
@@ -140,10 +156,25 @@ export class InstitutionalBoardService {
       const changedFields = Object.keys(dto).filter(
         (key) => dto[key as keyof UpdateBoardTermDto] !== undefined,
       );
-      const term = await tx.governanceTerm.update({
-        where: { id },
-        data: { startDate: startsOn, endDate: endsOn },
-      });
+      const closing =
+        current.status === GovernanceTermStatus.ACTIVE &&
+        status === GovernanceTermStatus.CLOSED;
+      if (closing) {
+        const result = await tx.governanceTerm.updateMany({
+          where: { id, status: GovernanceTermStatus.ACTIVE },
+          data: { startDate: startsOn, endDate: endsOn, status },
+        });
+        if (result.count !== 1)
+          throw new BadRequestException(
+            'El período ya cambió de estado; actualice el listado antes de continuar.',
+          );
+      } else {
+        await tx.governanceTerm.update({
+          where: { id },
+          data: { startDate: startsOn, endDate: endsOn, status },
+        });
+      }
+      const term = await tx.governanceTerm.findUniqueOrThrow({ where: { id } });
       await this.log(
         tx,
         actorId,
@@ -153,6 +184,25 @@ export class InstitutionalBoardService {
         changedFields,
         context,
       );
+      if (closing) {
+        const memberships = await tx.governanceMembership.findMany({
+          where: { termId: id },
+          select: { id: true, personId: true },
+        });
+        await Promise.all(
+          memberships.map((membership) =>
+            this.recordPrivilegeReviewTrigger(
+              tx,
+              actorId,
+              membership.id,
+              membership.personId,
+              'term-closed',
+              context,
+              `term-closed:${id}:${membership.id}`,
+            ),
+          ),
+        );
+      }
       return this.toLegacyTermFields(term);
     });
   }
@@ -264,6 +314,16 @@ export class InstitutionalBoardService {
         changedFields,
         context,
       );
+      if (dto.position !== undefined && dto.position !== current.legacyPosition) {
+        await this.recordPrivilegeReviewTrigger(
+          tx,
+          actorId,
+          current.id,
+          current.personId,
+          'office-changed',
+          context,
+        );
+      }
       return this.toLegacyAppointment(appointment, person);
     });
   }
@@ -302,6 +362,14 @@ export class InstitutionalBoardService {
         'BoardAppointment',
         id,
         ['endsOn'],
+        context,
+      );
+      await this.recordPrivilegeReviewTrigger(
+        tx,
+        actorId,
+        current.id,
+        current.personId,
+        'appointment-revoked',
         context,
       );
       return this.toLegacyAppointment(appointment, person);
@@ -366,6 +434,22 @@ export class InstitutionalBoardService {
         'BoardAppointment',
         successor.id,
         ['boardTermId', 'personId', 'position', 'replacedAppointmentId'],
+        context,
+      );
+      await this.recordPrivilegeReviewTrigger(
+        tx,
+        actorId,
+        previous.id,
+        previous.personId,
+        'appointment-replaced-outgoing',
+        context,
+      );
+      await this.recordPrivilegeReviewTrigger(
+        tx,
+        actorId,
+        successor.id,
+        successor.personId,
+        'appointment-replaced-incoming',
         context,
       );
       return {
@@ -521,6 +605,87 @@ export class InstitutionalBoardService {
         entityType,
         entityId,
         details: { changedFields },
+        ...context,
+      },
+      tx,
+    );
+  }
+
+  private assertTermStatusTransition(
+    current: GovernanceTermStatus | null,
+    next: GovernanceTermStatus | null,
+    endsOn: Date,
+  ) {
+    if (next === current) return;
+    if (current === null)
+      throw new BadRequestException(
+        'El período histórico no tiene un estado institucional transicionable.',
+      );
+    const validTransitions: Readonly<Record<GovernanceTermStatus, readonly GovernanceTermStatus[]>> = {
+      [GovernanceTermStatus.PLANNED]: [
+        GovernanceTermStatus.ACTIVE,
+        GovernanceTermStatus.CANCELLED,
+      ],
+      [GovernanceTermStatus.ACTIVE]: [
+        GovernanceTermStatus.CLOSED,
+        GovernanceTermStatus.CANCELLED,
+      ],
+      [GovernanceTermStatus.CLOSED]: [],
+      [GovernanceTermStatus.CANCELLED]: [],
+    };
+    if (next === null || !validTransitions[current].includes(next))
+      throw new BadRequestException('La transición de estado del período no es válida.');
+    if (next === GovernanceTermStatus.CLOSED && endsOn > new Date())
+      throw new BadRequestException(
+        'No se puede finalizar un período antes de su fecha de finalización.',
+      );
+  }
+
+  private async recordPrivilegeReviewTrigger(
+    tx: Prisma.TransactionClient,
+    actorId: number,
+    membershipId: number,
+    personId: number,
+    trigger:
+      | 'appointment-revoked'
+      | 'appointment-replaced-outgoing'
+      | 'appointment-replaced-incoming'
+      | 'office-changed'
+      | 'term-closed',
+    context: AuditContext,
+    originKey?: string,
+  ) {
+    if (originKey) {
+      const existing = await tx.auditLog.findFirst({
+        where: {
+          action: AuditAction.BOARD_PRIVILEGE_REVIEW_REQUIRED,
+          entityType: 'GovernanceMembership',
+          entityId: membershipId.toString(),
+          details: { path: ['originKey'], equals: originKey },
+        },
+        select: { id: true },
+      });
+      if (existing) return;
+    }
+    const account = await tx.user.findUnique({
+      where: { personId },
+      select: { id: true },
+    });
+    await this.audit.log(
+      {
+        userId: actorId,
+        action: AuditAction.BOARD_PRIVILEGE_REVIEW_REQUIRED,
+        module: 'INSTITUTIONAL_BOARD',
+        entityType: 'GovernanceMembership',
+        entityId: membershipId,
+        details: {
+          trigger,
+          membershipId,
+          personId,
+          accountUserId: account?.id ?? null,
+          status: 'REQUIRED',
+          originKey,
+        },
         ...context,
       },
       tx,

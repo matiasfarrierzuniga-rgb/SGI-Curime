@@ -41,6 +41,8 @@ Registro, verificación, inicio de sesión, vinculación con `Person`, afiliaci�
 
 `Person`, `User`, `Affiliate`, `GovernanceMembership`, `Role`, `Permission`, emprendimientos y voluntariado son dominios distintos. Afiliación, nombramientos, representación, publicación de emprendimientos y permisos privilegiados tienen procesos independientes. El voluntariado puede existir sin cuenta.
 
+RBAC V2.3 usa el catálogo ejecutable `backend/src/auth/domain/policies/canonical-role-grants.ts` y responsabilidades funcionales aprobadas. System Administrator administra seguridad técnica; Presidency supervisa procesos institucionales autorizados; Secretariat mantiene documentación, afiliaciones autorizadas y períodos/nombramientos; Treasury opera finanzas autorizadas; Operator ejecuta operaciones de inventario autorizadas; Community User usa servicios comunitarios. Esta descripción no convierte cargos, afiliación ni vínculo Person–User en grants automáticos.
+
 ## 5. Compatibilidad histórica
 
 `UserRequest`, aprobación administrativa, activación de cuentas `INACTIVE` y tokens históricos se conservan únicamente donde el código y sus consumidores aún los requieren. No son requisito del autorregistro comunitario ordinario ni deben reintroducirse como paso de aprobación.

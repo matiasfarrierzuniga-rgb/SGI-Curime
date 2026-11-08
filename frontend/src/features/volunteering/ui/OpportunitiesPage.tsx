@@ -35,12 +35,13 @@ export function OpportunitiesPage() {
   const [creating, setCreating] = useState(false)
   const [workflowId, setWorkflowId] = useState<number | null>(null)
   const [managementId, setManagementId] = useState<number | null>(null)
-  const mayRead = hasCapability(user?.permissionCodes, 'vol.opportunities.read')
+  const mayManageCampaign = hasCapability(user?.permissionCodes, 'volunteer.campaign.manage')
+  const mayRead = hasCapability(user?.permissionCodes, 'vol.opportunities.read') || mayManageCampaign
   const queriesEnabled = !isSessionLoading && mayRead
   const opportunities = useOpportunities(filters, queriesEnabled)
   const detail = useOpportunity(selectedId, queriesEnabled)
-  const mayCreate = hasCapability(user?.permissionCodes, 'vol.opportunities.create')
-  const mayUpdate = hasCapability(user?.permissionCodes, 'vol.opportunities.update')
+  const mayCreate = mayManageCampaign
+  const mayUpdate = mayManageCampaign
   const updateFilters = (next: Partial<OpportunitiesFilters>) => setFilters(current => ({ ...current, ...next, page: next.page ?? 1 }))
   const closeDetail = () => setSelectedId(null)
 

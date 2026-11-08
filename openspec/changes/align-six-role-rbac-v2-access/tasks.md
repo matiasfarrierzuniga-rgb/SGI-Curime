@@ -1,5 +1,7 @@
 # Tasks
 
+> **HISTORICAL TASK BASELINE.** Do not use legacy count expectations here to remove active functionality. Completion state is preserved as prior evidence; current work is tracked by `stabilize-rbac-v2-3-access-and-legacy-reconciliation`.
+
 ## 1. Freeze authorized evidence
 
 - [x] 1.1 Activate the APPLY skills listed in `design.md`, read root/frontend/backend instructions plus `docs/architecture/backend-layer-rules.md`, and verify branch `fix/consolidate-canonical-role-catalog`, initial HEAD `871f834`, clean worktree, and comparison with `development`; stop on drift and record actual Git evidence without switching, merging, stashing, or importing work.

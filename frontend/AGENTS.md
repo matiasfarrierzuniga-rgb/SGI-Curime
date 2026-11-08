@@ -4,11 +4,16 @@ Aplican además las reglas de `../AGENTS.md` y `CONVENTIONS.md`. Este archivo no
 
 ## Arquitectura
 
+### Contexto operativo P0 — DEVELOPMENT ONLY
+
+Objetivo actual: completar desarrollo funcional para certificación posterior. No ejecutar automáticamente suites, lint, builds, auditorías generales RBAC ni cambios que creen infraestructura, worktrees o rutas/grants nuevos. Preservar flujos recuperados y diferir VERIFY hasta autorización expresa. Las decisiones funcionales aprobadas, contratos vigentes y código actual prevalecen sobre matrices históricas que contradigan RBAC V2.3.
+
 - React 19, TypeScript, Vite 8, React Router 7, Axios, TanStack Query y Tailwind 4. Trabaja dentro de `src/app`, `src/features/<domain>` y `src/shared`, respetando dependencias y APIs públicas de `src/features/*/index.ts`.
 - `src/pages`, `src/services`, `src/types`, `src/components` y `src/content` raíz son zonas legacy: no agregar código nuevo salvo excepción documentada.
 - Los datos de servidor viven en TanStack Query; evita duplicarlos en stores o estado local. Usa el cliente HTTP y patrones de error ya existentes.
 - Antes de cambiar comportamiento funcional o rutas, identifica los CU V2 relacionados y contrástalos con contratos API, guards, rutas, feature slices y pruebas V1. El catálogo no autoriza UI, rutas ni permisos inexistentes.
 - Conserva los tokens de diseño SGI-Curime en `src/tailwind.css`, DM Sans y DM Serif Display, accesibilidad, foco, teclado y diseño responsive. No copiar la marca visual de Odoo.
+- Sidebar, dashboard, rutas y botones reflejan capacidades efectivas y una operación backend existente; no restaurar flujos ni mostrar destinos ficticios para satisfacer documentación antigua. Secretaría mantiene nombramientos y afiliaciones según capacidades persistidas; el formulario de agregar nombramiento no se considera resuelto hasta completar selección de Person, guardado, feedback y refresco.
 
 ## Skills y autoridades locales
 

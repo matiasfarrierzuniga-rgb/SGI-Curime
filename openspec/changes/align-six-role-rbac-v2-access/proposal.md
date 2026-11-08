@@ -1,5 +1,7 @@
 # Proposal
 
+> **SUPERSEDED FOR CURRENT RBAC V2.3 DECISIONS.** This change preserves prior implementation and certification evidence. Its 24-grant Secretariat and 105-assignment references are historical planning observations; current functional responsibilities and `canonical-role-grants.ts` govern new work.
+
 ## Why
 
 The six canonical RBAC V2 roles and their 105 current `RolePermission` assignments require end-to-end verification against implemented NestJS operations, effective guards, React routes, navigation, dashboards, and action-level controls. C3-AUTH-01 removes two obsolete UserRequest review grants from the System Administrator without expanding privileges.

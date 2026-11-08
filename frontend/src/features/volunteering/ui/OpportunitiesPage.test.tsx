@@ -11,7 +11,7 @@ vi.mock('@/shared/ui/Toast', () => ({ useToast: vi.fn() }))
 
 const opportunity = { id: 1, title: 'Limpieza de playa', description: null, location: null, capacity: null, applicationDeadline: null, status: 'PUBLISHED', createdByUserId: 4, createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z' } as const
 const notify = vi.fn()
-const OPPORTUNITY_MANAGER_PERMISSIONS = ['vol.opportunities.read', 'vol.opportunities.create', 'vol.opportunities.update']
+const OPPORTUNITY_MANAGER_PERMISSIONS = ['volunteer.campaign.manage']
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })

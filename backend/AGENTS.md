@@ -4,11 +4,18 @@ Aplican además las reglas del `../AGENTS.md` raíz. Un solo agente ejecutor pue
 
 ## Tecnología y límites
 
+### Contexto operativo P0 — DEVELOPMENT ONLY
+
+Objetivo actual: completar desarrollo funcional para certificación posterior. No ejecutar automáticamente suites, lint, builds, auditorías generales RBAC, migraciones, seeds, sincronizaciones, resets ni operaciones PostgreSQL. No crear ramas, worktrees o infraestructura adicional. Mantener los módulos recuperados y no introducir nuevos privilegios, endpoints o grants sin contrato aprobado; VERIFY sigue requiriendo autorización separada.
+
+Las decisiones funcionales aprobadas, contratos vigentes y código actual prevalecen sobre matrices RBAC históricas. `canonical-role-grants.ts` es la fuente ejecutable de asignaciones; documentación o OpenSpec histórico contradictorio debe identificarse como histórico, no usarse para revertir comportamiento.
+
 - Backend: NestJS + TypeScript + Prisma 7 + PostgreSQL 17; aplica las reglas vigentes de `docs/architecture/backend-layer-rules.md` y los módulos actuales.
 - Revisa controladores, DTO, casos de uso, repositorios, módulos, tests y schema real **antes** de cambiar un contrato. No inventes rutas, eventos, campos, estados, capacidades ni relaciones.
 - Antes de cambiar comportamiento funcional, identifica los CU V2 relacionados y contrástalos con controladores, DTO, casos de uso, schema, pruebas y contratos V1 reales. Registra evidencia o estado `NOT_VERIFIED`; el catálogo no prueba implementación.
 - Separa endpoint público, autenticado y protegido por capacidades. El backend decide la autorización. Roles y permisos deben verificarse en registros persistidos, sin confiar en los datos recibidos del cliente.
 - No mezcles cargos institucionales, membresía en Junta Directiva o condición de afiliado con el software Role. La autorización sobre registros propios exige comprobar el vínculo/alcance de negocio además de la capacidad.
+- Secretaría administra períodos y nombramientos con las capacidades persistidas vigentes, y revisa solicitudes de afiliación conforme al flujo aprobado. El cargo no concede ni revoca automáticamente software roles o permisos ERP.
 
 ## Registro comunitario — contrato actual
 

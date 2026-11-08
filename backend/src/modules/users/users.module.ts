@@ -13,6 +13,7 @@ import { ListAccountsUseCase } from './application/use-cases/list-accounts.use-c
 import { UnlockUserUseCase } from './application/use-cases/unlock-user.use-case';
 import { UpdateUserUseCase } from './application/use-cases/update-user.use-case';
 import { UpdateSubscriptionExpirationUseCase } from './application/use-cases/update-subscription-expiration.use-case';
+import { ResolveBoardPrivilegeReviewUseCase } from './application/use-cases/resolve-board-privilege-review.use-case';
 import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
 import { RegisterAdministratorUseCase } from './application/use-cases/register-administrator.use-case';
 import { LinkAccountPersonUseCase } from './application/use-cases/link-account-person.use-case';
@@ -44,6 +45,7 @@ import { RegistrationController } from './presentation/controllers/registration.
     GetUserUseCase,
     UpdateUserUseCase,
     UpdateSubscriptionExpirationUseCase,
+    ResolveBoardPrivilegeReviewUseCase,
     ChangeUserRoleUseCase,
     ActivateUserUseCase,
     DeactivateUserUseCase,

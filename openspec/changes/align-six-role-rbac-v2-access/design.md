@@ -1,5 +1,7 @@
 # Design
 
+> **SUPERSEDED FOR CURRENT RBAC V2.3 DECISIONS.** Retain this design as historical evidence. Numeric baselines in this file do not override approved functional responsibilities or the executable canonical catalog.
+
 ## Context
 
 See `proposal.md` and both spec deltas. Current branch `fix/consolidate-canonical-role-catalog` is at checkpoint `871f834`; `development` is the integration base, but this change must not merge either direction automatically. Existing RBAC consolidation recognizes 93 capability codes, resolves effective grants from persistence, admits five canonical ERP roles, and excludes the community role. It intentionally mapped only verified endpoint equivalents, leaving broader V2 capabilities non-routable.

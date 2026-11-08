@@ -113,7 +113,7 @@ describe('getErpNavigation', () => {
         expect.objectContaining({ label: 'Directorio', path: '/app/admin/ventures', capability: 'ent.ventures.read' }),
       ],
     })
-    expect(items.find(item => item.label === 'Voluntariado')).toMatchObject({ path: '/app/admin/volunteering', capability: 'vol.opportunities.read' })
+    expect(items.find(item => item.label === 'Voluntariado')).toMatchObject({ path: '/app/admin/volunteering', anyOfCapabilities: ['vol.opportunities.read', 'volunteer.campaign.manage'] })
   })
 
   it('does not use role names as authorization input', () => {

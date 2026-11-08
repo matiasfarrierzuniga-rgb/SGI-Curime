@@ -133,7 +133,6 @@ export interface UsersRepository {
   updateStatus(id: number, status: UserStatus): Promise<User>;
   updateSubscriptionExpirationDate(id: number, value: Date): Promise<User>;
   updateRole(id: number, roleId: number): Promise<User>;
-  updateActiveAffiliateRoleForUser(id: number, roleId: number): Promise<void>;
   resetTemporaryLock(id: number): Promise<User>;
   countActiveAdministrators(excludeUserId: number): Promise<number>;
   countAdministrators(): Promise<number>;

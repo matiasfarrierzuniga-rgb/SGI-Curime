@@ -33,7 +33,7 @@ const navigation: readonly ErpNavigationSection[] = [
     label: 'Desarrollo comunitario', accent: 'blue', items: [
        { label: 'Eventos', path: '/app/events', anyOfCapabilities: ['events.proposal.create', 'events.proposal.review', 'events.proposal.approve', 'events.publish'], icon: CalendarDays },
       { label: 'Emprendimientos', path: '/app/admin/ventures/summary', capability: 'ent.ventures.read', icon: Store, children: [{ label: 'Resumen', path: '/app/admin/ventures/summary', capability: 'ent.ventures.read', icon: ChevronRight }, { label: 'Directorio', path: '/app/admin/ventures', capability: 'ent.ventures.read', icon: Store }] },
-      { label: 'Voluntariado', path: '/app/admin/volunteering', capability: 'vol.opportunities.read', icon: HandHeart },
+       { label: 'Voluntariado', path: '/app/admin/volunteering', anyOfCapabilities: ['vol.opportunities.read', 'volunteer.campaign.manage'], icon: HandHeart },
     ],
   },
   {

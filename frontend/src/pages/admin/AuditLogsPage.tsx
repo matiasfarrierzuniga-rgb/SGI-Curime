@@ -13,10 +13,12 @@ import { useToast } from '@/shared/ui/Toast'
 import { useAuth } from '@/features/auth'
 import { hasCapability } from '@/shared/security/access'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { rolesService, type RoleOption } from '@/features/roles'
 import { auditLogsService } from '../../services/auditLogsService'
-import type { AuditLog, AuditQuery } from '../../types/audit'
+import type { AuditLog, AuditQuery, BoardPrivilegeReview, BoardPrivilegeReviewResolution } from '../../types/audit'
 
 const limit = 20
+const canonicalRoleCodes = new Set(['ROLE_SYSTEM_ADMIN', 'ROLE_INSTITUTIONAL_PRESIDENT', 'ROLE_INSTITUTIONAL_SECRETARY', 'ROLE_INSTITUTIONAL_TREASURER', 'ROLE_INSTITUTIONAL_OPERATOR', 'ROLE_COMMUNITY_USER'])
 const sensitiveDetailKey = /password|token|jwt|secret|database_url|admin_password/i
 const redactDetails = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(redactDetails)
@@ -29,6 +31,7 @@ export function AuditLogsPage() {
   const { notify } = useToast()
   const { user, isLoading: isSessionLoading } = useAuth()
   const mayReadAudit = hasCapability(user?.permissionCodes, 'aud.logs.read')
+  const mayReviewPrivileges = hasCapability(user?.permissionCodes, 'usr.users.read') && hasCapability(user?.permissionCodes, 'usr.users.role.change')
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -37,6 +40,13 @@ export function AuditLogsPage() {
   const [selected, setSelected] = useState<AuditLog | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [reviews, setReviews] = useState<BoardPrivilegeReview[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [reviewsError, setReviewsError] = useState('')
+  const [reviewing, setReviewing] = useState<BoardPrivilegeReview | null>(null)
+  const [reviewForm, setReviewForm] = useState<BoardPrivilegeReviewResolution>({ decision: 'NO_CHANGE', justification: '' })
+  const [reviewRoles, setReviewRoles] = useState<RoleOption[]>([])
+  const [resolving, setResolving] = useState(false)
 
   useEffect(() => {
     if (isSessionLoading || !mayReadAudit) return
@@ -54,6 +64,18 @@ export function AuditLogsPage() {
       .finally(() => active && setLoading(false))
     return () => { active = false }
   }, [filters, isSessionLoading, mayReadAudit, page])
+
+  const loadPrivilegeReviews = () => {
+    if (isSessionLoading || !mayReviewPrivileges) return
+    setReviewsLoading(true)
+    setReviewsError('')
+    Promise.all([auditLogsService.listBoardPrivilegeReviews({ page: 1, limit: 50 }), rolesService.listActive()])
+      .then(([result, roles]) => { setReviews(result.data); setReviewRoles(roles.filter(role => canonicalRoleCodes.has(role.name))) })
+      .catch((cause) => setReviewsError(getErrorMessage(cause)))
+      .finally(() => setReviewsLoading(false))
+  }
+
+  useEffect(() => { loadPrivilegeReviews() }, [isSessionLoading, mayReviewPrivileges])
 
   const detail = async (id: number) => {
     try {
@@ -75,8 +97,36 @@ export function AuditLogsPage() {
     })
   }
 
+  const resolveReview = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!reviewing || resolving) return
+    if (reviewForm.justification.trim().length < 3) {
+      notify('Indique una justificación de al menos tres caracteres.', 'error')
+      return
+    }
+    if (reviewForm.decision === 'ROLE_CHANGED' && !reviewForm.roleId) {
+      notify('Seleccione el rol canónico autorizado.', 'error')
+      return
+    }
+    setResolving(true)
+    try {
+      await auditLogsService.resolveBoardPrivilegeReview(reviewing.id, { ...reviewForm, justification: reviewForm.justification.trim() })
+      notify('Revisión de privilegios resuelta.', 'success')
+      setReviewing(null)
+      loadPrivilegeReviews()
+    } catch (cause) {
+      notify(getErrorMessage(cause), 'error')
+    } finally {
+      setResolving(false)
+    }
+  }
+
   return (
     <AdministrativeListLayout header={<PageHeader context="Administración" title="Bitácora" />}>
+      {mayReviewPrivileges ? <section className="mb-6 rounded-surface border border-border-default bg-surface-card p-5 shadow-surface" aria-labelledby="privilege-reviews-title">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 id="privilege-reviews-title" className="text-heading-3 font-semibold text-text-primary">Revisiones de privilegios institucionales</h2><p className="mt-1 text-body-small text-text-secondary">Requieren decisión técnica explícita. Los nombramientos no modifican roles automáticamente.</p></div><Button type="button" variant="outline" size="sm" onClick={loadPrivilegeReviews} disabled={reviewsLoading}>Actualizar</Button></div>
+        {reviewsError ? <ErrorState message={reviewsError} /> : reviewsLoading ? <LoadingState label="Cargando revisiones…" /> : reviews.length === 0 ? <p className="mt-4 text-body-small text-text-secondary">No hay revisiones registradas.</p> : <div className="mt-4 overflow-x-auto rounded-control border border-border-default"><DataTable className="min-w-[58rem]"><DataTableHeader><DataTableRow><DataTableHead>Fecha</DataTableHead><DataTableHead>Persona / cuenta</DataTableHead><DataTableHead>Origen</DataTableHead><DataTableHead>Acceso efectivo</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead><span className="sr-only">Acción</span></DataTableHead></DataTableRow></DataTableHeader><DataTableBody>{reviews.map(review => <DataTableRow key={review.id}><DataTableCell>{new Date(review.createdAt).toLocaleString()}</DataTableCell><DataTableCell>{review.person?.fullName ?? `Persona ${review.person?.id ?? '—'}`}<br /><span className="text-text-secondary">{review.account ? `${review.account.email} · ${review.account.role.name}` : 'Sin cuenta vinculada'}</span></DataTableCell><DataTableCell>{review.trigger ?? '—'}<br /><span className="text-text-secondary">Nombramiento #{review.membership?.id ?? '—'} · período #{review.membership?.term.id ?? '—'}</span></DataTableCell><DataTableCell>{review.account ? `${review.account.effectiveCapabilities.length} capacidades` : '—'}</DataTableCell><DataTableCell>{review.resolution ? `Resuelta: ${review.resolution.decision ?? '—'}` : 'Pendiente'}</DataTableCell><DataTableCell>{!review.resolution && review.account ? <Button type="button" size="sm" onClick={() => { setReviewing(review); setReviewForm({ decision: 'NO_CHANGE', justification: '' }) }}>Resolver</Button> : null}</DataTableCell></DataTableRow>)}</DataTableBody></DataTable></div>}
+      </section> : null}
       <form className="filters card" onSubmit={submit} aria-label="Filtrar bitácora">
         <label>Usuario (ID)<input type="number" min="1" inputMode="numeric" value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })} /></label>
         <label>Acción<input maxLength={100} value={form.action} onChange={(event) => setForm({ ...form, action: event.target.value })} /></label>
@@ -123,6 +173,7 @@ export function AuditLogsPage() {
           <pre className="details">{safeDetails(selected.details)}</pre>
         </Modal>
       )}
+      {reviewing ? <Modal title="Resolver revisión de privilegios" onClose={() => { if (!resolving) setReviewing(null) }}><form className="grid gap-4" onSubmit={resolveReview}><p className="text-body-small text-text-secondary">Persona: <span className="font-semibold text-text-primary">{reviewing.person?.fullName ?? 'No disponible'}</span><br />Cuenta: <span className="font-semibold text-text-primary">{reviewing.account?.email ?? 'No vinculada'}</span><br />Rol actual: <span className="font-semibold text-text-primary">{reviewing.account?.role.name ?? '—'}</span></p><p className="text-body-small text-text-secondary">Capacidades efectivas: {reviewing.account?.effectiveCapabilities.join(', ') || 'ninguna'}.</p><label className="grid gap-2 text-sm font-semibold">Decisión<select value={reviewForm.decision} onChange={event => setReviewForm({ decision: event.target.value as BoardPrivilegeReviewResolution['decision'], justification: reviewForm.justification })}><option value="NO_CHANGE">Sin cambio de rol</option><option value="ROLE_CHANGED">Cambiar rol técnico</option></select></label>{reviewForm.decision === 'ROLE_CHANGED' ? <label className="grid gap-2 text-sm font-semibold">Rol canónico<select required value={reviewForm.roleId ?? ''} onChange={event => setReviewForm({ ...reviewForm, roleId: Number(event.target.value) || undefined })}><option value="">Seleccione un rol</option>{reviewRoles.map(role => <option key={role.id} value={role.id}>{role.label}</option>)}</select></label> : null}<label className="grid gap-2 text-sm font-semibold">Justificación<textarea required minLength={3} maxLength={1000} value={reviewForm.justification} onChange={event => setReviewForm({ ...reviewForm, justification: event.target.value })} /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={resolving} onClick={() => setReviewing(null)}>Cancelar</Button><Button type="submit" disabled={resolving}>{resolving ? 'Guardando…' : 'Registrar resolución'}</Button></div></form></Modal> : null}
     </AdministrativeListLayout>
   )
 }

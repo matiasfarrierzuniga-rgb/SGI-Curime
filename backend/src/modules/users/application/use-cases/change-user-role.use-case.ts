@@ -61,7 +61,6 @@ export class ChangeUserRoleUseCase {
       }
 
       const updated = await tx.updateRole(id, roleId);
-      await tx.updateActiveAffiliateRoleForUser(id, roleId);
       return updated;
     });
     await this.audit?.record({

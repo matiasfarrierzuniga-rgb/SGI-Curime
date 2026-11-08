@@ -1,32 +1,18 @@
-# React + TypeScript + Vite
+# SGI-Curime frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + TypeScript + Vite SPA. Arquitectura vigente: `app -> features -> shared`; `src/pages`, `src/services`, `src/types`, `src/components` y `src/content` son zonas legacy sin código nuevo salvo excepción documentada.
 
-Currently, two official plugins are available:
+## Acceso y rutas
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+El frontend consume capacidades efectivas entregadas por servidor. Sidebar, rutas, dashboard y acciones deben reflejar una operación backend equivalente, pero el guard API sigue siendo autoritativo. No se infiere acceso desde nombre de rol, cargo institucional, afiliación, `sessionStorage` ni estado de ruta.
 
-## React Compiler
+- Eventos públicos permanecen en `/eventos`; gestión institucional en `/app/events` exige capacidades de operación existentes.
+- Voluntariado público permanece sin cuenta en `/voluntariado`; la ruta administrativa `/app/admin/volunteering` exige capacidad efectiva.
+- La cuenta comunitaria verificada accede a Mi Comunidad y no al ERP por autenticación sola.
+- Secretaría conserva acceso a nombramientos y afiliaciones únicamente según capacidades persistidas; el formulario de agregar nombramiento sigue pendiente de corrección funcional completa (selección, guardado, notificación y refresco), aunque la ruta sea accesible.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Contratos y desarrollo
 
-## Expanding the Oxlint configuration
+Consulta [`CONVENTIONS.md`](./CONVENTIONS.md), [`AGENTS.md`](./AGENTS.md) y [`../docs/contracts/account-lifecycle-v1.md`](../docs/contracts/account-lifecycle-v1.md) antes de modificar rutas, formularios o autenticación. El registro comunitario no crea ni aprueba `UserRequest` ordinario.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+La estabilización RBAC V2.3 está en [`../openspec/changes/stabilize-rbac-v2-3-access-and-legacy-reconciliation/`](../openspec/changes/stabilize-rbac-v2-3-access-and-legacy-reconciliation/). La implementación recuperada sigue pendiente de certificación final; no se deben introducir grants, rutas ficticias ni reversión de flujos recuperados para satisfacer documentos históricos.
