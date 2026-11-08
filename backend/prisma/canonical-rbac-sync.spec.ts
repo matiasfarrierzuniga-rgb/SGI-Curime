@@ -15,7 +15,7 @@ describe('canonical RBAC synchronizer', () => {
 
   it('plans all reviewed grants without applying them', () => {
     const plan = inspectCanonicalRbac(roles);
-    expect(plan.grantsToCreate).toHaveLength(107);
+    expect(plan.grantsToCreate).toHaveLength(111);
     expect(plan.unexpectedGrants).toEqual([]);
     expect(plan.historicalActiveRoles).toEqual([]);
   });
@@ -45,7 +45,7 @@ describe('canonical RBAC synchronizer', () => {
     const plan = inspectCanonicalRbac(roles);
     await applyCanonicalRbacPlan(writer, plan);
     expect(writer.ensurePermission).toHaveBeenCalled();
-    expect(writer.ensureRolePermission).toHaveBeenCalledTimes(107);
+    expect(writer.ensureRolePermission).toHaveBeenCalledTimes(111);
     expect(writer.revokeRolePermission).not.toHaveBeenCalled();
   });
 });

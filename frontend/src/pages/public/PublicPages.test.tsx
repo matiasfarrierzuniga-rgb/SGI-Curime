@@ -178,9 +178,8 @@ describe('portal público', () => {
     expect(within(volunteering).getByRole('link', { name: 'Ver oportunidades' })).toHaveAttribute('href', '/voluntariado')
 
     const donations = screen.getByRole('heading', { name: 'Donaciones' }).closest('article')!
-    expect(within(donations).getByText('Próximamente')).toBeVisible()
-    expect(within(donations).getByText(/todavía no recibe donaciones/)).toBeVisible()
-    expect(within(donations).queryByRole('link')).not.toBeInTheDocument()
+    expect(within(donations).getByText('Disponible')).toBeVisible()
+    expect(within(donations).getByRole('link', { name: 'Solicitar una donación' })).toHaveAttribute('href', '/donaciones')
 
     const registration = screen.getByRole('heading', { name: 'Crear una cuenta' }).closest('section')!
     expect(within(registration).getByText(/verifique su correo/)).toBeVisible()
@@ -208,7 +207,7 @@ describe('portal público', () => {
     expect(screen.queryByRole('heading', { name: 'Crear una cuenta' })).not.toBeInTheDocument()
     expect(screen.queryByText(/verifique su correo para acceder/)).not.toBeInTheDocument()
     expect(within(screen.getByRole('main')).getAllByRole('article')).toHaveLength(5)
-    expect(within(screen.getByRole('heading', { name: 'Donaciones' }).closest('article')!).getByText('Próximamente')).toBeVisible()
+    expect(within(screen.getByRole('heading', { name: 'Donaciones' }).closest('article')!).getByRole('link', { name: 'Solicitar una donación' })).toHaveAttribute('href', '/donaciones')
   })
 
   it('muestra la landing y navega al inicio de sesión', () => {

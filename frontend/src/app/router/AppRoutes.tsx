@@ -30,7 +30,7 @@ import { LandingPage } from '@/features/public-site'
 import { AppHomePage } from '@/pages/erp/AppHomePage'
 import { ReservationAdminPage, ReservationRequestPage } from '@/features/reservations'
 import { DinadecoAnnualReportPage, FinancialDashboardPage, FinancialMovementsPage, FinancialPage, TreasuryPage } from '@/features/financial'
-import { DonationsPage } from '@/features/donations'
+import { DonationsPage, DonationRequestsPage, PublicDonationRequestPage } from '@/features/donations'
 import { AssembliesAdminPage, AssemblyManagementPage, MineAssembliesPage } from '@/features/assemblies'
 import { InstitutionalProfilePage } from '@/features/institutional-profile'
 import { InstitutionalBoardPage } from '@/features/institutional-board'
@@ -63,6 +63,7 @@ export function AppRoutes() {
         <Route path="/transparencia" element={<TransparencyPage />} />
         <Route path="/contacto" element={<ContactPage />} />
         <Route path="/afiliacion" element={<AffiliationPage />} />
+        <Route path="/donaciones" element={<PublicDonationRequestPage />} />
       </Route>
       <Route element={<AccessLayout />}>
         <Route path="/login" element={<LoginPage />} />
@@ -95,6 +96,9 @@ export function AppRoutes() {
            </Route>
           <Route element={<RoleRoute capability="don.donations.read" />}>
             <Route path="/app/donations" element={<DonationsPage />} />
+          </Route>
+          <Route element={<RoleRoute capability="don.requests.read" />}>
+            <Route path="/app/donation-requests" element={<DonationRequestsPage />} />
           </Route>
           <Route element={<RoleRoute allOfCapabilities={['fin.movements.read', 'fin.charges.read']} />}>
             <Route path="/app/financial" element={<TreasuryPage />} />

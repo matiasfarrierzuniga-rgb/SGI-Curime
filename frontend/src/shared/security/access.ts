@@ -39,6 +39,8 @@ export const ACCESS_CAPABILITIES = [
   "don.donations.update",
   "don.donations.cancel",
   "don.donations.delete",
+  "don.requests.read",
+  "don.requests.review",
   "ent.ventures.read",
   "ent.ventures.create",
   "ent.ventures.update",

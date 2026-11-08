@@ -157,7 +157,7 @@ export function ServicesPage() {
         ],
     volunteering: [{ label: isAuthenticated ? "Participar como voluntario" : "Ver oportunidades", to: "/voluntariado" }],
     entrepreneurship: [{ label: "Ver emprendimientos", to: "/ventures" }],
-    donations: [],
+    donations: [{ label: "Solicitar una donación", to: "/donaciones" }],
   } as const;
   const serviceDetails = {
     affiliation: {
@@ -192,8 +192,8 @@ export function ServicesPage() {
       icon: HeartHandshake,
       image: "/images/public/home/hero-curime-wide.webp",
       alt: "Paisaje de Curime.",
-      description: "Los canales autorizados para apoyar proyectos comunitarios se anunciarán cuando la Asociación confirme las condiciones del servicio. Esta página todavía no recibe donaciones.",
-      steps: [],
+      description: "Comparta su intención de aportar dinero o bienes. La Asociación revisará la solicitud y coordinará con usted. El portal no procesa pagos ni confirma recepción.",
+      steps: ["Describa su aporte", "Envíe la solicitud", "Espere la coordinación de la ADI"],
     },
   } satisfies Record<(typeof services)[number]["key"], {
     icon: LucideIcon;

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { ACCESS_CAPABILITIES, hasCapability } from "./access";
 
 describe("permission-code access policy", () => {
-  it("recognizes the 91-code canonical legacy and V2 catalog without legacy drift", () => {
-    expect(ACCESS_CAPABILITIES).toHaveLength(91);
+  it("recognizes the 93-code catalog including donation requests", () => {
+    expect(ACCESS_CAPABILITIES).toHaveLength(93);
+    expect(ACCESS_CAPABILITIES).toContain("don.requests.read");
+    expect(ACCESS_CAPABILITIES).toContain("don.requests.review");
     expect(ACCESS_CAPABILITIES).toContain("system.rbac.manage");
     expect(ACCESS_CAPABILITIES).not.toContain("abs.justifications.read");
   });

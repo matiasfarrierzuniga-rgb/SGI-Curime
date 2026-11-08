@@ -36,7 +36,7 @@ export const moduleAvailability = {
   reservations: { enabled: true },
   volunteering: { enabled: true },
    entrepreneurship: { enabled: true },
-  donations: { enabled: false },
+  donations: { enabled: true },
   userRegistration: { enabled: true },
 } as const;
 
@@ -64,7 +64,7 @@ export const services = [
   {
     key: "donations",
     title: "Donaciones",
-    text: "Los canales autorizados para aportar a proyectos comunitarios se anunciarán cuando estén disponibles.",
+    text: "Envíe una solicitud para coordinar un aporte de dinero o bienes. Ningún pago se procesa en el portal.",
   },
 ] as const;
 

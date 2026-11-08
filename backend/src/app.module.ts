@@ -24,6 +24,7 @@ import { IdentityModule } from './identity/identity.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { FinancialModule } from './financial/financial.module';
 import { DonationsModule } from './donations/donations.module';
+import { DonationRequestsModule } from './donation-requests/donation-requests.module';
 import { InstitutionalProfileModule } from './institutional-profile/institutional-profile.module';
 import { InstitutionalBoardModule } from './institutional-board/institutional-board.module';
 import { EntrepreneurshipModule } from './entrepreneurship/entrepreneurship.module';
@@ -57,6 +58,7 @@ import { TerritorialCatalogModule } from './territorial-catalog/territorial-cata
     ReservationsModule,
     FinancialModule,
     DonationsModule,
+    DonationRequestsModule,
     InstitutionalProfileModule,
     InstitutionalBoardModule,
     EntrepreneurshipModule,

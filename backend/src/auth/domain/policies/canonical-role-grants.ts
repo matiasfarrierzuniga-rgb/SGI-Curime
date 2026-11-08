@@ -12,15 +12,16 @@ export const CANONICAL_ROLE_GRANT_COUNTS: Readonly<
 > = {
   ROLE_INSTITUTIONAL_PRESIDENT: 16,
   ROLE_INSTITUTIONAL_SECRETARY: 26,
-  ROLE_INSTITUTIONAL_TREASURER: 26,
+  ROLE_INSTITUTIONAL_TREASURER: 28,
   ROLE_INSTITUTIONAL_OPERATOR: 12,
-  ROLE_SYSTEM_ADMIN: 27,
+  ROLE_SYSTEM_ADMIN: 29,
   ROLE_COMMUNITY_USER: 0,
 };
 
 /**
  * Versioned RBAC V2 assignment contract. Entries come from the reviewed
- * 107-row OpenSpec matrix; controller mappings remain independently exact.
+ * current RBAC V2.3 decisions plus reviewed donation request access;
+ * controller mappings remain independently exact.
  */
 export const CANONICAL_ROLE_GRANTS: Readonly<
   Record<CanonicalRoleCode, readonly Capability[]>
@@ -79,6 +80,8 @@ export const CANONICAL_ROLE_GRANTS: Readonly<
     'don.donations.create',
     'don.donations.read',
     'don.donations.update',
+    'don.requests.read',
+    'don.requests.review',
     'erp.dashboard.read',
     'finance.cxc.generate',
     'finance.expense.approve',
@@ -122,6 +125,8 @@ export const CANONICAL_ROLE_GRANTS: Readonly<
     'adm.requests.read',
     'aud.logs.read',
     'don.donations.read',
+    'don.requests.read',
+    'don.requests.review',
     'ent.ventures.read',
     'erp.dashboard.read',
     'fin.charges.read',

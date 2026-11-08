@@ -1,4 +1,6 @@
 export { donationsApi } from './api/donations.api'
+export { PublicDonationRequestPage } from './ui/PublicDonationRequestPage'
+export { DonationRequestsPage } from './ui/DonationRequestsPage'
 export { DonationsPage } from './ui/DonationsPage'
 export {
   donationsKeys,

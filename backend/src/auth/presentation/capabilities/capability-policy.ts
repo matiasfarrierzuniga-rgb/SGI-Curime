@@ -124,6 +124,9 @@ export const RBAC_V2_CAPABILITIES = [
 export const CAPABILITIES = [
   ...LEGACY_CAPABILITIES,
   ...RBAC_V2_CAPABILITIES,
+  // Request access is recognized but has no default role grant.
+  'don.requests.read',
+  'don.requests.review',
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];

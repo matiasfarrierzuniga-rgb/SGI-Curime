@@ -153,6 +153,7 @@ model User {
   voidedFinancialMovements    FinancialMovement[]      @relation("FinancialMovementVoider")
   recordedDonations           Donation[]               @relation("DonationRecorder")
   cancelledDonations          Donation[]               @relation("DonationCanceller")
+  reviewedDonationRequests    DonationRequest[]        @relation("DonationRequestReviewer")
   inventoryMovements          InventoryMovement[]
   inventoryLoansCreated       InventoryLoan[]          @relation("LoanCreator")
   inventoryLoansReceived      InventoryLoan[]          @relation("LoanReceiver")
@@ -764,6 +765,33 @@ model Donation {
   @@index([status, receivedAt])
 }
 
+// A request is an intention to donate. It never represents received funds.
+model DonationRequest {
+  id               String                @id @default(uuid()) @db.Uuid
+  donorName        String                @db.VarChar(160)
+  email            String?               @db.VarChar(254)
+  phone            String?               @db.VarChar(32)
+  kind             DonationRequestKind
+  modality         DonationRequestModality
+  paymentPreference DonationRequestPaymentPreference?
+  approximateAmount Decimal?             @db.Decimal(14, 2)
+  goodsDescription String?               @db.VarChar(2000)
+  comments         String?               @db.VarChar(2000)
+  anonymousPublic  Boolean               @default(false)
+  status           DonationRequestStatus @default(PENDING)
+  reviewReason     String?               @db.VarChar(1000)
+  reviewedById     Int?
+  reviewedAt       DateTime?
+  idempotencyHash  String                @unique @db.Char(64)
+  payloadHash      String                @db.Char(64)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  reviewedBy       User?                 @relation("DonationRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([reviewedById])
+}
+
 model Expense {
   id                        Int                 @id @default(autoincrement())
   description               String
@@ -1289,6 +1317,29 @@ enum PaymentMethod {
 
 enum DonationStatus {
   CONFIRMED
+  CANCELLED
+}
+
+enum DonationRequestKind {
+  MONETARY
+  IN_KIND
+}
+
+enum DonationRequestModality {
+  DIGITAL
+  IN_PERSON
+  COORDINATED
+}
+
+enum DonationRequestPaymentPreference {
+  SINPE
+  BANK_TRANSFER
+}
+
+enum DonationRequestStatus {
+  PENDING
+  IN_REVIEW
+  REJECTED
   CANCELLED
 }
 

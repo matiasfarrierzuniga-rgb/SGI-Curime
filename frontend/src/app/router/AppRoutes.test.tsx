@@ -83,6 +83,7 @@ beforeEach(() => {
     if (url === '/admin-reports/dashboard') return Promise.resolve({ data: emptyAdminDashboard() })
     if (url === '/financial/reports/dinadeco/annual') return Promise.resolve({ data: responseForDinadeco() })
     if (url === '/donations') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
+    if (url === '/donation-requests') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/ventures') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 1 } })
     if (url === '/volunteering/opportunities') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/institutional-profile') return Promise.resolve({ data: emptyInstitutionalProfile() })
@@ -432,6 +433,24 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.queryByRole('heading', { name: 'Financiero' })).not.toBeInTheDocument()
   })
 
+  it('renders public donation requests without a session', async () => {
+    renderRoute('/donaciones', null)
+    expect(await screen.findByRole('heading', { name: 'Donaciones' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enviar solicitud' })).toBeInTheDocument()
+  })
+
+  it('renders donation requests for persisted readers', async () => {
+    renderRoute('/app/donation-requests', 'ROLE_SYSTEM_ADMIN', true, [...SYSTEM_ADMIN_CAPABILITIES, 'don.requests.read', 'don.requests.review'])
+    expect(await screen.findByRole('heading', { name: 'Solicitudes públicas' })).toBeInTheDocument()
+    expect(httpGet).toHaveBeenCalledWith('/donation-requests', { params: { page: 1, limit: 20 } })
+  })
+
+  it('denies donation requests without their read permission', async () => {
+    renderRoute('/app/donation-requests', 'ROLE_INSTITUTIONAL_TREASURER')
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(httpGet).not.toHaveBeenCalledWith('/donation-requests', expect.anything())
+  }, 10000)
+
   it('redirects anonymous users from /app/donations to login', () => {
     renderRoute('/app/donations', null)
 
@@ -448,7 +467,7 @@ describe('AppRoutes capability deep links', () => {
   })
 
   it('redirects users without donations read capability to 403', async () => {
-    renderRoute('/app/donations', 'Vecino/Afiliado')
+    renderRoute('/app/donations', 'ROLE_INSTITUTIONAL_TREASURER', true, ['fin.charges.read', 'fin.movements.read'])
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Donaciones' })).not.toBeInTheDocument()
