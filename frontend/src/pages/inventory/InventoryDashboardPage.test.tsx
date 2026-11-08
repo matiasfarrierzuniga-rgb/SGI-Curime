@@ -3,9 +3,30 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { InventoryDashboardPage } from './InventoryDashboardPage'
 import { inventoryReportsService } from '../../services/inventoryReportsService'
+import { inventoryAlertsService } from '../../services/inventoryAlertsService'
+import { inventoryItemsService } from '../../services/inventoryItemsService'
+import { inventoryMovementsService } from '../../services/inventoryMovementsService'
+
+const auth = vi.hoisted(() => ({
+  user: { permissionCodes: ['inv.inventory.read'] as string[] },
+}))
+
+vi.mock('@/features/auth', () => ({
+  useAuth: () => auth,
+}))
 
 vi.mock('../../services/inventoryReportsService', () => ({
   inventoryReportsService: { summary: vi.fn() },
+}))
+
+vi.mock('../../services/inventoryAlertsService', () => ({
+  inventoryAlertsService: { get: vi.fn() },
+}))
+vi.mock('../../services/inventoryItemsService', () => ({
+  inventoryItemsService: { list: vi.fn() },
+}))
+vi.mock('../../services/inventoryMovementsService', () => ({
+  inventoryMovementsService: { list: vi.fn() },
 }))
 
 const summary = {
@@ -29,7 +50,14 @@ const page = () =>
 describe('InventoryDashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    auth.user.permissionCodes = ['inv.inventory.read']
     vi.mocked(inventoryReportsService.summary).mockResolvedValue(summary)
+    vi.mocked(inventoryAlertsService.get).mockResolvedValue({
+      summary: { lowStock: 0, outOfStock: 0, overdueLoans: 0, inactiveItems: 0, damagedItems: 0 },
+      lowStock: [], outOfStock: [], overdueLoans: [], inactiveItems: [], damagedItems: [],
+    })
+    vi.mocked(inventoryItemsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100 })
+    vi.mocked(inventoryMovementsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100 })
   })
 
   it('shows loading and then the summary cards', async () => {
@@ -50,6 +78,21 @@ describe('InventoryDashboardPage', () => {
     expect(screen.getByRole('link', { name: 'Préstamos' })).toHaveAttribute('href', '/inventory/loans')
     expect(screen.getByRole('link', { name: 'Alertas' })).toHaveAttribute('href', '/inventory/alerts')
     expect(screen.getByRole('link', { name: 'Reportes' })).toHaveAttribute('href', '/inventory/reports')
+  })
+
+  it('does not invent category or movement statistics when datasets are empty', async () => {
+    page()
+    expect(await screen.findByText('No hay artículos para distribuir.')).toBeInTheDocument()
+    expect(screen.getByText('No hay movimientos registrados.')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Gestionar artículos' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Gestionar categorías' })).not.toBeInTheDocument()
+  })
+
+  it('shows inventory management actions only with the canonical capability', async () => {
+    auth.user.permissionCodes = ['inv.inventory.read', 'inventory.item.manage']
+    page()
+    expect(await screen.findByRole('link', { name: 'Gestionar artículos' })).toHaveAttribute('href', '/inventory/items')
+    expect(screen.getByRole('link', { name: 'Gestionar categorías' })).toHaveAttribute('href', '/inventory/categories')
   })
 
   it('shows an error state when the summary fails', async () => {
