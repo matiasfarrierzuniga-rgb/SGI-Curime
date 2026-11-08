@@ -10,7 +10,7 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { Input } from '@/shared/ui/input'
 import { LoadingState } from '@/shared/ui/LoadingState'
-import { Modal } from '@/shared/ui/Modal'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Select } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/Toast'
@@ -244,7 +244,8 @@ export function InstitutionalBoardPage() {
           </div>}</CardContent>
         </Card>
 
-       {canManage ? <Card>
+        {canManage && editing ? <Dialog open onOpenChange={open => { if (!open && !mutationBusy) { setEditing(null); setAppointment(emptyAppointment) } }}><DialogContent size="md"><form className="grid gap-4" onSubmit={submitAppointment}><DialogHeader className="pr-8"><DialogTitle>Editar nombramiento</DialogTitle><DialogDescription>Actualice los datos disponibles. La Persona vinculada se conserva como evidencia histórica.</DialogDescription></DialogHeader><div className="grid gap-2"><span className="text-sm font-semibold">Persona</span><p className="rounded-control border border-border-default bg-surface-subtle p-3" aria-label="Persona del nombramiento">{personName(editing)}</p></div><label className="grid gap-2 text-sm font-semibold">Cargo<Select value={appointment.position} onChange={event => setAppointment({ ...appointment, position: event.target.value as BoardPosition })}>{BOARD_POSITIONS.map(position => <option key={position} value={position}>{BOARD_POSITION_LABELS[position]}</option>)}</Select></label><label className="grid gap-2 text-sm font-semibold">Plaza (opcional)<Input type="number" min="1" value={appointment.seatNumber} onChange={event => setAppointment({ ...appointment, seatNumber: event.target.value })} /></label><label className="grid gap-2 text-sm font-semibold">Desde (opcional)<Input type="date" value={appointment.startsOn} onChange={event => setAppointment({ ...appointment, startsOn: event.target.value })} /></label><label className="grid gap-2 text-sm font-semibold">Hasta (opcional)<Input type="date" value={appointment.endsOn} onChange={event => setAppointment({ ...appointment, endsOn: event.target.value })} /></label>{message ? <p role="alert" className="text-body-small text-status-danger">{message}</p> : null}<DialogFooter><Button type="button" variant="outline" disabled={mutationBusy} onClick={() => { setEditing(null); setAppointment(emptyAppointment) }}>Cancelar</Button><Button type="submit" loading={mutationBusy}>Guardar cambios</Button></DialogFooter></form></DialogContent></Dialog> : null}
+        {canManage && !editing ? <Card>
           <CardHeader><CardTitle>{editing ? 'Editar nombramiento' : replacing ? 'Sustituir nombramiento' : 'Agregar nombramiento'}</CardTitle><CardDescription>{editing ? 'Actualice los datos disponibles para este nombramiento.' : replacing ? 'Seleccione la persona sucesora y la fecha en que finaliza el nombramiento anterior.' : 'Busque y seleccione una persona existente antes de guardar.'}</CardDescription></CardHeader>
           <CardContent><form className="grid gap-4 md:grid-cols-2" onSubmit={submitAppointment}>
             {replacing ? <label className="grid gap-2 text-sm font-semibold md:col-span-2">Finalización del nombramiento anterior<Input type="date" required value={replacing.endsOn?.slice(0, 10) ?? ''} onChange={event => setReplacing({ ...replacing, endsOn: event.target.value || null })} /></label> : null}
@@ -262,14 +263,7 @@ export function InstitutionalBoardPage() {
              <div className="flex flex-wrap gap-2 md:col-span-2"><Button type="submit" disabled={mutationBusy}>{mutationBusy ? 'Guardando…' : editing ? 'Guardar cambios' : replacing ? 'Confirmar sustitución' : 'Agregar nombramiento'}</Button>{editing || replacing ? <Button type="button" variant="outline" onClick={() => { setEditing(null); setReplacing(null); setAppointment(emptyAppointment); setQuery('') }} disabled={mutationBusy}>Cancelar</Button> : null}</div>
           </form></CardContent>
        </Card> : null}
-        {revoking ? <Modal title="Revocar nombramiento" onClose={() => { if (!mutations.revokeAppointment.isPending) setRevoking(null) }} busy={mutations.revokeAppointment.isPending}>
-          <form className="grid gap-4" onSubmit={(event) => void submitRevoke(event)}>
-            <p className="text-body-small text-text-secondary">El registro se conservará y se establecerá una fecha de finalización para la persona nombrada.</p>
-            <label className="grid gap-2 text-sm font-semibold">Fecha efectiva de revocación<Input type="date" required value={revokeDate} onChange={event => setRevokeDate(event.target.value)} /></label>
-            {message ? <p className="text-body-small text-status-danger" role="alert">{message}</p> : null}
-            <div className="flex flex-wrap gap-2"><Button type="submit" variant="danger" disabled={mutationBusy}>{mutations.revokeAppointment.isPending ? 'Revocando…' : 'Confirmar revocación'}</Button><Button type="button" variant="outline" onClick={() => setRevoking(null)} disabled={mutationBusy}>Cancelar</Button></div>
-          </form>
-        </Modal> : null}
+        {revoking ? <Dialog open onOpenChange={open => { if (!open && !mutations.revokeAppointment.isPending) { setRevoking(null); setRevokeDate('') } }}><DialogContent size="sm"><form className="grid gap-6" onSubmit={(event) => void submitRevoke(event)}><DialogHeader className="pr-8"><DialogTitle>Revocar nombramiento</DialogTitle><DialogDescription>El registro se conservará y se establecerá una fecha de finalización para la persona nombrada.</DialogDescription></DialogHeader><label className="grid gap-2 text-sm font-semibold">Fecha efectiva de revocación<Input type="date" required value={revokeDate} onChange={event => setRevokeDate(event.target.value)} aria-describedby={message ? 'revoke-error' : undefined} aria-invalid={Boolean(message)} /></label>{message ? <p id="revoke-error" className="text-body-small text-status-danger" role="alert">{message}</p> : null}<DialogFooter><Button type="button" variant="outline" onClick={() => { setRevoking(null); setRevokeDate('') }} disabled={mutationBusy}>Cancelar</Button><Button type="submit" variant="danger" loading={mutationBusy}>Confirmar revocación</Button></DialogFooter></form></DialogContent></Dialog> : null}
       </div>
     </div> : null}
   </section>
