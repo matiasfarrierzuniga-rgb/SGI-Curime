@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 import {
@@ -83,7 +83,7 @@ const quickLinks = [
 ]
 
 function Panel({ title, icon: Icon, action, children, className = '' }: {
-  title: string; icon: typeof Package; action?: React.ReactNode; children: React.ReactNode; className?: string
+  title: string; icon: typeof Package; action?: ReactNode; children: ReactNode; className?: string
 }) {
   return <Card className={`min-w-0 gap-3 bg-erp-surface-raised shadow-sm ${className}`}>
     <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -207,12 +207,12 @@ export function InventoryDashboardPage() {
       </div>
 
       <nav aria-label="Accesos rápidos de inventario" className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
-        {quickLinks.map(({ label, caption, to, Icon }) => <Link key={to} to={to} className="group flex min-w-0 items-center gap-3 rounded-surface border border-erp-border bg-erp-surface-raised p-3 shadow-sm transition-colors hover:border-[#5caa8e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#087c52]">
+        {quickLinks.map(({ label, caption, to, Icon }) => <Link key={to} to={to} aria-label={label} className="group flex min-w-0 items-center gap-3 rounded-surface border border-erp-border bg-erp-surface-raised p-3 shadow-sm transition-colors hover:border-[#5caa8e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#087c52]">
           <Icon className="size-5 shrink-0 text-[#006348]" aria-hidden="true" /><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{label}</span><span className="block truncate text-xs text-erp-text-muted">{caption}</span></span><ChevronRight className="size-4 shrink-0 text-erp-text-muted" aria-hidden="true" />
         </Link>)}
       </nav>
 
-      <section aria-label="Filtros del inventario" className="grid gap-2 rounded-surface border border-erp-border bg-erp-surface-raised p-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <section aria-label="Filtros del listado de artículos" className="grid gap-2 rounded-surface border border-erp-border bg-erp-surface-raised p-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         <label className="relative"><span className="sr-only">Buscar artículo</span><Search className="pointer-events-none absolute left-3 top-3 size-4 text-erp-text-muted" aria-hidden="true"/><input className="h-10 w-full rounded-control border border-erp-border bg-transparent pl-9 pr-3 text-sm" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar artículo (código, nombre o descripción)" /></label>
         <label><span className="sr-only">Filtrar por categoría</span><select className="h-10 w-full rounded-control border border-erp-border bg-transparent px-3 text-sm" value={category} onChange={e => setCategory(e.target.value)}><option value="">Todas las categorías</option>{categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}</select></label>
         <label><span className="sr-only">Filtrar por estado</span><select className="h-10 w-full rounded-control border border-erp-border bg-transparent px-3 text-sm" value={status} onChange={e => setStatus(e.target.value)}><option value="">Todos los estados</option><option value="ACTIVE">Activos</option><option value="INACTIVE">Inactivos</option><option value="low">Stock bajo</option></select></label>
