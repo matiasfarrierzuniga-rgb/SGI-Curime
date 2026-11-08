@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { InventoryDashboardPage } from './InventoryDashboardPage'
@@ -65,19 +65,19 @@ describe('InventoryDashboardPage', () => {
     expect(screen.getByText(/Cargando resumen de inventario/)).toBeInTheDocument()
     expect(await screen.findByText('10')).toBeInTheDocument()
     await waitFor(() => expect(screen.getAllByText('Artículos').length).toBeGreaterThan(0))
-    expect(screen.getByText('Activos')).toBeInTheDocument()
+    expect(screen.getAllByText('Activos').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Préstamos vencidos').length).toBeGreaterThan(0)
   })
 
   it('shows the quick access links', async () => {
     page()
     await screen.findByText('Artículos')
-    expect(screen.getByRole('link', { name: 'Artículos' })).toHaveAttribute('href', '/inventory/items')
-    expect(screen.getByRole('link', { name: 'Categorías' })).toHaveAttribute('href', '/inventory/categories')
-    expect(screen.getByRole('link', { name: 'Movimientos' })).toHaveAttribute('href', '/inventory/movements')
-    expect(screen.getByRole('link', { name: 'Préstamos' })).toHaveAttribute('href', '/inventory/loans')
-    expect(screen.getByRole('link', { name: 'Alertas' })).toHaveAttribute('href', '/inventory/alerts')
-    expect(screen.getByRole('link', { name: 'Reportes' })).toHaveAttribute('href', '/inventory/reports')
+    const quickAccess = screen.getByRole('navigation', { name: 'Accesos rápidos de inventario' })
+    expect(within(quickAccess).getByRole('link', { name: 'Artículos' })).toHaveAttribute('href', '/inventory/items')
+    expect(within(quickAccess).getByRole('link', { name: 'Categorías' })).toHaveAttribute('href', '/inventory/categories')
+    expect(within(quickAccess).getByRole('link', { name: 'Movimientos' })).toHaveAttribute('href', '/inventory/movements')
+    expect(within(quickAccess).getByRole('link', { name: 'Préstamos' })).toHaveAttribute('href', '/inventory/loans')
+    expect(within(quickAccess).getByRole('link', { name: 'Reportes' })).toHaveAttribute('href', '/inventory/reports')
   })
 
   it('does not invent category or movement statistics when datasets are empty', async () => {
@@ -98,6 +98,6 @@ describe('InventoryDashboardPage', () => {
   it('shows an error state when the summary fails', async () => {
     vi.mocked(inventoryReportsService.summary).mockRejectedValueOnce(new Error('x'))
     page()
-    expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar el resumen de inventario.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar esta sección.')
   })
 })

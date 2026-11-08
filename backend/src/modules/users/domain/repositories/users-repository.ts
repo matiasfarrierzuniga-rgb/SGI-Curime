@@ -4,7 +4,7 @@ import {
   UserRole,
   UserStatus,
 } from '../entities/user';
-import type { Prisma } from '../../../../generated/prisma/client';
+import type { Prisma } from '../../../../../generated/prisma/client';
 import { RegistrationConflictError } from '../errors/registration-conflict.error';
 import type {
   RuntimePersonIdentityInput,
