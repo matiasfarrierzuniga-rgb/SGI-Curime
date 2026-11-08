@@ -1,3 +1,5 @@
+> **VIGENTE PARCIAL / PLANNING.** Person-first ownership and reconciliation remain staged and incomplete. This change does not replace the current account lifecycle and does not authorize automatic User–Person linking.
+
 ## Why
 
 Person identity and contact facts remain duplicated across `User` and `Affiliate`, while request and history records mix legitimate submitted snapshots with generic field names. Current independent writes, nullable identity links, incomplete reconciliation evidence, and consumer contracts make column removal or constraint enforcement unsafe. This change defines one evidence-led, reversible Person-first transition before the blocked institutional-access work resumes.

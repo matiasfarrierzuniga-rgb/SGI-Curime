@@ -1,5 +1,7 @@
 # Design
 
+> **VIGENTE PARCIAL.** CP-04 design and implementation evidence. The resolved capability is `system.identity.manage`; certification gaps remain documented in the CP-04 report. Community self-registration and this administrative mutation are separate processes.
+
 ## Context
 
 See `proposal.md` and `specs/identity/account-person-linking/spec.md`. `User.personId` and `Affiliate.personId` are nullable unique relations. `BoardAppointment.personId` is a Person relation; it is not an account relation. Current Person-first evidence preserves nullable links while reconciliation Stage C remains incomplete and forbids automatic name, email, or identification matching.

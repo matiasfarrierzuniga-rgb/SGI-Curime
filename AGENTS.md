@@ -371,7 +371,7 @@ Una propuesta de OpenSpec no sustituye un contrato implementado ni modifica deci
 
 ## Contrato transversal de identidad y registro comunitario
 
-Antes de tocar `/register`, `UserRequest`, `Person`, `User`, `Role`, `Permission`, `AccountActivationToken`, correo o autenticación, lee **`docs/decisions/community-account-registration.md`**. C3-AUTH-01 está implementado en la rama de trabajo; certificación PostgreSQL desechable e integración permanecen pendientes.
+Para describir el ciclo de vida vigente de cuentas, consulta primero **`docs/contracts/account-lifecycle-v1.md`** y contrástalo con código y pruebas actuales. Una propuesta histórica de OpenSpec o una decisión supersedida no sustituye el contrato operativo vigente. Antes de tocar `/register`, `UserRequest`, `Person`, `User`, `Role`, `Permission`, `AccountActivationToken`, correo o autenticación, revisa también la decisión histórica referenciada por el contrato. C3-AUTH-01 está implementado en la rama de trabajo; certificación PostgreSQL desechable e integración permanecen pendientes.
 
 - **C3-AUTH-01 implementado:** `POST /community-accounts/register` crea una cuenta comunitaria pendiente de verificación; enlace con token hasheado y vencible permite establecer contraseña en `POST /community-accounts/verify-email`, activar la cuenta y luego iniciar sesión sin aprobación administrativa. El rol inicial no tiene grants ERP.
 - **Flujo V1 retirado:** no hay endpoints, UI ni grants `usr.user-requests.read`/`usr.user-requests.review` para aprobar registros comunitarios. Registros `UserRequest` históricos permanecen como datos sin operaciones nuevas.

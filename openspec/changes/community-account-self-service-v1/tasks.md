@@ -1,5 +1,7 @@
 # Tasks
 
+> **HISTORICAL / PARTIAL.** Tasks retain implementation evidence and unfinished work. Do not mark remaining tasks complete from later code or use this list as a current requirement source; consult the canonical account lifecycle contract.
+
 ## 1. Approval gate and persistence baseline
 
 - [ ] 1.1 Obtain owner approval for the additive Prisma migration, `Cuenta comunitaria` zero-permission role, disposable PostgreSQL validation environment, and forward-only rollback plan; verify approval and environment evidence are recorded before any schema command.

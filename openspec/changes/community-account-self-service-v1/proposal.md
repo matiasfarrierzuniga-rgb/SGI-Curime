@@ -1,5 +1,7 @@
 # Proposal
 
+> **SUPERSEDED / HISTORICAL.** Planning artifact retained for traceability. Its password-at-registration, migration and pending-task language is not the current operational contract. Use `docs/contracts/account-lifecycle-v1.md`; do not reopen this proposal as requirements without a new approved change.
+
 ## Why
 
 El registro público actual crea `UserRequest(PENDING)` y exige revisión administrativa, una `Person` preexistente e identificación legal antes de que una persona pueda activar su acceso. La comunidad necesita una cuenta básica autocontenida que pruebe control del correo, sin confundirlo con identidad legal, afiliación ni autorización institucional.

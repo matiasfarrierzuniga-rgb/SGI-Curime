@@ -10,13 +10,15 @@ Aplican además las reglas del `../AGENTS.md` raíz. Un solo agente ejecutor pue
 - Separa endpoint público, autenticado y protegido por capacidades. El backend decide la autorización. Roles y permisos deben verificarse en registros persistidos, sin confiar en los datos recibidos del cliente.
 - No mezcles cargos institucionales, membresía en Junta Directiva o condición de afiliado con el software Role. La autorización sobre registros propios exige comprobar el vínculo/alcance de negocio además de la capacidad.
 
-## Registro comunitario — alcance de este incremento
+## Registro comunitario — contrato actual
 
-Lee `../docs/decisions/community-account-registration.md` y distingue **AS-IS** de **TO-BE propuesto**:
+Consulta primero `../docs/contracts/account-lifecycle-v1.md` y contrasta con `community-accounts.controller.ts`, `community-accounts.service.ts`, DTOs y pruebas. La decisión en `../docs/decisions/community-account-registration.md` es referencia histórica, no fuente operativa autónoma.
 
-- AS-IS: `POST /register` crea `UserRequest(PENDING)`; el flujo de aprobación crea `User(INACTIVE)` con `AccountActivationToken`; `POST /auth/activate-account` activa y fija contraseña.
-- TO-BE (NO IMPLEMENTADO): autoservicio con nombre, correo y contraseña, verificación de correo y rol comunitario mínimo; sin aprobación de Junta Directiva para una cuenta normal.
+- Actual: `POST /community-accounts/register` recibe correo, crea o continúa una cuenta pendiente de verificación, y no requiere aprobación administrativa ordinaria.
+- Actual: `validate-token` no consume; `verify-email` establece contraseña, consume token, activa cuenta; `resend-verification` conserva respuesta neutral y límites.
+- Actual: cuenta verificada usa rol comunitario sin grants ERP y accede a `Mi Comunidad`; no emite sesión antes de verificar.
 - La cuenta verificada NO acredita identidad legal ni autoriza acceso a una `Person`, `Affiliate`, `Venture` o expediente preexistente.
+- La vinculación User–Person posterior es explícita, administrativa y protegida por `system.identity.manage`; no se infiere por coincidencia de datos.
 - Conserva el flujo histórico de UserRequest y el bootstrap de administradores. Define una transición compatible; nunca elimines datos porque ahora el registro público cambia de significado.
 - Antes de implementar determina el impacto en `User.identification` obligatorio, unicidad, `Person.personId`, estados de cuenta, tokens existentes, reenvío y rate limiting. Cualquier alteración del modelo congelado exige OpenSpec/decisión/migración/rollback explícitos.
 - Usa tokens aleatorios almacenados como hash, con expiración, un solo uso y no exposición en logs. Almacena contraseñas solo como hash seguro según la infraestructura del proyecto.

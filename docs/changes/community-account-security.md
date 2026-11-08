@@ -1,5 +1,7 @@
 # Seguridad del registro comunitario
 
+> **KEEP_REFERENCE.** Controles de seguridad y compatibilidad histórica. El ciclo operativo vigente está en [`docs/contracts/account-lifecycle-v1.md`](../contracts/account-lifecycle-v1.md).
+
 Estado: implementación local; validación en curso. CU V2 relacionados: CU-01, CU-20, CU-22 y CU-23 a CU-27, referencias NOT_VERIFIED hasta validar el catálogo inmutable.
 
 Alcance: respuestas de registro neutrales; recuperación solo para cuentas activas; invalidación de recuperación al corregir correo o desactivar; verificación comunitaria explícita; bloqueo de roles mientras está pendiente; revocación de sesiones y corte de JWT al desactivar. No cambia afiliaciones ni cargos.

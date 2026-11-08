@@ -1,5 +1,7 @@
 # Proposal
 
+> **VIGENTE PARCIAL.** CP-04 implementation exists in the current branch. This change governs only later administrative User–Person linking; it never makes `UserRequest` approval a prerequisite for ordinary community registration. See `docs/contracts/account-lifecycle-v1.md` for lifecycle boundaries.
+
 ## Why
 
 La administración necesita distinguir identidad canónica, afiliación, nombramiento institucional y acceso SGI al revisar integrantes de Junta Directiva. Hoy una cuenta comunitaria puede existir sin `Person`, pero no hay un contrato administrativo explícito y seguro para vincularla a una Persona canónica ya verificada.

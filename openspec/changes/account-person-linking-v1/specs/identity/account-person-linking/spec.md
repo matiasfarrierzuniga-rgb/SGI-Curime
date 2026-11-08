@@ -1,5 +1,7 @@
 # Spec Delta
 
+> **VIGENTE PARCIAL.** Applies to explicit administrative linking only. It does not govern public community registration and does not require `UserRequest` approval for that registration.
+
 ## Purpose
 
 Define consulta y vinculación administrativa segura entre cuentas SGI y Personas canónicas, sin confundir identidad, afiliación, gobierno institucional ni autorización de software.

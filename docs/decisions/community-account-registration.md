@@ -1,6 +1,8 @@
-# SGI-Curime — Contrato propuesto: registro comunitario de autoservicio
+# SGI-Curime — Decisión histórica: registro comunitario de autoservicio
 
-- **Estado:** IMPLEMENTED ON `feat/p0-governance-inventory-rbac-v2-3` — C3-AUTH-01; pendiente de integración y certificación PostgreSQL desechable.
+> **SUPERSEDED / KEEP_REFERENCE.** Este documento conserva la decisión y evidencia del incremento C3-AUTH-01. La fuente operativa vigente es [`docs/contracts/account-lifecycle-v1.md`](../contracts/account-lifecycle-v1.md). No usar las secciones de propuesta, restricciones abiertas o criterios de APPLY como instrucciones actuales si contradicen código y contrato canónico.
+
+- **Estado documental:** SUPERSEDED por el contrato canónico; evidencia histórica IMPLEMENTED ON `feat/p0-governance-inventory-rbac-v2-3` — C3-AUTH-01; integración y certificación PostgreSQL desechable pendientes.
 - **Tipo:** Decisión transversal de identidad, autenticación, permisos y experiencia comunitaria.
 - **Referencia técnica AS-IS:** SGI-Curime V1 en `main@52361bedd4a66c1069a1d944380f528792bf215f` (PR #114). Volver a auditar al comenzar APPLY.
 - **Referencia de requisitos:** especificación V2 v0.1 (13-10-2026), 15 DCU y 155 CU; documento en revisión, no código V1 ni aprobación institucional.
