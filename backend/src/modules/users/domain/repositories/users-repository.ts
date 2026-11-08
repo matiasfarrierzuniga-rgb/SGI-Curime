@@ -4,6 +4,7 @@ import {
   UserRole,
   UserStatus,
 } from '../entities/user';
+import type { Prisma } from '../../../../generated/prisma/client';
 import { RegistrationConflictError } from '../errors/registration-conflict.error';
 import type {
   RuntimePersonIdentityInput,
@@ -11,6 +12,7 @@ import type {
 } from '../../../../identity/runtime-person-resolution';
 
 export const USERS_REPOSITORY = Symbol('USERS_REPOSITORY');
+export type UsersTransactionClient = Prisma.TransactionClient;
 
 export interface UserQuery {
   name?: string;
@@ -104,7 +106,9 @@ export class RegistrationDataConflictError extends RegistrationConflictError {
 }
 
 export interface UsersRepository {
-  withTransaction<T>(work: (repo: UsersRepository) => Promise<T>): Promise<T>;
+  withTransaction<T>(
+    work: (repo: UsersRepository, client: UsersTransactionClient) => Promise<T>,
+  ): Promise<T>;
   withRegistrationTransaction<T>(
     work: (repo: UsersRepository) => Promise<T>,
   ): Promise<T>;

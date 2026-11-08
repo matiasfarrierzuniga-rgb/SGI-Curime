@@ -36,34 +36,84 @@ export class ChangeUserRoleUseCase {
     actorId?: number,
     context: AuditContext = {},
   ): Promise<User> {
-    let previousRoleId: number | undefined;
-    const result = await this.repository.withTransaction(async (tx) => {
-      const [user, role] = await Promise.all([
-        tx.findById(id),
-        tx.findRoleById(roleId),
-      ]);
-      if (!user) throw new UserNotFoundError();
-      if (user.status === UserStatus.PENDING_EMAIL_VERIFICATION)
-        throw new ActivationNotCompletedError();
-      if (
-        isCommunityAccountRole(user.role.name) &&
-        !(await tx.communityVerificationEvidence(id))
-      )
-        throw new ActivationNotCompletedError();
-      if (!role) throw new RoleNotFoundError();
-      if (!role.isActive) throw new InactiveRoleError();
-      if (!isCanonicalRoleCode(role.name)) throw new NonAssignableRoleError();
-      previousRoleId = user.roleId;
+    const { updated, previousRoleId } = await this.repository.withTransaction((tx) =>
+      this.applyRoleChange(tx, id, roleId),
+    );
+    await this.recordAudit(
+      this.audit,
+      id,
+      roleId,
+      previousRoleId,
+      actorId,
+      context,
+    );
+    return updated;
+  }
 
-      if (requiresAdminContinuity(user, role.name)) {
-        const count = await tx.countActiveAdministrators(id);
-        assertAnotherActiveAdministrator(count);
-      }
+  async executeInTransaction(
+    repository: UsersRepository,
+    id: number,
+    roleId: number,
+    actorId?: number,
+    context: AuditContext = {},
+    auditPort?: AuditPort,
+  ): Promise<User> {
+    const { updated, previousRoleId } = await this.applyRoleChange(
+      repository,
+      id,
+      roleId,
+    );
+    await this.recordAudit(
+      auditPort ?? this.audit,
+      id,
+      roleId,
+      previousRoleId,
+      actorId,
+      context,
+    );
+    return updated;
+  }
 
-      const updated = await tx.updateRole(id, roleId);
-      return updated;
-    });
-    await this.audit?.record({
+  private async applyRoleChange(
+    repository: UsersRepository,
+    id: number,
+    roleId: number,
+  ): Promise<{ updated: User; previousRoleId: number }> {
+    const [user, role] = await Promise.all([
+      repository.findById(id),
+      repository.findRoleById(roleId),
+    ]);
+    if (!user) throw new UserNotFoundError();
+    if (user.status === UserStatus.PENDING_EMAIL_VERIFICATION)
+      throw new ActivationNotCompletedError();
+    if (
+      isCommunityAccountRole(user.role.name) &&
+      !(await repository.communityVerificationEvidence(id))
+    )
+      throw new ActivationNotCompletedError();
+    if (!role) throw new RoleNotFoundError();
+    if (!role.isActive) throw new InactiveRoleError();
+    if (!isCanonicalRoleCode(role.name)) throw new NonAssignableRoleError();
+    const previousRoleId = user.roleId;
+
+    if (requiresAdminContinuity(user, role.name)) {
+      const count = await repository.countActiveAdministrators(id);
+      assertAnotherActiveAdministrator(count);
+    }
+
+    const updated = await repository.updateRole(id, roleId);
+    return { updated, previousRoleId };
+  }
+
+  private async recordAudit(
+    auditPort: AuditPort | undefined,
+    id: number,
+    roleId: number,
+    previousRoleId: number,
+    actorId: number | undefined,
+    context: AuditContext,
+  ): Promise<void> {
+    await auditPort?.record({
       userId: actorId,
       action: AuditAction.USER_ROLE_CHANGED,
       module: 'USERS',
@@ -72,6 +122,5 @@ export class ChangeUserRoleUseCase {
       details: { previousRoleId, newRoleId: roleId },
       ...context,
     });
-    return result;
   }
 }

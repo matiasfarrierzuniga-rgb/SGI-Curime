@@ -187,13 +187,14 @@ export class PrismaUsersRepository implements UsersRepository {
   }
 
   async withTransaction<T>(
-    work: (repo: UsersRepository) => Promise<T>,
+    work: (
+      repo: UsersRepository,
+      client: Prisma.TransactionClient,
+    ) => Promise<T>,
   ): Promise<T> {
     return this.prisma.$transaction(
       async (tx) => {
-        return work(
-          new PrismaUsersRepository(this.prisma, this.personResolver, tx),
-        );
+        return work(new PrismaUsersRepository(this.prisma, this.personResolver, tx), tx);
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );

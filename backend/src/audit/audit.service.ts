@@ -45,7 +45,10 @@ export interface BoardPrivilegeReview {
     roleChange: { previousRoleId: number; newRoleId: number } | null;
   } | null;
 }
-type AuditLogClient = Pick<PrismaService, 'auditLog'>;
+type AuditLogClient = Pick<
+  PrismaService,
+  'auditLog' | 'governanceMembership' | 'person' | 'user'
+>;
 const sensitive = /password|token|jwt|secret|database_url|admin_password/i;
 
 export function sanitizeAuditDetails(
@@ -132,7 +135,7 @@ export class AuditService {
 
   async findBoardPrivilegeReviews(page = 1, limit = 20) {
     const where = { action: AuditAction.BOARD_PRIVILEGE_REVIEW_REQUIRED };
-    const [reviews, total, resolutions] = await this.prisma.$transaction([
+    const [reviews, total] = await this.prisma.$transaction([
       this.prisma.auditLog.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -140,19 +143,40 @@ export class AuditService {
         take: limit,
       }),
       this.prisma.auditLog.count({ where }),
-      this.prisma.auditLog.findMany({
-        where: { action: AuditAction.BOARD_PRIVILEGE_REVIEW_RESOLVED },
-        select: {
-          id: true,
-          createdAt: true,
-          details: true,
-          user: { select: { id: true, fullName: true, email: true } },
-        },
-      }),
     ]);
+    const resolutions = reviews.length
+      ? await this.prisma.auditLog.findMany({
+          where: {
+            action: AuditAction.BOARD_PRIVILEGE_REVIEW_RESOLVED,
+            OR: [
+              { entityId: { in: reviews.map((review) => review.id.toString()) } },
+              ...reviews.map((review) => ({
+                details: { path: ['reviewId'], equals: review.id },
+              })),
+            ],
+          },
+          select: {
+            id: true,
+            createdAt: true,
+            details: true,
+            entityId: true,
+            user: { select: { id: true, fullName: true, email: true } },
+          },
+        })
+      : [];
     return {
       data: await Promise.all(
-        reviews.map((review) => this.toBoardPrivilegeReview(review, resolutions)),
+        reviews.map((review) =>
+          this.toBoardPrivilegeReview(
+            review,
+            resolutions.find(
+              (resolution) =>
+                resolution.entityId === review.id.toString() ||
+                this.detailsNumber(this.detailsRecord(resolution.details), 'reviewId') === review.id,
+            ) ?? null,
+            this.prisma,
+          ),
+        ),
       ),
       total,
       page,
@@ -160,13 +184,19 @@ export class AuditService {
     };
   }
 
-  async findBoardPrivilegeReview(id: number) {
-    const review = await this.prisma.auditLog.findFirst({
+  async findBoardPrivilegeReview(id: number, client: AuditLogClient = this.prisma) {
+    const review = await client.auditLog.findFirst({
       where: { id, action: AuditAction.BOARD_PRIVILEGE_REVIEW_REQUIRED },
     });
     if (!review) throw new NotFoundException('Revisión de privilegios no encontrada');
-    const resolutions = await this.prisma.auditLog.findMany({
-      where: { action: AuditAction.BOARD_PRIVILEGE_REVIEW_RESOLVED },
+    const resolution = await client.auditLog.findFirst({
+      where: {
+        action: AuditAction.BOARD_PRIVILEGE_REVIEW_RESOLVED,
+        OR: [
+          { entityId: id.toString() },
+          { details: { path: ['reviewId'], equals: id } },
+        ],
+      },
       select: {
         id: true,
         createdAt: true,
@@ -174,7 +204,15 @@ export class AuditService {
         user: { select: { id: true, fullName: true, email: true } },
       },
     });
-    return this.toBoardPrivilegeReview(review, resolutions);
+    return this.toBoardPrivilegeReview(review, resolution, client);
+  }
+
+  async lockBoardPrivilegeReview(id: number, client: Prisma.TransactionClient) {
+    const rows = await client.$queryRaw<Array<{ id: number }>>(
+      Prisma.sql`SELECT "id" FROM "AuditLog" WHERE "id" = ${id} AND "action" = ${AuditAction.BOARD_PRIVILEGE_REVIEW_REQUIRED} FOR UPDATE`,
+    );
+    if (!rows.length) throw new NotFoundException('Revisión de privilegios no encontrada');
+    return this.findBoardPrivilegeReview(id, client);
   }
 
   async recordBoardPrivilegeReviewResolution(
@@ -184,8 +222,9 @@ export class AuditService {
     justification: string,
     roleChange: { previousRoleId: number; newRoleId: number } | null,
     context: AuditContext,
+    client: AuditLogClient = this.prisma,
   ) {
-    const existing = await this.prisma.auditLog.findFirst({
+    const existing = await client.auditLog.findFirst({
       where: {
         action: AuditAction.BOARD_PRIVILEGE_REVIEW_RESOLVED,
         details: { path: ['reviewId'], equals: reviewId },
@@ -202,23 +241,24 @@ export class AuditService {
       entityId: reviewId,
       details: { reviewId, decision, justification, roleChange, status: 'RESOLVED' },
       ...context,
-    });
+    }, client);
   }
 
   private async toBoardPrivilegeReview(
     review: { id: number; createdAt: Date; details: Prisma.JsonValue | null },
-    resolutions: Array<{
+    resolution: {
       id: number;
       createdAt: Date;
       details: Prisma.JsonValue | null;
       user: { id: number; fullName: string | null; email: string } | null;
-    }>,
+    } | null,
+    client: AuditLogClient,
   ): Promise<BoardPrivilegeReview> {
     const details = this.detailsRecord(review.details);
     const membershipId = this.detailsNumber(details, 'membershipId');
     const personId = this.detailsNumber(details, 'personId');
     const membership = membershipId
-      ? await this.prisma.governanceMembership.findUnique({
+      ? await client.governanceMembership.findUnique({
           where: { id: membershipId },
           select: {
             id: true,
@@ -230,13 +270,13 @@ export class AuditService {
         })
       : null;
     const person = personId
-      ? await this.prisma.person.findUnique({
+      ? await client.person.findUnique({
           where: { id: personId },
           select: { id: true, firstName: true, firstSurname: true, secondSurname: true, legacyFullName: true },
         })
       : null;
     const account = personId
-      ? await this.prisma.user.findUnique({
+      ? await client.user.findUnique({
           where: { personId },
           select: {
             id: true,
@@ -253,9 +293,6 @@ export class AuditService {
           },
         })
       : null;
-    const resolution = resolutions.find(
-      (entry) => this.detailsNumber(this.detailsRecord(entry.details), 'reviewId') === review.id,
-    );
     const resolutionDetails = resolution ? this.detailsRecord(resolution.details) : null;
     const roleChangeValue = resolutionDetails?.roleChange;
     const roleChange = this.detailsRecord(roleChangeValue);
