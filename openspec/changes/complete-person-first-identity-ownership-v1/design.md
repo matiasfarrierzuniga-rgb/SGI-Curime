@@ -105,6 +105,10 @@ Apply Stages A–E in order. Each stage requires recorded preflight/result evide
 - Document actual external consumers before declaring any V1.1 API compatibility window.
 - Certify 100% safe linking, zero nulls/conflicts, normalized uniqueness, preflight, and rollback evidence before proposing required final `User.personId` or `Affiliate.personId`.
 
+## C3-DB-01 code checkpoint
+
+`77a8fc0` closes a localized unsafe-link path: an AffiliateRequest cannot persist a reused Person link when the resolver reports `profileEnrichmentRequired`. The request remains unpersisted for institutional correction/review; no Person is modified by that rejection. A complete compatible Person remains eligible. This checkpoint preserves nullable `User.personId` for legitimate community accounts, prohibits name/email-only reconciliation and User.email↔Person.email synchronization, and records no PostgreSQL write. Existing database population remains subject to human-reviewed reconciliation; no new database/container/disposable-instance execution is authorized by this checkpoint.
+
 ## Appendix A — Stage A Evidence / Frozen Contract
 
 ### Scope and evidence boundary

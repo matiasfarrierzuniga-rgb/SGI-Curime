@@ -9,7 +9,6 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { Button } from '@/shared/ui/button'
 import { useAuth } from '@/features/auth'
 import { hasCapability } from '@/shared/security/access'
-import { isAdmin } from '@/shared/security/roles'
 import { useAffiliatesList } from '../hooks/useAffiliatesQueries'
 import type { Affiliate, AffiliateStatus } from '../model/affiliates.types'
 import { AffiliateFilters } from './AffiliateFilters'
@@ -22,7 +21,7 @@ const limit = 20
 export function AffiliatesPage() {
   const { user } = useAuth()
   const canUpdateAffiliate = hasCapability(user?.permissionCodes, 'padron.affiliate.update')
-  const canManageAffiliateLifecycle = isAdmin(user?.role)
+  const canManageAffiliateLifecycle = hasCapability(user?.permissionCodes, 'padron.affiliate.status')
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<AffiliateStatus | ''>('')

@@ -12,7 +12,6 @@ import { AffiliateStatus, Prisma } from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { GENERAL_ACCOUNT_ROLE } from '../auth/domain/policies/internal-access.policy';
 import { QueryAffiliatesDto } from './dto/query-affiliates.dto';
 import { UpdateAffiliateDto } from './dto/update-affiliate.dto';
 const select = {
@@ -174,45 +173,17 @@ export class AffiliatesService {
     return this.prisma.$transaction(async (tx) => {
       const affiliate = await tx.affiliate.findUnique({
         where: { id },
-        select: {
-          id: true,
-          status: true,
-          personId: true,
-          person: { select: { user: { select: { id: true } } } },
-        },
+        select: { id: true, status: true },
       });
       if (!affiliate) throw new NotFoundException('Affiliate not found');
       if (affiliate.status !== 'ACTIVE') {
         throw new ConflictException('Affiliate is already inactive');
-      }
-      if (!affiliate.personId || !affiliate.person) {
-        throw new ConflictException('Affiliate has no linked person');
-      }
-      const user = affiliate.person.user;
-      if (!user) throw new ConflictException('Affiliate has no linked user');
-      const generalRole = await tx.role.findUnique({
-        where: { name: GENERAL_ACCOUNT_ROLE },
-        select: { id: true, isActive: true },
-      });
-      if (!generalRole?.isActive) {
-        throw new ConflictException('General account role is unavailable');
       }
 
       const item = await tx.affiliate.update({
         where: { id },
         data: { status: 'INACTIVE' },
         select,
-      });
-      await tx.user.update({
-        where: { id: user.id },
-        data: { roleId: generalRole.id },
-      });
-      await tx.session.updateMany({
-        where: { userId: user.id, revokedAt: null },
-        data: {
-          revokedAt: new Date(),
-          revocationReason: 'AFFILIATE_DEACTIVATED',
-        },
       });
       await this.audit.log(
         {

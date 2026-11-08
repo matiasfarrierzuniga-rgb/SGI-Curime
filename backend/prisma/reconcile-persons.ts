@@ -13,6 +13,10 @@ import {
   type IdentitySource,
   type ReconciliationCluster,
 } from '../src/identity-reconciliation/identity-reconciliation';
+import {
+  isUserReconciliationCandidate,
+  toSource,
+} from '../src/identity-reconciliation/reconciliation-source-adapter';
 
 const ADVISORY_LOCK_ID = 915202605;
 
@@ -124,6 +128,7 @@ async function reconcile(tx: Prisma.TransactionClient): Promise<RunSummary> {
       tx.user.findMany({
         select: {
           id: true,
+          personId: true,
           identification: true,
           identificationType: true,
           fullName: true,
@@ -175,7 +180,9 @@ async function reconcile(tx: Prisma.TransactionClient): Promise<RunSummary> {
     ]);
 
   const sources: IdentitySource[] = [
-    ...users.map((row) => toSource(row, 'User', null)),
+    ...users
+      .filter(isUserReconciliationCandidate)
+      .map((row) => toSource(row, 'User', null)),
     ...affiliates.map((row) => toSource(row, 'Affiliate', row.birthDate)),
     ...userRequests.map((row) => toSource(row, 'UserRequest', null)),
     ...affiliateRequests.map((row) =>
@@ -242,34 +249,6 @@ async function reconcile(tx: Prisma.TransactionClient): Promise<RunSummary> {
     personRowsAfter,
     selectedPersonIds,
   );
-}
-
-function toSource(
-  row: {
-    id: number;
-    identification: string | null;
-    identificationType: string | null;
-    fullName: string;
-    email: string | null;
-    phoneCountryCode: string | null;
-    phoneNationalNumber: string | null;
-    address: string | null;
-  },
-  sourceModel: IdentitySource['sourceModel'],
-  birthDate: Date | null,
-): IdentitySource {
-  return {
-    sourceModel,
-    sourceId: row.id,
-    identification: row.identification,
-    identificationType: row.identificationType,
-    fullName: row.fullName,
-    birthDate,
-    email: row.email,
-    phoneCountryCode: row.phoneCountryCode,
-    phoneNationalNumber: row.phoneNationalNumber,
-    address: row.address,
-  };
 }
 
 async function resolveOrCreatePerson(
@@ -503,7 +482,9 @@ function isTransactionWriteConflict(error: unknown): boolean {
   );
 }
 
-main().catch((error: unknown) => {
-  console.error('Identity reconciliation failed.', error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error: unknown) => {
+    console.error('Identity reconciliation failed.', error);
+    process.exitCode = 1;
+  });
+}

@@ -1,8 +1,6 @@
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/shared/ui/DataTable'
 import { Button } from '@/shared/ui/button'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { useAuth } from '@/features/auth'
-import { canManageInventory } from '@/shared/security/roles'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -27,9 +25,8 @@ const limit = 10
 const emptyForm = { name: '', description: '' }
 
 export function InventoryCategoriesPage() {
-  const { user } = useAuth()
-  // UI mirrors legacy endpoint policy; server RolesGuard remains authoritative.
-  const mayManageInventory = canManageInventory(user?.role)
+  // Inventory mutations remain hidden until an approved canonical capability maps to them.
+  const mayManageInventory = false
   const { notify } = useToast()
   const [categories, setCategories] = useState<InventoryCategory[]>([])
   const [total, setTotal] = useState(0)

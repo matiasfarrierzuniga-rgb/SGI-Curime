@@ -10,7 +10,7 @@ function axiosError(status?: number, message?: string) {
 describe('community account feedback', () => {
   it('keeps identifiable password validation inline and Spanish', () => {
     expect(communityPasswordError('password123')).toBe(communityFeedbackMessages.passwordUppercase)
-    expect(communityAccountFeedback(axiosError(400, 'password must contain an uppercase letter'), 'register')).toEqual({
+    expect(communityAccountFeedback(axiosError(400, 'password must contain an uppercase letter'), 'verify')).toEqual({
       kind: 'error', field: 'password', message: communityFeedbackMessages.passwordUppercase,
     })
   })

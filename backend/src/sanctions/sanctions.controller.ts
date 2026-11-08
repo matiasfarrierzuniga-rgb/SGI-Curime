@@ -11,7 +11,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard, Roles, RolesGuard } from '../auth';
+import {
+  CapabilityGuard,
+  JwtAuthGuard,
+  RequireCapabilities,
+} from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import {
   CreateSanctionDto,
@@ -21,10 +25,10 @@ import {
 import { SanctionsService } from './sanctions.service';
 type AuthRequest = Request & { user: AuthenticatedUser };
 @Controller()
-@Roles('Administrador')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, CapabilityGuard)
 export class SanctionsController {
   constructor(private readonly service: SanctionsService) {}
+  @RequireCapabilities('padron.sanction.apply')
   @Post('affiliates/:id/sanctions') create(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateSanctionDto,
@@ -32,6 +36,7 @@ export class SanctionsController {
   ) {
     return this.service.create(id, dto, req.user.id, this.context(req));
   }
+  @RequireCapabilities('padron.affiliate.read')
   @Get('affiliates/:id/sanctions') byAffiliate(
     @Param('id', ParseIntPipe) id: number,
     @Query() q: QuerySanctionsDto,
@@ -39,12 +44,15 @@ export class SanctionsController {
     q.affiliateId = id;
     return this.service.findAll(q);
   }
+  @RequireCapabilities('padron.affiliate.read')
   @Get('sanctions') findAll(@Query() q: QuerySanctionsDto) {
     return this.service.findAll(q);
   }
+  @RequireCapabilities('padron.affiliate.read')
   @Get('sanctions/:id') findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
+  @RequireCapabilities('padron.sanction.apply')
   @Patch('sanctions/:id') update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateSanctionDto,

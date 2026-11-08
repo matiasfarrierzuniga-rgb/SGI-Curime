@@ -3,6 +3,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PublicFooter } from './PublicFooter'
 import { PublicHeader } from './PublicHeader'
+import { site } from '@/content/publicSiteContent'
 
 const auth = vi.hoisted(() => ({
   isAuthenticated: false,
@@ -46,13 +47,14 @@ describe('PublicHeader authentication states', () => {
     expect(screen.getByRole('button', { name: 'Abrir menú de navegación' })).toHaveFocus()
   })
 
-  it('keeps the public ventures directory in primary navigation', () => {
+  it('keeps public community destinations in primary navigation', () => {
     renderHeader()
 
     fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
     fireEvent.click(screen.getByRole('button', { name: 'Comunidad' }))
 
     expect(screen.getByRole('link', { name: 'Emprendimientos' })).toHaveAttribute('href', '/ventures')
+    expect(screen.getByRole('link', { name: 'Voluntariado' })).toHaveAttribute('href', '/voluntariado')
   })
 
   it('shows public access without authenticated actions to guests', () => {
@@ -94,13 +96,13 @@ describe('PublicHeader navigation groups', () => {
     expect(within(nav).getByRole('link', { name: 'Contacto' })).toHaveAttribute('href', '/contacto')
     expect(within(nav).getByRole('button', { name: 'Comunidad' })).toHaveAttribute('aria-expanded', 'false')
     expect(within(nav).getByRole('button', { name: 'Servicios' })).toHaveAttribute('aria-expanded', 'false')
-    for (const route of ['/', '/nosotros', '/comunidad', '/ventures', '/noticias', '/eventos', '/servicios', '/transparencia', '/contacto']) {
+    for (const route of ['/', '/nosotros', '/comunidad', '/ventures', '/voluntariado', '/noticias', '/eventos', '/servicios', '/transparencia', '/contacto']) {
       expect(nav.querySelectorAll(`a[href="${route}"]`)).toHaveLength(1)
     }
   })
 
   it.each([
-    ['Comunidad', ['Comunidad', 'Emprendimientos', 'Noticias', 'Eventos']],
+    ['Comunidad', ['Comunidad', 'Emprendimientos', 'Voluntariado', 'Noticias', 'Eventos']],
     ['Servicios', ['Servicios', 'Transparencia']],
   ] as const)('opens and closes %s with all its destinations', (group, destinations) => {
     renderHeader()
@@ -115,12 +117,12 @@ describe('PublicHeader navigation groups', () => {
 
   it.each([
     ['Inicio', '/'], ['Nosotros', '/nosotros'], ['Comunidad', '/comunidad'],
-    ['Emprendimientos', '/ventures'], ['Noticias', '/noticias'], ['Eventos', '/eventos'],
+    ['Emprendimientos', '/ventures'], ['Voluntariado', '/voluntariado'], ['Noticias', '/noticias'], ['Eventos', '/eventos'],
     ['Servicios', '/servicios'], ['Transparencia', '/transparencia'], ['Contacto', '/contacto'],
   ])('navigates to %s at %s and closes the menu', (label, route) => {
     renderHeader()
     fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
-    if (['Comunidad', 'Emprendimientos', 'Noticias', 'Eventos'].includes(label)) fireEvent.click(screen.getByRole('button', { name: 'Comunidad' }))
+    if (['Comunidad', 'Emprendimientos', 'Voluntariado', 'Noticias', 'Eventos'].includes(label)) fireEvent.click(screen.getByRole('button', { name: 'Comunidad' }))
     if (['Servicios', 'Transparencia'].includes(label)) fireEvent.click(screen.getByRole('button', { name: 'Servicios' }))
     fireEvent.click(screen.getByRole('link', { name: label }))
     expect(screen.getByTestId('location')).toHaveTextContent(route)
@@ -153,6 +155,7 @@ describe('PublicHeader navigation groups', () => {
     const firstLink = screen.getByRole('link', { name: 'Comunidad' })
     await waitFor(() => expect(firstLink).toHaveFocus())
     expect(screen.getByRole('link', { name: 'Emprendimientos' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Voluntariado' })).toBeInTheDocument()
   })
 
   it('marks nested routes and group triggers active', () => {
@@ -179,6 +182,16 @@ describe('PublicHeader navigation groups', () => {
 })
 
 describe('PublicFooter authentication states', () => {
+  it('uses each central public destination once, including volunteering', () => {
+    renderFooter()
+
+    expect(site.nav.find((item) => item.label === 'Voluntariado')).toEqual({ label: 'Voluntariado', to: '/voluntariado' })
+    const footer = screen.getByRole('contentinfo')
+    expect(within(footer).getByRole('link', { name: 'Voluntariado' })).toHaveAttribute('href', '/voluntariado')
+    expect(footer.querySelectorAll('a[href="/voluntariado"]')).toHaveLength(1)
+    expect(within(footer).getAllByRole('link')).toHaveLength(site.nav.length + 4)
+  })
+
   it('shows login and account registration to guests', () => {
     renderFooter()
 

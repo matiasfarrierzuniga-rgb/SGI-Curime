@@ -42,7 +42,7 @@ describe('InstitutionalBoardService', () => {
     );
     expect(tx.governanceTerm.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ legacyInstitutionalProfileId: 1 }),
+        data: expect.objectContaining({ institutionalProfileId: 1 }),
       }),
     );
     expect(audit.log).toHaveBeenCalledWith(
@@ -91,7 +91,8 @@ describe('InstitutionalBoardService', () => {
     tx.governanceMembership.create.mockResolvedValue({
       id: 3,
       termId: 4,
-      legacyPersonId: 9,
+      personId: 9,
+      person: { id: 9 },
       legacyPosition: BoardPosition.TREASURER,
       seatNumber: null,
       startedAt: null,
@@ -131,13 +132,13 @@ describe('InstitutionalBoardService', () => {
     tx.governanceMembership.findUnique.mockResolvedValue({
       id: 3,
       termId: 4,
-      legacyPersonId: 9,
+      personId: 9,
       legacyPosition: BoardPosition.PRESIDENT,
       seatNumber: null,
       startedAt: null,
       endedAt: null,
       term: {
-        legacyInstitutionalProfileId: 1,
+        institutionalProfileId: 1,
         startDate: new Date('2026-01-01'),
         endDate: new Date('2027-12-31'),
       },
@@ -146,7 +147,8 @@ describe('InstitutionalBoardService', () => {
     tx.governanceMembership.update.mockResolvedValue({
       id: 3,
       termId: 4,
-      legacyPersonId: 9,
+      personId: 9,
+      person: { id: 9 },
       legacyPosition: BoardPosition.PRESIDENT,
       seatNumber: null,
       startedAt: null,
@@ -155,7 +157,8 @@ describe('InstitutionalBoardService', () => {
     tx.governanceMembership.create.mockResolvedValue({
       id: 4,
       termId: 4,
-      legacyPersonId: 10,
+      personId: 10,
+      person: { id: 10 },
       legacyPosition: BoardPosition.PRESIDENT,
       seatNumber: null,
       startedAt: new Date('2027-01-01'),
@@ -180,7 +183,7 @@ describe('InstitutionalBoardService', () => {
     );
     expect(tx.governanceMembership.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ termId: 4, legacyPersonId: 10 }),
+        data: expect.objectContaining({ termId: 4, personId: 10 }),
       }),
     );
     expect(result.successor.personId).toBe(10);
@@ -198,13 +201,13 @@ describe('InstitutionalBoardService', () => {
     tx.governanceMembership.findUnique.mockResolvedValue({
       id: 3,
       termId: 4,
-      legacyPersonId: 9,
+      personId: 9,
       legacyPosition: BoardPosition.PRESIDENT,
       seatNumber: null,
       startedAt: null,
       endedAt: null,
       term: {
-        legacyInstitutionalProfileId: 1,
+        institutionalProfileId: 1,
         startDate: new Date('2026-01-01'),
         endDate: new Date('2027-12-31'),
       },

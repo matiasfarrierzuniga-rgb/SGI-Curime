@@ -6,6 +6,7 @@ import { PublicLayout } from '@/app/layouts/PublicLayout'
 import { LandingPage } from '@/features/public-site'
 import { PublicEventsPage } from '@/features/events'
 import { publicContentService } from '../../services/publicContentService'
+import { Breadcrumbs } from '../../components/public/PublicComponents'
 import { AboutPage, CommunityPage, ContactPage, NewsDetailPage, NewsPage, ServicesPage, TransparencyPage } from './PublicPages'
 
 const authState = vi.hoisted(() => ({
@@ -49,17 +50,40 @@ describe('portal público', () => {
 
   afterEach(() => vi.restoreAllMocks())
 
+  it('expone variantes hero y simple con semántica de ruta accesible', () => {
+    const { rerender } = render(<MemoryRouter><Breadcrumbs current="Nombre institucional muy extenso de Curime" variant="hero" /></MemoryRouter>)
+
+    const hero = screen.getByRole('navigation', { name: 'Ruta de navegación' })
+    expect(hero).toHaveClass('py-4')
+    expect(within(hero).getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '/')
+    expect(within(hero).getByText('Nombre institucional muy extenso de Curime')).toHaveAttribute('aria-current', 'page')
+    expect(hero.querySelector('svg')).toBeInTheDocument()
+
+    rerender(<MemoryRouter><Breadcrumbs current="Contacto" variant="simple" /></MemoryRouter>)
+    expect(screen.getByRole('navigation', { name: 'Ruta de navegación' })).toHaveClass('py-4', 'md:py-6')
+  })
+
+  it('integra un único breadcrumb hero antes del contenido comunitario', () => {
+    renderPublic('/comunidad')
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Ruta de navegación' })
+    expect(breadcrumb).toHaveTextContent('Inicio')
+    expect(within(breadcrumb).getByText('Comunidad')).toHaveAttribute('aria-current', 'page')
+    expect(breadcrumb).not.toHaveClass('border-b')
+  })
+
   it('muestra las siete áreas de Transparencia sin descargas ficticias', () => {
     renderPublic('/transparencia')
     const main = within(screen.getByRole('main'))
     expect(main.getByRole('heading', { name: 'Transparencia', level: 1 })).toBeVisible()
     expect(main.getByRole('img', { name: 'Paisaje rural de Curime, Guanacaste.' })).toHaveAttribute('src', '/images/public/home/hero-curime-fallback.jpg')
     for (const title of ['Documentos públicos', 'Informes', 'Proyectos', 'Rendición de cuentas', 'Reportes administrativos', 'Reportes financieros autorizados', 'Información relacionada con DINADECO']) {
-      expect(main.getByRole('heading', { name: title })).toBeVisible()
+      expect(main.getByRole('heading', { name: title, level: 4 })).toBeVisible()
     }
-    expect(main.getAllByText('Información en preparación')).toHaveLength(7)
+    expect(main.getByRole('heading', { name: 'No hay documentos publicados por el momento' })).toBeVisible()
+    expect(main.getAllByText('En preparación')).toHaveLength(7)
     expect(main.getByText('Informes de gestión y resultados de la Asociación.')).toBeVisible()
-    expect(main.getAllByRole('article')).toHaveLength(7)
+    expect(main.getAllByRole('listitem')).toHaveLength(7)
     expect(main.getAllByRole('link')).toHaveLength(1) // Solo la ruta de Inicio del breadcrumb.
   })
 
@@ -107,7 +131,8 @@ describe('portal público', () => {
     expect(main.getByRole('heading', { name: 'Visión' })).toBeVisible()
     expect(main.getByRole('heading', { name: 'Objetivos' })).toBeVisible()
     expect(main.getByRole('heading', { name: 'Nuestra historia' })).toBeVisible()
-    expect(main.getAllByRole('listitem')).toHaveLength(4)
+    expect(main.getByText(/no se presentan hitos ni cronologías sin validación/i)).toBeVisible()
+    expect(main.queryByText('Hito 01')).not.toBeInTheDocument()
     expect(main.getByRole('heading', { name: 'Junta Directiva' })).toBeVisible()
     expect(main.getByText(/Integrantes, cargos y período pendientes de validación/)).toBeVisible()
     expect(main.queryByText('2001')).not.toBeInTheDocument()
@@ -338,6 +363,7 @@ describe('portal público', () => {
     expect(lastNames).toHaveAttribute('autocomplete', 'family-name')
     expect(email).toHaveAttribute('autocomplete', 'email')
     expect(contact.getByRole('button', { name: 'Revisar consulta' })).toBeVisible()
+    expect(contact.getByText(/no envía mensajes automáticamente/i)).toBeVisible()
 
     fireEvent.click(contact.getByRole('button', { name: 'Revisar consulta' }))
 

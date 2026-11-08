@@ -46,7 +46,16 @@ const userSelect = {
   person: {
     select: {
       id: true,
+      firstName: true,
+      firstSurname: true,
+      secondSurname: true,
+      legacyFullName: true,
+      identification: true,
+      identificationType: true,
       email: true,
+      phoneCountryCode: true,
+      phoneNationalNumber: true,
+      address: true,
       affiliate: { select: { id: true, status: true, legacyRoleId: true } },
     },
   },
@@ -87,16 +96,22 @@ type SafeAdminPerson = Prisma.PersonGetPayload<{
 }>;
 
 function toUser(user: SafeUser): User {
+  const canonicalName = user.person
+    ? formatPersonName(user.person) ?? user.person.legacyFullName
+    : null;
   return {
     id: user.id,
-    fullName: user.fullName,
-    identification: user.identification,
-    identificationType: user.identificationType,
+    fullName: canonicalName ?? user.fullName ?? 'Cuenta comunitaria',
+    identification: user.person?.identification ?? user.identification,
+    identificationType:
+      user.person?.identificationType ?? user.identificationType,
     email: user.email,
-    phoneCountryCode: user.phoneCountryCode,
-    phoneNationalNumber: user.phoneNationalNumber,
+    phoneCountryCode:
+      user.person?.phoneCountryCode ?? user.phoneCountryCode,
+    phoneNationalNumber:
+      user.person?.phoneNationalNumber ?? user.phoneNationalNumber,
     phone: user.phone,
-    address: user.address,
+    address: user.person?.address ?? user.address,
     status: user.status as DomainUserStatus,
     subscriptionExpirationDate: user.subscriptionExpirationDate,
     lockedAt: user.lockedAt,

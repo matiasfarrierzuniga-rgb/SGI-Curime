@@ -24,6 +24,7 @@
   - [x] 3.3b Add `IdentityReconciliationManifest(sourceModel, sourceId)` evidence lookup index; retain existing nullable request Person relations and reconciliation manifest evidence.
   - [ ] 3.3c GovernanceMembership Person relation/semantic rename support remains pending; Person.gender remains explicitly unapproved and absent.
 - [ ] 3.4 Add focused migration/resolver tests for duplicate identities, conflicts, null links, malformed IDs, transaction races, retry idempotency, and rollback/forward-repair paths.
+  - [x] 3.4a C3-DB-01 checkpoint: mock-based regression coverage for incomplete reused Person rejection, no persisted AffiliateRequest link, and community User creation without automatic Person/Affiliate link (`77a8fc0`). This is not Stage C completion or database certification.
 - [ ] 3.5 Certify 100% safe User/Affiliate linking, zero nulls/conflicts, normalized uniqueness, preflight, rollback evidence, reconciliation population, and exception queue before proposing final Person-link non-null constraints; do not guess links.
 
 ## 4. Stage D — Canonical Read, Write, API, And Frontend Cutover

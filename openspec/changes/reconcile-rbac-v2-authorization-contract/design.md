@@ -45,6 +45,16 @@ Migrate only list/detail Affiliate Requests, Affiliate reads, audit logs, and in
 
 Alternative rejected: map mutations to read capabilities. This broadens privilege and violates least privilege.
 
+### 5. C3-SEC-01 session and affiliation hardening
+
+`sessionGeneration` is the canonical immediate bearer invalidation mechanism. Login and refresh place the current persisted generation in newly issued access tokens; JWT validation resolves the account and rejects a mismatched generation before exposing an authenticated principal. Role changes and account deactivation atomically increment the generation and revoke active refresh sessions. `sessionsInvalidBefore` is retained as compatibility/audit metadata written alongside global invalidation; authorization does not evaluate it because timestamp comparison is vulnerable to same-second issuance ambiguity.
+
+Refresh-token logout remains individual revocation. Refresh rotation uses compare-and-swap over an unrevoked, unexpired session, so a reused or concurrent losing refresh credential cannot mint replacement credentials.
+
+Affiliate deactivation changes only `Affiliate.status` and audit evidence. It does not require a Person/User relation, rewrite software role, assign `Subscription_L1`, revoke a session, or change Person. Loss of institutional eligibility remains a separate approved appointments/access-policy decision; this checkpoint adds no new access grant or removal rule.
+
+JWT validation accepts only HS256 and rejects a missing, non-integer, or non-positive subject before repository resolution. JWT `role` remains compatibility context only: authenticated role and permission codes always come from persistence.
+
 ## Risks / Trade-offs
 
 - [V2 persisted permissions lack endpoints] → catalog them as non-routable and deny by default; no controller mapping.

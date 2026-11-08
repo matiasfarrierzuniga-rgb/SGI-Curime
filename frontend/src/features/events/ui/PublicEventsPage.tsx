@@ -5,6 +5,7 @@ import { getErrorMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
+import { PublicPageContent, PublicPageHeader } from '@/shared/ui/PublicPageLayout'
 import { usePublicEvents } from '../hooks/useEventsQueries'
 import { getPublicEventPresentation } from '../model/publicEventPresentation'
 
@@ -27,14 +28,10 @@ export function PublicEventsPage() {
   }, [])
 
   return (
-    <section className="bg-brand-ivory py-14 md:py-20">
-      <div className="public-container">
-        <header className="max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">Agenda comunitaria</p>
-          <h1 className="mt-3 font-heading text-heading-1 font-bold text-brand-ink">Eventos</h1>
-          <p className="mt-4 text-body-large text-brand-ink/75">Consulte las actividades comunicadas oficialmente por la Asociación.</p>
-        </header>
-        <section aria-label="Eventos publicados" className="mt-10">
+    <>
+      <PublicPageHeader breadcrumb="Eventos" eyebrow="Agenda comunitaria" title="Eventos" intro="Consulte las actividades comunicadas oficialmente por la Asociación." />
+      <PublicPageContent className="bg-brand-ivory">
+        <section aria-label="Eventos publicados">
           {eventsQuery.isPending ? <LoadingState label="Cargando eventos publicados..." /> : null}
           {eventsQuery.isError ? <ErrorState message={getErrorMessage(eventsQuery.error, 'No fue posible cargar los eventos publicados.')} action={<button className="min-h-11 rounded-md border border-border px-4 font-semibold" type="button" onClick={() => void eventsQuery.refetch()}>Reintentar</button>} /> : null}
           {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length === 0 ? <EmptyState title="No hay eventos publicados en este momento" description="Cuando la Asociación publique una actividad, aparecerá en esta agenda." /> : null}
@@ -58,7 +55,7 @@ export function PublicEventsPage() {
             </div>
           ) : null}
         </section>
-      </div>
-    </section>
+      </PublicPageContent>
+    </>
   )
 }

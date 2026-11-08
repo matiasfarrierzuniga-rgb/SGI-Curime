@@ -21,12 +21,7 @@ describe('community account registration and activation', () => {
   const hasher = { hash: jest.fn() };
   let service: CommunityAccountsService;
   const payload = {
-    firstName: 'Ana',
-    firstSurname: 'Pérez',
-    identificationType: 'NATIONAL',
-    identification: '123456789',
     email: 'ana@example.test',
-    privacyAcknowledgement: true,
   };
   const validToken = () => ({
     id: 1,
@@ -50,7 +45,6 @@ describe('community account registration and activation', () => {
     });
     tx.user.create.mockResolvedValue({
       id: 2,
-      fullName: 'Ana Pérez',
       email: 'ana@example.test',
     });
     tx.user.updateMany.mockResolvedValue({ count: 1 });
@@ -71,7 +65,7 @@ describe('community account registration and activation', () => {
     );
   });
 
-  it('registers valid identity without password and creates a pending account and hashed token', async () => {
+  it('registers only an email without password, Person, or identity fields', async () => {
     const dto = plainToInstance(CreateCommunityAccountDto, payload);
     expect(await validate(dto)).toHaveLength(0);
     await service.register(dto);
@@ -80,7 +74,6 @@ describe('community account registration and activation', () => {
         data: expect.objectContaining({
           passwordHash: null,
           status: 'PENDING_EMAIL_VERIFICATION',
-          identification: '123456789',
         }) as unknown,
       }),
     );
@@ -92,38 +85,38 @@ describe('community account registration and activation', () => {
         }) as unknown,
       }),
     );
+    // eslint-disable-next-line prettier/prettier -- Tuple cast prevents unsafe mock-data access in this assertion.
+    const [[createArgument]] = tx.user.create.mock.calls as unknown as Array<[{ data: Record<string, unknown> }]>;
+    expect(createArgument.data).not.toHaveProperty('personId');
+    expect(createArgument.data).not.toHaveProperty('affiliate');
+    expect(createArgument.data).not.toHaveProperty('fullName');
+    expect(createArgument.data).not.toHaveProperty('identification');
+    expect(createArgument.data).not.toHaveProperty('firstName');
     expect(hasher.hash).not.toHaveBeenCalled();
     expect(delivery.deliver).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects invalid identity and missing acceptance at the DTO boundary', async () => {
+  it('rejects an invalid email at the DTO boundary', async () => {
     const errors = await validate(
       plainToInstance(CreateCommunityAccountDto, {
-        ...payload,
-        identification: 'abc',
         email: 'invalid',
-        privacyAcknowledgement: false,
       }),
     );
     expect(errors.map((error) => error.property)).toEqual(
-      expect.arrayContaining([
-        'identification',
-        'email',
-        'privacyAcknowledgement',
-      ]),
+      expect.arrayContaining(['email']),
     );
   });
 
-  it('rejects duplicate account email or identification without creating another account', async () => {
+  it('normalizes the only accepted registration field', async () => {
+    const dto = plainToInstance(CreateCommunityAccountDto, {
+      email: ' ANA@EXAMPLE.TEST ',
+    });
+    expect(await validate(dto)).toHaveLength(0);
+    expect(dto).toEqual({ email: 'ana@example.test' });
+  });
+
+  it('acknowledges a duplicate account email without creating another account', async () => {
     tx.user.findUnique.mockResolvedValueOnce({ id: 8 });
-    await expect(
-      service.register(plainToInstance(CreateCommunityAccountDto, payload)),
-    ).resolves.toEqual(
-      expect.objectContaining({ message: expect.any(String) }),
-    );
-    tx.user.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 9 });
     await expect(
       service.register(plainToInstance(CreateCommunityAccountDto, payload)),
     ).resolves.toEqual(
@@ -147,7 +140,7 @@ describe('community account registration and activation', () => {
     );
   });
 
-  it('retains the pending account and reports immediate email delivery failure', async () => {
+  it('retains the pending account when asynchronous email delivery fails', async () => {
     delivery.deliver.mockResolvedValue(false);
     await expect(
       service.register(plainToInstance(CreateCommunityAccountDto, payload)),

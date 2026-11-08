@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
+import { Breadcrumbs, PublicPageContent } from '@/shared/ui/PublicPageLayout'
 import { usePublicVenture } from '../hooks/usePublicVentures'
 import type { PublicVenture } from '../model/publicVentures.types'
 
@@ -20,15 +21,14 @@ export function PublicVentureDetailPage() {
   }, [ventureQuery.data])
 
   return (
-    <section className="bg-brand-ivory py-14 md:py-20">
-      <div className="public-container max-w-4xl">
+    <><div className="public-container"><Breadcrumbs current="Emprendimientos" variant="simple" /></div>
+    <PublicPageContent className="max-w-4xl bg-brand-ivory" spacing="normal">
         <Link className="inline-flex min-h-11 items-center gap-2 rounded-sm font-semibold text-brand-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to="/ventures"><ChevronLeft className="size-4" aria-hidden="true" />Volver a emprendimientos</Link>
         {!ventureId ? <ErrorState className="mt-10" title="Emprendimiento no disponible" message="El emprendimiento solicitado no está disponible." action={<Link className="inline-flex min-h-11 items-center rounded-md border border-border px-4 font-semibold" to="/ventures">Ver emprendimientos</Link>} /> : null}
         {ventureId && ventureQuery.isPending ? <LoadingState className="mt-10" label="Cargando emprendimiento..." /> : null}
         {ventureId && ventureQuery.isError ? <ErrorState className="mt-10" title="Emprendimiento no disponible" message={getErrorMessage(ventureQuery.error, 'El emprendimiento solicitado no está disponible.')} action={<Link className="inline-flex min-h-11 items-center rounded-md border border-border px-4 font-semibold" to="/ventures">Ver emprendimientos</Link>} /> : null}
         {ventureQuery.data ? <VentureDetail venture={ventureQuery.data} /> : null}
-      </div>
-    </section>
+    </PublicPageContent></>
   )
 }
 

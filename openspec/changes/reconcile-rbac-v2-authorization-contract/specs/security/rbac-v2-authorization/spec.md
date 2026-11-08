@@ -68,3 +68,18 @@ The system SHALL preserve legacy capabilities and legacy software roles during t
 #### Scenario: New V2 catalog is deployed
 - **WHEN** canonical V2 capability definitions are deployed before role-assignment migration
 - **THEN** no user gains access solely because a capability or role definition exists
+
+### Requirement: Persisted access and session revocation
+The system SHALL resolve the authenticated software role and permission codes from current persistence, not JWT role claims. It SHALL reject access tokens whose session generation does not equal the persisted user generation. Global privilege or account revocation SHALL atomically advance that generation and revoke active refresh sessions. Individual logout SHALL revoke only the identified refresh session.
+
+#### Scenario: Role changed while bearer remains in a client
+- **WHEN** a user's role changes after an access token was issued
+- **THEN** the prior bearer is rejected because its generation is stale, and its active refresh credential cannot be reused
+
+#### Scenario: JWT carries a historical role claim
+- **WHEN** a validly signed JWT contains a role claim different from current persistence
+- **THEN** authorization uses the persisted role and persisted approved permission codes
+
+#### Scenario: Affiliation is deactivated
+- **WHEN** an active Affiliate, including one without a linked User, is deactivated
+- **THEN** only affiliation state and audit evidence change; no software role, User status, Person, or session is changed without a separately approved policy

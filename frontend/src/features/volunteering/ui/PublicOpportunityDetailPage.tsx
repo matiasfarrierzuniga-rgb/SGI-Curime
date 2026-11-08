@@ -4,6 +4,7 @@ import { useAuth } from '@/features/auth'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { LoadingState } from '@/shared/ui/LoadingState'
+import { Breadcrumbs, PublicPageContent } from '@/shared/ui/PublicPageLayout'
 import { usePublicOpportunity } from '../hooks/usePublicOpportunities'
 import { VolunteerApplicationForm } from './VolunteerApplicationForm'
 
@@ -17,7 +18,7 @@ export function PublicOpportunityDetailPage() {
 
   useEffect(() => { if (opportunity.data) document.title = `${opportunity.data.title} | ADI Curime` }, [opportunity.data])
 
-  return <section className="bg-brand-ivory py-14 md:py-20"><div className="public-container max-w-4xl">
+  return <><div className="public-container"><Breadcrumbs current="Voluntariado" variant="simple" /></div><PublicPageContent className="max-w-4xl bg-brand-ivory" spacing="normal">
     <Link to="/voluntariado" className="inline-flex min-h-11 items-center font-semibold text-brand-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">Volver a voluntariado</Link>
     {!opportunityId ? <ErrorState title="Oportunidad no disponible" message="La oportunidad solicitada no está disponible." /> : null}
     {opportunityId && opportunity.isPending ? <LoadingState label="Cargando oportunidad..." /> : null}
@@ -34,5 +35,5 @@ export function PublicOpportunityDetailPage() {
         {!isAuthenticated ? <p className="mt-5 text-body-small text-brand-ink/75">Puede postularse sin cuenta. Si lo prefiere, <Link className="font-semibold text-brand-primary underline" to="/login">Iniciar sesión</Link> o <Link className="font-semibold text-brand-primary underline" to="/register">Crear una cuenta</Link>.</p> : null}
       </> : <p role="status" className="mt-8 text-body font-semibold text-brand-ink">Convocatoria cerrada para nuevas postulaciones.</p>}
     </article> : null}
-  </div></section>
+  </PublicPageContent></>
 }

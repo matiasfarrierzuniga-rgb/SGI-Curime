@@ -1,11 +1,9 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '@/shared/ui/Toast'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import { InventoryItemsPage } from './InventoryItemsPage'
-
-vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
 
 vi.mock('../../services/inventoryItemsService', () => ({
   inventoryItemsService: {
@@ -45,8 +43,6 @@ const item = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 } as const
 
-const conflict = (message: string) => ({ isAxiosError: true, response: { status: 409, data: { message } } })
-
 const page = () =>
   render(
     <ToastProvider>
@@ -85,117 +81,16 @@ describe('InventoryItemsPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar los artículos.')
   })
 
-  it('creates an item through the modal', async () => {
-    vi.mocked(inventoryItemsService.create).mockResolvedValue(item as never)
+  it('hides unsupported inventory mutations', async () => {
     page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Nuevo artículo' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Nuevo artículo' })
-    fireEvent.change(screen.getByLabelText('Código'), { target: { value: 'HER-002' } })
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Tornillo' } })
-    fireEvent.change(within(dialog).getByLabelText('Categoría'), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText('Existencia inicial'), { target: { value: '0' } })
-    fireEvent.change(screen.getByLabelText('Cantidad mínima'), { target: { value: '3' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
-    await waitFor(() =>
-      expect(inventoryItemsService.create).toHaveBeenCalledWith({
-        code: 'HER-002',
-        name: 'Tornillo',
-        description: undefined,
-        categoryId: 1,
-        quantity: 0,
-        minimumQuantity: 3,
-        unit: 'unidad',
-        location: undefined,
-        condition: 'GOOD',
-      }),
-    )
-    expect(await screen.findByRole('dialog', { name: /Artículo: Martillo/ })).toBeInTheDocument()
-  })
-
-  it('updates an existing item through the edit form', async () => {
-    vi.mocked(inventoryItemsService.update).mockResolvedValue({ ...item, name: 'Martillo reforzado' } as never)
-    page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }))
-    await screen.findByRole('dialog', { name: /Artículo: Martillo/ })
-    fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Martillo reforzado' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
-
-    await waitFor(() =>
-      expect(inventoryItemsService.update).toHaveBeenCalledWith(1, {
-        code: 'HER-001',
-        name: 'Martillo reforzado',
-        description: '',
-        categoryId: 1,
-        minimumQuantity: 2,
-        unit: 'unidad',
-        location: 'Bodega A',
-        condition: 'GOOD',
-      }),
-    )
-    expect(await screen.findByText('Artículo actualizado correctamente.')).toBeInTheDocument()
-  })
-
-  it('rejects an invalid minimum quantity without silently coercing it', async () => {
-    page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Nuevo artículo' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Nuevo artículo' })
-    fireEvent.change(screen.getByLabelText('Código'), { target: { value: 'HER-002' } })
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Tornillo' } })
-    fireEvent.change(within(dialog).getByLabelText('Categoría'), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText('Existencia inicial'), { target: { value: '0' } })
-    fireEvent.change(screen.getByLabelText('Cantidad mínima'), { target: { value: '-2' } })
-    fireEvent.submit(within(dialog).getByRole('button', { name: 'Guardar' }).closest('form')!)
-
-    expect(await screen.findByText('La cantidad mínima debe ser un entero mayor o igual a cero.')).toBeInTheDocument()
+    await screen.findByText('Martillo')
+    for (const action of ['Nuevo artículo', 'Editar', 'Entrada', 'Salida', 'Realizar ajuste']) {
+      expect(screen.queryByRole('button', { name: action })).not.toBeInTheDocument()
+    }
     expect(inventoryItemsService.create).not.toHaveBeenCalled()
-  })
-
-  it('records an entry', async () => {
-    page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Entrada' }))
-    await screen.findByRole('dialog', { name: /Registrar entrada: Martillo/ })
-    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '3' } })
-    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Compra' } })
-    fireEvent.change(screen.getByLabelText('Referencia (opcional)'), { target: { value: 'F-001' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar' }))
-    await waitFor(() =>
-      expect(inventoryItemsService.entry).toHaveBeenCalledWith(1, {
-        quantity: 3,
-        reason: 'Compra',
-        reference: 'F-001',
-        notes: undefined,
-      }),
-    )
-    expect(await screen.findByText('Entrada registrada correctamente.')).toBeInTheDocument()
-  })
-
-  it('shows a clear message when there is insufficient stock on an exit', async () => {
-    vi.mocked(inventoryItemsService.exit).mockRejectedValueOnce(conflict('Insufficient stock'))
-    page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Salida' }))
-    await screen.findByRole('dialog', { name: /Registrar salida: Martillo/ })
-    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '99' } })
-    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Uso interno' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar' }))
-    expect(await screen.findByText('No hay stock suficiente disponible para registrar esta salida.')).toBeInTheDocument()
-  })
-
-  it('registers an adjustment', async () => {
-    page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }))
-    await screen.findByRole('dialog', { name: /Artículo: Martillo/ })
-    fireEvent.click(screen.getByRole('button', { name: 'Realizar ajuste' }))
-    await screen.findByRole('dialog', { name: /Ajuste de inventario: Martillo/ })
-    fireEvent.change(screen.getByLabelText('Nueva cantidad'), { target: { value: '8' } })
-    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Conteo físico' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Ajustar' }))
-    await waitFor(() =>
-      expect(inventoryItemsService.adjustment).toHaveBeenCalledWith(1, {
-        newQuantity: 8,
-        reason: 'Conteo físico',
-        notes: undefined,
-      }),
-    )
+    expect(inventoryItemsService.update).not.toHaveBeenCalled()
+    expect(inventoryItemsService.entry).not.toHaveBeenCalled()
+    expect(inventoryItemsService.exit).not.toHaveBeenCalled()
+    expect(inventoryItemsService.adjustment).not.toHaveBeenCalled()
   })
 })

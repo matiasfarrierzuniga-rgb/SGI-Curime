@@ -14,8 +14,6 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  Roles,
-  RolesGuard,
 } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { AffiliatesService } from './affiliates.service';
@@ -48,14 +46,14 @@ export class AffiliatesController {
     return this.service.update(id, dto, req.user.id, this.context(req));
   }
   @Patch(':id/activate')
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequireCapabilities('padron.affiliate.status')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   activate(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.setStatus(id, 'ACTIVE', req.user.id, this.context(req));
   }
   @Patch(':id/deactivate')
-  @Roles('Administrador')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequireCapabilities('padron.affiliate.status')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   deactivate(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.deactivate(id, req.user.id, this.context(req));
   }

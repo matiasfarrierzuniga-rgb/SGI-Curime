@@ -1,10 +1,8 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '@/shared/ui/Toast'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import { InventoryCategoriesPage } from './InventoryCategoriesPage'
-
-vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { role: 'Administrador' } }) }))
 
 vi.mock('../../services/inventoryCategoriesService', () => ({
   inventoryCategoriesService: {
@@ -39,39 +37,15 @@ describe('InventoryCategoriesPage', () => {
     expect(screen.getByText('Activa')).toBeInTheDocument()
   })
 
-  it('creates a category', async () => {
+  it('hides unsupported category mutations', async () => {
     page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Nueva categoría' }))
-    await screen.findByRole('dialog', { name: 'Nueva categoría' })
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ferretería' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
-    await waitFor(() => expect(inventoryCategoriesService.create).toHaveBeenCalledWith({ name: 'Ferretería', description: undefined }))
-    expect(await screen.findByText('Categoría creada correctamente.')).toBeInTheDocument()
-  })
-
-  it('edits a category', async () => {
-    page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Editar' }))
-    await screen.findByRole('dialog', { name: 'Editar categoría' })
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Herramientas nuevas' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
-    await waitFor(() => expect(inventoryCategoriesService.update).toHaveBeenCalledWith(1, { name: 'Herramientas nuevas', description: 'Útiles de trabajo' }))
-  })
-
-  it('activates and deactivates a category through confirmation', async () => {
-    page()
-    await screen.findByRole('button', { name: 'Inactivar' })
-    fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Inactivar categoría' })
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Inactivar' }))
-    await waitFor(() => expect(inventoryCategoriesService.deactivate).toHaveBeenCalledWith(1))
-
-    const inactive = { ...category, isActive: false } as const
-    vi.mocked(inventoryCategoriesService.list).mockResolvedValue({ data: [inactive], total: 1, page: 1, limit: 10 })
-    page()
-    fireEvent.click(await screen.findByRole('button', { name: 'Activar' }))
-    const activateDialog = await screen.findByRole('dialog', { name: 'Activar categoría' })
-    fireEvent.click(within(activateDialog).getByRole('button', { name: 'Activar' }))
-    await waitFor(() => expect(inventoryCategoriesService.activate).toHaveBeenCalledWith(1))
+    await screen.findByText('Herramientas')
+    for (const action of ['Nueva categoría', 'Editar', 'Activar', 'Inactivar']) {
+      expect(screen.queryByRole('button', { name: action })).not.toBeInTheDocument()
+    }
+    expect(inventoryCategoriesService.create).not.toHaveBeenCalled()
+    expect(inventoryCategoriesService.update).not.toHaveBeenCalled()
+    expect(inventoryCategoriesService.activate).not.toHaveBeenCalled()
+    expect(inventoryCategoriesService.deactivate).not.toHaveBeenCalled()
   })
 })

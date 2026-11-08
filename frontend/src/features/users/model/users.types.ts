@@ -76,5 +76,5 @@ export interface AccountMutationResponse {
   isAdministrativelyBlocked: boolean
 }
 
-export interface UserUpdate { fullName?: string; email?: string; phoneCountryCode?: string; phoneNationalNumber?: string; address?: string }
+export interface UserUpdate { email: string }
 export interface UserQuery { page?: number; limit?: number; name?: string; email?: string; identification?: string; status?: UserStatus; roleId?: number; blocked?: boolean }

@@ -1,5 +1,9 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { emailError, fullNameError, normalizeEmail, normalizeText } from '@/shared/lib/formValidation'
+import { Button } from '@/shared/ui/button'
+import { FormField } from '@/shared/ui/FormField'
+import { Input } from '@/shared/ui/input'
+import { Textarea } from '@/shared/ui/textarea'
 
 type ContactField = 'firstName' | 'lastNames' | 'email' | 'subject' | 'message'
 type ContactValues = Record<ContactField, string>
@@ -12,8 +16,6 @@ const initialValues: ContactValues = {
   subject: '',
   message: '',
 }
-
-const fieldClass = 'min-h-12 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 aria-invalid:border-danger aria-invalid:ring-3 aria-invalid:ring-danger/15'
 
 function validateField(name: ContactField, rawValue: string) {
   const value = normalizeText(rawValue)
@@ -70,39 +72,24 @@ export function ContactForm() {
     onChange: update(name),
     onBlur: () => validateOne(name),
     'aria-invalid': Boolean(errors[name]),
-    'aria-describedby': errors[name] ? `${name}-error` : undefined,
   })
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 shadow-sm sm:p-7 lg:p-8">
-      <h2 className="text-heading-2 text-brand-deep">Envíe su consulta</h2>
-      <p className="mt-2 text-body-small text-foreground-muted">Este formulario le ayuda a revisar su consulta. No envía mensajes en línea; use el correo oficial para contactar a la Asociación.</p>
+    <section aria-labelledby="contact-form-title" className="rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-surface sm:p-7 lg:p-8">
+      <p className="public-eyebrow text-brand-primary">Prepare su consulta</p>
+      <h2 id="contact-form-title" className="mt-3 font-heading text-heading-2 text-brand-ink">Organice su mensaje antes de enviarlo por correo</h2>
+      <p className="mt-3 text-pretty text-body-small leading-relaxed text-foreground-muted">Este formulario no envía mensajes automáticamente. Le ayuda a revisar los datos antes de contactar a la Asociación mediante el correo oficial.</p>
       <form className="mt-6 grid gap-5" onSubmit={submit} noValidate>
         <div className="grid gap-5 sm:grid-cols-2">
-          <label className="grid gap-2 text-label font-semibold" htmlFor="firstName">Nombre <span aria-hidden="true">*</span>
-            <input id="firstName" className={fieldClass} required minLength={2} maxLength={80} autoComplete="given-name" {...fieldProps('firstName')} />
-            {errors.firstName && <span id="firstName-error" className="field-error" role="alert">{errors.firstName}</span>}
-          </label>
-          <label className="grid gap-2 text-label font-semibold" htmlFor="lastNames">Apellidos <span aria-hidden="true">*</span>
-            <input id="lastNames" className={fieldClass} required minLength={2} maxLength={120} autoComplete="family-name" {...fieldProps('lastNames')} />
-            {errors.lastNames && <span id="lastNames-error" className="field-error" role="alert">{errors.lastNames}</span>}
-          </label>
+          <FormField id="firstName" label="Nombre" required error={errors.firstName}><Input minLength={2} maxLength={80} autoComplete="given-name" {...fieldProps('firstName')} /></FormField>
+          <FormField id="lastNames" label="Apellidos" required error={errors.lastNames}><Input minLength={2} maxLength={120} autoComplete="family-name" {...fieldProps('lastNames')} /></FormField>
         </div>
-        <label className="grid gap-2 text-label font-semibold" htmlFor="contactEmail">Correo electrónico <span aria-hidden="true">*</span>
-          <input id="contactEmail" className={fieldClass} type="email" inputMode="email" required maxLength={254} autoComplete="email" {...fieldProps('email')} />
-          {errors.email && <span id="email-error" className="field-error" role="alert">{errors.email}</span>}
-        </label>
-        <label className="grid gap-2 text-label font-semibold" htmlFor="subject">Asunto <span aria-hidden="true">*</span>
-          <input id="subject" className={fieldClass} required minLength={3} maxLength={150} {...fieldProps('subject')} />
-          {errors.subject && <span id="subject-error" className="field-error" role="alert">{errors.subject}</span>}
-        </label>
-        <label className="grid gap-2 text-label font-semibold" htmlFor="message">Mensaje <span aria-hidden="true">*</span>
-          <textarea id="message" className={`${fieldClass} min-h-36 resize-y`} required minLength={10} maxLength={2000} {...fieldProps('message')} />
-          {errors.message && <span id="message-error" className="field-error" role="alert">{errors.message}</span>}
-        </label>
-        {notice && <p className="rounded-lg border border-brand-accent bg-brand-ivory p-3 text-sm leading-relaxed text-brand-deep" role="status">{notice}</p>}
-        <button className="primary min-h-12 w-full rounded-lg px-5 py-3 font-bold sm:w-auto sm:justify-self-start" type="submit">Revisar consulta</button>
+        <FormField id="email" label="Correo electrónico" required error={errors.email}><Input type="email" inputMode="email" maxLength={254} autoComplete="email" {...fieldProps('email')} /></FormField>
+        <FormField id="subject" label="Asunto" required error={errors.subject}><Input minLength={3} maxLength={150} {...fieldProps('subject')} /></FormField>
+        <FormField id="message" label="Mensaje" required error={errors.message}><Textarea className="min-h-36 resize-y" minLength={10} maxLength={2000} {...fieldProps('message')} /></FormField>
+        {notice && <p className="rounded-control border border-brand-accent/60 bg-brand-ivory p-3 text-body-small leading-relaxed text-brand-deep" role="status">{notice}</p>}
+        <Button className="w-full sm:w-auto sm:justify-self-start" size="lg" type="submit">Revisar consulta</Button>
       </form>
-    </div>
+    </section>
   )
 }

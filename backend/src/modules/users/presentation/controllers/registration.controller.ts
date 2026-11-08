@@ -7,7 +7,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
-import type { Request } from 'express';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import type { AuthenticatedUser } from '../../../../auth';
 import { OptionalJwtAuthGuard } from '../../../../auth/presentation/guards/optional-jwt-auth.guard';
@@ -17,27 +16,12 @@ import { AdministratorRegistrationForbiddenError } from '../../domain/errors/adm
 import { RegisterUserDto } from '../dto/register-user.dto';
 import { toRegistrationHttpError } from '../mappers/registration-error.mapper';
 import { toUserResponse } from '../mappers/user-response.mapper';
-import { CreateUserRequestDto } from '../../../../user-requests/dto/create-user-request.dto';
-import { UserRequestsService } from '../../../../user-requests/user-requests.service';
 
 @Controller()
 export class RegistrationController {
   constructor(
-    private readonly userRequests: UserRequestsService,
     private readonly registerAdministratorUseCase: RegisterAdministratorUseCase,
   ) {}
-
-  @Post('register')
-  @UseGuards(ThrottlerGuard)
-  async register(
-    @Body() dto: CreateUserRequestDto,
-    @Req() request: Request,
-  ) {
-    return this.userRequests.create(dto, {
-      ipAddress: request.ip,
-      userAgent: request.get('user-agent'),
-    });
-  }
 
   @Post('admin/register')
   @UseGuards(ThrottlerGuard, OptionalJwtAuthGuard)

@@ -4,8 +4,7 @@ import {
   JwtAuthGuard,
   CapabilityGuard,
   RequireCapabilities,
-  Roles,
-  RolesGuard,
+  UnsupportedOperationGuard,
   type AuthenticatedUser,
 } from '../auth';
 import { AdminReportsService } from './admin-reports.service';
@@ -14,7 +13,6 @@ import { AttendanceReportQueryDto } from './dto/report-query.dto';
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
 @Controller('admin-reports')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminReportsController {
   constructor(private readonly service: AdminReportsService) {}
   @Get('dashboard')
@@ -27,12 +25,12 @@ export class AdminReportsController {
     );
   }
   @Get('affiliates-summary')
-  @Roles('Administrador')
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   affiliates(@Req() req: AuthenticatedRequest) {
     return this.service.affiliatesSummary(this.generatedBy(req));
   }
   @Get('attendance-summary')
-  @Roles('Administrador')
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   attendance(
     @Query() q: AttendanceReportQueryDto,
     @Req() req: AuthenticatedRequest,
@@ -40,12 +38,12 @@ export class AdminReportsController {
     return this.service.attendanceSummary(q, this.generatedBy(req));
   }
   @Get('justifications-summary')
-  @Roles('Administrador')
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   justifications(@Req() req: AuthenticatedRequest) {
     return this.service.justificationsSummary(this.generatedBy(req));
   }
   @Get('sanctions-summary')
-  @Roles('Administrador')
+  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
   sanctions(@Req() req: AuthenticatedRequest) {
     return this.service.sanctionsSummary(this.generatedBy(req));
   }

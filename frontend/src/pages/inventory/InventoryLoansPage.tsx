@@ -5,12 +5,9 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { useToast } from '@/shared/ui/Toast'
-import { useAuth } from '@/features/auth'
-import { canManageInventory } from '@/shared/security/roles'
-import { affiliatesService } from '../../services/affiliatesService'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryLoansService } from '../../services/inventoryLoansService'
-import type { AffiliateOption, InventoryItem, InventoryLoan, InventoryLoanStatus, InventoryLoanQuery } from '../../types/inventory'
+import type { InventoryItem, InventoryLoan, InventoryLoanStatus, InventoryLoanQuery } from '../../types/inventory'
 import { loanStatusLabels } from '../../types/inventory'
 import { getErrorMessage, isConflictWithMessage } from '@/shared/lib/errors'
 import { EmptyState } from '@/shared/ui/EmptyState'
@@ -40,15 +37,11 @@ const emptyLoanForm = {
 const emptyReturnForm = { returnNotes: '', condition: '' }
 
 export function InventoryLoansPage() {
-  const { user } = useAuth()
-  const isAdmin = user?.role === 'Administrador'
-  // UI mirrors legacy endpoint policy; server RolesGuard remains authoritative.
-  const mayManageInventory = canManageInventory(user?.role)
+  // Inventory mutations remain hidden until an approved canonical capability maps to them.
+  const mayManageInventory = false
   const { notify } = useToast()
   const [loans, setLoans] = useState<InventoryLoan[]>([])
   const [items, setItems] = useState<InventoryItem[]>([])
-  const [affiliates, setAffiliates] = useState<AffiliateOption[]>([])
-  const [affiliateSearch, setAffiliateSearch] = useState('')
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [form, setForm] = useState({ itemId: '', status: '', overdue: false, dateFrom: '', dateTo: '' })
@@ -95,25 +88,9 @@ export function InventoryLoansPage() {
     }
   }, [])
 
-  const searchAffiliates = async (e?: FormEvent) => {
-    e?.preventDefault()
-    setBusy(true)
-    try {
-      const r = await affiliatesService.list({ search: affiliateSearch.trim() || undefined, page: 1, limit: 20 })
-      setAffiliates(r.data)
-    } catch (err) {
-      notify(getErrorMessage(err, 'No fue posible cargar afiliados.'), 'error')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const openCreate = () => {
     setLoanForm(emptyLoanForm)
-    setAffiliates([])
-    setAffiliateSearch('')
     setMode('create')
-    if (isAdmin) void searchAffiliates()
   }
 
   const openDetail = async (id: number) => {
@@ -323,22 +300,6 @@ export function InventoryLoansPage() {
             </select></label>
             <label>Cantidad<input type="number" min={1} step={1} required value={loanForm.quantity} onChange={(e) => setLoanForm({ ...loanForm, quantity: e.target.value })} /></label>
             <label>Nombre del prestatario<input maxLength={200} required value={loanForm.borrowerName} onChange={(e) => setLoanForm({ ...loanForm, borrowerName: e.target.value })} /></label>
-            {isAdmin && (
-              <fieldset className="card">
-                <legend>Asociar afiliado (opcional)</legend>
-                <label>Buscar afiliado
-                  <div className="filters">
-                    <input placeholder="Nombre o cédula" value={affiliateSearch} onChange={(e) => setAffiliateSearch(e.target.value)} />
-                    <Button type="button" variant="outline" disabled={busy} onClick={() => void searchAffiliates()}>Buscar</Button>
-                  </div>
-                </label>
-                <label>Afiliado<select value={loanForm.affiliateId} onChange={(e) => setLoanForm({ ...loanForm, affiliateId: e.target.value })}>
-                  <option value="">Sin asociar</option>
-                  {affiliates.map((a) => <option key={a.id} value={a.id}>{a.fullName} — {a.identification}</option>)}
-                </select></label>
-                {affiliates.length === 0 && <p className="mini-table-note">No se encontraron afiliados.</p>}
-              </fieldset>
-            )}
             <label>Fecha de préstamo (opcional)<input type="date" value={loanForm.loanDate} onChange={(e) => setLoanForm({ ...loanForm, loanDate: e.target.value })} /></label>
             <label>Devolución esperada<input type="date" required value={loanForm.expectedReturnDate} onChange={(e) => setLoanForm({ ...loanForm, expectedReturnDate: e.target.value })} /></label>
             <label>Notas (opcionales)<textarea maxLength={1000} value={loanForm.notes} onChange={(e) => setLoanForm({ ...loanForm, notes: e.target.value })} /></label>

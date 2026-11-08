@@ -103,6 +103,37 @@ describe('PrismaUsersRepository registration methods', () => {
     });
   });
 
+  it('projects linked personal identity from Person instead of User snapshots', async () => {
+    db.user.findUnique.mockResolvedValue(
+      userRecord({
+        fullName: 'Snapshot antiguo',
+        identification: '000000000',
+        person: {
+          id: 12,
+          firstName: 'Ana',
+          firstSurname: 'Pérez',
+          secondSurname: 'Mora',
+          legacyFullName: null,
+          identification: '123456789',
+          identificationType: 'NATIONAL',
+          email: 'ana.persona@example.test',
+          phoneCountryCode: '+506',
+          phoneNationalNumber: '88888888',
+          address: 'Curime',
+          affiliate: null,
+        },
+      }),
+    );
+
+    await expect(repository.findById(7)).resolves.toMatchObject({
+      fullName: 'Ana Pérez Mora',
+      identification: '123456789',
+      phoneCountryCode: '+506',
+      phoneNationalNumber: '88888888',
+      address: 'Curime',
+    });
+  });
+
   it('lists Person roots with no fabricated User access', async () => {
     db.person.findMany.mockResolvedValue([
       {

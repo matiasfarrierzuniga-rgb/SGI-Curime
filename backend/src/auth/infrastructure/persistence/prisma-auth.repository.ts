@@ -30,7 +30,10 @@ function toAuthAccount(user: AccountRow): AuthAccount {
   return {
     id: user.id,
     email: user.email,
-    fullName: user.fullName,
+    fullName:
+      canonicalPersonName(user.person) ??
+      user.fullName ??
+      'Cuenta comunitaria',
     status: user.status,
     passwordHash: user.passwordHash,
     lockedAt: user.lockedAt,
@@ -49,6 +52,17 @@ function toAuthAccount(user: AccountRow): AuthAccount {
     affiliateRoleId: user.person?.affiliate?.legacyRoleId ?? null,
     subscriptionExpirationDate: user.subscriptionExpirationDate,
   };
+}
+
+function canonicalPersonName(person: AccountRow['person']): string | null {
+  if (!person) return null;
+  return (
+    [person.firstName, person.firstSurname, person.secondSurname]
+      .filter((part): part is string => Boolean(part?.trim()))
+      .join(' ') ||
+    person.legacyFullName ||
+    null
+  );
 }
 
 @Injectable()

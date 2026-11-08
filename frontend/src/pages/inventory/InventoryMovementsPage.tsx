@@ -2,10 +2,8 @@ import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader
 import { Button } from '@/shared/ui/button'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Pagination } from '@/shared/ui/Pagination'
-import { useAuth } from '@/features/auth'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryMovementsService } from '../../services/inventoryMovementsService'
-import { usersService } from '@/features/users'
 import type { InventoryItem, InventoryMovement, InventoryMovementType, InventoryMovementQuery } from '../../types/inventory'
 import { movementTypeLabels } from '../../types/inventory'
 import { getErrorMessage } from '@/shared/lib/errors'
@@ -24,11 +22,8 @@ import { InventoryPageContainer } from './InventoryPageLayout'
 const limit = 20
 
 export function InventoryMovementsPage() {
-  const { user } = useAuth()
-  const isAdmin = user?.role === 'Administrador'
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [items, setItems] = useState<InventoryItem[]>([])
-  const [users, setUsers] = useState<{ id: number; label: string }[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [form, setForm] = useState({ itemId: '', type: '', dateFrom: '', dateTo: '', userId: '' })
@@ -74,27 +69,6 @@ export function InventoryMovementsPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!isAdmin) return
-    let active = true
-    usersService
-      .list({ page: 1, limit: 100 })
-      .then((r) => {
-        if (active) {
-          setUsers(r.data.flatMap((person) => person.access ? [{
-            id: person.access.id,
-            label: person.fullName ?? person.person.contactEmail ?? 'Sin nombre',
-          }] : []))
-        }
-      })
-      .catch(() => {
-        /* optional filter; ignored when unavailable */
-      })
-    return () => {
-      active = false
-    }
-  }, [isAdmin])
-
   const submit = (e: FormEvent) => {
     e.preventDefault()
     setPage(1)
@@ -114,7 +88,7 @@ export function InventoryMovementsPage() {
         filters={
           <SearchFilterBar
             label="Filtrar movimientos"
-            controlsClassName={isAdmin ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-2 xl:grid-cols-4'}
+            controlsClassName="md:grid-cols-2 xl:grid-cols-4"
             onSubmit={submit}
             actions={<Button type="submit">Aplicar filtros</Button>}
           >
@@ -132,12 +106,6 @@ export function InventoryMovementsPage() {
                 <option value="ADJUSTMENT">Ajuste</option>
               </Select>
             </FormField>
-            {isAdmin && <FormField id="inventory-movement-user" label="Registrado por">
-              <Select value={form.userId} onChange={(e) => setForm({ ...form, userId: e.target.value })}>
-                <option value="">Todos</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
-              </Select>
-            </FormField>}
             <FormField id="inventory-movement-date-from" label="Desde">
               <Input type="date" value={form.dateFrom} onChange={(e) => setForm({ ...form, dateFrom: e.target.value })} />
             </FormField>
