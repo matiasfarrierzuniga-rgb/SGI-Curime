@@ -10,7 +10,7 @@ type RoleRouteProps = {
 }
 
 export function RoleRoute({ capability, anyOfCapabilities, allOfCapabilities }: RoleRouteProps) {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isLoading } = useAuth()
   const requiresCapability = capability !== undefined || anyOfCapabilities !== undefined || allOfCapabilities !== undefined
   const hasRequiredCapability = capability !== undefined
     ? hasCapability(user?.permissionCodes, capability)
@@ -19,5 +19,6 @@ export function RoleRoute({ capability, anyOfCapabilities, allOfCapabilities }: 
       : Boolean(anyOfCapabilities?.length && anyOfCapabilities.some(item => hasCapability(user?.permissionCodes, item)))
   const allowed = !requiresCapability || (isAuthenticated && user?.canAccessErp === true && hasRequiredCapability)
 
+  if (isLoading) return <p className="container">Restaurando sesión…</p>
   return allowed ? <Outlet /> : <Navigate to="/403" replace />
 }

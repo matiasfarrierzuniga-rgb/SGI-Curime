@@ -126,6 +126,17 @@ describe('RBAC V2 HTTP guard certification', () => {
       : operation;
   }
 
+  function dashboardRequest(token?: string) {
+    // Nest exposes the Express server through an untyped generic boundary.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const operation = request(app.getHttpServer<Server>()).get(
+      '/admin-reports/dashboard',
+    );
+    return token
+      ? operation.set('Authorization', `Bearer ${token}`)
+      : operation;
+  }
+
   it('returns 401 for unauthenticated affiliate status requests', async () => {
     await statusRequest().expect(401);
     expect(affiliates.setStatus).not.toHaveBeenCalled();
@@ -193,6 +204,29 @@ describe('RBAC V2 HTTP guard certification', () => {
       'ACTIVE',
       7,
       expect.any(Object),
+    );
+  });
+
+  it('returns 401 for an unauthenticated dashboard request', async () => {
+    await dashboardRequest().expect(401);
+    expect(reports.dashboard).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 for a dashboard request without its persisted capability', async () => {
+    currentAccount = account({ permissionCodes: ['adm.affiliates.read'] });
+
+    await dashboardRequest(await bearer()).expect(403);
+    expect(reports.dashboard).not.toHaveBeenCalled();
+  });
+
+  it('allows dashboard entry only through its persisted capability', async () => {
+    currentAccount = account({ permissionCodes: ['erp.dashboard.read'] });
+    reports.dashboard.mockResolvedValue({ data: {} });
+
+    await dashboardRequest(await bearer()).expect(200);
+    expect(reports.dashboard).toHaveBeenCalledWith(
+      { id: 7, fullName: 'Certification User' },
+      ['erp.dashboard.read'],
     );
   });
 

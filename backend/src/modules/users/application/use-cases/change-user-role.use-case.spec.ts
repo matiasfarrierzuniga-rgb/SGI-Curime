@@ -38,7 +38,6 @@ describe('ChangeUserRoleUseCase', () => {
     findRoleById: jest.fn(),
     countActiveAdministrators: jest.fn(),
     updateRole: jest.fn(),
-    updateActiveAffiliateRoleForUser: jest.fn(),
     communityVerificationEvidence: jest.fn(),
   };
   const audit = { record: jest.fn() };
@@ -57,7 +56,6 @@ describe('ChangeUserRoleUseCase', () => {
     repository.findRoleById.mockResolvedValue(treasurer);
     repository.countActiveAdministrators.mockResolvedValue(1);
     repository.updateRole.mockResolvedValue(adminUser);
-    repository.updateActiveAffiliateRoleForUser.mockResolvedValue(undefined);
   });
 
   it('throws UserNotFoundError for an unknown user', async () => {
@@ -139,10 +137,6 @@ describe('ChangeUserRoleUseCase', () => {
     });
 
     expect(repository.updateRole).toHaveBeenCalledWith(1, 2);
-    expect(repository.updateActiveAffiliateRoleForUser).toHaveBeenCalledWith(
-      1,
-      2,
-    );
     expect(result).toEqual(adminUser);
     expect(audit.record).toHaveBeenCalledWith({
       userId: 7,
@@ -153,6 +147,9 @@ describe('ChangeUserRoleUseCase', () => {
       details: { previousRoleId: 1, newRoleId: 2 },
       ipAddress: '127.0.0.1',
     });
+    expect(repository.withTransaction.mock.invocationCallOrder[0]).toBeLessThan(
+      audit.record.mock.invocationCallOrder[0],
+    );
   });
 
   it('delegates session invalidation to the atomic role update', async () => {

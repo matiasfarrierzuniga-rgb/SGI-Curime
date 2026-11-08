@@ -1,3 +1,5 @@
+> **VIGENTE PARCIAL / PLANNING.** Stage C–E remain pending. Preserve nullable links and manual evidence; consult the canonical account lifecycle for community registration and CP-04 for the implemented administrative link.
+
 ## Context
 
 See `proposal.md` and `specs/identity/person-first-ownership/spec.md` for normative behavior.

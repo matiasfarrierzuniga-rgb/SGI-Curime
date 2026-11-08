@@ -1,5 +1,7 @@
 # Registro y activación comunitaria: etapa 1
 
+> **KEEP_REFERENCE / PARTIAL.** Evidencia técnica del incremento. El contrato operativo vigente está en [`docs/contracts/account-lifecycle-v1.md`](../contracts/account-lifecycle-v1.md); no tratar este documento como fuente normativa independiente.
+
 **Estado:** implementación en revisión; validación y despliegue pendientes.
 
 ## Objetivo y alcance

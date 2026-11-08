@@ -30,7 +30,6 @@ describe('getErpNavigation', () => {
       'usr.users.read',
       'adm.affiliates.read',
        'padron.application.review',
-      'usr.user-requests.read',
       'adm.justifications.read',
        'governance.assembly.session',
       'adm.institutional-profile.read',
@@ -60,7 +59,7 @@ describe('getErpNavigation', () => {
     expect(navigation.map(section => [section.label, section.items.map(item => item.label)])).toEqual([
       ['Panel principal', ['Inicio']],
       ['Gobierno institucional', ['Perfil institucional', 'Junta Directiva', 'Asambleas', 'Mis asambleas']],
-      ['Personas y accesos', ['Usuarios', 'Afiliados', 'Solicitudes de cuenta', 'Solicitudes de afiliación', 'Justificaciones de ausencia']],
+       ['Personas y accesos', ['Usuarios y cuentas', 'Afiliados / padrón', 'Solicitudes de afiliación', 'Justificaciones de ausencia']],
       ['Desarrollo comunitario', ['Eventos', 'Emprendimientos', 'Voluntariado']],
       ['Recursos y operaciones', ['Reservas', 'Inventario']],
       ['Finanzas', ['Finanzas', 'Donaciones']],
@@ -76,7 +75,6 @@ describe('getErpNavigation', () => {
       '/admin/users',
       '/app/admin/affiliates',
       '/app/admin/requests',
-      '/admin/user-requests',
       '/app/admin/absence-justifications',
       '/app/events',
       '/app/admin/ventures/summary',
@@ -88,8 +86,6 @@ describe('getErpNavigation', () => {
       '/inventory/categories',
       '/inventory/movements',
       '/inventory/loans',
-      '/inventory/alerts',
-      '/inventory/reports',
       '/app/financial/dashboard',
       '/app/financial',
       '/app/financial/movements',
@@ -117,7 +113,7 @@ describe('getErpNavigation', () => {
         expect.objectContaining({ label: 'Directorio', path: '/app/admin/ventures', capability: 'ent.ventures.read' }),
       ],
     })
-    expect(items.find(item => item.label === 'Voluntariado')).toMatchObject({ path: '/app/admin/volunteering', capability: 'vol.opportunities.read' })
+    expect(items.find(item => item.label === 'Voluntariado')).toMatchObject({ path: '/app/admin/volunteering', anyOfCapabilities: ['vol.opportunities.read', 'volunteer.campaign.manage'] })
   })
 
   it('does not use role names as authorization input', () => {

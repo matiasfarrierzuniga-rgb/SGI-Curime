@@ -144,25 +144,6 @@ export class InboxNotificationService {
     return { updated: result.count };
   }
 
-  async notifyUserRequestSubmitted(
-    tx: NotificationTransaction,
-    requestId: number,
-  ) {
-    const recipientUserIds = await this.findActiveRecipients(tx, [
-      'usr.user-requests.read',
-      'usr.user-requests.review',
-    ]);
-    return this.create(tx, {
-      recipientUserIds,
-      type: NotificationType.USER_REQUEST_SUBMITTED,
-      category: NotificationCategory.OPERATIONAL,
-      title: 'Nueva solicitud de cuenta',
-      body: 'Hay una solicitud de cuenta pendiente de revisión.',
-      resourceType: NotificationResourceType.USER_REQUEST,
-      resourceId: requestId,
-    });
-  }
-
   async notifyAffiliateRequestSubmitted(
     tx: NotificationTransaction,
     requestId: number,
@@ -293,11 +274,6 @@ function notificationAction(
   actor: AuthenticatedUser,
 ) {
   if (!actor.canAccessErp) return null;
-  if (
-    resourceType === NotificationResourceType.USER_REQUEST &&
-    hasPersistedCapability(actor.permissionCodes, 'usr.user-requests.read')
-  )
-    return { label: 'Ver solicitudes de cuenta', href: '/admin/user-requests' };
   if (
     resourceType === NotificationResourceType.AFFILIATE_REQUEST &&
     actor.role === 'Administrador' &&

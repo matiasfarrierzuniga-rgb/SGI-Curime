@@ -4,6 +4,7 @@ import {
   UserRole,
   UserStatus,
 } from '../entities/user';
+import type { Prisma } from '../../../../../generated/prisma/client';
 import { RegistrationConflictError } from '../errors/registration-conflict.error';
 import type {
   RuntimePersonIdentityInput,
@@ -11,6 +12,7 @@ import type {
 } from '../../../../identity/runtime-person-resolution';
 
 export const USERS_REPOSITORY = Symbol('USERS_REPOSITORY');
+export type UsersTransactionClient = Prisma.TransactionClient;
 
 export interface UserQuery {
   name?: string;
@@ -30,6 +32,20 @@ export interface UserPage {
   limit: number;
 }
 
+export interface AccountPage {
+  data: User[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface PersonLinkCandidate {
+  id: number;
+  displayName: string;
+  identificationHint: string | null;
+  affiliateStatus: 'ACTIVE' | 'INACTIVE' | null;
+}
+
 export interface UserAffiliationContext {
   affiliateId: number | null;
   affiliateStatus: 'ACTIVE' | 'INACTIVE' | null;
@@ -40,6 +56,16 @@ export interface UserAffiliationContext {
 
 export interface UserUpdateData {
   email?: string;
+}
+
+export interface AccountPersonLinkData {
+  userId: number;
+  personId: number;
+  actorId: number;
+  evidenceReference: string;
+  reason: string;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export interface UserCreateData {
@@ -80,11 +106,14 @@ export class RegistrationDataConflictError extends RegistrationConflictError {
 }
 
 export interface UsersRepository {
-  withTransaction<T>(work: (repo: UsersRepository) => Promise<T>): Promise<T>;
+  withTransaction<T>(
+    work: (repo: UsersRepository, client: UsersTransactionClient) => Promise<T>,
+  ): Promise<T>;
   withRegistrationTransaction<T>(
     work: (repo: UsersRepository) => Promise<T>,
   ): Promise<T>;
   findPage(query: UserQuery): Promise<UserPage>;
+  findAccountsPage(query: UserQuery): Promise<AccountPage>;
   findById(id: number): Promise<User | null>;
   findAdminPersonById(id: number): Promise<AdminPersonReadModel | null>;
   findAffiliationContext(id: number): Promise<UserAffiliationContext>;
@@ -93,6 +122,7 @@ export interface UsersRepository {
     excludeId?: number,
   ): Promise<{ id: number } | null>;
   findByPersonId(personId: number): Promise<{ id: number } | null>;
+  findLinkablePersonCandidates(query: string): Promise<PersonLinkCandidate[]>;
   findRoleById(id: number): Promise<UserRole | null>;
   findRoleByName(name: string): Promise<UserRole | null>;
   create(data: UserCreateData): Promise<User>;
@@ -103,10 +133,10 @@ export interface UsersRepository {
   communityVerificationEvidence(id: number): Promise<Date | null>;
   deactivateAndRevokeSessions(id: number): Promise<User>;
   updateProfile(id: number, data: UserUpdateData): Promise<User>;
+  linkAccountToPerson(data: AccountPersonLinkData): Promise<User>;
   updateStatus(id: number, status: UserStatus): Promise<User>;
   updateSubscriptionExpirationDate(id: number, value: Date): Promise<User>;
   updateRole(id: number, roleId: number): Promise<User>;
-  updateActiveAffiliateRoleForUser(id: number, roleId: number): Promise<void>;
   resetTemporaryLock(id: number): Promise<User>;
   countActiveAdministrators(excludeUserId: number): Promise<number>;
   countAdministrators(): Promise<number>;

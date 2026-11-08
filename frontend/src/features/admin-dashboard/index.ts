@@ -1,1 +1,5 @@
-export { AdminDashboard } from './ui/AdminDashboard'
+export {
+  AdminDashboard,
+  InstitutionalDashboardWelcome,
+} from './ui/AdminDashboard'
+export { canUseAdministrativeDashboard } from './model/canUseAdministrativeDashboard'

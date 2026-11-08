@@ -75,7 +75,7 @@ const page = () => {
 
 const open = async () => {
   fireEvent.click((await screen.findAllByRole('button', { name: 'Ver detalle' }))[0])
-  await screen.findByRole('dialog', { name: /Persona: Ana/ })
+  await screen.findByRole('dialog', { name: /Cuenta: Ana/ })
 }
 
 describe('UsersPage', () => {
@@ -102,7 +102,7 @@ describe('UsersPage', () => {
     expect(screen.getByText(/Cargando usuarios/)).toBeInTheDocument()
     resolveList({ data: [], total: 0, page: 1, limit: 10 })
 
-    expect(await screen.findByText(/No hay personas/)).toBeInTheDocument()
+    expect(await screen.findByText(/No hay cuentas registradas/)).toBeInTheDocument()
   })
 
   it('shows errors from listing users', async () => {
@@ -202,7 +202,7 @@ describe('UsersPage', () => {
     await screen.findByText('Ana Pérez')
 
     fireEvent.click(screen.getByRole('button', { name: 'Más acciones para Ana Pérez' }))
-    expect(screen.getByRole('menu', { name: 'Acciones de cuenta para Ana Pérez' })).toBeInTheDocument()
+    expect(screen.getByRole('menu', { name: 'Más acciones para Ana Pérez' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Desbloquear cuenta' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('menuitem', { name: 'Cambiar rol' }))
 
@@ -216,11 +216,11 @@ describe('UsersPage', () => {
 
     const trigger = screen.getByRole('button', { name: 'Más acciones para Ana Pérez' })
     fireEvent.click(trigger)
-    expect(screen.getByRole('menu', { name: 'Acciones de cuenta para Ana Pérez' })).toBeInTheDocument()
+    expect(screen.getByRole('menu', { name: 'Más acciones para Ana Pérez' })).toBeInTheDocument()
 
-    fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'Más acciones para Ana Pérez' }), { key: 'Escape' })
 
-    expect(screen.queryByRole('menu', { name: 'Acciones de cuenta para Ana Pérez' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menu', { name: 'Más acciones para Ana Pérez' })).not.toBeInTheDocument()
     expect(trigger).toHaveFocus()
   })
 

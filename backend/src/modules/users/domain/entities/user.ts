@@ -59,6 +59,7 @@ export interface User {
   affiliate: UserAffiliateContext | null;
   createdAt: Date;
   updatedAt: Date;
+  effectiveCapabilities?: readonly string[];
 }
 
 export interface AccountLockState {

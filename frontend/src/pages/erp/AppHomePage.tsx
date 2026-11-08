@@ -14,7 +14,11 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/features/auth";
-import { AdminDashboard } from "@/features/admin-dashboard";
+import {
+  AdminDashboard,
+  canUseAdministrativeDashboard,
+  InstitutionalDashboardWelcome,
+} from "@/features/admin-dashboard";
 import { getRoleName } from "@/shared/security/roles";
 import { hasCapability } from "@/shared/security/access";
 import { getErpNavigation } from "@/app/navigation/erpNavigation";
@@ -70,8 +74,11 @@ export function AppHomePage() {
     user?.permissionCodes,
     "erp.dashboard.read",
   );
+  const canViewAdministrativeMetrics = canUseAdministrativeDashboard(
+    user?.permissionCodes,
+  );
   const showStandaloneInventorySummary =
-    canViewInventory && !canViewDashboard;
+    canViewInventory && !canViewAdministrativeMetrics;
   const authorizedDestinations = getErpNavigation(user?.permissionCodes)
     .flatMap((section) => section.items)
     .flatMap((item) => (item.children?.length ? item.children : [item]))
@@ -110,11 +117,13 @@ export function AppHomePage() {
         canViewDashboard ? "max-w-none !p-0" : "max-w-[1440px] space-y-10"
       }
     >
-      {canViewDashboard ? (
+      {canViewAdministrativeMetrics ? (
         <AdminDashboard
           permissionCodes={user?.permissionCodes}
           userName={user?.fullName}
         />
+      ) : canViewDashboard ? (
+        <InstitutionalDashboardWelcome fullName={user?.fullName} />
       ) : (
         <header>
           <h1 className="font-sans text-heading-1 font-bold text-text-primary">

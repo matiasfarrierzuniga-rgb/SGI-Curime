@@ -1,14 +1,14 @@
 # Documentación de SGI-Curime
 
 Estado: Vigente  
-Última revisión: 2026-09  
-Fuente primaria: rama `main`, pruebas y configuración vigente
+Última revisión: 2026-11
+Fuente primaria: decisiones funcionales aprobadas, contratos vigentes, código y configuración de la rama de trabajo; `main` es referencia de promoción
 
 ## Propósito
 
 Este directorio concentra la documentación técnica, funcional y operativa vigente de SGI-Curime.
 
-La regla principal es simple: la documentación debe explicar el sistema que realmente existe en `main`. Los documentos históricos pueden conservarse como evidencia de evolución, pero deben estar claramente identificados para evitar confusión.
+La regla principal es simple: la documentación debe explicar el sistema aprobado e implementado en la rama de trabajo, distinguiendo funcionalidades recuperadas de certificación final pendiente. Los documentos históricos pueden conservarse como evidencia de evolución, pero deben estar claramente identificados para evitar confusión.
 
 ## Cómo navegar esta documentación
 
@@ -45,6 +45,7 @@ Documentos estables disponibles:
 - [`modules/affiliates.md`](./modules/affiliates.md): consulta, edición, estados, validaciones y auditoría de Afiliados.
 - [`modules/audit.md`](./modules/audit.md): trazabilidad, sanitización y consulta administrativa de Auditoría.
 - [`modules/institutional-board.md`](./modules/institutional-board.md): períodos, nombramientos, historia y límites de Junta Directiva.
+- [`contracts/account-lifecycle-v1.md`](./contracts/account-lifecycle-v1.md): ciclo operativo de cuenta comunitaria, identidad y límites ERP.
 - [`modules/donations.md`](./modules/donations.md): estado real de Donaciones, preparación existente y alcance todavía pendiente.
 - [`requirements/adi-dinadeco-source-mapping.md`](./requirements/adi-dinadeco-source-mapping.md): análisis de plantillas privadas ADI/DINADECO y mapeo de requisitos contra el sistema actual, sin implementación ni datos personales.
 
@@ -73,26 +74,19 @@ La documentación histórica de Sprint 1 continúa en `architecture/sprint-1-sco
 
 Cuando exista una contradicción entre documentos y código, la prioridad de evidencia es:
 
-1. código actual de `main`;
-2. pruebas automatizadas vigentes;
-3. configuración real del repositorio;
+1. decisiones funcionales aprobadas y contratos operativos vigentes;
+2. código y configuración actuales de la rama de trabajo;
+3. pruebas automatizadas vigentes, con su estado de ejecución explícito;
 4. documentación marcada como vigente;
-5. documentos históricos.
+5. OpenSpec y documentos históricos, con estado explícito.
 
 ## OpenSpec
 
-`openspec/` queda fuera de la iniciativa documental actual. Su contenido no se elimina ni reorganiza en esta fase, pero tampoco se utiliza como fuente vigente sin contrastarlo primero con el código actual.
+`openspec/` conserva decisiones, cambios activos y evidencia histórica. No sustituye contratos implementados ni se usa como fuente autónoma; los artefactos activos se contrastan con decisiones aprobadas y código actual. La estabilización actual está en `stabilize-rbac-v2-3-access-and-legacy-reconciliation`; su matriz es evidencia de aceptación, no una segunda matriz de grants.
 
 ## Deudas transversales visibles
 
-La documentación vigente debe mostrar también las diferencias reales entre capas. Actualmente Afiliados y Auditoría presentan una autorización híbrida:
-
-```text
-Frontend: capabilities
-Backend: RolesGuard + Administrador
-```
-
-Esta diferencia se considera deuda de reconciliación y no debe ocultarse como si la migración a capabilities estuviera terminada de extremo a extremo.
+La documentación vigente debe mostrar diferencias reales entre capas y no declarar certificación sin evidencia. RBAC V2.3 mantiene como fuente ejecutable `backend/src/auth/domain/policies/canonical-role-grants.ts`; cargos, afiliación e identidad no son substitutos de permisos técnicos. Matrices anteriores que contradigan decisiones aprobadas son históricas o `SUPERSEDED`, sin eliminación de su evidencia.
 
 La configuración Docker oficial integrada en `main` es `compose.yaml`; un `docker-compose.dev.yml` no forma parte actualmente de la rama canónica.
 
@@ -117,7 +111,7 @@ Un área puede considerarse documentada cuando:
 | Arquitectura general | 🟢 `architecture/overview.md` creado y vigente |
 | Arquitectura frontend | 🟢 Snapshot histórico reemplazado por arquitectura vigente |
 | Arquitectura backend | 🟢 Snapshot de Sprint 1 reemplazado por arquitectura vigente |
-| Autorización | 🟢 Base existente; deuda híbrida documentada |
+| Autorización | 🟡 RBAC V2.3 consolidado documentalmente; certificación funcional final pendiente |
 | ADRs | 🟢 Base existente |
 | Reservas | 🟢 Documento estable creado |
 | Financiero | 🟢 Documento estable creado |

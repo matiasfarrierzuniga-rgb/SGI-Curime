@@ -1,3 +1,5 @@
+> **SUPERSEDED / HISTORICAL for public registration.** This artifact preserves earlier request-first lifecycle planning. Its `/register` approval semantics do not override the current community-account contract; use `docs/contracts/account-lifecycle-v1.md`. Persisted-capability and institutional-access evidence remains reference material.
+
 ## Why
 
 SGI Curime currently has the required persistence and activation foundations, but its public `/register` path bypasses institutional review and its authorization rules mix persisted capabilities with hard-coded software role names. V1 needs one explicit account lifecycle and one capability contract across navigation, frontend routes, and backend APIs before access can be certified by actor.

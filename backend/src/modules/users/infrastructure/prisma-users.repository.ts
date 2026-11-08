@@ -1,9 +1,5 @@
 import { ConflictException, Injectable, Optional } from '@nestjs/common';
-import {
-  Prisma,
-  PrismaClient,
-  UserStatus,
-} from '../../../../generated/prisma/client';
+import { Prisma, PrismaClient, UserStatus } from '../../../../generated/prisma/client';
 import { getAccountLockoutPolicy, lockoutCutoff } from '../../../auth';
 import { SYSTEM_ADMIN_ROLE } from '../../../auth/domain/policies/canonical-role-catalog';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -19,7 +15,10 @@ import {
 } from '../domain/entities/user';
 import { EmailAlreadyRegisteredError } from '../domain/errors/email-already-registered.error';
 import {
+  AccountPersonLinkData,
   UserCreateData,
+  AccountPage,
+  PersonLinkCandidate,
   UserPage,
   UserAffiliationContext,
   UserQuery,
@@ -27,6 +26,10 @@ import {
   UsersRepository,
   RegistrationDataConflictError,
 } from '../domain/repositories/users-repository';
+import { AuditAction } from '../../../audit/audit-actions';
+import { AccountPersonLinkConflictError } from '../domain/errors/account-person-link-conflict.error';
+import { PersonNotFoundError } from '../domain/errors/person-not-found.error';
+import { UserNotFoundError } from '../domain/errors/user-not-found.error';
 
 const userSelect = {
   id: true,
@@ -65,6 +68,7 @@ const userSelect = {
       name: true,
       description: true,
       isActive: true,
+      permissions: { select: { permission: { select: { code: true } } } },
     },
   },
   createdAt: true,
@@ -134,6 +138,7 @@ function toUser(user: SafeUser): User {
       : null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+    effectiveCapabilities: (user.role.permissions ?? []).map((entry) => entry.permission.code),
   };
 }
 
@@ -182,13 +187,14 @@ export class PrismaUsersRepository implements UsersRepository {
   }
 
   async withTransaction<T>(
-    work: (repo: UsersRepository) => Promise<T>,
+    work: (
+      repo: UsersRepository,
+      client: Prisma.TransactionClient,
+    ) => Promise<T>,
   ): Promise<T> {
     return this.prisma.$transaction(
       async (tx) => {
-        return work(
-          new PrismaUsersRepository(this.prisma, this.personResolver, tx),
-        );
+        return work(new PrismaUsersRepository(this.prisma, this.personResolver, tx), tx);
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -240,6 +246,22 @@ export class PrismaUsersRepository implements UsersRepository {
       page: query.page,
       limit: query.limit,
     };
+  }
+
+  async findAccountsPage(query: UserQuery): Promise<AccountPage> {
+    const where = this.toAccountWhere(query);
+    const skip = (query.page - 1) * query.limit;
+    const [accounts, total] = await Promise.all([
+      this.db.user.findMany({
+        where,
+        select: userSelect,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: query.limit,
+      }),
+      this.db.user.count({ where }),
+    ]);
+    return { data: accounts.map(toUser), total, page: query.page, limit: query.limit };
   }
 
   async findById(id: number): Promise<User | null> {
@@ -454,16 +476,6 @@ export class PrismaUsersRepository implements UsersRepository {
     return toUser(user);
   }
 
-  async updateActiveAffiliateRoleForUser(
-    id: number,
-    roleId: number,
-  ): Promise<void> {
-    await this.db.affiliate.updateMany({
-      where: { person: { user: { id } }, status: 'ACTIVE' },
-      data: { legacyRoleId: roleId },
-    });
-  }
-
   async resetTemporaryLock(id: number): Promise<User> {
     const user = await this.db.user.update({
       where: { id },
@@ -544,6 +556,128 @@ export class PrismaUsersRepository implements UsersRepository {
               },
             }
           : undefined,
+    };
+  }
+
+  async findLinkablePersonCandidates(query: string): Promise<PersonLinkCandidate[]> {
+    const people = await this.db.person.findMany({
+      where: {
+        user: { is: null },
+        OR: [
+          { legacyFullName: { contains: query, mode: 'insensitive' } },
+          { firstName: { contains: query, mode: 'insensitive' } },
+          { firstSurname: { contains: query, mode: 'insensitive' } },
+          { identification: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        firstName: true,
+        firstSurname: true,
+        secondSurname: true,
+        legacyFullName: true,
+        identification: true,
+        affiliate: { select: { status: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    return people.map((person) => ({
+      id: person.id,
+      displayName:
+        person.legacyFullName ?? formatPersonName(person) ?? `Persona ${person.id}`,
+      identificationHint: person.identification
+        ? `••••${person.identification.replace(/\D/g, '').slice(-4)}`
+        : null,
+      affiliateStatus: person.affiliate?.status ?? null,
+    }));
+  }
+
+  async linkAccountToPerson(data: AccountPersonLinkData): Promise<User> {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: data.userId },
+          select: { id: true, personId: true },
+        });
+        if (!user) throw new UserNotFoundError();
+        if (user.personId !== null) throw new AccountPersonLinkConflictError();
+
+        const person = await tx.person.findUnique({
+          where: { id: data.personId },
+          select: { id: true },
+        });
+        if (!person) throw new PersonNotFoundError();
+
+        const linked = await tx.user.findUnique({
+          where: { personId: data.personId },
+          select: { id: true },
+        });
+        if (linked) throw new AccountPersonLinkConflictError();
+
+        const updated = await tx.user.updateMany({
+          where: { id: data.userId, personId: null },
+          data: { personId: data.personId },
+        });
+        if (updated.count !== 1) throw new AccountPersonLinkConflictError();
+
+        await tx.auditLog.create({
+          data: {
+            userId: data.actorId,
+            action: AuditAction.USER_PERSON_LINKED,
+            module: 'IDENTITY',
+            entityType: 'User',
+            entityId: String(data.userId),
+            details: {
+              personId: data.personId,
+              verificationMethod: 'ADMINISTRATIVE_REVIEW',
+              evidenceReference: data.evidenceReference,
+              reason: data.reason,
+            },
+            ipAddress: data.ipAddress,
+            userAgent: data.userAgent,
+          },
+        });
+
+        const result = await tx.user.findUnique({
+          where: { id: data.userId },
+          select: userSelect,
+        });
+        if (!result) throw new UserNotFoundError();
+        return toUser(result);
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        (error.code === 'P2002' || error.code === 'P2034')
+      ) {
+        throw new AccountPersonLinkConflictError();
+      }
+      throw error;
+    }
+  }
+
+  private toAccountWhere(query: UserQuery): Prisma.UserWhereInput {
+    const cutoff = lockoutCutoff(this.lockoutMinutes);
+    const textConditions: Prisma.UserWhereInput[] = [];
+    if (query.name) {
+      textConditions.push({
+        OR: [
+          { fullName: { contains: query.name, mode: 'insensitive' } },
+          { person: { is: { legacyFullName: { contains: query.name, mode: 'insensitive' } } } },
+          { person: { is: { firstName: { contains: query.name, mode: 'insensitive' } } } },
+          { person: { is: { firstSurname: { contains: query.name, mode: 'insensitive' } } } },
+        ],
+      });
+    }
+    if (query.email) textConditions.push({ email: { contains: query.email, mode: 'insensitive' } });
+    return {
+      AND: textConditions.length ? textConditions : undefined,
+      identification: query.identification ? { contains: query.identification, mode: 'insensitive' } : undefined,
+      status: query.status,
+      roleId: query.roleId,
+      ...(query.blocked === true ? { OR: [{ status: UserStatus.BLOCKED }, { lockedAt: { gt: cutoff } }] } : {}),
+      ...(query.blocked === false ? { AND: [...textConditions, { status: { not: UserStatus.BLOCKED } }, { OR: [{ lockedAt: null }, { lockedAt: { lte: cutoff } }] }] } : {}),
     };
   }
 }

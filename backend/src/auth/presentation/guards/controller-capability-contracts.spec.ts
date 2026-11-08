@@ -12,9 +12,9 @@ import { InventoryMovementsController } from '../../../inventory-movements/inven
 import { InventoryReportsController } from '../../../inventory-reports/inventory-reports.controller';
 import { SanctionsController } from '../../../sanctions/sanctions.controller';
 import { CAPABILITIES_KEY } from '../decorators/require-capabilities.decorator';
+import { ANY_CAPABILITIES_KEY } from '../decorators/require-any-capabilities.decorator';
 import { CapabilityGuard } from './capability.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { UnsupportedOperationGuard } from './unsupported-operation.guard';
 
 function handler(controller: { prototype: object }, name: string): object {
   return Reflect.getOwnPropertyDescriptor(controller.prototype, name)
@@ -27,17 +27,29 @@ describe('migrated controller authorization contracts', () => {
     [AffiliateRequestsController, 'findOne', 'padron.application.review'],
     [AffiliateRequestsController, 'approve', 'padron.application.approve'],
     [AffiliateRequestsController, 'reject', 'padron.application.approve'],
-    [AffiliatesController, 'findAll', 'adm.affiliates.read'],
-    [AffiliatesController, 'findOne', 'adm.affiliates.read'],
     [AffiliatesController, 'update', 'padron.affiliate.update'],
     [AffiliatesController, 'activate', 'padron.affiliate.status'],
     [AffiliatesController, 'deactivate', 'padron.affiliate.status'],
     [InventoryCategoriesController, 'findAll', 'inv.inventory.read'],
     [InventoryCategoriesController, 'findOne', 'inv.inventory.read'],
+    [InventoryCategoriesController, 'create', 'inventory.item.manage'],
+    [InventoryCategoriesController, 'update', 'inventory.item.manage'],
+    [InventoryCategoriesController, 'activate', 'inventory.item.manage'],
+    [InventoryCategoriesController, 'deactivate', 'inventory.item.manage'],
     [InventoryItemsController, 'findAll', 'inv.inventory.read'],
     [InventoryItemsController, 'findOne', 'inv.inventory.read'],
+    [InventoryItemsController, 'create', 'inventory.item.manage'],
+    [InventoryItemsController, 'update', 'inventory.item.manage'],
+    [InventoryItemsController, 'activate', 'inventory.item.manage'],
+    [InventoryItemsController, 'deactivate', 'inventory.item.manage'],
     [InventoryLoansController, 'findAll', 'inv.inventory.read'],
     [InventoryLoansController, 'findOne', 'inv.inventory.read'],
+    [InventoryLoansController, 'create', 'inventory.loan.manage'],
+    [InventoryLoansController, 'return', 'inventory.loan.manage'],
+    [InventoryLoansController, 'cancel', 'inventory.loan.manage'],
+    [InventoryItemOperationsController, 'recordEntry', 'inventory.item.manage'],
+    [InventoryItemOperationsController, 'recordExit', 'inventory.item.manage'],
+    [InventoryItemOperationsController, 'recordAdjustment', 'inventory.item.manage'],
     [
       InventoryItemOperationsController,
       'findItemMovements',
@@ -50,6 +62,20 @@ describe('migrated controller authorization contracts', () => {
       expect.arrayContaining([JwtAuthGuard, CapabilityGuard]),
     );
   });
+
+  it.each(['findAll', 'findOne'])(
+    'AffiliatesController.%s allows authorized padrón readers',
+    (method) => {
+      const target = handler(AffiliatesController, method);
+      expect(Reflect.getMetadata(ANY_CAPABILITIES_KEY, target)).toEqual([
+        'adm.affiliates.read',
+        'padron.affiliate.read',
+      ]);
+      expect(Reflect.getMetadata(GUARDS_METADATA, target)).toEqual(
+        expect.arrayContaining([JwtAuthGuard, CapabilityGuard]),
+      );
+    },
+  );
 
   it.each([
     ['create', 'padron.sanction.apply'],
@@ -93,29 +119,4 @@ describe('migrated controller authorization contracts', () => {
     );
   });
 
-  it.each([
-    [InventoryCategoriesController, 'create'],
-    [InventoryCategoriesController, 'update'],
-    [InventoryCategoriesController, 'activate'],
-    [InventoryCategoriesController, 'deactivate'],
-    [InventoryItemsController, 'create'],
-    [InventoryItemsController, 'update'],
-    [InventoryItemsController, 'activate'],
-    [InventoryItemsController, 'deactivate'],
-    [InventoryLoansController, 'create'],
-    [InventoryLoansController, 'return'],
-    [InventoryLoansController, 'cancel'],
-    [InventoryItemOperationsController, 'recordEntry'],
-    [InventoryItemOperationsController, 'recordExit'],
-    [InventoryItemOperationsController, 'recordAdjustment'],
-  ])(
-    '%s.%s remains default-deny without an approved canonical capability',
-    (controller, method) => {
-      const target = handler(controller, method);
-      expect(Reflect.getMetadata(CAPABILITIES_KEY, target)).toBeUndefined();
-      expect(Reflect.getMetadata(GUARDS_METADATA, target)).toEqual(
-        expect.arrayContaining([JwtAuthGuard, UnsupportedOperationGuard]),
-      );
-    },
-  );
 });

@@ -16,7 +16,11 @@ No hay DELETE. Una sustitución cierra el nombramiento anterior y crea otro, con
 
 El backend conserva `personId` en PATCH únicamente para una eventual corrección administrativa de captura. El formulario normal de edición no permite cambiar Persona: una sustitución debe cerrar la vigencia del nombramiento anterior y crear una fila nueva para la nueva persona.
 
-Solo Administrador recibe `adm.institutional-board.read/manage`. La búsqueda específica devuelve id, nombre, tipo y últimos cuatro caracteres de identificación; excluye nacimiento, domicilio y contacto. Escrituras y auditoría son atómicas. Acciones: `BOARD_TERM_CREATED/UPDATED` y `BOARD_APPOINTMENT_CREATED/UPDATED`; se guardan ids y `changedFields`, no PII.
+La autorización proviene de capacidades persistidas, no del label de software role ni del cargo. En el baseline RBAC V2.3 vigente, Secretaría tiene `adm.institutional-board.read/manage` para consultar y mantener períodos y nombramientos; System Administrator conserva lectura técnica cuando su grant efectivo lo permite. La búsqueda específica devuelve id, nombre, tipo y últimos cuatro caracteres de identificación; excluye nacimiento, domicilio y contacto. Escrituras y auditoría son atómicas. Acciones actuales: `BOARD_TERM_CREATED/UPDATED` y `BOARD_APPOINTMENT_CREATED/UPDATED/REVOKED`; se guardan ids y `changedFields`, no PII.
+
+Finalizar, sustituir o corregir un nombramiento preserva `Person`, `User`, `Affiliate`, `User.personId` y el historial `GovernanceMembership`. El cargo nunca asigna o revoca automáticamente permisos ERP. La revisión explícita de privilegios administrativos tras estos cambios está **PENDIENTE DE IMPLEMENTACIÓN** en el cambio RBAC V2.3; no debe asumirse como completada ni como eliminación de autorizaciones legítimas.
+
+El acceso a la pantalla no certifica el formulario “Agregar nombramiento”. Permanecen pendientes de corrección funcional: disponibilidad del botón según capacidad, selección y proyección autorizada de Person, guardado, feedback visible, actualización del listado y recuperación de controles tras la solicitud.
 
 ## VALIDATION_PENDING
 

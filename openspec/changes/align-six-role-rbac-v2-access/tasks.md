@@ -1,23 +1,25 @@
 # Tasks
 
+> **HISTORICAL TASK BASELINE.** Do not use legacy count expectations here to remove active functionality. Completion state is preserved as prior evidence; current work is tracked by `stabilize-rbac-v2-3-access-and-legacy-reconciliation`.
+
 ## 1. Freeze authorized evidence
 
 - [x] 1.1 Activate the APPLY skills listed in `design.md`, read root/frontend/backend instructions plus `docs/architecture/backend-layer-rules.md`, and verify branch `fix/consolidate-canonical-role-catalog`, initial HEAD `871f834`, clean worktree, and comparison with `development`; stop on drift and record actual Git evidence without switching, merging, stashing, or importing work.
-- [x] 1.2 Re-run the repository's read-only canonical matrix export only against the reviewed environment, verify active-role counts `16/24/26/12/29/0` and 107 non-null assignments, and stop without editing persistence if any count or code differs.
+- [x] 1.2 Re-run the repository's read-only canonical matrix export only against the reviewed environment, verify active-role counts `16/24/26/12/27/0` and 105 non-null assignments after C3-AUTH-01 retirement; do not execute persistence changes without an identified safe environment.
 - [ ] 1.3 Recheck every matrix row against current controllers, guard metadata, business rules, routes, screens and action controls; verify each remains classified `ALIGNED`, `MISALIGNED`, or `UNSUPPORTED` and that no V2/legacy equivalence relies only on naming.
 
 ## 2. Correct dashboard backend authorization
 
 - [x] 2.1 Update `backend/src/admin-reports/admin-reports.controller.ts` so `GET /admin-reports/dashboard` requires `erp.dashboard.read` plus capabilities for every protected metric domain it returns, removing nominal-only authorization for that method while leaving unrelated reports unchanged; verify no canonical institutional role with dashboard-only access can retrieve unauthorized metrics.
-- [ ] 2.2 Update `backend/src/admin-reports/admin-reports.controller.spec.ts` with positive legacy/system-administrator fixtures and negative missing-dashboard/missing-domain capability cases; verify unauthenticated access is `401`, insufficient persisted access is `403`, and the focused Jest suite passes.
+- [x] 2.2 Update `backend/src/admin-reports/admin-reports.controller.spec.ts` with positive legacy/system-administrator fixtures and negative missing-dashboard/missing-domain capability cases; verify unauthenticated access is `401`, insufficient persisted access is `403`, and the focused Jest suite passes.
 - [x] 2.3 Extend `backend/src/auth/presentation/guards/controller-capability-contracts.spec.ts` to lock exact dashboard metadata and assert reviewed V2 codes are not silently attached to legacy operations; verify the focused guard-contract suite passes.
 
 ## 3. Align shared route and navigation policy
 
 - [x] 3.1 Update `frontend/src/app/router/AppRoutes.tsx` to protect only ERP profile route `/app/profile` with `usr.profile.read`, preserve authenticated community `/profile`, and remove `/app/roles` placeholder; verify `AppRoutes.test.tsx` covers allowed/denied deep links and no placeholder is presented as functional.
 - [x] 3.2 Update `frontend/src/app/navigation/erpNavigation.ts` so Profile visibility and entry fallback match implemented routes while unsupported V2 capabilities create no destination; verify `erpNavigation.test.ts` uses exact fixtures for all six roles, removes empty groups, and preserves personal routes under their independent contracts.
-- [ ] 3.3 Refine `frontend/src/features/admin-dashboard/ui/AdminDashboard.tsx` and its public export only as needed to reuse approved welcome/shell presentation without exposing administrative metrics; verify `AdminDashboard.test.tsx` proves each query, card, link and action is capability-safe.
-- [ ] 3.4 Update `frontend/src/pages/erp/AppHomePage.tsx` to compose the shared institutional shell, financial entry, and inventory summary from real authorized data without new role-specific dashboards; verify `AppHomePage.test.tsx` covers the six canonical profiles and asserts unauthorized admin-report requests never occur.
+- [x] 3.3 Refine `frontend/src/features/admin-dashboard/ui/AdminDashboard.tsx` and its public export only as needed to reuse approved welcome/shell presentation without exposing administrative metrics; verify `AdminDashboard.test.tsx` proves each query, card, link and action is capability-safe.
+- [x] 3.4 Update `frontend/src/pages/erp/AppHomePage.tsx` to compose the shared institutional shell, financial entry, and inventory summary from real authorized data without new role-specific dashboards; verify `AppHomePage.test.tsx` covers the six canonical profiles and asserts unauthorized admin-report requests never occur.
 
 ## 4. Gate 01 — Presidency institutional
 
@@ -42,9 +44,9 @@
 
 ## 8. Gate 05 — System Administrator
 
-- [ ] 8.1 Validate System Administrator's 29-row fixture across administrative dashboard, users, account requests, read-only institutional modules, finance, inventory, reservations, audit and volunteering; verify each action follows its split legacy capability rather than broad `system.*` codes.
+- [ ] 8.1 Validate System Administrator's 27-row fixture across administrative dashboard, users, read-only institutional modules, finance, inventory, reservations, audit and volunteering; verify retired account-request operations remain unavailable and each remaining action follows its split legacy capability rather than broad `system.*` codes.
 - [ ] 8.2 Extend user-management tests for read/update/role-change/lifecycle/unlock separation, non-assignable roles, own-account continuity and privilege-escalation denial; verify direct API negatives remain `403` and frontend actions match backend capabilities.
-- [ ] 8.3 Verify `usr.roles.read` retains its backend read contract while `/app/roles` no longer presents a placeholder, and verify `system.audit.read`, `system.identity.manage`, `system.maintenance.operate`, and `system.rbac.manage` expose no substituted route or operation.
+- [x] 8.3 Retire `usr.user-requests.read` and `usr.user-requests.review`: no controller, route, navigation item, dashboard request, approval UI, or notification action remains. Verify `usr.roles.read` retains its backend read contract while `/app/roles` no longer presents a placeholder, and verify `system.audit.read`, `system.identity.manage`, `system.maintenance.operate`, and `system.rbac.manage` expose no substituted route or operation.
 
 ## 9. Gate 06 — Community User
 
@@ -56,7 +58,7 @@
 - [x] 10.1 Run focused backend controller/guard suites, then backend build and non-mutating focused lint commands; record exact commands/results as `PASSED`, `FAILED`, or `NOT_EXECUTED` and do not run seeds, migrations, resets, backfills, PostgreSQL-mutating tests, or lint commands that apply fixes.
 - [ ] 10.2 Run focused frontend tests for routes, navigation, dashboards and affected screens, then `npm run verify` under repository test policy; validate keyboard/focus/semantics and `320/375/768/1024/1440` layouts, recording pre-existing failures separately without fixing unrelated debt.
 - [ ] 10.3 Inspect final diff against `development` and checkpoint evidence; verify no changes under `backend/prisma/**`, no grant/catalog expansion, no identity/affiliation/accounting changes, no fictional data, no unsupported V2 route, and no unrelated source file.
-- [ ] 10.4 Produce final execution evidence in the delivery response: updated 107-row status summary, corrected access, reused screens, unsupported capabilities, tests/results, modified files, regression risks and rollback command/commit reference; verify no capability is marked functional when its route returns `403` or its operation is absent.
+- [ ] 10.4 Produce final execution evidence in the delivery response: updated 105-row status summary, corrected access, reused screens, unsupported capabilities, tests/results, modified files, regression risks and rollback command/commit reference; verify no capability is marked functional when its route returns `403` or its operation is absent.
 - [ ] 10.5 Declare GO only if all six role gates, negative authorization cases, builds, focused checks and scope review pass; otherwise declare NO-GO with blockers and leave integration to `development` untouched.
 
 ## Workflow follow-up

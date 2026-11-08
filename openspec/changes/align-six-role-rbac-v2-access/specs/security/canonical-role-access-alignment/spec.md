@@ -29,7 +29,7 @@ The authorization contract SHALL cover Presidency, Secretariat, Treasury, Instit
 - **THEN** every persisted assignment for that role SHALL be classified as implemented-and-aligned, implemented-but-misaligned, or without equivalent implementation
 
 #### Scenario: Assignment counts drift from expected baseline
-- **WHEN** current canonical evidence does not match Presidency 16, Secretariat 24, Treasury 26, Operator 12, System Administrator 29, and Community User 0
+- **WHEN** current canonical evidence does not match Presidency 16, Secretariat 24, Treasury 26, Operator 12, System Administrator 27, and Community User 0
 - **THEN** alignment SHALL stop for the affected baseline and report the discrepancy instead of silently changing grants or assuming the expected matrix
 
 ### Requirement: Frontend surfaces mirror backend-authorized operations

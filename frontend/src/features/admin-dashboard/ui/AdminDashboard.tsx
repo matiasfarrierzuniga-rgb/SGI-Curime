@@ -6,7 +6,6 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { useMemo, useState, type ReactElement, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
@@ -26,7 +25,6 @@ import {
   PackageX,
   RefreshCw,
   Sun,
-  UserPlus,
   Users,
   UsersRound,
 } from "lucide-react";
@@ -37,7 +35,6 @@ import { useAssemblies } from "@/features/assemblies";
 import type { Assembly } from "@/features/assemblies";
 import { useReservationsList } from "@/features/reservations";
 import type { AdminReservation } from "@/features/reservations";
-import { userRequestsService } from "@/features/user-requests";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
@@ -58,17 +55,13 @@ import {
 } from "@/shared/lib/calendar";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
 import type { AdminDashboardData } from "../model/adminDashboard.types";
+import { canUseAdministrativeDashboard } from "../model/canUseAdministrativeDashboard";
 
 type AdminDashboardProps = {
   permissionCodes?: readonly string[];
   userName?: string;
 };
 type Icon = typeof Users;
-type AccountRequestStatus = {
-  isPending: boolean;
-  isError: boolean;
-  total?: number;
-};
 type Tone = "success" | "warning" | "danger" | "info" | "violet";
 type QuickAction = {
   label: string;
@@ -136,14 +129,30 @@ export function AdminDashboard({
   permissionCodes,
   userName,
 }: AdminDashboardProps) {
-  const dashboard = useAdminDashboard();
+  const canReadAdministrativeMetrics = canUseAdministrativeDashboard(
+    permissionCodes,
+  );
+
+  if (!canReadAdministrativeMetrics) {
+    return <InstitutionalDashboardWelcome fullName={userName} />;
+  }
+
+  return (
+    <AdminDashboardContent
+      permissionCodes={permissionCodes}
+      userName={userName}
+    />
+  );
+}
+
+function AdminDashboardContent({
+  permissionCodes,
+  userName,
+}: AdminDashboardProps) {
+  const dashboard = useAdminDashboard(true);
   const events = usePublicEvents();
   const [calendarMonth, setCalendarMonth] = useState(() =>
     currentCostaRicaMonth(),
-  );
-  const canReadAccountRequests = hasCapability(
-    permissionCodes,
-    "usr.user-requests.read",
   );
   const canReadReservations = hasCapability(
     permissionCodes,
@@ -157,25 +166,18 @@ export function AdminDashboard({
     canReadReservations,
   );
   const assembliesCalendar = useAssemblies(canReadAssemblies);
-  const accountRequests = useQuery({
-    queryKey: ["user-requests", "dashboard", "pending"],
-    queryFn: () =>
-      userRequestsService.list({ page: 1, limit: 1, status: "PENDING" }),
-    enabled: canReadAccountRequests,
-    staleTime: 30_000,
-  });
 
   if (dashboard.isPending)
     return (
       <section aria-busy="true">
-        <InstitutionalWelcome fullName={userName} />
+        <InstitutionalDashboardWelcome fullName={userName} />
         <DashboardSkeleton />
       </section>
     );
   if (dashboard.isError)
     return (
       <section>
-        <InstitutionalWelcome fullName={userName} />
+        <InstitutionalDashboardWelcome fullName={userName} />
         <ErrorState
           className="mt-5"
           title="No fue posible cargar los indicadores"
@@ -198,7 +200,7 @@ export function AdminDashboard({
   if (!hasData(data))
     return (
       <section>
-        <InstitutionalWelcome
+        <InstitutionalDashboardWelcome
           fullName={userName}
           generatedAt={metadata.generatedAt}
         />
@@ -210,29 +212,20 @@ export function AdminDashboard({
       </section>
     );
 
-  const accountStatus = {
-    isPending: accountRequests.isPending,
-    isError: accountRequests.isError,
-    total: accountRequests.data?.total,
-  };
   return (
     <section className="space-y-4">
-      <InstitutionalWelcome
+      <InstitutionalDashboardWelcome
         fullName={userName}
         generatedAt={metadata.generatedAt}
       />
       <KpiRow
         data={data}
         permissionCodes={permissionCodes}
-        accountRequests={accountStatus}
-        canReadAccountRequests={canReadAccountRequests}
       />
       <div className="grid min-w-0 gap-3 min-[1200px]:grid-cols-[minmax(0,1.32fr)_minmax(0,1fr)] min-[1200px]:items-stretch">
         <AttentionPanel
           data={data}
           permissionCodes={permissionCodes}
-          accountRequests={accountStatus}
-          canReadAccountRequests={canReadAccountRequests}
         />
         <QuickActions
           actions={quickActions.filter((action) =>
@@ -287,7 +280,7 @@ export function AdminDashboard({
   );
 }
 
-function InstitutionalWelcome({
+export function InstitutionalDashboardWelcome({
   fullName,
   generatedAt,
 }: {
@@ -350,21 +343,10 @@ function InstitutionalWelcome({
 function KpiRow({
   data,
   permissionCodes,
-  accountRequests,
-  canReadAccountRequests,
 }: {
   data: AdminDashboardData;
   permissionCodes?: readonly string[];
-  accountRequests: AccountRequestStatus;
-  canReadAccountRequests: boolean;
 }) {
-  const accountValue = !canReadAccountRequests
-    ? null
-    : accountRequests.isPending
-      ? "—"
-      : accountRequests.isError
-        ? null
-        : (accountRequests.total ?? 0);
   const cards = [
     data.affiliates && hasCapability(permissionCodes, "adm.affiliates.read") ? (
       <KpiCard
@@ -398,25 +380,6 @@ function KpiRow({
         icon={Package}
         tone="warning"
         action={{ label: "Ver inventario", path: "/inventory" }}
-      />
-    ) : null,
-    canReadAccountRequests ? (
-      <KpiCard
-        key="account-requests"
-        title="Solicitudes pendientes"
-        subtitle={
-          accountValue === null
-            ? "Información no disponible"
-            : "Pendientes de revisión"
-        }
-        value={accountValue}
-        icon={UserPlus}
-        tone="danger"
-        action={
-          !accountRequests.isError
-            ? { label: "Ver solicitudes", path: "/admin/user-requests" }
-            : undefined
-        }
       />
     ) : null,
   ].filter((card): card is ReactElement => card !== null);
@@ -490,30 +453,11 @@ type AttentionItem = {
 function AttentionPanel({
   data,
   permissionCodes,
-  accountRequests,
-  canReadAccountRequests,
 }: {
   data: AdminDashboardData;
   permissionCodes?: readonly string[];
-  accountRequests: AccountRequestStatus;
-  canReadAccountRequests: boolean;
 }) {
   const items: AttentionItem[] = [];
-  if (
-    canReadAccountRequests &&
-    !accountRequests.isPending &&
-    !accountRequests.isError &&
-    (accountRequests.total ?? 0) > 0
-  )
-    items.push({
-      label: "Solicitudes de cuenta",
-      detail: "Pendientes de revisión",
-      count: accountRequests.total ?? 0,
-      icon: UserPlus,
-      tone: "danger",
-      path: "/admin/user-requests",
-      capability: "usr.user-requests.read",
-    });
   if (
     hasCapability(permissionCodes, "padron.application.review") &&
     data.affiliateRequests &&

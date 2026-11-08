@@ -1,10 +1,12 @@
 # Design
 
+> **SUPERSEDED FOR CURRENT RBAC V2.3 DECISIONS.** Retain this design as historical evidence. Numeric baselines in this file do not override approved functional responsibilities or the executable canonical catalog.
+
 ## Context
 
 See `proposal.md` and both spec deltas. Current branch `fix/consolidate-canonical-role-catalog` is at checkpoint `871f834`; `development` is the integration base, but this change must not merge either direction automatically. Existing RBAC consolidation recognizes 93 capability codes, resolves effective grants from persistence, admits five canonical ERP roles, and excludes the community role. It intentionally mapped only verified endpoint equivalents, leaving broader V2 capabilities non-routable.
 
-The current frontend already has capability-filtered ERP navigation plus shared administrative, financial, and inventory dashboards, but legacy role helpers and routes coexist. Canonical matrix export tooling exists at `backend/scripts/export-canonical-rbac-matrix.sql`. The expected matrix has 107 assignments across six roles; PostgreSQL, Prisma, migrations, and grant data are frozen for this increment.
+The current frontend already has capability-filtered ERP navigation plus shared administrative, financial, and inventory dashboards, but legacy role helpers and routes coexist. Canonical matrix export tooling exists at `backend/scripts/export-canonical-rbac-matrix.sql`. C3-AUTH-01 retires two obsolete UserRequest grants, leaving 105 assignments across six roles; PostgreSQL history, Prisma schema, and migrations remain frozen.
 
 ## Root Cause
 
@@ -16,7 +18,7 @@ The current frontend already has capability-filtered ERP navigation plus shared 
 
 ## Current Traceability Matrix
 
-Evidence: read-only export from the branch-provided script on 2026-11-04. It returned 107 non-null assignments with expected counts `16/24/26/12/29/0`; all six roles were active. `L` means implemented legacy capability; `V2` means V2 catalog capability. States: `A` aligned, `P` partial/misaligned, `U` no approved equivalent implementation. A V2 description is evidence of intended verb, not proof that a similarly named legacy endpoint is equivalent.
+Evidence: read-only export from the branch-provided script on 2026-11-04 returned the prior 107-assignment baseline. C3-AUTH-01 now defines 105 non-null canonical assignments with expected counts `16/24/26/12/27/0`; persisted reconciliation remains pending an authorized disposable PostgreSQL environment. `L` means implemented legacy capability; `V2` means V2 catalog capability. States: `A` aligned, `P` partial/misaligned, `U` no approved equivalent implementation. A V2 description is evidence of intended verb, not proof that a similarly named legacy endpoint is equivalent.
 
 Compact contract notation: `BE` gives endpoint and effective guard; `FE` gives route/screen/action. `—` means no approved equivalent. Corrections never change grants.
 
@@ -118,7 +120,7 @@ Compact contract notation: `BE` gives endpoint and effective guard; `FE` gives r
 | `maintenance.order.manage` | V2 / manage work order | — → — | U | Record missing maintenance module. |
 | `usr.profile.read` | L / own profile | authenticated `GET /users/me` → `/app/profile` | P | Guard ERP route only. |
 
-### 05 — System Administrator (29)
+### 05 — System Administrator (27)
 
 | Capability | Origin / operation | Current BE → FE | State | Minimal proposal |
 |---|---|---|---|---|
@@ -143,8 +145,6 @@ Compact contract notation: `BE` gives endpoint and effective guard; `FE` gives r
 | `system.rbac.manage` | V2 / manage user role | legacy role-change uses another code → — | U | Do not collapse read/change/lifecycle into broad grant. |
 | `usr.profile.read` | L / own profile | authenticated `GET /users/me` → `/app/profile` | P | Guard ERP route only. |
 | `usr.roles.read` | L / read roles | `GET /roles`, `CapabilityGuard` → `/app/roles` placeholder | P | Remove/hide placeholder; report missing management screen, do not build one. |
-| `usr.user-requests.read` | L / read account requests | `GET /user-requests*`, `CapabilityGuard` → requests | A | Preserve. |
-| `usr.user-requests.review` | L / approve/reject account request | `PATCH /user-requests/:id/*`, `CapabilityGuard` → dialog actions | A | Preserve identity-review rules. |
 | `usr.users.lifecycle.manage` | L / activate/deactivate | user lifecycle PATCH endpoints, `CapabilityGuard` → user actions | A | Preserve administrator-continuity restrictions. |
 | `usr.users.read` | L / read users | `GET /users*`, `CapabilityGuard` → users | A | Preserve. |
 | `usr.users.role.change` | L / change role | `PATCH /users/:id/role`, `CapabilityGuard` → user action | A | Preserve assignable-role and self-escalation rules. |
@@ -168,7 +168,7 @@ Compact contract notation: `BE` gives endpoint and effective guard; `FE` gives r
 - Make negative authorization evidence a release gate.
 
 **Non-Goals:**
-- Editing roles, permissions, `RolePermission`, seed grants, Prisma schema, migrations, or PostgreSQL data.
+- Editing Prisma schema, migrations, or PostgreSQL data.
 - Creating missing business modules, endpoints, accounting behavior, fictional dashboard data, or six role-specific dashboards.
 - Inferring software permissions from institutional office, Affiliate state, labels, or similar capability names.
 - Integrating, rebasing, merging, pushing, or importing historical branches, stashes, or worktrees.
@@ -178,7 +178,7 @@ Compact contract notation: `BE` gives endpoint and effective guard; `FE` gives r
 
 ### 1. Freeze evidence before correcting behavior
 
-Start from the current branch and checkpoint, inspect the canonical export script and source catalogs, and produce one normalized 107-row working matrix. Each row records role, capability provenance (`legacy` or `v2`), CRUD/business verb, endpoint, effective guard, domain rule, route, screen/action, and status. If role counts differ from 16/24/26/12/29/0, stop and report drift instead of changing grants.
+Start from the current branch and checkpoint, inspect the canonical export script and source catalogs, and produce one normalized 105-row working matrix. Each row records role, capability provenance (`legacy` or `v2`), CRUD/business verb, endpoint, effective guard, domain rule, route, screen/action, and status. If role counts differ from 16/24/26/12/27/0, stop and report drift instead of changing grants.
 
 Alternative rejected: derive intended access from navigation, role labels, or module names. Those surfaces can already be wrong and cannot establish authorization authority.
 
@@ -258,7 +258,7 @@ Do not activate `sgi-forms-validation` unless APPLY unexpectedly changes a form,
 
 ## Risks / Trade-offs
 
-- [Expected 107 assignments differ from current evidence] → stop alignment, report exact drift, and request an authorized matrix decision; do not repair persistence.
+- [Expected 105 assignments differ from current evidence] → stop alignment, report exact drift, and request an authorized matrix decision; do not repair persistence.
 - [Capability wording is broader than implemented business semantics] → classify unsupported or narrow to proven operation; never grant broad module access.
 - [Legacy and V2 identifiers coexist] → record provenance per row and preserve compatibility only where current contracts require it.
 - [Shared screen leaks actions or data] → gate route, query/data section, and each mutation independently; verify direct API denial.
@@ -270,7 +270,7 @@ Do not activate `sgi-forms-validation` unless APPLY unexpectedly changes a form,
 ## Migration Plan
 
 1. Confirm clean branch state, checkpoint, and comparison against `development`; do not merge or import other work.
-2. Generate/read the canonical matrix through approved read-only evidence and freeze the 107-row traceability baseline.
+2. Generate/read the canonical matrix through approved read-only evidence and freeze the 105-row traceability baseline.
 3. Complete role gates in prescribed order, correcting backend before frontend within each gate.
 4. Run focused positive/negative authorization tests after each gate, then frontend verify, backend tests/build, and final cross-role checks under repository test policy.
 5. Inspect final diff for forbidden persistence changes and produce closeout evidence with GO/NO-GO.

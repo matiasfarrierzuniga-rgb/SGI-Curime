@@ -15,6 +15,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import {
   CapabilityGuard,
   JwtAuthGuard,
+  RequireAnyCapabilities,
   RequireCapabilities,
   type AuthenticatedUser,
 } from '../auth';
@@ -41,25 +42,25 @@ export class VolunteeringOpportunitiesController {
   constructor(private readonly service: VolunteeringOpportunitiesService) {}
 
   @Get()
-  @RequireCapabilities('vol.opportunities.read')
+  @RequireAnyCapabilities('vol.opportunities.read', 'volunteer.campaign.manage')
   findAll(@Query() query: QueryVolunteerOpportunitiesDto) {
     return this.service.findAll(query);
   }
 
   @Get(':id')
-  @RequireCapabilities('vol.opportunities.read')
+  @RequireAnyCapabilities('vol.opportunities.read', 'volunteer.campaign.manage')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
   @Post()
-  @RequireCapabilities('vol.opportunities.create')
+  @RequireCapabilities('volunteer.campaign.manage')
   create(@Body() dto: CreateVolunteerOpportunityDto, @Req() req: AuthRequest) {
     return this.service.create(dto, req.user.id, this.context(req));
   }
 
   @Patch(':id')
-  @RequireCapabilities('vol.opportunities.update')
+  @RequireCapabilities('volunteer.campaign.manage')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateVolunteerOpportunityDto,
@@ -69,13 +70,13 @@ export class VolunteeringOpportunitiesController {
   }
 
   @Get(':id/sessions')
-  @RequireCapabilities('vol.opportunities.read')
+  @RequireAnyCapabilities('vol.opportunities.read', 'volunteer.campaign.manage')
   sessions(@Param('id', ParseIntPipe) id: number) {
     return this.service.findSessions(id);
   }
 
   @Post(':id/sessions')
-  @RequireCapabilities('vol.opportunities.update')
+  @RequireCapabilities('volunteer.campaign.manage')
   addSession(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateVolunteerSessionDto,
@@ -85,13 +86,13 @@ export class VolunteeringOpportunitiesController {
   }
 
   @Patch(':id/publish')
-  @RequireCapabilities('vol.opportunities.update')
+  @RequireCapabilities('volunteer.campaign.manage')
   publish(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.publish(id, req.user.id, this.context(req));
   }
 
   @Patch(':id/close')
-  @RequireCapabilities('vol.opportunities.update')
+  @RequireCapabilities('volunteer.campaign.manage')
   close(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.service.close(id, req.user.id, this.context(req));
   }
@@ -138,13 +139,13 @@ export class VolunteeringApplicationsController {
   constructor(private readonly applications: VolunteeringApplicationsService) {}
 
   @Get('opportunities/:id/applications')
-  @RequireCapabilities('vol.opportunities.read')
+  @RequireAnyCapabilities('vol.opportunities.read', 'volunteer.campaign.manage')
   list(@Param('id', ParseIntPipe) id: number) {
     return this.applications.list(id);
   }
 
   @Patch('applications/:id/approve')
-  @RequireCapabilities('vol.opportunities.update')
+  @RequireCapabilities('volunteer.campaign.manage')
   approve(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ApproveVolunteerApplicationDto,
@@ -157,7 +158,7 @@ export class VolunteeringApplicationsController {
   }
 
   @Patch('applications/:id/reject')
-  @RequireCapabilities('vol.opportunities.update')
+  @RequireCapabilities('volunteer.campaign.manage')
   reject(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RejectVolunteerApplicationDto,

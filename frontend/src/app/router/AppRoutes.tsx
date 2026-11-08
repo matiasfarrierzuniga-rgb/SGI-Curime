@@ -14,7 +14,6 @@ import { ProfilePage } from '@/features/profile'
 import { TokenPasswordPage } from '@/features/auth'
 import { CommunityEmailVerificationPage, CommunityHomePage, CommunityRegistrationPage } from '@/features/community-accounts'
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage'
-import { UserRequestsPage } from '@/pages/admin/UserRequestsPage'
 import { UsersPage } from '@/features/users'
 import { InventoryAlertsPage } from '@/pages/inventory/InventoryAlertsPage'
 import { InventoryCategoriesPage } from '@/pages/inventory/InventoryCategoriesPage'
@@ -115,14 +114,11 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="usr.users.read" />}>
             <Route path="/admin/users" element={<UsersPage />} />
           </Route>
-          <Route element={<RoleRoute capability="adm.affiliates.read" />}>
+          <Route element={<RoleRoute anyOfCapabilities={['adm.affiliates.read', 'padron.affiliate.read']} />}>
             <Route path="/app/admin/affiliates" element={<AffiliatesPage />} />
           </Route>
           <Route element={<RoleRoute capability="padron.application.review" />}>
             <Route path="/app/admin/requests" element={<AffiliateRequestsPage />} />
-          </Route>
-          <Route element={<RoleRoute capability="usr.user-requests.read" />}>
-            <Route path="/admin/user-requests" element={<UserRequestsPage />} />
           </Route>
           <Route element={<RoleRoute anyOfCapabilities={['governance.assembly.session', 'adm.assemblies.read']} />}>
             <Route path="/app/admin/assemblies" element={<AssembliesAdminPage />} />
@@ -142,7 +138,7 @@ export function AppRoutes() {
               <Route path="/app/admin/ventures" element={<VenturesPage />} />
               <Route path="/app/admin/ventures/summary" element={<VenturesSummaryPage />} />
             </Route>
-           <Route element={<RoleRoute capability="vol.opportunities.read" />}>
+            <Route element={<RoleRoute anyOfCapabilities={['vol.opportunities.read', 'volunteer.campaign.manage']} />}>
              <Route path="/app/admin/volunteering" element={<OpportunitiesPage />} />
            </Route>
           <Route path="/app/affiliate/absence-justifications/new" element={<AffiliateAbsenceJustificationPage />} />
@@ -150,7 +146,7 @@ export function AppRoutes() {
           <Route element={<RoleRoute capability="aud.logs.read" />}>
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
           </Route>
-          <Route element={<RoleRoute anyOfCapabilities={['events.proposal.create', 'events.proposal.review', 'events.proposal.approve', 'events.publish', 'pub.events.manage']} />}>
+          <Route element={<RoleRoute anyOfCapabilities={['events.proposal.create', 'events.proposal.review', 'events.proposal.approve', 'events.publish']} />}>
             <Route path="/app/events" element={<EventsManagementPage />} />
           </Route>
           <Route element={<RoleRoute capability="inv.inventory.read" />}>

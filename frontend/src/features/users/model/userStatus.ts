@@ -6,5 +6,7 @@ export function statusLabel(u: AccountAccess) {
       ? "Bloqueado administrativo"
       : u.status === "ACTIVE"
         ? "Activo"
-        : "Inactivo";
+        : u.status === "PENDING_EMAIL_VERIFICATION"
+          ? "Correo pendiente de verificación"
+          : "Inactivo";
 }

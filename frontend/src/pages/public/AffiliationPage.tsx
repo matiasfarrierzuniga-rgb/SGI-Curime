@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ReactElement, type ReactNode, type Re
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { affiliationSchema, mapAffiliationFormToRequest, TerritorialSelectors, type AffiliationFormValues } from '@/features/affiliate-requests'
-import { userRequestsService, type IdentityLookupResult } from '@/features/user-requests'
+import { identityLookupService, type IdentityLookupResult } from '@/features/identity'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { digitsOnly, identificationMaxLength } from '@/shared/lib/formValidation'
 import { Button } from '@/shared/ui/button'
@@ -79,7 +79,7 @@ export function AffiliationPage() {
       setLookupStatus({ kind: 'loading' })
       let request = lookupCache.current.get(identification)
       if (!request) {
-        request = userRequestsService.lookupIdentity(identification)
+        request = identityLookupService.lookup(identification)
         lookupCache.current.set(identification, request)
       }
 

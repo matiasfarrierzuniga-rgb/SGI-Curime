@@ -19,14 +19,16 @@ import { SearchFilterBar } from '@/shared/ui/SearchFilterBar'
 import { Select } from '@/shared/ui/select'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { InventoryPageContainer } from './InventoryPageLayout'
+import { useAuth } from '@/features/auth'
+import { hasCapability } from '@/shared/security/access'
 
 const limit = 10
 
 const emptyForm = { name: '', description: '' }
 
 export function InventoryCategoriesPage() {
-  // Inventory mutations remain hidden until an approved canonical capability maps to them.
-  const mayManageInventory = false
+  const { user } = useAuth()
+  const mayManageInventory = hasCapability(user?.permissionCodes, 'inventory.item.manage')
   const { notify } = useToast()
   const [categories, setCategories] = useState<InventoryCategory[]>([])
   const [total, setTotal] = useState(0)

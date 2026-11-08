@@ -1,5 +1,7 @@
 # Design
 
+> **SUPERSEDED / HISTORICAL.** Preserved design evidence. Current code establishes email-only registration and password establishment during verification; this artifact's earlier alternatives and migration plan are not active instructions.
+
 ## Context
 
 See `proposal.md` and the delta specs. Current `POST /register` creates `UserRequest(PENDING)` with legal identification and administrative review. `User.identification` is required/unique; `Person` is optional on `User`; `AccountActivationToken` already stores a SHA-256 token hash, expiry, and one-use marker. Legacy activation changes `INACTIVE` to `ACTIVE` while setting password. Login permits only `ACTIVE` accounts. Existing public throttling defaults to five requests per sixty seconds.

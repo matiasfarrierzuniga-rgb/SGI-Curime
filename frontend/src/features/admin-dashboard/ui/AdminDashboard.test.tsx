@@ -63,7 +63,11 @@ function renderDashboard(permissionCodes?: readonly string[]) {
     <MemoryRouter>
       <QueryClientProvider client={client}>
         <AdminDashboard
-          permissionCodes={permissionCodes}
+          permissionCodes={[
+            "erp.dashboard.read",
+            "adm.affiliates.read",
+            ...(permissionCodes ?? []),
+          ]}
           userName="Ana Pérez"
         />
       </QueryClientProvider>
@@ -130,27 +134,6 @@ describe("AdminDashboard", () => {
     ).toBeGreaterThan(0);
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(httpClient.get).toHaveBeenCalledWith("/admin-reports/dashboard");
-  });
-
-  it("requests account-pending count only with its authorized capability", async () => {
-    vi.mocked(httpClient.get).mockImplementation((url: string) => {
-      if (url === "/admin-reports/dashboard")
-        return Promise.resolve({ data: response });
-      if (url === "/user-requests")
-        return Promise.resolve({
-          data: { data: [], total: 6, page: 1, limit: 1 },
-        });
-      return Promise.reject(new Error("unexpected endpoint"));
-    });
-    renderDashboard(["usr.user-requests.read"]);
-    const card = await screen.findByRole("heading", {
-      name: "Solicitudes pendientes",
-      level: 2,
-    });
-    expect(within(card.closest("article")!).getByText("6")).toBeInTheDocument();
-    expect(httpClient.get).toHaveBeenCalledWith("/user-requests", {
-      params: { page: 1, limit: 1, status: "PENDING" },
-    });
   });
 
   it("filters quick actions by route capability", async () => {
@@ -314,18 +297,22 @@ describe("AdminDashboard", () => {
     });
   });
 
-  it("does not expose administrative quick actions without their effective capabilities", async () => {
+  it("does not expose broader administrative quick actions without their effective capabilities", async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: response });
     renderDashboard([]);
 
     expect(
-      await screen.findByText("No hay accesos disponibles."),
+      await screen.findByRole("link", { name: "Gestionar afiliados" }),
     ).toBeInTheDocument();
 
     expect(
-      screen.queryByRole("navigation", {
-        name: "Accesos rápidos administrativos",
-      }),
+      screen.queryByRole("link", { name: "Inventario" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Gestionar reservas" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Registrar donación" }),
     ).not.toBeInTheDocument();
   });
 

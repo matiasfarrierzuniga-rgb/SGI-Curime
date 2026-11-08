@@ -47,3 +47,11 @@ export function useUserDetail(personId: string | null, enabled: boolean) {
     enabled: enabled && personId !== null,
   });
 }
+
+export function usePersonLinkCandidates(query: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...usersKeys.all, 'person-link-candidates', query] as const,
+    queryFn: () => usersService.personLinkCandidates(query),
+    enabled: enabled && query.trim().length >= 2,
+  })
+}

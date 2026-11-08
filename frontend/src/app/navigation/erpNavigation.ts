@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeftRight, Building2, CalendarCheck2, CalendarClock, CalendarDays, ChevronRight, CircleUserRound,
   ClipboardList, ContactRound, FilePenLine, Files, HandHeart, HeartHandshake, House, Package,
-  Presentation, ScrollText, Store, Tags, TriangleAlert, UserRoundCog, UserRoundPlus, UsersRound, Wallet,
+   Presentation, ScrollText, Store, Tags, UserRoundCog, UsersRound, Wallet,
 } from 'lucide-react'
 import { hasCapability, type AccessCapability } from '@/shared/security/access'
 
@@ -23,24 +23,23 @@ const navigation: readonly ErpNavigationSection[] = [
   },
   {
     label: 'Personas y accesos', accent: 'cyan', items: [
-      { label: 'Usuarios', path: '/admin/users', capability: 'usr.users.read', icon: UserRoundCog },
-      { label: 'Afiliados', path: '/app/admin/affiliates', capability: 'adm.affiliates.read', icon: ContactRound },
-      { label: 'Solicitudes de cuenta', path: '/admin/user-requests', capability: 'usr.user-requests.read', icon: UserRoundPlus },
+      { label: 'Usuarios y cuentas', path: '/admin/users', capability: 'usr.users.read', icon: UserRoundCog },
+      { label: 'Afiliados / padrón', path: '/app/admin/affiliates', anyOfCapabilities: ['adm.affiliates.read', 'padron.affiliate.read'], icon: ContactRound },
        { label: 'Solicitudes de afiliación', path: '/app/admin/requests', capability: 'padron.application.review', icon: ClipboardList },
       { label: 'Justificaciones de ausencia', path: '/app/admin/absence-justifications', capability: 'adm.justifications.read', icon: Files },
     ],
   },
   {
     label: 'Desarrollo comunitario', accent: 'blue', items: [
-      { label: 'Eventos', path: '/app/events', anyOfCapabilities: ['events.proposal.create', 'events.proposal.review', 'events.proposal.approve', 'events.publish', 'pub.events.manage'], icon: CalendarDays },
+       { label: 'Eventos', path: '/app/events', anyOfCapabilities: ['events.proposal.create', 'events.proposal.review', 'events.proposal.approve', 'events.publish'], icon: CalendarDays },
       { label: 'Emprendimientos', path: '/app/admin/ventures/summary', capability: 'ent.ventures.read', icon: Store, children: [{ label: 'Resumen', path: '/app/admin/ventures/summary', capability: 'ent.ventures.read', icon: ChevronRight }, { label: 'Directorio', path: '/app/admin/ventures', capability: 'ent.ventures.read', icon: Store }] },
-      { label: 'Voluntariado', path: '/app/admin/volunteering', capability: 'vol.opportunities.read', icon: HandHeart },
+       { label: 'Voluntariado', path: '/app/admin/volunteering', anyOfCapabilities: ['vol.opportunities.read', 'volunteer.campaign.manage'], icon: HandHeart },
     ],
   },
   {
     label: 'Recursos y operaciones', accent: 'teal', items: [
       { label: 'Reservas', path: '/app/reservations', capability: 'res.reservations.read', icon: CalendarClock },
-      { label: 'Inventario', path: '/inventory', capability: 'inv.inventory.read', icon: Package, children: [{ label: 'Resumen', path: '/inventory', icon: Package }, { label: 'Artículos', path: '/inventory/items', icon: Package }, { label: 'Categorías', path: '/inventory/categories', icon: Tags }, { label: 'Movimientos', path: '/inventory/movements', icon: ArrowLeftRight }, { label: 'Préstamos', path: '/inventory/loans', icon: ContactRound }, { label: 'Alertas', path: '/inventory/alerts', icon: TriangleAlert }, { label: 'Reportes', path: '/inventory/reports', icon: ScrollText }] },
+      { label: 'Inventario', path: '/inventory', capability: 'inv.inventory.read', icon: Package, children: [{ label: 'Artículos', path: '/inventory/items', capability: 'inv.inventory.read', icon: Package }, { label: 'Categorías', path: '/inventory/categories', capability: 'inv.inventory.read', icon: Tags }, { label: 'Movimientos', path: '/inventory/movements', capability: 'inv.inventory.read', icon: ArrowLeftRight }, { label: 'Préstamos', path: '/inventory/loans', capability: 'inv.inventory.read', icon: ContactRound }] },
     ],
   },
   { label: 'Finanzas', accent: 'maize', items: [{ label: 'Finanzas', path: '/app/financial/dashboard', icon: Wallet, children: [{ label: 'Dashboard financiero', path: '/app/financial/dashboard', anyOfCapabilities: ['fin.movements.read', 'fin.charges.read'], icon: Wallet }, { label: 'Resumen', path: '/app/financial', allOfCapabilities: ['fin.movements.read', 'fin.charges.read'], icon: Wallet }, { label: 'Cargos y pagos', path: '/app/financial/charges', capability: 'fin.charges.read', icon: Wallet }, { label: 'Movimientos financieros', path: '/app/financial/movements', capability: 'fin.movements.read', icon: ArrowLeftRight }, { label: 'DINADECO', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: ScrollText }] }, { label: 'Donaciones', path: '/app/donations', capability: 'don.donations.read', icon: HeartHandshake }] },
@@ -59,7 +58,8 @@ export function getErpNavigation(permissionCodes: readonly string[] | null | und
     const items = section.items.flatMap((item) => {
       const children = item.children?.filter((child) => isVisible(child, permissionCodes))
       if (!isVisible(item, permissionCodes) || (item.children !== undefined && children?.length === 0)) return []
-      return [{ ...item, path: children?.[0]?.path ?? item.path, children }]
+      const hasOwnEndpointAccess = item.capability !== undefined || item.anyOfCapabilities !== undefined || item.allOfCapabilities !== undefined
+      return [{ ...item, path: hasOwnEndpointAccess ? item.path : children?.[0]?.path ?? item.path, children }]
     })
     return items.length ? [{ ...section, items }] : []
   })

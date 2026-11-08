@@ -5,6 +5,12 @@ import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryCategoriesService } from '../../services/inventoryCategoriesService'
 import { InventoryItemsPage } from './InventoryItemsPage'
 
+const authState = vi.hoisted(() => ({ permissionCodes: [] as string[] }))
+
+vi.mock('@/features/auth', () => ({
+  useAuth: () => ({ user: { permissionCodes: authState.permissionCodes } }),
+}))
+
 vi.mock('../../services/inventoryItemsService', () => ({
   inventoryItemsService: {
     list: vi.fn(),
@@ -53,6 +59,7 @@ const page = () =>
 describe('InventoryItemsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    authState.permissionCodes = ['inv.inventory.read']
     vi.mocked(inventoryItemsService.list).mockResolvedValue({ data: [item], total: 1, page: 1, limit: 10 })
     vi.mocked(inventoryItemsService.get).mockResolvedValue(item as never)
     vi.mocked(inventoryCategoriesService.list).mockResolvedValue({ data: [category], total: 1, page: 1, limit: 100 })
@@ -81,7 +88,7 @@ describe('InventoryItemsPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar los artículos.')
   })
 
-  it('hides unsupported inventory mutations', async () => {
+  it('keeps inventory mutations hidden for read-only users', async () => {
     page()
     await screen.findByText('Martillo')
     for (const action of ['Nuevo artículo', 'Editar', 'Entrada', 'Salida', 'Realizar ajuste']) {
@@ -92,5 +99,15 @@ describe('InventoryItemsPage', () => {
     expect(inventoryItemsService.entry).not.toHaveBeenCalled()
     expect(inventoryItemsService.exit).not.toHaveBeenCalled()
     expect(inventoryItemsService.adjustment).not.toHaveBeenCalled()
+  })
+
+  it('shows item and movement operations with inventory.item.manage', async () => {
+    authState.permissionCodes = ['inv.inventory.read', 'inventory.item.manage']
+    page()
+
+    await screen.findByText('Martillo')
+    for (const action of ['Nuevo artículo', 'Entrada', 'Salida']) {
+      expect(screen.getByRole('button', { name: action })).toBeInTheDocument()
+    }
   })
 })

@@ -62,7 +62,7 @@ const notice: OperationalNotification = {
   readAt: null,
   createdAt: "2030-01-01T12:00:00.000Z",
   expiresAt: "2031-01-01T12:00:00.000Z",
-  action: { label: "Ver solicitudes de cuenta", href: "/admin/user-requests" },
+  action: null,
 };
 
 function renderInRouter(node: React.ReactNode) {
@@ -91,10 +91,7 @@ describe("notification inbox UI", () => {
     expect(screen.getByText("Nueva solicitud de cuenta")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Marcar leída" }));
     expect(hooks.markRead).toHaveBeenCalledWith(notice.id);
-    expect(screen.getByRole("link", { name: "Abrir" })).toHaveAttribute(
-      "href",
-      "/admin/user-requests",
-    );
+    expect(screen.queryByRole("link", { name: "Abrir" })).not.toBeInTheDocument();
     fireEvent.keyDown(document, { key: "Escape" });
     expect(
       screen.queryByRole("heading", { name: "Notificaciones" }),

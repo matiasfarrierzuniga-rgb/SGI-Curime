@@ -31,9 +31,14 @@ export function inspectCanonicalRbac(
     (name) => byName.has(name) && !byName.get(name)!.isActive,
   );
   const historicalActiveRoles = persistedRoles
-    .filter((role) => !CANONICAL_ROLE_CODES.includes(role.name as never) && role.isActive)
+    .filter(
+      (role) =>
+        !CANONICAL_ROLE_CODES.includes(role.name as never) && role.isActive,
+    )
     .map((role) => role.name);
-  const permissionsToEnsure = [...new Set(Object.values(CANONICAL_ROLE_GRANTS).flat())].sort();
+  const permissionsToEnsure = [
+    ...new Set(Object.values(CANONICAL_ROLE_GRANTS).flat()),
+  ].sort();
   const grantsToCreate: { role: string; capability: string }[] = [];
   const unexpectedGrants: { role: string; capability: string }[] = [];
 
@@ -44,7 +49,8 @@ export function inspectCanonicalRbac(
       if (!current.has(capability)) grantsToCreate.push({ role, capability });
     }
     for (const capability of current) {
-      if (!expected.has(capability)) unexpectedGrants.push({ role, capability });
+      if (!expected.has(capability))
+        unexpectedGrants.push({ role, capability });
     }
   }
   return {
@@ -60,18 +66,28 @@ export function inspectCanonicalRbac(
 export type CanonicalRbacWriter = {
   ensurePermission(code: string): Promise<void>;
   ensureRolePermission(roleName: string, permissionCode: string): Promise<void>;
+  revokeRolePermission(roleName: string, permissionCode: string): Promise<void>;
 };
 
-/** Controlled application. Deliberately additive: it never deletes historical data. */
+/**
+ * Controlled canonical reconciliation. Historical roles and data remain intact;
+ * only grants on canonical roles are made equal to their current contract.
+ */
 export async function applyCanonicalRbacPlan(
   writer: CanonicalRbacWriter,
   plan: CanonicalRbacSyncPlan,
 ): Promise<void> {
   if (plan.missingRoles.length || plan.inactiveCanonicalRoles.length) {
-    throw new Error('Canonical roles must exist and be active before grant synchronization.');
+    throw new Error(
+      'Canonical roles must exist and be active before grant synchronization.',
+    );
   }
-  for (const permission of plan.permissionsToEnsure) await writer.ensurePermission(permission);
+  for (const permission of plan.permissionsToEnsure)
+    await writer.ensurePermission(permission);
   for (const grant of plan.grantsToCreate) {
     await writer.ensureRolePermission(grant.role, grant.capability);
+  }
+  for (const grant of plan.unexpectedGrants) {
+    await writer.revokeRolePermission(grant.role, grant.capability);
   }
 }

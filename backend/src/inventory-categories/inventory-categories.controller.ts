@@ -15,7 +15,6 @@ import {
   CapabilityGuard,
   JwtAuthGuard,
   RequireCapabilities,
-  UnsupportedOperationGuard,
 } from '../auth';
 import type { AuthenticatedUser } from '../auth';
 import { CreateInventoryCategoryDto } from './dto/create-inventory-category.dto';
@@ -30,7 +29,8 @@ export class InventoryCategoriesController {
   constructor(private readonly categoriesService: InventoryCategoriesService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.item.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   create(
     @Body() dto: CreateInventoryCategoryDto,
     @Req() req: AuthenticatedRequest,
@@ -53,7 +53,8 @@ export class InventoryCategoriesController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.item.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateInventoryCategoryDto,
@@ -68,7 +69,8 @@ export class InventoryCategoriesController {
   }
 
   @Patch(':id/activate')
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.item.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   activate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,
@@ -82,7 +84,8 @@ export class InventoryCategoriesController {
   }
 
   @Patch(':id/deactivate')
-  @UseGuards(JwtAuthGuard, UnsupportedOperationGuard)
+  @RequireCapabilities('inventory.item.manage')
+  @UseGuards(JwtAuthGuard, CapabilityGuard)
   deactivate(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,

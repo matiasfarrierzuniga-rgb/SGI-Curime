@@ -3,6 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CapabilityGuard, JwtAuthGuard } from '../auth';
 import { CAPABILITIES_KEY } from '../auth/presentation/decorators/require-capabilities.decorator';
+import { ANY_CAPABILITIES_KEY } from '../auth/presentation/decorators/require-any-capabilities.decorator';
 import {
   CreateVolunteerOpportunityDto,
   QueryVolunteerOpportunitiesDto,
@@ -30,28 +31,28 @@ describe('VolunteeringOpportunitiesController', () => {
     ).toEqual([JwtAuthGuard, CapabilityGuard]);
     expect(
       Reflect.getMetadata(
-        CAPABILITIES_KEY,
+        ANY_CAPABILITIES_KEY,
         VolunteeringOpportunitiesController.prototype.findAll,
       ),
-    ).toEqual(['vol.opportunities.read']);
+    ).toEqual(['vol.opportunities.read', 'volunteer.campaign.manage']);
     expect(
       Reflect.getMetadata(
-        CAPABILITIES_KEY,
+        ANY_CAPABILITIES_KEY,
         VolunteeringOpportunitiesController.prototype.findOne,
       ),
-    ).toEqual(['vol.opportunities.read']);
+    ).toEqual(['vol.opportunities.read', 'volunteer.campaign.manage']);
     expect(
       Reflect.getMetadata(
         CAPABILITIES_KEY,
         VolunteeringOpportunitiesController.prototype.create,
       ),
-    ).toEqual(['vol.opportunities.create']);
+    ).toEqual(['volunteer.campaign.manage']);
     expect(
       Reflect.getMetadata(
         CAPABILITIES_KEY,
         VolunteeringOpportunitiesController.prototype.update,
       ),
-    ).toEqual(['vol.opportunities.update']);
+    ).toEqual(['volunteer.campaign.manage']);
   });
 
   it('validates and transforms list, create, and update DTO input', async () => {

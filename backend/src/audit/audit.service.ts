@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditAction } from './audit-actions';
 import { QueryAuditLogsDto } from './dto/query-audit-logs.dto';
 
 export interface AuditContext {
@@ -15,7 +16,39 @@ export interface AuditEvent extends AuditContext {
   entityId?: string | number;
   details?: unknown;
 }
-type AuditLogClient = Pick<PrismaService, 'auditLog'>;
+export interface BoardPrivilegeReview {
+  id: number;
+  createdAt: Date;
+  trigger: string | null;
+  membership: {
+    id: number;
+    position: string;
+    startsOn: Date | null;
+    endsOn: Date | null;
+    term: { id: number; startsOn: Date; endsOn: Date; status: string | null };
+  } | null;
+  person: { id: number; fullName: string } | null;
+  account: {
+    id: number;
+    fullName: string;
+    email: string;
+    status: string;
+    role: { id: number; name: string };
+    effectiveCapabilities: string[];
+  } | null;
+  resolution: {
+    id: number;
+    createdAt: Date;
+    actor: { id: number; fullName: string; email: string } | null;
+    decision: string | null;
+    justification: string | null;
+    roleChange: { previousRoleId: number; newRoleId: number } | null;
+  } | null;
+}
+type AuditLogClient = Pick<
+  PrismaService,
+  'auditLog' | 'governanceMembership' | 'person' | 'user'
+>;
 const sensitive = /password|token|jwt|secret|database_url|admin_password/i;
 
 export function sanitizeAuditDetails(
@@ -98,5 +131,253 @@ export class AuditService {
     });
     if (!log) throw new NotFoundException('Audit log not found');
     return log;
+  }
+
+  async findBoardPrivilegeReviews(page = 1, limit = 20) {
+    const where = { action: AuditAction.BOARD_PRIVILEGE_REVIEW_REQUIRED };
+    const [reviews, total] = await this.prisma.$transaction([
+      this.prisma.auditLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.auditLog.count({ where }),
+    ]);
+    const resolutions = reviews.length
+      ? await this.prisma.auditLog.findMany({
+          where: {
+            action: AuditAction.BOARD_PRIVILEGE_REVIEW_RESOLVED,
+            OR: [
+              { entityId: { in: reviews.map((review) => review.id.toString()) } },
+              ...reviews.map((review) => ({
+                details: { path: ['reviewId'], equals: review.id },
+              })),
+            ],
+          },
+          select: {
+            id: true,
+            createdAt: true,
+            details: true,
+            entityId: true,
+            user: { select: { id: true, fullName: true, email: true } },
+          },
+        })
+      : [];
+    return {
+      data: await Promise.all(
+        reviews.map((review) =>
+          this.toBoardPrivilegeReview(
+            review,
+            resolutions.find(
+              (resolution) =>
+                resolution.entityId === review.id.toString() ||
+                this.detailsNumber(this.detailsRecord(resolution.details), 'reviewId') === review.id,
+            ) ?? null,
+            this.prisma,
+          ),
+        ),
+      ),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async findBoardPrivilegeReview(id: number, client: AuditLogClient = this.prisma) {
+    const review = await client.auditLog.findFirst({
+      where: { id, action: AuditAction.BOARD_PRIVILEGE_REVIEW_REQUIRED },
+    });
+    if (!review) throw new NotFoundException('Revisión de privilegios no encontrada');
+    const resolution = await client.auditLog.findFirst({
+      where: {
+        action: AuditAction.BOARD_PRIVILEGE_REVIEW_RESOLVED,
+        OR: [
+          { entityId: id.toString() },
+          { details: { path: ['reviewId'], equals: id } },
+        ],
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        details: true,
+        user: { select: { id: true, fullName: true, email: true } },
+      },
+    });
+    return this.toBoardPrivilegeReview(review, resolution, client);
+  }
+
+  async lockBoardPrivilegeReview(id: number, client: Prisma.TransactionClient) {
+    const rows = await client.$queryRaw<Array<{ id: number }>>(
+      Prisma.sql`SELECT "id" FROM "AuditLog" WHERE "id" = ${id} AND "action" = ${AuditAction.BOARD_PRIVILEGE_REVIEW_REQUIRED} FOR UPDATE`,
+    );
+    if (!rows.length) throw new NotFoundException('Revisión de privilegios no encontrada');
+    return this.findBoardPrivilegeReview(id, client);
+  }
+
+  async recordBoardPrivilegeReviewResolution(
+    reviewId: number,
+    actorId: number,
+    decision: 'NO_CHANGE' | 'ROLE_CHANGED',
+    justification: string,
+    roleChange: { previousRoleId: number; newRoleId: number } | null,
+    context: AuditContext,
+    client: AuditLogClient = this.prisma,
+  ) {
+    const existing = await client.auditLog.findFirst({
+      where: {
+        action: AuditAction.BOARD_PRIVILEGE_REVIEW_RESOLVED,
+        details: { path: ['reviewId'], equals: reviewId },
+      },
+      select: { id: true },
+    });
+    if (existing)
+      throw new ConflictException('La revisión de privilegios ya fue resuelta');
+    return this.log({
+      userId: actorId,
+      action: AuditAction.BOARD_PRIVILEGE_REVIEW_RESOLVED,
+      module: 'INSTITUTIONAL_BOARD',
+      entityType: 'AuditLog',
+      entityId: reviewId,
+      details: { reviewId, decision, justification, roleChange, status: 'RESOLVED' },
+      ...context,
+    }, client);
+  }
+
+  private async toBoardPrivilegeReview(
+    review: { id: number; createdAt: Date; details: Prisma.JsonValue | null },
+    resolution: {
+      id: number;
+      createdAt: Date;
+      details: Prisma.JsonValue | null;
+      user: { id: number; fullName: string | null; email: string } | null;
+    } | null,
+    client: AuditLogClient,
+  ): Promise<BoardPrivilegeReview> {
+    const details = this.detailsRecord(review.details);
+    const membershipId = this.detailsNumber(details, 'membershipId');
+    const personId = this.detailsNumber(details, 'personId');
+    const membership = membershipId
+      ? await client.governanceMembership.findUnique({
+          where: { id: membershipId },
+          select: {
+            id: true,
+            legacyPosition: true,
+            startedAt: true,
+            endedAt: true,
+            term: { select: { id: true, startDate: true, endDate: true, status: true } },
+          },
+        })
+      : null;
+    const person = personId
+      ? await client.person.findUnique({
+          where: { id: personId },
+          select: { id: true, firstName: true, firstSurname: true, secondSurname: true, legacyFullName: true },
+        })
+      : null;
+    const account = personId
+      ? await client.user.findUnique({
+          where: { personId },
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            status: true,
+            role: {
+              select: {
+                id: true,
+                name: true,
+                permissions: { select: { permission: { select: { code: true } } } },
+              },
+            },
+          },
+        })
+      : null;
+    const resolutionDetails = resolution ? this.detailsRecord(resolution.details) : null;
+    const roleChangeValue = resolutionDetails?.roleChange;
+    const roleChange = this.detailsRecord(roleChangeValue);
+    return {
+      id: review.id,
+      createdAt: review.createdAt,
+      trigger: typeof details.trigger === 'string' ? details.trigger : null,
+      membership: membership
+        ? {
+            id: membership.id,
+            position: membership.legacyPosition,
+            startsOn: membership.startedAt,
+            endsOn: membership.endedAt,
+            term: {
+              id: membership.term.id,
+              startsOn: membership.term.startDate,
+              endsOn: membership.term.endDate,
+              status: membership.term.status,
+            },
+          }
+        : null,
+      person: person
+        ? {
+            id: person.id,
+            fullName:
+              [person.firstName, person.firstSurname, person.secondSurname]
+                .filter(Boolean)
+                .join(' ') || person.legacyFullName || `Persona ${person.id}`,
+          }
+        : null,
+      account: account
+        ? {
+            id: account.id,
+            fullName: account.fullName ?? account.email,
+            email: account.email,
+            status: account.status,
+            role: { id: account.role.id, name: account.role.name },
+            effectiveCapabilities: account.role.permissions.map(
+              (assignment) => assignment.permission.code,
+            ),
+          }
+        : null,
+      resolution: resolution
+        ? {
+            id: resolution.id,
+            createdAt: resolution.createdAt,
+            actor: resolution.user
+              ? {
+                  id: resolution.user.id,
+                  fullName: resolution.user.fullName ?? resolution.user.email,
+                  email: resolution.user.email,
+                }
+              : null,
+            decision:
+              typeof resolutionDetails?.decision === 'string'
+                ? resolutionDetails.decision
+                : null,
+            justification:
+              typeof resolutionDetails?.justification === 'string'
+                ? resolutionDetails.justification
+                : null,
+            roleChange:
+              roleChange &&
+              typeof roleChange.previousRoleId === 'number' &&
+              typeof roleChange.newRoleId === 'number'
+                ? {
+                    previousRoleId: roleChange.previousRoleId,
+                    newRoleId: roleChange.newRoleId,
+                  }
+                : null,
+          }
+        : null,
+    };
+  }
+
+  private detailsRecord(value: unknown): Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  }
+
+  private detailsNumber(details: Record<string, unknown>, key: string) {
+    const value = details[key];
+    return typeof value === 'number' && Number.isInteger(value) && value > 0
+      ? value
+      : null;
   }
 }

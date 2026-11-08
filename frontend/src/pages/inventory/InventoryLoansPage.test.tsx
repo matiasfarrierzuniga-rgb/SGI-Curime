@@ -5,6 +5,12 @@ import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryLoansService } from '../../services/inventoryLoansService'
 import { InventoryLoansPage } from './InventoryLoansPage'
 
+const authState = vi.hoisted(() => ({ permissionCodes: [] as string[] }))
+
+vi.mock('@/features/auth', () => ({
+  useAuth: () => ({ user: { permissionCodes: authState.permissionCodes } }),
+}))
+
 vi.mock('../../services/inventoryLoansService', () => ({
   inventoryLoansService: { list: vi.fn(), get: vi.fn(), create: vi.fn(), return: vi.fn(), cancel: vi.fn() },
 }))
@@ -44,6 +50,7 @@ const page = () =>
 describe('InventoryLoansPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    authState.permissionCodes = ['inv.inventory.read']
     vi.mocked(inventoryLoansService.list).mockResolvedValue({ data: [loan], total: 1, page: 1, limit: 10 })
     vi.mocked(inventoryLoansService.get).mockResolvedValue(loan as never)
     vi.mocked(inventoryItemsService.list).mockResolvedValue({ data: [item as never], total: 1, page: 1, limit: 100 })
@@ -63,7 +70,7 @@ describe('InventoryLoansPage', () => {
     expect(screen.getAllByText('Activo').length).toBeGreaterThan(0)
   })
 
-  it('hides unsupported loan mutations', async () => {
+  it('keeps loan mutations hidden for read-only users', async () => {
     page()
     await screen.findByText('Martillo')
     for (const action of ['Nuevo préstamo', 'Devolver', 'Cancelar']) {
@@ -72,5 +79,14 @@ describe('InventoryLoansPage', () => {
     expect(inventoryLoansService.create).not.toHaveBeenCalled()
     expect(inventoryLoansService.return).not.toHaveBeenCalled()
     expect(inventoryLoansService.cancel).not.toHaveBeenCalled()
+  })
+
+  it('shows loan operations with inventory.loan.manage', async () => {
+    authState.permissionCodes = ['inv.inventory.read', 'inventory.loan.manage']
+    page()
+
+    await screen.findByText('Martillo')
+    expect(screen.getByRole('button', { name: 'Nuevo préstamo' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Devolver' })).toBeInTheDocument()
   })
 })

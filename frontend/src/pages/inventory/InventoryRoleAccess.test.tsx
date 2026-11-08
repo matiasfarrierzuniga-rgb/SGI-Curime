@@ -77,12 +77,12 @@ describe('Inventory route access by role', () => {
 
   it('allows the Gestor de Inventario to open the inventory dashboard', async () => {
     renderAt('/inventory', 'Gestor de Inventario')
-    expect(await screen.findByRole('heading', { name: 'Inventario' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Panel de Inventario' })).toBeInTheDocument()
   })
 
   it('allows the Administrador to open inventory routes', async () => {
     renderAt('/inventory', 'Administrador')
-    expect(await screen.findByRole('heading', { name: 'Inventario' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Panel de Inventario' })).toBeInTheDocument()
   })
 
   it('blocks a non-inventory role from protected routes', async () => {

@@ -1,4 +1,4 @@
-export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED'
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING_EMAIL_VERIFICATION' | 'BLOCKED'
 export type { Role, RoleOption } from '@/features/roles'
 import type { Role } from '@/features/roles'
 
@@ -28,9 +28,10 @@ export interface UserActions {
   changeRole: boolean
   manageLifecycle: boolean
   unlock: boolean
+  linkPerson: boolean
 }
 
-/** GET /users response. Root id/personId identify Person, never User account. */
+/** GET /users/accounts response. Root id identifies User account; person is optional. */
 export interface User {
   id: string
   fullName: string | null
@@ -39,14 +40,15 @@ export interface User {
   phoneCountryCode: string | null
   phoneNationalNumber: string | null
   address: string | null
-  personId: string
+  personId: string | null
   affiliateId: string | null
   createdAt: string
   updatedAt: string
-  person: { id: string; contactEmail: string | null }
+  person: { id: string; contactEmail: string | null } | null
   access: AccountAccess | null
   affiliate: AffiliateContext | null
   actions: UserActions
+  effectiveCapabilities?: string[]
 }
 
 /** PATCH /users/:accessId returns an account-root response, not a Person-root User. */
@@ -78,3 +80,18 @@ export interface AccountMutationResponse {
 
 export interface UserUpdate { email: string }
 export interface UserQuery { page?: number; limit?: number; name?: string; email?: string; identification?: string; status?: UserStatus; roleId?: number; blocked?: boolean }
+
+export interface PersonLinkCandidate {
+  id: number
+  displayName: string
+  identificationHint: string | null
+  affiliateStatus: 'ACTIVE' | 'INACTIVE' | null
+}
+
+export interface AccountPersonLinkInput {
+  userId: number
+  personId: number
+  verificationMethod: 'ADMINISTRATIVE_REVIEW'
+  evidenceReference: string
+  reason: string
+}

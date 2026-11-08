@@ -1,5 +1,7 @@
 # Spec Delta
 
+> **SUPERSEDED / PARTIAL.** Historical delta retained. Current operational behavior is defined by `docs/contracts/account-lifecycle-v1.md`; do not interpret this delta's original registration fields as a request to reintroduce password-at-registration or administrative approval.
+
 ## Purpose
 
 Define la cuenta comunitaria básica, verificable por correo y separada de identidad legal, afiliación y autorización institucional.

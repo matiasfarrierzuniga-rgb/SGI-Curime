@@ -345,11 +345,18 @@ Current tokens, responsive rules, WCAG baseline, and existing shared primitives 
 
 ## Alcance para cualquier agente o compañero
 
+### Contexto operativo P0 — DEVELOPMENT ONLY
+
+Objetivo actual: completar desarrollo funcional de SGI-Curime para posterior certificación y puesta en producción. Durante este contexto aprobado no ejecutar suites, lint, builds, auditorías generales de permisos, migraciones, seeds, sincronizaciones RBAC ni cambios PostgreSQL sin autorización específica. No crear ramas, worktrees o infraestructura adicional; no reconstruir módulos recuperados, revertir funcionalidades ni introducir privilegios institucionales nuevos. Esta restricción temporal no elimina los requisitos de VERIFY: solo difiere su ejecución hasta autorización expresa.
+
+RBAC V2.3 se interpreta desde decisiones funcionales aprobadas, contratos vigentes y código actual. Las matrices históricas que contradigan esas fuentes son evidencia `SUPERSEDED` o histórica, no autoridad para restaurar grants, endpoints o flujos. La fuente ejecutable de asignaciones es `backend/src/auth/domain/policies/canonical-role-grants.ts`; el cambio OpenSpec sucesor mantiene una matriz de aceptación, no un catálogo adicional.
+
 - Trabaja con **un agente ejecutor por tarea**. No delegues automáticamente en Terra, Atlas, Forge, Pixel, Sentinel ni otros agentes históricos. Los archivos `backend/AGENTS.md` y `frontend/AGENTS.md` son **reglas por directorio**, no otros agentes.
 - No nombres una rama, worktree, commit, permiso o estado de despliegue como vigente sin verificar Git, código y configuración actuales. `PROJECT-STATE.md` es evidencia operativa que puede estar desactualizada: si contradice Git, informa la discrepancia sin corregirla silenciosamente.
 - Respeta `CONTRIBUTING.md`: los cambios compartidos entran por rama dedicada, revisión y Pull Request hacia `main`, no por push directo.
 - Cuando el árbol contiene modificaciones o untracked ajenos, no los sobrescribas, limpies, muevas ni incorpores al cambio. No crees worktrees ni cambies de rama sin autorización explícita. No uses `reset --hard`, `clean`, `stash`, `rebase`, `merge`, `switch`, commit, push o archive sin autorización explícita o contrato activo que nombre esa operación. Puede hacerse análisis de solo lectura aun si el árbol está sucio.
 - Las fases son **EXPLORE** (inspección sin cambios), **PROPOSE** (especificación), **APPLY** (código o documentación solo con autorización expresa), **VERIFY** (evidencia de pruebas) y **ARCHIVE** (cerrar especificaciones). Cada fase requiere autorización independiente; no infieras permiso para una fase posterior. ARCHIVE exige implementación completa, evidencia requerida y solicitud explícita.
+- No repitas una acción OpenSpec ya ejecutada por otro agente; inspecciona artefactos, estado y alcance actual antes de continuar.
 - Diferencia en cada informe `IMPLEMENTED`, `PROPOSED`, `PARTIAL`, `BLOCKED` y `NOT_VERIFIED`; nunca marques pruebas `PASSED` sin ejecutarlas ni afirmes que una tabla equivale a un proceso funcional completo.
 - Documenta cada incremento con objetivo, alcance, exclusiones, archivos afectados, contratos API/DB, migración/rollback si aplica, pruebas y riesgos. Evita correcciones fuera de alcance.
 - Nunca ejecutes migraciones, seeds, resets, backfills o suites destructivas contra datos reales sin autorización expresa, copia restaurable y entorno identificado. No imprimas datos personales, secretos, contraseñas ni tokens completos.
@@ -371,10 +378,10 @@ Una propuesta de OpenSpec no sustituye un contrato implementado ni modifica deci
 
 ## Contrato transversal de identidad y registro comunitario
 
-Antes de tocar `/register`, `UserRequest`, `Person`, `User`, `Role`, `Permission`, `AccountActivationToken`, correo o autenticación, lee **`docs/decisions/community-account-registration.md`**. Es un **contrato objetivo en estado PROPUESTO**, no evidencia de que el comportamiento ya cambió.
+Para describir el ciclo de vida vigente de cuentas, consulta primero **`docs/contracts/account-lifecycle-v1.md`** y contrástalo con código y pruebas actuales. Una propuesta histórica de OpenSpec o una decisión supersedida no sustituye el contrato operativo vigente. Antes de tocar `/register`, `UserRequest`, `Person`, `User`, `Role`, `Permission`, `AccountActivationToken`, correo o autenticación, revisa también la decisión histórica referenciada por el contrato. C3-AUTH-01 está implementado en la rama de trabajo; certificación PostgreSQL desechable e integración permanecen pendientes.
 
-- **Comportamiento actual verificado en V1 (baseline PR #114):** el `/register` público genera `UserRequest(PENDING)`; una revisión con `usr.user-requests.review` aprueba, resuelve una `Person` existente y crea `User(INACTIVE)` más token; la activación establece contraseña y permite iniciar sesión. La aprobación puede bloquearse si la `Person` no existe o es ambigua.
-- **Cambio objetivo sujeto a OpenSpec y aprobación:** registro comunitario abierto con nombre, correo, contraseña, verificación de correo y activación **sin aprobación administrativa de una cuenta básica**.
+- **C3-AUTH-01 implementado:** `POST /community-accounts/register` crea una cuenta comunitaria pendiente de verificación; enlace con token hasheado y vencible permite establecer contraseña en `POST /community-accounts/verify-email`, activar la cuenta y luego iniciar sesión sin aprobación administrativa. El rol inicial no tiene grants ERP.
+- **Flujo V1 retirado:** no hay endpoints, UI ni grants `usr.user-requests.read`/`usr.user-requests.review` para aprobar registros comunitarios. Registros `UserRequest` históricos permanecen como datos sin operaciones nuevas.
 - Verificar un correo demuestra control del buzón, **no identidad legal, afiliación a la ADI, cargo en Junta Directiva ni autorización sobre otras personas o recursos**.
 - `Person` (identidad física), `User` (acceso), `Affiliate` (afiliación), `Role`/`Permission` (autorización), `Venture` (emprendimiento), `VolunteerApplication` (postulación) y relaciones de negocio tienen responsabilidades diferentes.
 - La cuenta comunitaria no obtiene capacidades de administración del ERP. Las aprobaciones de afiliación, publicación de emprendimientos, representación institucional y permisos privilegiados son procesos independientes.

@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { CapabilityGuard, JwtAuthGuard } from '../auth';
 import { CAPABILITIES_KEY } from '../auth/presentation/decorators/require-capabilities.decorator';
+import { ANY_CAPABILITIES_KEY } from '../auth/presentation/decorators/require-any-capabilities.decorator';
 import {
   VolunteeringApplicationsController,
   VolunteeringOpportunitiesController,
@@ -54,31 +55,31 @@ describe('volunteering ERP workflow', () => {
         CAPABILITIES_KEY,
         Reflect.get(VolunteeringOpportunitiesController.prototype, 'publish'),
       ),
-    ).toEqual(['vol.opportunities.update']);
+    ).toEqual(['volunteer.campaign.manage']);
     expect(
       Reflect.getMetadata(
         CAPABILITIES_KEY,
         Reflect.get(VolunteeringOpportunitiesController.prototype, 'close'),
       ),
-    ).toEqual(['vol.opportunities.update']);
+    ).toEqual(['volunteer.campaign.manage']);
     expect(
       Reflect.getMetadata(
-        CAPABILITIES_KEY,
+        ANY_CAPABILITIES_KEY,
         Reflect.get(VolunteeringApplicationsController.prototype, 'list'),
       ),
-    ).toEqual(['vol.opportunities.read']);
+    ).toEqual(['vol.opportunities.read', 'volunteer.campaign.manage']);
     expect(
       Reflect.getMetadata(
         CAPABILITIES_KEY,
         Reflect.get(VolunteeringApplicationsController.prototype, 'approve'),
       ),
-    ).toEqual(['vol.opportunities.update']);
+    ).toEqual(['volunteer.campaign.manage']);
     expect(
       Reflect.getMetadata(
         CAPABILITIES_KEY,
         Reflect.get(VolunteeringApplicationsController.prototype, 'reject'),
       ),
-    ).toEqual(['vol.opportunities.update']);
+    ).toEqual(['volunteer.campaign.manage']);
   });
 
   it('publishes only a draft with a future session', async () => {

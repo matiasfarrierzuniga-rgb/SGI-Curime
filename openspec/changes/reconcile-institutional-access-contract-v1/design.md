@@ -1,3 +1,5 @@
+> **SUPERSEDED / HISTORICAL for public registration; KEEP_REFERENCE for RBAC evidence.** The request-first flow below is not the ordinary community self-registration flow. Do not use it to reintroduce administrative approval. Current account lifecycle is defined by `docs/contracts/account-lifecycle-v1.md`.
+
 ## Context
 
 See `proposal.md` for motivation and `specs/security/institutional-access-contract/spec.md` for normative behavior.

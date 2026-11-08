@@ -41,6 +41,7 @@ const user = {
 
 describe('UsersController F0 response contracts', () => {
   const listUsers = { execute: jest.fn() };
+  const listAccounts = { execute: jest.fn() };
   const getUser = {
     execute: jest.fn(),
     executeAdminPerson: jest.fn(),
@@ -48,7 +49,9 @@ describe('UsersController F0 response contracts', () => {
   };
   const controller = new UsersController(
     listUsers as never,
+    listAccounts as never,
     getUser as never,
+    {} as never,
     {} as never,
     {} as never,
     {} as never,

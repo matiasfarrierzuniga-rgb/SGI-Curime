@@ -8,9 +8,9 @@ SGI-Curime es una aplicación web orientada a centralizar y digitalizar procesos
 
 ## Estado del proyecto
 
-El proyecto se encuentra en desarrollo activo durante Ingeniería II. La rama `main` es la referencia para el estado vigente del código.
+El proyecto se encuentra en desarrollo activo durante Ingeniería II. La rama de trabajo contiene el baseline en desarrollo; `main` es referencia de promoción, no sustituto de contratos aprobados o estado local verificado.
 
-Actualmente existen capacidades funcionales en áreas como:
+La rama de trabajo contiene funcionalidades recuperadas e implementadas, pendientes de certificación final, en áreas como:
 
 - autenticación y gestión de sesión;
 - usuarios, roles y autorización por capacidades;
@@ -18,6 +18,10 @@ Actualmente existen capacidades funcionales en áreas como:
 - auditoría;
 - reservas;
 - financiero.
+- inventario operativo;
+- gobernanza, períodos y nombramientos institucionales;
+- eventos y voluntariado público/administrativo según capacidades;
+- registro comunitario autónomo C3-AUTH-01.
 
 Otros módulos del producto continúan en evolución o planificación y no deben asumirse como implementados únicamente por aparecer en el alcance general del sistema.
 
@@ -66,7 +70,7 @@ SGI-Curime/
 ├── frontend/          Aplicación web React
 ├── backend/           API NestJS y Prisma
 ├── docs/              Documentación vigente e histórica
-├── openspec/          Especificaciones de etapas anteriores; fuera del alcance documental actual
+├── openspec/          Contratos, cambios activos y evidencia histórica con estado explícito
 ├── compose.yaml       Configuración Docker base
 ├── .env.example       Referencia de variables de entorno
 ├── CONTRIBUTING.md    Guía de contribución
@@ -79,10 +83,18 @@ La documentación técnica y funcional se está consolidando bajo [`docs/`](./do
 
 Principios de documentación:
 
-- el código actual de `main`, sus pruebas y su configuración son la fuente primaria de verdad;
+- las decisiones funcionales aprobadas, los contratos vigentes y el código de la rama de trabajo definen el alcance de desarrollo; `main` es referencia de promoción;
 - los documentos vigentes deben reflejar el comportamiento real del sistema;
 - los snapshots y análisis antiguos deben identificarse explícitamente como históricos;
-- OpenSpec queda fuera de esta iniciativa de actualización y no se utiliza como fuente vigente sin contrastarlo contra el código actual.
+- OpenSpec conserva trazabilidad y no sustituye un contrato implementado; sus cambios activos deben contrastarse contra código y decisiones aprobadas.
+
+## RBAC V2.3 e identidad
+
+La fuente ejecutable de asignaciones canónicas es [`backend/src/auth/domain/policies/canonical-role-grants.ts`](./backend/src/auth/domain/policies/canonical-role-grants.ts). Los seis roles canónicos separan autorización técnica de identidad (`Person`), cuenta (`User`), afiliación (`Affiliate`) y nombramiento institucional (`GovernanceMembership`). Un cargo no concede automáticamente permisos ERP.
+
+El contrato operativo de registro comunitario está en [`docs/contracts/account-lifecycle-v1.md`](./docs/contracts/account-lifecycle-v1.md): registro por correo, verificación, contraseña, activación y acceso a Mi Comunidad; no restaura aprobación ordinaria mediante `UserRequest`.
+
+La estabilización documental y funcional de esta rama se rastrea en [`stabilize-rbac-v2-3-access-and-legacy-reconciliation`](./openspec/changes/stabilize-rbac-v2-3-access-and-legacy-reconciliation/). Su matriz es evidencia de aceptación, no un segundo catálogo de grants.
 
 Consulta [`docs/README.md`](./docs/README.md) para navegar por la documentación del proyecto.
 

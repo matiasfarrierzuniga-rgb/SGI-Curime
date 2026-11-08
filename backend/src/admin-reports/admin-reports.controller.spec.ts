@@ -74,4 +74,21 @@ describe('AdminReportsController', () => {
       ),
     ).toEqual(['erp.dashboard.read']);
   });
+
+  it('forwards persisted capabilities without authorizing by role label', () => {
+    const institutionalRequest = {
+      user: {
+        ...user,
+        role: 'ROLE_INSTITUTIONAL_PRESIDENT',
+        permissionCodes: ['erp.dashboard.read'],
+      },
+    } as AuthenticatedRequest;
+
+    void controller.dashboard(institutionalRequest);
+
+    expect(service.dashboard).toHaveBeenCalledWith(
+      { id: 12, fullName: 'Persona Administradora' },
+      ['erp.dashboard.read'],
+    );
+  });
 });

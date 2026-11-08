@@ -5,9 +5,10 @@ export const adminDashboardKeys = {
   all: ['admin-dashboard'] as const,
 }
 
-export function useAdminDashboard() {
+export function useAdminDashboard(enabled: boolean) {
   return useQuery({
     queryKey: adminDashboardKeys.all,
     queryFn: adminDashboardApi.get,
+    enabled,
   })
 }

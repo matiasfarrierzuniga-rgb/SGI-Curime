@@ -57,7 +57,7 @@ describe('ErpLayout', () => {
     fireEvent.click(inventory)
 
     expect(screen.getAllByRole('button', { name: 'Contraer navegación' }).length).toBeGreaterThan(0)
-    expect(screen.getByRole('link', { name: 'Resumen' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Inventario' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Artículos' })).toBeInTheDocument()
   })
 

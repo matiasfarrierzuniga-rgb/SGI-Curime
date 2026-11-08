@@ -104,6 +104,19 @@ function NavigationItem({ navigationId, item, currentPath, compact, accent, onNa
   return <li><div className={`group relative flex items-center rounded-control transition-colors ${active ? `${accent.active} shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] text-white` : 'text-erp-navigation-foreground hover:bg-white/[0.09]'}`}><span aria-hidden="true" className={`absolute left-0 top-2 bottom-2 w-1 rounded-r-full ${accent.rail} transition-opacity ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-70'}`} /><NavLink end to={item.path ?? '#'} onClick={navigate} title={compact ? item.label : undefined} aria-label={compact ? item.label : undefined} className={({ isActive }) => `flex min-h-12 min-w-0 flex-1 items-center gap-3.5 rounded-control bg-transparent px-3.5 text-navigation font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-erp-focus ${(isActive || active) ? 'text-white' : ''} ${compact ? 'justify-center px-0' : ''}`}>{Icon ? <Icon className="size-5 shrink-0" aria-hidden="true" /> : null}<span className={compact ? 'sr-only' : item.label === 'Dashboard financiero' ? 'min-w-0 text-[0.8125rem] leading-tight whitespace-normal' : 'min-w-0 truncate'}>{item.label}</span></NavLink>{hasChildren && !compact ? <button type="button" className="mr-1 grid size-10 place-items-center !rounded-control !border-transparent !bg-transparent !p-0 !text-erp-navigation-foreground transition-colors hover:!bg-white/10 focus-visible:!outline-2 focus-visible:!outline-erp-focus" aria-controls={submenuId} aria-label={`${showChildren ? 'Contraer' : 'Expandir'} ${item.label}`} aria-expanded={showChildren} onClick={() => setSubnavOpen(value => !value)}>{showChildren ? <ChevronDown className="size-4" aria-hidden="true" /> : <ChevronRight className="size-4" aria-hidden="true" />}</button> : null}</div>{showChildren ? <ul id={submenuId} className="ml-5 mt-1.5 space-y-1.5 border-l border-white/15 pl-3">{item.children!.map(child => <NavigationItem key={child.label} navigationId={navigationId} item={child} currentPath={currentPath} compact={false} accent={accent} onNavigate={onNavigate} />)}</ul> : null}</li>
 }
 
-function isCurrent(item: ErpNavigationItem, path: string) { return item.path === path || item.children?.some(child => child.path === path) === true }
-function findCurrentLabel(navigation: readonly ErpNavigationSection[], path: string) { for (const section of navigation) for (const item of section.items) { if (item.path === path) return item.label; const child = item.children?.find(candidate => candidate.path === path); if (child) return child.label } return 'Inicio' }
+function matchesPath(itemPath: string | undefined, currentPath: string) {
+  return itemPath === currentPath || (itemPath !== undefined && currentPath.startsWith(`${itemPath}/`))
+}
+
+function isCurrent(item: ErpNavigationItem, path: string) {
+  return matchesPath(item.path, path) || item.children?.some(child => matchesPath(child.path, path)) === true
+}
+function findCurrentLabel(navigation: readonly ErpNavigationSection[], path: string) {
+  for (const section of navigation) for (const item of section.items) {
+    const child = item.children?.find(candidate => matchesPath(candidate.path, path))
+    if (child) return child.label
+    if (matchesPath(item.path, path)) return item.label
+  }
+  return 'Inicio'
+}
 function getInitials(fullName?: string) { return fullName?.split(/\s+/).filter(Boolean).slice(0, 2).map(name => name[0]).join('').toUpperCase() || 'U' }

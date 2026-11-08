@@ -13,6 +13,7 @@ import type { Request } from 'express';
 import {
   CapabilityGuard,
   JwtAuthGuard,
+  RequireAnyCapabilities,
   RequireCapabilities,
 } from '../auth';
 import type { AuthenticatedUser } from '../auth';
@@ -24,13 +25,13 @@ type AuthRequest = Request & { user: AuthenticatedUser };
 export class AffiliatesController {
   constructor(private readonly service: AffiliatesService) {}
   @Get()
-  @RequireCapabilities('adm.affiliates.read')
+  @RequireAnyCapabilities('adm.affiliates.read', 'padron.affiliate.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   findAll(@Query() q: QueryAffiliatesDto) {
     return this.service.findAll(q);
   }
   @Get(':id')
-  @RequireCapabilities('adm.affiliates.read')
+  @RequireAnyCapabilities('adm.affiliates.read', 'padron.affiliate.read')
   @UseGuards(JwtAuthGuard, CapabilityGuard)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
