@@ -28,6 +28,7 @@ export interface UserActions {
   changeRole: boolean
   manageLifecycle: boolean
   unlock: boolean
+  linkPerson: boolean
 }
 
 /** GET /users/accounts response. Root id identifies User account; person is optional. */
@@ -79,3 +80,18 @@ export interface AccountMutationResponse {
 
 export interface UserUpdate { email: string }
 export interface UserQuery { page?: number; limit?: number; name?: string; email?: string; identification?: string; status?: UserStatus; roleId?: number; blocked?: boolean }
+
+export interface PersonLinkCandidate {
+  id: number
+  displayName: string
+  identificationHint: string | null
+  affiliateStatus: 'ACTIVE' | 'INACTIVE' | null
+}
+
+export interface AccountPersonLinkInput {
+  userId: number
+  personId: number
+  verificationMethod: 'ADMINISTRATIVE_REVIEW'
+  evidenceReference: string
+  reason: string
+}

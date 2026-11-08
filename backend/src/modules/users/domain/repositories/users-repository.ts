@@ -37,6 +37,13 @@ export interface AccountPage {
   limit: number;
 }
 
+export interface PersonLinkCandidate {
+  id: number;
+  displayName: string;
+  identificationHint: string | null;
+  affiliateStatus: 'ACTIVE' | 'INACTIVE' | null;
+}
+
 export interface UserAffiliationContext {
   affiliateId: number | null;
   affiliateStatus: 'ACTIVE' | 'INACTIVE' | null;
@@ -47,6 +54,16 @@ export interface UserAffiliationContext {
 
 export interface UserUpdateData {
   email?: string;
+}
+
+export interface AccountPersonLinkData {
+  userId: number;
+  personId: number;
+  actorId: number;
+  evidenceReference: string;
+  reason: string;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export interface UserCreateData {
@@ -101,6 +118,7 @@ export interface UsersRepository {
     excludeId?: number,
   ): Promise<{ id: number } | null>;
   findByPersonId(personId: number): Promise<{ id: number } | null>;
+  findLinkablePersonCandidates(query: string): Promise<PersonLinkCandidate[]>;
   findRoleById(id: number): Promise<UserRole | null>;
   findRoleByName(name: string): Promise<UserRole | null>;
   create(data: UserCreateData): Promise<User>;
@@ -111,6 +129,7 @@ export interface UsersRepository {
   communityVerificationEvidence(id: number): Promise<Date | null>;
   deactivateAndRevokeSessions(id: number): Promise<User>;
   updateProfile(id: number, data: UserUpdateData): Promise<User>;
+  linkAccountToPerson(data: AccountPersonLinkData): Promise<User>;
   updateStatus(id: number, status: UserStatus): Promise<User>;
   updateSubscriptionExpirationDate(id: number, value: Date): Promise<User>;
   updateRole(id: number, roleId: number): Promise<User>;

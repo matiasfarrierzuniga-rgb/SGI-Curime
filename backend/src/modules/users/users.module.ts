@@ -15,12 +15,15 @@ import { UpdateUserUseCase } from './application/use-cases/update-user.use-case'
 import { UpdateSubscriptionExpirationUseCase } from './application/use-cases/update-subscription-expiration.use-case';
 import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
 import { RegisterAdministratorUseCase } from './application/use-cases/register-administrator.use-case';
+import { LinkAccountPersonUseCase } from './application/use-cases/link-account-person.use-case';
+import { ListPersonLinkCandidatesUseCase } from './application/use-cases/list-person-link-candidates.use-case';
 import { OptionalJwtAuthGuard } from '../../auth/presentation/guards/optional-jwt-auth.guard';
 import { CommunityAccountsModule } from '../../user-requests/community-accounts.module';
 import { USERS_REPOSITORY } from './domain/repositories/users-repository';
 import { AuditServiceAdapter } from './infrastructure/audit/audit-service.adapter';
 import { PrismaUsersRepository } from './infrastructure/prisma-users.repository';
 import { UsersController } from './presentation/controllers/users.controller';
+import { IdentityAccountLinksController } from './presentation/controllers/identity-account-links.controller';
 import { RegistrationController } from './presentation/controllers/registration.controller';
 
 @Module({
@@ -31,7 +34,7 @@ import { RegistrationController } from './presentation/controllers/registration.
     IdentityModule,
     CommunityAccountsModule,
   ],
-  controllers: [UsersController, RegistrationController],
+  controllers: [UsersController, RegistrationController, IdentityAccountLinksController],
   providers: [
     PrismaUsersRepository,
     { provide: USERS_REPOSITORY, useExisting: PrismaUsersRepository },
@@ -47,6 +50,8 @@ import { RegistrationController } from './presentation/controllers/registration.
     UnlockUserUseCase,
     RegisterUserUseCase,
     RegisterAdministratorUseCase,
+    LinkAccountPersonUseCase,
+    ListPersonLinkCandidatesUseCase,
     OptionalJwtAuthGuard,
   ],
 })

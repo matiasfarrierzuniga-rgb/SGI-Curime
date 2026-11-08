@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
-import { Eye, MoreHorizontal, Pencil, ShieldCheck, UserRoundCheck, UserRoundX } from "lucide-react";
+import { Eye, Link2, MoreHorizontal, Pencil, ShieldCheck, UserRoundCheck, UserRoundX } from "lucide-react";
 import type { User } from "../model/users.types";
 import { statusLabel } from "../model/userStatus";
 import { Badge } from "@/shared/ui/badge";
@@ -14,6 +14,7 @@ interface UsersTableProps {
   users: User[];
   onOpen: (accountId: string) => void;
   onManage: (user: User, action: ManagementAction) => void;
+  onLinkPerson: (user: User) => void;
 }
 
 interface UserActionsCellProps {
@@ -21,10 +22,11 @@ interface UserActionsCellProps {
   menuOpen: boolean;
   onOpen: () => void;
   onManage: (action: ManagementAction) => void;
+  onLinkPerson: () => void;
   onMenuOpenChange: (open: boolean) => void;
 }
 
-function UserActionsCell({ user, menuOpen, onOpen, onManage, onMenuOpenChange }: UserActionsCellProps) {
+function UserActionsCell({ user, menuOpen, onOpen, onManage, onLinkPerson, onMenuOpenChange }: UserActionsCellProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const name = user.fullName || "persona sin nombre registrado";
   const access = user.access;
@@ -41,7 +43,8 @@ function UserActionsCell({ user, menuOpen, onOpen, onManage, onMenuOpenChange }:
   const unlockAction = access !== null && user.actions.unlock && access.isTemporarilyLocked
     ? { label: "Desbloquear cuenta", action: "unlock" as const, icon: ShieldCheck }
     : null;
-  const hasAccountOperations = Boolean(canEdit || roleAction || lifecycleAction || unlockAction);
+  const canLinkPerson = access !== null && user.actions.linkPerson;
+  const hasAccountOperations = Boolean(canEdit || roleAction || lifecycleAction || unlockAction || canLinkPerson);
 
   return (
     <div className="flex items-center justify-end gap-1 whitespace-nowrap">
@@ -68,7 +71,8 @@ function UserActionsCell({ user, menuOpen, onOpen, onManage, onMenuOpenChange }:
           <MenuPrimitive.Positioner side="bottom" align="end" sideOffset={8} className="z-toast">
             <MenuPrimitive.Popup className="grid min-w-56 gap-1 rounded-control border border-border bg-surface p-1.5 text-left shadow-overlay outline-none" aria-label={`Acciones de cuenta para ${name}`}>
               <p className="px-2 py-1 text-caption font-semibold uppercase tracking-wide text-text-secondary">Cuenta SGI</p>
-              {canEdit ? <MenuPrimitive.Item className="flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-semibold outline-none data-highlighted:bg-muted xl:hidden" onClick={() => onManage("edit")}><Pencil aria-hidden="true" />Editar</MenuPrimitive.Item> : null}
+               {canEdit ? <MenuPrimitive.Item className="flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-semibold outline-none data-highlighted:bg-muted xl:hidden" onClick={() => onManage("edit")}><Pencil aria-hidden="true" />Editar</MenuPrimitive.Item> : null}
+               {canLinkPerson ? <MenuPrimitive.Item className="flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-semibold outline-none data-highlighted:bg-muted" onClick={onLinkPerson}><Link2 aria-hidden="true" />Vincular Persona</MenuPrimitive.Item> : null}
               {roleAction ? <MenuPrimitive.Item className="flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-semibold outline-none data-highlighted:bg-muted" onClick={() => onManage(roleAction.action)}><roleAction.icon aria-hidden="true" />{roleAction.label}</MenuPrimitive.Item> : null}
               {lifecycleAction || unlockAction ? <><div className="my-1 border-t border-border-subtle" role="separator" /><p className="px-2 py-1 text-caption font-semibold uppercase tracking-wide text-text-secondary">Acceso y ciclo de vida</p>{lifecycleAction ? <MenuPrimitive.Item className={`flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-semibold outline-none data-highlighted:bg-muted ${lifecycleAction.action === "deactivate" ? "text-status-error-foreground data-highlighted:bg-status-error-surface" : ""}`} onClick={() => onManage(lifecycleAction.action)}><lifecycleAction.icon aria-hidden="true" />{lifecycleAction.label}</MenuPrimitive.Item> : null}{unlockAction ? <MenuPrimitive.Item className="flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-semibold outline-none data-highlighted:bg-muted" onClick={() => onManage(unlockAction.action)}><unlockAction.icon aria-hidden="true" />{unlockAction.label}</MenuPrimitive.Item> : null}</> : null}
               {!hasAccountOperations ? <p className="px-2 py-2 text-body-small text-text-secondary">No hay acciones de cuenta disponibles para esta persona.</p> : null}
@@ -80,7 +84,7 @@ function UserActionsCell({ user, menuOpen, onOpen, onManage, onMenuOpenChange }:
   );
 }
 
-export function UsersTable({ users, onOpen, onManage }: UsersTableProps) {
+export function UsersTable({ users, onOpen, onManage, onLinkPerson }: UsersTableProps) {
   const [menuFor, setMenuFor] = useState<string | null>(null);
 
   return (
@@ -116,6 +120,7 @@ export function UsersTable({ users, onOpen, onManage }: UsersTableProps) {
                 menuOpen={menuFor === user.id}
                 onOpen={() => onOpen(user.id)}
                 onManage={(action) => { setMenuFor(null); onManage(user, action); }}
+                onLinkPerson={() => { setMenuFor(null); onLinkPerson(user); }}
                 onMenuOpenChange={(open) => setMenuFor(open ? user.id : null)}
               />
             </DataTableCell>

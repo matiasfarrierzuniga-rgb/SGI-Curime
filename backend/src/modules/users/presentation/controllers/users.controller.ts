@@ -28,11 +28,13 @@ import { ListAccountsUseCase } from '../../application/use-cases/list-accounts.u
 import { UnlockUserUseCase } from '../../application/use-cases/unlock-user.use-case';
 import { UpdateUserUseCase } from '../../application/use-cases/update-user.use-case';
 import { UpdateSubscriptionExpirationUseCase } from '../../application/use-cases/update-subscription-expiration.use-case';
+import { ListPersonLinkCandidatesUseCase } from '../../application/use-cases/list-person-link-candidates.use-case';
 import { ChangeRoleDto } from '../dto/change-role.dto';
 import { QueryUsersDto } from '../dto/query-users.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UpdateIsActiveDto } from '../dto/update-is-active.dto';
 import { UpdateSubscriptionExpirationDto } from '../dto/update-subscription-expiration.dto';
+import { PersonLinkCandidatesQueryDto } from '../dto/person-link-candidates-query.dto';
 import {
   toAdminUserResponse,
   toUserResponse,
@@ -52,6 +54,7 @@ export class UsersController {
     private readonly deactivateUser: DeactivateUserUseCase,
     private readonly unlockUser: UnlockUserUseCase,
     private readonly updateSubscriptionExpiration: UpdateSubscriptionExpirationUseCase,
+    private readonly listPersonLinkCandidates: ListPersonLinkCandidatesUseCase,
   ) {}
 
   @Get()
@@ -113,6 +116,12 @@ export class UsersController {
       const account = await this.getUser.execute(id);
       return this.toAccountResponse(account, req.user);
     });
+  }
+
+  @Get('person-link-candidates')
+  @RequireCapabilities('system.identity.manage')
+  findPersonLinkCandidates(@Query() query: PersonLinkCandidatesQueryDto) {
+    return this.run(() => this.listPersonLinkCandidates.execute(query.query));
   }
 
   @Get(':personId')
@@ -321,6 +330,9 @@ export class UsersController {
         changeRole: hasPersistedCapability(actor.permissionCodes, 'usr.users.role.change'),
         manageLifecycle: hasPersistedCapability(actor.permissionCodes, 'usr.users.lifecycle.manage'),
         unlock: hasPersistedCapability(actor.permissionCodes, 'usr.users.unlock'),
+        linkPerson:
+          account.personId === null &&
+          hasPersistedCapability(actor.permissionCodes, 'system.identity.manage'),
       },
     };
   }

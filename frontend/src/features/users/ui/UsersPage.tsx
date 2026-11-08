@@ -18,6 +18,7 @@ import { UserFilters } from "./UserFilters";
 import { UsersTable } from "./UsersTable";
 import { UserDetailsModal } from "./UserDetailsModal";
 import { UserManagementDialogs } from "./UserManagementDialogs";
+import { AccountPersonLinkDialog } from './AccountPersonLinkDialog'
 import { usersService } from "../api/users.api";
 import { usersKeys } from "../hooks/useUsersQueries";
 import { useToast } from "@/shared/ui/Toast";
@@ -36,6 +37,7 @@ export function UsersPage() {
   const [roleId, setRoleId] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [management, setManagement] = useState<{ user: User; action: ManagementAction } | null>(null);
+  const [linkingAccount, setLinkingAccount] = useState<User | null>(null)
   const queryClient = useQueryClient();
   const { notify } = useToast();
   const { user, isLoading: isSessionLoading } = useAuth();
@@ -85,6 +87,17 @@ export function UsersPage() {
       notify("Cambios de cuenta SGI guardados.", "success");
     },
   });
+  const linkMutation = useMutation({
+    mutationFn: ({ user, personId, evidenceReference, reason }: { user: User; personId: number; evidenceReference: string; reason: string }) => {
+      if (!user.access || !user.actions.linkPerson) throw new Error('La vinculación de Persona no está disponible para esta cuenta.')
+      return usersService.linkPerson({ userId: user.access.id, personId, verificationMethod: 'ADMINISTRATIVE_REVIEW', evidenceReference, reason })
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: usersKeys.all })
+      setLinkingAccount(null)
+      notify('Cuenta SGI vinculada con la Persona seleccionada.', 'success')
+    },
+  })
 
   const clearFilters = () => {
     setPage(1);
@@ -136,7 +149,7 @@ export function UsersPage() {
         />
       ) : (
           <AdministrativeListResults count={loading ? "Cargando resultados…" : `${total} ${total === 1 ? "cuenta encontrada" : "cuentas encontradas"}`}>
-          <UsersTable users={users} onOpen={setSelectedId} onManage={(user, action) => setManagement({ user, action })} />
+           <UsersTable users={users} onOpen={setSelectedId} onManage={(user, action) => setManagement({ user, action })} onLinkPerson={setLinkingAccount} />
           <Pagination
             page={page}
             total={total}
@@ -166,6 +179,13 @@ export function UsersPage() {
         onUpdate={(payload) => management && mutation.mutate({ action: "edit", user: management.user, payload })}
         onChangeRole={(roleId) => management && mutation.mutate({ action: "role", user: management.user, payload: roleId })}
         onLifecycle={(action) => management && mutation.mutate({ action, user: management.user })}
+      />
+      <AccountPersonLinkDialog
+        account={linkingAccount}
+        busy={linkMutation.isPending}
+        error={linkMutation.error}
+        onClose={() => { if (!linkMutation.isPending) setLinkingAccount(null) }}
+        onConfirm={({ personId, evidenceReference, reason }) => linkingAccount && linkMutation.mutate({ user: linkingAccount, personId, evidenceReference, reason })}
       />
     </AdministrativeListLayout>
   );
