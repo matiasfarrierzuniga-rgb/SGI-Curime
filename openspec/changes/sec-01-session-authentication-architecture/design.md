@@ -173,7 +173,7 @@ No Prisma schema change is required: `sessionGeneration`, invalidation metadata 
 
 ### D8 — Password-change contract is backend-canonical
 
-**PROPOSED.** Canonical request fields are `currentPassword`, `newPassword` and `newPasswordConfirmation`, matching the current backend DTO and use case. Frontend `password` and `passwordConfirmation` are a statically observed mismatch, not a compatibility contract. `APPLY` updates the frontend payload and adds DTO/controller/frontend contract tests; backend does not accept duplicate aliases that could create ambiguous validation.
+**IMPLEMENTED in G3.3 frontend.** Canonical request fields are `currentPassword`, `newPassword` and `newPasswordConfirmation`, matching the current backend DTO and use case. Frontend authenticated profile change now sends only these fields; token-based activation/reset remains the separate `{ token, password, passwordConfirmation }` contract. Backend does not accept duplicate aliases that could create ambiguous validation.
 
 ### D9 — Session state has one frontend mutation owner
 

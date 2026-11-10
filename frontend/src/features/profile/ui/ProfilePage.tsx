@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { authService, useAuth } from '@/features/auth'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/features/auth'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { getRoleLabel } from '@/shared/security/roles'
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
@@ -11,12 +12,13 @@ import { PageHeader } from '@/shared/ui/PageHeader'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { useToast } from '@/shared/ui/Toast'
 
-type PasswordForm = { currentPassword: string; password: string; passwordConfirmation: string }
+type PasswordForm = { currentPassword: string; newPassword: string; newPasswordConfirmation: string }
 
-const emptyPasswordForm: PasswordForm = { currentPassword: '', password: '', passwordConfirmation: '' }
+const emptyPasswordForm: PasswordForm = { currentPassword: '', newPassword: '', newPasswordConfirmation: '' }
 
 export function ProfilePage() {
-  const { user } = useAuth()
+  const { user, changePassword } = useAuth()
+  const navigate = useNavigate()
   const { notify } = useToast()
   const roleLabel = getRoleLabel(user?.role)
   const [form, setForm] = useState<PasswordForm>(emptyPasswordForm)
@@ -25,7 +27,7 @@ export function ProfilePage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    if (form.password !== form.passwordConfirmation) {
+    if (form.newPassword !== form.newPasswordConfirmation) {
       setError('Las contraseñas no coinciden.')
       return
     }
@@ -33,9 +35,10 @@ export function ProfilePage() {
     setLoading(true)
     setError('')
     try {
-      const result = await authService.changePassword(form)
-      notify(result.message || 'Contraseña actualizada.', 'success')
+      const result = await changePassword(form)
       setForm(emptyPasswordForm)
+      notify(result.message || 'Contraseña actualizada. Inicie sesión nuevamente.', 'success')
+      navigate('/login', { replace: true })
     } catch (reason) {
       setError(getErrorMessage(reason))
     } finally {
@@ -77,10 +80,10 @@ export function ProfilePage() {
                 <Input type="password" required autoComplete="current-password" value={form.currentPassword} onChange={event => setForm(current => ({ ...current, currentPassword: event.target.value }))} />
               </FormField>
               <FormField id="new-password" label="Nueva contraseña" required>
-                <Input type="password" required minLength={10} maxLength={128} autoComplete="new-password" value={form.password} onChange={event => setForm(current => ({ ...current, password: event.target.value }))} />
+                <Input type="password" required minLength={10} maxLength={128} autoComplete="new-password" value={form.newPassword} onChange={event => setForm(current => ({ ...current, newPassword: event.target.value }))} />
               </FormField>
               <FormField id="password-confirmation" label="Confirmar nueva contraseña" required>
-                <Input type="password" required minLength={10} maxLength={128} autoComplete="new-password" value={form.passwordConfirmation} onChange={event => setForm(current => ({ ...current, passwordConfirmation: event.target.value }))} />
+                <Input type="password" required minLength={10} maxLength={128} autoComplete="new-password" value={form.newPasswordConfirmation} onChange={event => setForm(current => ({ ...current, newPasswordConfirmation: event.target.value }))} />
               </FormField>
             </div>
             <div className="border-t border-border-subtle pt-6">

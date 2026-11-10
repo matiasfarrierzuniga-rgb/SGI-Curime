@@ -6,7 +6,7 @@ import { LEGACY_SESSION_STORAGE_KEY } from '@/shared/session/sessionStorage'
 import { AuthProvider, useAuth } from './AuthContext'
 import { authService } from '../api/auth.api'
 
-vi.mock('../api/auth.api', () => ({ authService: { me: vi.fn(), login: vi.fn(), logout: vi.fn(), refresh: vi.fn() } }))
+vi.mock('../api/auth.api', () => ({ authService: { me: vi.fn(), login: vi.fn(), logout: vi.fn(), refresh: vi.fn(), changePassword: vi.fn() } }))
 
 const user = { id: 1, fullName: 'Ana', email: 'ana@curime.cr', role: 'Usuario', status: 'ACTIVE' } as any
 const userB = { id: 2, fullName: 'Bea', email: 'bea@curime.cr', role: 'Usuario', status: 'ACTIVE' } as any
@@ -20,6 +20,7 @@ function Probe() {
     <span>{auth.user?.fullName ?? 'anonymous'}</span>
     <button onClick={() => void auth.login({ email: 'ana@curime.cr', password: 'not-inspected' }).catch(() => undefined)}>login</button>
     <button onClick={() => void auth.logout()}>logout</button>
+    <button onClick={() => void auth.changePassword({ currentPassword: 'Old1234567', newPassword: 'New1234567', newPasswordConfirmation: 'New1234567' }).catch(() => undefined)}>change-password</button>
   </>
 }
 
@@ -103,6 +104,43 @@ describe('AuthContext memory-only session ownership', () => {
 
     expect(getAuthSessionAdapter()?.getAccessToken()).toBeNull()
     expect(queryClient.getQueryData(['sensitive'])).toBeUndefined()
+  })
+
+  it('invalidates locally after authenticated password change without calling logout', async () => {
+    vi.mocked(authService.login).mockResolvedValue({ accessToken: 'token', user })
+    vi.mocked(authService.me).mockResolvedValue(user)
+    vi.mocked(authService.changePassword).mockResolvedValue({ message: 'Changed' })
+    const { queryClient } = renderAuth()
+    await screen.findByText('phase:anonymous')
+    fireEvent.click(screen.getByText('login'))
+    await screen.findByText('Ana')
+    queryClient.setQueryData(['sensitive'], user)
+
+    fireEvent.click(screen.getByText('change-password'))
+    await screen.findByText('phase:anonymous')
+
+    expect(authService.changePassword).toHaveBeenCalledWith({ currentPassword: 'Old1234567', newPassword: 'New1234567', newPasswordConfirmation: 'New1234567' })
+    expect(authService.logout).not.toHaveBeenCalled()
+    expect(getAuthSessionAdapter()?.getAccessToken()).toBeNull()
+    expect(queryClient.getQueryData(['sensitive'])).toBeUndefined()
+  })
+
+  it('preserves a valid session when password change fails', async () => {
+    vi.mocked(authService.login).mockResolvedValue({ accessToken: 'token', user })
+    vi.mocked(authService.me).mockResolvedValue(user)
+    vi.mocked(authService.changePassword).mockRejectedValue(new Error('current password rejected'))
+    renderAuth()
+    await screen.findByText('phase:anonymous')
+    fireEvent.click(screen.getByText('login'))
+    await screen.findByText('Ana')
+
+    fireEvent.click(screen.getByText('change-password'))
+    await waitFor(() => expect(authService.changePassword).toHaveBeenCalledOnce())
+
+    expect(screen.getByText('Ana')).toBeInTheDocument()
+    expect(screen.getByText('phase:authenticated')).toBeInTheDocument()
+    expect(getAuthSessionAdapter()?.getAccessToken()).toBe('token')
+    expect(authService.logout).not.toHaveBeenCalled()
   })
 
   it('cannot let a late logout erase a newer login context', async () => {

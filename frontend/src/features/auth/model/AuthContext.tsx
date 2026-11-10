@@ -5,7 +5,7 @@ import { configureAuthSessionAdapter, type SessionInvalidationReason } from '@/s
 import { createAuthSessionCoordinator, type AuthSessionCoordinator } from '@/shared/session/authSessionCoordinator'
 import { clearLegacySession } from '@/shared/session/sessionStorage'
 import { authService } from '../api/auth.api'
-import type { AuthenticatedUser, LoginCredentials } from './auth.types'
+import type { AuthenticatedUser, ChangePasswordPayload, LoginCredentials } from './auth.types'
 
 export type SessionPhase = 'initializing' | 'authenticated' | 'anonymous' | 'refresh-failed'
 
@@ -16,6 +16,7 @@ interface AuthValue {
   phase: SessionPhase
   login: (data: LoginCredentials) => Promise<AuthenticatedUser>
   logout: () => Promise<void>
+  changePassword: (payload: ChangePasswordPayload) => Promise<{ message?: string }>
 }
 
 const AuthContext = createContext<AuthValue | undefined>(undefined)
@@ -166,7 +167,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return fresh
   }, [isCurrent, resetSession])
 
-  return <AuthContext.Provider value={{ user, isAuthenticated: phase === 'authenticated' && user !== null, isLoading: phase === 'initializing', phase, login, logout }}>{children}</AuthContext.Provider>
+  const changePassword = useCallback(async (payload: ChangePasswordPayload) => {
+    const epoch = epochRef.current
+    const result = await authService.changePassword(payload)
+    if (isCurrent(epoch)) {
+      resetSession('anonymous')
+      coordinatorRef.current?.publish('session-invalidated')
+    }
+    return result
+  }, [isCurrent, resetSession])
+
+  return <AuthContext.Provider value={{ user, isAuthenticated: phase === 'authenticated' && user !== null, isLoading: phase === 'initializing', phase, login, logout, changePassword }}>{children}</AuthContext.Provider>
 }
 
 // oxlint-disable-next-line react/only-export-components -- hook and provider intentionally share their private context

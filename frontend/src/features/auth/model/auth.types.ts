@@ -16,3 +16,4 @@ export interface AuthenticatedUser {
 export interface LoginCredentials { email: string; password: string }
 export interface LoginResponse { accessToken: string; user: AuthenticatedUser }
 export interface PasswordWithConfirmation { token: string; password: string; passwordConfirmation: string }
+export interface ChangePasswordPayload { currentPassword: string; newPassword: string; newPasswordConfirmation: string }

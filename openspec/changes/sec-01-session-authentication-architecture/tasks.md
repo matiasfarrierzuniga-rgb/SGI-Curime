@@ -25,12 +25,13 @@
   - [x] Gate 2 backend: issue mandatory JWT `sid`, fail closed on inactive/foreign/expired persisted sessions, and revoke individual logout by stable `Session.id`.
   - [x] Gate 2 backend: add authenticated `POST /auth/logout-all`; atomically increment generation and revoke active sessions for global logout, password change and reset.
   - [x] Gate 2 focused unit and HTTP-contract coverage: individual/global logout, password change/reset, account deactivation, missing `sid`, session ownership and refresh/logout race.
-  - [ ] Gate 3 frontend memory/cache cleanup and runtime coordination remain pending.
+  - [x] Gate 3 frontend password-change success clears memory/query caches, broadcasts `session-invalidated`, avoids `/logout` and automatic refresh, and requires login again.
+  - [ ] Gate 3 browser multi-tab, production/runtime and final certification remain `NOT_VERIFIED`.
   - [ ] PostgreSQL transaction/concurrency integration and production/runtime certification remain pending.
 
 ## 4. Compatibility, transition and rollback
 
-- [ ] 4.1 **SEC-01-08 — Certify aliases and canonical password contract.** Validate every preserved auth/current-user alias, no-body refresh shape, `/users/me` authority and `currentPassword/newPassword/newPasswordConfirmation`; replace academic body-token assertions and verify every intentional break is documented with no browser-selectable compatibility bypass.
+- [ ] 4.1 **SEC-01-08 — Certify aliases and canonical password contract.** Frontend payload alignment is implemented and focused-tested; full alias, browser and runtime certification remains pending. Validate every preserved auth/current-user alias, no-body refresh shape, `/users/me` authority and `currentPassword/newPassword/newPasswordConfirmation`; verify every intentional break is documented with no browser-selectable compatibility bypass.
 - [ ] 4.2 **SEC-01-09 — Execute staged migration and safe rollback rehearsal.** Deploy backend cookie contract before frontend memory migration, observe approved indicators, and rehearse rollback using only cookie-compatible builds under assigned ownership and time limit; verify rollback restores service without body refresh exposure or weakened rotation, revocation, generation, origin or audit controls.
 
 ## 5. Security verification and implementation closure
