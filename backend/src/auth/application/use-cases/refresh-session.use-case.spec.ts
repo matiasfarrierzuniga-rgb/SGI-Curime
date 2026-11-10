@@ -66,6 +66,7 @@ describe('RefreshSessionUseCase', () => {
       email: 'admin@example.com',
       role: 'ROLE_SYSTEM_ADMIN',
       sessionGeneration: 3,
+      sid: 4,
     });
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: AuditAction.REFRESH_SUCCESS }),

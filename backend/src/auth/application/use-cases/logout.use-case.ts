@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AuditAction } from '../../../audit/audit-actions';
+import { AuthApplicationError } from '../errors/auth.errors';
 import {
   AUDIT_PORT,
   type AuditContext,
@@ -24,16 +25,24 @@ export class LogoutUseCase {
   async execute(
     rawRefreshToken: string | undefined,
     context: AuditContext = {},
+    authenticatedSessionId?: number,
   ): Promise<{ message: string }> {
-    if (!rawRefreshToken) return { message: 'Logged out' };
+    const session = rawRefreshToken
+      ? await this.sessions.findByRefreshTokenHash(
+          this.refreshTokens.hash(rawRefreshToken),
+        )
+      : null;
+    if (
+      session &&
+      authenticatedSessionId !== undefined &&
+      session.id !== authenticatedSessionId
+    ) {
+      throw new AuthApplicationError('UNAUTHORIZED', 'Unauthorized');
+    }
+    const sessionId = session?.id ?? authenticatedSessionId;
+    if (sessionId === undefined) return { message: 'Logged out' };
 
-    const refreshTokenHash = this.refreshTokens.hash(rawRefreshToken);
-    const session =
-      await this.sessions.findByRefreshTokenHash(refreshTokenHash);
-    const revoked = await this.sessions.revokeByRefreshTokenHash(
-      refreshTokenHash,
-      'logout',
-    );
+    const revoked = await this.sessions.revoke(sessionId, 'logout');
     if (revoked) {
       await recordAuditBestEffort(this.audit, {
         userId: session?.userId,

@@ -51,6 +51,8 @@ One adjacent mismatch requires preservation as explicit evidence: frontend passw
 
 On 2026-11-10, the SGI-Curime responsible approved D1-D5 as the target architecture for incremental implementation. Gate 1 authorizes only backend authentication/session compatibility: cookie-only refresh transport across existing aliases, secure production cookie policy, origin enforcement, response shaping and focused contract tests.
 
+Gate 2 approval extends the backend contract only: access JWTs carry mandatory `sid = Session.id`; JWT validation fails closed when the persisted session is absent, foreign, revoked or expired; individual logout revokes the stable session ID; `POST /auth/logout-all` acts only for the authenticated user; password change/reset atomically advance `sessionGeneration` and revoke active sessions. JWTs without `sid` are rejected. This approval does not authorize frontend changes, Prisma schema changes, deployment or Gate 3.
+
 Deployment topology, effective production origin/CORS/proxy behavior, refresh inactivity value, anti-abuse thresholds, browser coordination baseline, active-session cap, global logout and rollout/recovery parameters remain **NOT_VERIFIED** or **APPROVAL_REQUIRED** as stated below. D6-D10 remain pending for their later gates. This record does not authorize Gates 2 or 3, production deployment, Prisma changes, RBAC changes or frontend changes.
 
 Implementation remains limited to the separately authorized gate and unresolved operational parameters remain pending.
@@ -167,6 +169,8 @@ The supported-browser baseline is **NOT_VERIFIED**; repository browser evidence 
 - A persistence failure rolls back the security mutation. Audit recording occurs after commit on a best-effort path; audit failure must create operational evidence but must not undo or falsely report the committed security state.
 
 No Prisma schema change is required: `sessionGeneration`, invalidation metadata and session revocation fields already exist. Endpoint approval and password/reset generation behavior are **APPROVAL_REQUIRED**.
+
+**Gate 2 approval record:** the endpoint and password/reset generation behavior above are approved for backend implementation. Verification remains limited to focused unit and HTTP-contract evidence; PostgreSQL integration and production behavior remain **NOT_VERIFIED** until a safe identified environment is authorized.
 
 ### D8 — Password-change contract is backend-canonical
 

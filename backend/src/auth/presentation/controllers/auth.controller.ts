@@ -18,6 +18,7 @@ import { ActivateAccountUseCase } from '../../application/use-cases/activate-acc
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { LogoutUseCase } from '../../application/use-cases/logout.use-case';
+import { LogoutAllUseCase } from '../../application/use-cases/logout-all.use-case';
 import { RefreshSessionUseCase } from '../../application/use-cases/refresh-session.use-case';
 import { getRefreshCookiePolicy } from '../../application/config/refresh-token.config';
 import { RequestPasswordResetUseCase } from '../../application/use-cases/request-password-reset.use-case';
@@ -30,6 +31,7 @@ import { LoginDto } from '../dto/login.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../guards/optional-jwt-auth.guard';
 import { UnsupportedOperationGuard } from '../guards/unsupported-operation.guard';
 import { toAuthHttpError } from '../errors/auth-http-error.mapper';
 import { assertCookieRequestOrigin } from '../security/cookie-origin.policy';
@@ -43,6 +45,7 @@ export class AuthController {
     private readonly loginUseCase: LoginUseCase,
     private readonly refreshSessionUseCase: RefreshSessionUseCase,
     private readonly logoutUseCase: LogoutUseCase,
+    private readonly logoutAllUseCase: LogoutAllUseCase,
     private readonly activateAccountUseCase: ActivateAccountUseCase,
     private readonly requestPasswordResetUseCase: RequestPasswordResetUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
@@ -102,6 +105,7 @@ export class AuthController {
 
   @Post(['auth/logout', 'logout'])
   @HttpCode(HttpStatus.OK)
+  @UseGuards(OptionalJwtAuthGuard)
   async logout(
     @Body() dto: RefreshTokenDto,
     @Req() request: Request,
@@ -112,9 +116,33 @@ export class AuthController {
     const refreshToken = refreshTokenFromCookie(request, policy.name);
     assertCookieRequestOrigin(request);
     try {
-      return await this.logoutUseCase.execute(
-        refreshToken,
-        this.context(request),
+      return await this.handle(() =>
+        this.logoutUseCase.execute(
+          refreshToken,
+          this.context(request),
+          request.user?.sessionId,
+        ),
+      );
+    } finally {
+      response.clearCookie(policy.name, {
+        ...policy.options,
+        maxAge: undefined,
+      });
+    }
+  }
+
+  @Post('auth/logout-all')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async logoutAll(
+    @Req() request: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const policy = getRefreshCookiePolicy();
+    assertCookieRequestOrigin(request);
+    try {
+      return await this.handle(() =>
+        this.logoutAllUseCase.execute(request.user.id, this.context(request)),
       );
     } finally {
       response.clearCookie(policy.name, {
@@ -179,7 +207,8 @@ export class AuthController {
   @Get('auth/me')
   @UseGuards(JwtAuthGuard)
   me(@Req() request: AuthenticatedRequest): AuthenticatedUser {
-    return request.user;
+    const { sessionId: _sessionId, ...user } = request.user;
+    return user;
   }
 
   @Get('auth/admin-test')

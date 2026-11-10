@@ -184,7 +184,20 @@ describe('AuthController (e2e)', () => {
       }) => {
         if (currentUser?.id !== where.id || currentUser.status !== where.status)
           return Promise.resolve({ count: 0 });
-        currentUser = { ...currentUser, ...data };
+        currentUser = {
+          ...currentUser,
+          ...data,
+          ...(typeof data.sessionGeneration === 'object'
+            ? {
+                sessionGeneration:
+                  currentUser.sessionGeneration +
+                  Number(
+                    (data.sessionGeneration as { increment?: number }).increment ??
+                      0,
+                  ),
+              }
+            : {}),
+        };
         return Promise.resolve({ count: 1 });
       },
     );
@@ -258,6 +271,17 @@ describe('AuthController (e2e)', () => {
           ) ?? null,
         ),
     );
+    prismaMock.session.findFirst.mockImplementation(
+      ({ where }: { where: { id: number; revokedAt: null; expiresAt: { gt: Date } } }) =>
+        Promise.resolve(
+          sessions.find(
+            (session) =>
+              session.id === where.id &&
+              session.revokedAt === null &&
+              session.expiresAt > where.expiresAt.gt,
+          ) ?? null,
+        ),
+    );
     prismaMock.session.updateMany.mockImplementation(
       ({
         where,
@@ -328,7 +352,7 @@ describe('AuthController (e2e)', () => {
 
     expect(body.accessToken).toEqual(expect.any(String));
     expect(jwtService.decode(body.accessToken)).toEqual(
-      expect.objectContaining({ sub: 1, sessionGeneration: 0 }),
+      expect.objectContaining({ sub: 1, sessionGeneration: 0, sid: 1 }),
     );
     expect(body.user).toEqual({
       id: 1,
@@ -489,6 +513,79 @@ describe('AuthController (e2e)', () => {
       .expect(401);
   });
 
+  it('revokes only the current access and refresh session on logout', async () => {
+    const firstResponse = await login().expect(200);
+    const first = loginResponseBody(firstResponse);
+    const second = loginResponseBody(await login().expect(200));
+
+    await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', refreshCookie(firstResponse))
+      .set('Authorization', `Bearer ${first.accessToken}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${first.accessToken}`)
+      .expect(401);
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${second.accessToken}`)
+      .expect(200);
+  });
+
+  it('leaves a session revoked when refresh races with logout', async () => {
+    const loginResponse = await login().expect(200);
+    const accessToken = loginResponseBody(loginResponse).accessToken;
+    const cookie = refreshCookie(loginResponse);
+
+    const [refreshResponse, logoutResponse] = await Promise.all([
+      request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('Origin', 'http://localhost:5173')
+        .set('Cookie', cookie),
+      request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Origin', 'http://localhost:5173')
+        .set('Cookie', cookie)
+        .set('Authorization', `Bearer ${accessToken}`),
+    ]);
+
+    expect([200, 401]).toContain(refreshResponse.status);
+    expect(logoutResponse.status).toBe(200);
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(401);
+  });
+
+  it('invalidates every access and refresh session on logout-all', async () => {
+    const firstResponse = await login().expect(200);
+    const first = loginResponseBody(firstResponse);
+    const second = loginResponseBody(await login().expect(200));
+
+    await request(app.getHttpServer())
+      .post('/auth/logout-all')
+      .set('Origin', 'http://localhost:5173')
+      .set('Authorization', `Bearer ${first.accessToken}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${first.accessToken}`)
+      .expect(401);
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${second.accessToken}`)
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', refreshCookie(firstResponse))
+      .expect(401);
+  });
+
   it('supports both logout aliases with an HTTP-only refresh cookie', async () => {
     const cookieLogin = await request(app.getHttpServer())
       .post('/login')
@@ -635,6 +732,8 @@ describe('AuthController (e2e)', () => {
   });
 
   it('rejects invalid and reused reset tokens, then logs in only with the reset password', async () => {
+    const priorResponse = await login().expect(200);
+    const priorSession = loginResponseBody(priorResponse);
     await request(app.getHttpServer())
       .post('/auth/reset-password')
       .send({
@@ -657,6 +756,15 @@ describe('AuthController (e2e)', () => {
       })
       .expect(200);
     await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${priorSession.accessToken}`)
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', refreshCookie(priorResponse))
+      .expect(401);
+    await request(app.getHttpServer())
       .post('/auth/reset-password')
       .send({
         token: deliveredToken,
@@ -678,7 +786,8 @@ describe('AuthController (e2e)', () => {
       })
       .expect(401);
 
-    const body = loginResponseBody(await login().expect(200));
+    const loginResponse = await login().expect(200);
+    const body = loginResponseBody(loginResponse);
     await request(app.getHttpServer())
       .patch('/auth/change-password')
       .set('Authorization', `Bearer ${body.accessToken}`)
@@ -688,6 +797,15 @@ describe('AuthController (e2e)', () => {
         newPasswordConfirmation: 'NewSecurePass1',
       })
       .expect(200);
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${body.accessToken}`)
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', refreshCookie(loginResponse))
+      .expect(401);
     await login(currentUser!.email, 'valid-password').expect(401);
     await login(currentUser!.email, 'NewSecurePass1').expect(200);
   });
@@ -733,6 +851,20 @@ describe('AuthController (e2e)', () => {
       .expect(401);
   });
 
+  it('rejects a signed JWT without sid', async () => {
+    const legacyToken = await jwtService.signAsync({
+      sub: 1,
+      email: 'admin@curime.test',
+      role: 'Administrador',
+      sessionGeneration: 0,
+    });
+
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${legacyToken}`)
+      .expect(401);
+  });
+
   it('rejects an expired JWT', async () => {
     const expiredToken = await jwtService.signAsync(
       { sub: 1, email: 'admin@curime.test', role: 'Administrador' },
@@ -746,20 +878,23 @@ describe('AuthController (e2e)', () => {
   });
 
   it('rejects a JWT when its user becomes inactive', async () => {
-    const body = loginResponseBody(await login().expect(200));
+    const loginResponse = await login().expect(200);
+    const body = loginResponseBody(loginResponse);
     currentUser = { ...currentUser!, status: 'INACTIVE' };
 
     await request(app.getHttpServer())
       .get('/auth/me')
       .set('Authorization', `Bearer ${body.accessToken}`)
       .expect(401);
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', refreshCookie(loginResponse))
+      .expect(401);
   });
 
   it('rejects a pre-deactivation JWT after same-second reactivation and accepts the new generation', async () => {
-    const oldToken = await jwtService.signAsync({
-      sub: currentUser!.id,
-      sessionGeneration: currentUser!.sessionGeneration,
-    });
+    const oldToken = loginResponseBody(await login().expect(200)).accessToken;
     currentUser = { ...currentUser!, status: 'INACTIVE', sessionGeneration: 1 };
     currentUser = { ...currentUser, status: 'ACTIVE' };
 
@@ -768,10 +903,9 @@ describe('AuthController (e2e)', () => {
       .set('Authorization', `Bearer ${oldToken}`)
       .expect(401);
 
-    const newToken = await jwtService.signAsync({
-      sub: currentUser.id,
-      sessionGeneration: currentUser.sessionGeneration,
-    });
+    const newToken = loginResponseBody(
+      await login(currentUser.email, 'valid-password').expect(200),
+    ).accessToken;
     await request(app.getHttpServer())
       .get('/auth/me')
       .set('Authorization', `Bearer ${newToken}`)

@@ -4,4 +4,5 @@ export interface JwtPayload {
   role: string;
   iat?: number;
   sessionGeneration?: number;
+  sid?: number;
 }

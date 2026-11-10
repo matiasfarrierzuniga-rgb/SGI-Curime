@@ -67,7 +67,7 @@ export class ChangePasswordUseCase {
     const revokedSessions = await this.repository.withTransaction(
       async (tx) => {
         await tx.setUserPassword(userId, passwordHash);
-        return tx.revokeUserSessions(userId, 'password-change');
+        return tx.invalidateUserSessions(userId, 'password-change');
       },
     );
     if (revokedSessions > 0) {

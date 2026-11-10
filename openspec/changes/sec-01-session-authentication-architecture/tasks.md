@@ -16,6 +16,11 @@
 - [ ] 3.1 **SEC-01-04 — Move browser credentials to approved storage.** Make auth runtime the sole access-token owner, remove access/user session dependence on Web Storage and safely purge the obsolete session key; verify frontend unit tests show no access or refresh credential in `localStorage` or `sessionStorage` after login, refresh, reload or logout.
 - [ ] 3.2 **SEC-01-06 — Implement renewal and invalid-credential contract.** Preserve atomic one-time rotation and absolute expiry; recover through cookie refresh then `/users/me`; implement per-context single-flight, Web Locks, credential-free BroadcastChannel events and bounded fallbacks; verify concurrent tabs, stale cookies/events, API absence, timeout, expiry, generic refresh-failure audit and no false replay-family claim.
 - [ ] 3.3 **SEC-01-07 — Complete transactional revocation and cleanup.** Implement individual logout plus approved global logout; atomically increment generation and revoke sessions for password change/reset and deactivation; end the initiating session; preserve `401`/`403` semantics and cache cleanup; verify persistence rollback, best-effort audit failure and that already-issued bearer tokens fail generation checks immediately, without changing RBAC grants.
+  - [x] Gate 2 backend: issue mandatory JWT `sid`, fail closed on inactive/foreign/expired persisted sessions, and revoke individual logout by stable `Session.id`.
+  - [x] Gate 2 backend: add authenticated `POST /auth/logout-all`; atomically increment generation and revoke active sessions for global logout, password change and reset.
+  - [x] Gate 2 focused unit and HTTP-contract coverage: individual/global logout, password change/reset, account deactivation, missing `sid`, session ownership and refresh/logout race.
+  - [ ] Gate 3 frontend memory/cache cleanup and runtime coordination remain pending.
+  - [ ] PostgreSQL transaction/concurrency integration and production/runtime certification remain pending.
 
 ## 4. Compatibility, transition and rollback
 

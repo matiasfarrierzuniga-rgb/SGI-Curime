@@ -3,7 +3,7 @@ import { LogoutUseCase } from './logout.use-case';
 describe('LogoutUseCase', () => {
   const sessions = {
     findByRefreshTokenHash: jest.fn(),
-    revokeByRefreshTokenHash: jest.fn(),
+    revoke: jest.fn(),
   };
   const refreshTokens = { hash: jest.fn() };
   const audit = { record: jest.fn() };
@@ -18,15 +18,15 @@ describe('LogoutUseCase', () => {
     );
     refreshTokens.hash.mockReturnValue('refresh-hash');
     sessions.findByRefreshTokenHash.mockResolvedValue({ id: 1, userId: 2 });
-    sessions.revokeByRefreshTokenHash.mockResolvedValue(true);
+    sessions.revoke.mockResolvedValue(true);
   });
 
   it('revokes an identified session without exposing credential state', async () => {
     await expect(useCase.execute('raw-refresh')).resolves.toEqual({
       message: 'Logged out',
     });
-    expect(sessions.revokeByRefreshTokenHash).toHaveBeenCalledWith(
-      'refresh-hash',
+    expect(sessions.revoke).toHaveBeenCalledWith(
+      1,
       'logout',
     );
   });
@@ -35,10 +35,24 @@ describe('LogoutUseCase', () => {
     await expect(useCase.execute(undefined)).resolves.toEqual({
       message: 'Logged out',
     });
-    sessions.revokeByRefreshTokenHash.mockResolvedValueOnce(false);
+    sessions.revoke.mockResolvedValueOnce(false);
     await expect(useCase.execute('invalid')).resolves.toEqual({
       message: 'Logged out',
     });
+  });
+
+  it('revokes the bearer-identified session when the refresh cookie is absent', async () => {
+    await expect(useCase.execute(undefined, {}, 3)).resolves.toEqual({
+      message: 'Logged out',
+    });
+    expect(sessions.revoke).toHaveBeenCalledWith(3, 'logout');
+  });
+
+  it('fails closed when cookie and authenticated sessions differ', async () => {
+    await expect(useCase.execute('raw-refresh', {}, 3)).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+    });
+    expect(sessions.revoke).not.toHaveBeenCalled();
   });
 
   it('returns success when post-revocation audit persistence fails', async () => {
