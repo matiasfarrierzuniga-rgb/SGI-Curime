@@ -180,27 +180,27 @@ export function InventoryDashboardPage() {
 
   return <InventoryPageContainer>
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
+      <header className="flex flex-wrap items-end justify-between gap-3 lg:gap-4">
+        <div className="min-w-0 space-y-1">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8b663e]">Inventario</p>
-          <h1 className="font-heading text-3xl font-bold tracking-tight text-erp-text sm:text-4xl">Panel de Inventario</h1>
-          <p className="text-sm text-erp-text-muted">Control de bienes, existencias y préstamos institucionales de la ADI Curime.</p>
+          <h1 className="font-heading text-heading-2 font-bold tracking-tight text-erp-text">Panel de Inventario</h1>
+          <p className="max-w-2xl text-sm text-erp-text-muted">Control de bienes, existencias y préstamos institucionales de la ADI Curime.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           {mayManageItems && <Link to="/inventory/items" className={buttonVariants({ size: 'sm' })}><Package className="size-4" />Gestionar artículos</Link>}
           {mayManageItems && <Link to="/inventory/categories" className={buttonVariants({ variant: 'outline', size: 'sm' })}><Tags className="size-4" />Gestionar categorías</Link>}
           <Link to="/inventory/movements" className={buttonVariants({ variant: 'outline', size: 'sm' })}><ArrowLeftRight className="size-4" />Movimientos</Link>
           <Link to="/inventory/loans" className={buttonVariants({ variant: 'outline', size: 'sm' })}><Handshake className="size-4" />Préstamos</Link>
         </div>
-      </div>
+      </header>
 
-      <nav aria-label="Accesos rápidos de inventario" className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
+      <nav aria-label="Accesos rápidos de inventario" className="grid grid-cols-1 gap-2 min-[390px]:grid-cols-2 min-[900px]:grid-cols-3 min-[1200px]:grid-cols-5">
         {quickLinks.map(({ label, caption, to, Icon }) => <Link key={to} to={to} aria-label={label} className="group flex min-w-0 items-center gap-3 rounded-surface border border-erp-border bg-erp-surface-raised p-3 shadow-sm transition-colors hover:border-[#5caa8e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#087c52]">
           <Icon className="size-5 shrink-0 text-[#006348]" aria-hidden="true" /><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{label}</span><span className="block truncate text-xs text-erp-text-muted">{caption}</span></span><ChevronRight className="size-4 shrink-0 text-erp-text-muted" aria-hidden="true" />
         </Link>)}
       </nav>
 
-      <section aria-label="Filtros del listado de artículos" className="grid gap-2 rounded-surface border border-erp-border bg-erp-surface-raised p-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <section aria-label="Filtros del listado de artículos" className="grid gap-2 rounded-surface border border-erp-border bg-erp-surface-raised p-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         <label className="relative"><span className="sr-only">Buscar artículo</span><Search className="pointer-events-none absolute left-3 top-3 size-4 text-erp-text-muted" aria-hidden="true"/><input className="h-10 w-full rounded-control border border-erp-border bg-transparent pl-9 pr-3 text-sm" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar artículo (código, nombre o descripción)" /></label>
         <label><span className="sr-only">Filtrar por categoría</span><select className="h-10 w-full rounded-control border border-erp-border bg-transparent px-3 text-sm" value={category} onChange={e => setCategory(e.target.value)}><option value="">Todas las categorías</option>{categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}</select></label>
         <label><span className="sr-only">Filtrar por estado</span><select className="h-10 w-full rounded-control border border-erp-border bg-transparent px-3 text-sm" value={status} onChange={e => setStatus(e.target.value)}><option value="">Todos los estados</option><option value="ACTIVE">Activos</option><option value="INACTIVE">Inactivos</option><option value="low">Stock bajo</option></select></label>
@@ -208,15 +208,15 @@ export function InventoryDashboardPage() {
       </section>
 
       {loading ? <LoadingState label="Cargando resumen de inventario…" /> : errors.summary ? <ErrorState message={errors.summary} /> : null}
-      {stats.length > 0 && <section aria-label="Indicadores de inventario" className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-8">
-        {stats.map(({ title, number, Icon, color }) => <article key={title} className={`min-w-0 rounded-surface border border-l-4 border-erp-border bg-erp-surface-raised p-3 shadow-sm ${color}`}>
+      {stats.length > 0 && <section aria-label="Indicadores de inventario" className="grid grid-cols-2 gap-2 min-[900px]:grid-cols-4 min-[1280px]:grid-cols-8">
+        {stats.map(({ title, number, Icon, color }) => <article key={title} className={`min-w-0 rounded-surface border border-l-4 border-erp-border bg-erp-surface-raised p-3 shadow-sm sm:p-3.5 ${color}`}>
           <div className="flex items-start gap-2"><Icon className="mt-0.5 size-4 shrink-0 text-[#006348]" aria-hidden="true"/><p className="text-xs font-medium leading-tight">{title}</p></div>
           <p className="mt-2 text-2xl font-bold tabular-nums">{number.toLocaleString('es-CR')}</p>
         </article>)}
       </section>}
 
-      <div className="grid gap-3 xl:grid-cols-12">
-        <Panel title="Alertas y atención inmediata" icon={TriangleAlert} className="xl:col-span-4"
+      <section aria-label="Paneles principales de inventario" className="grid gap-3 min-[1200px]:grid-cols-12">
+        <Panel title="Alertas y atención inmediata" icon={TriangleAlert} className="min-[1200px]:col-span-4"
           action={<Link to="/inventory/alerts" className="text-xs font-semibold text-[#006348] hover:underline">Ver todas</Link>}>
           <div className="mb-3 flex gap-2" role="group" aria-label="Tipo de alerta">
             <button type="button" onClick={() => setAlertTab('lowStock')} aria-pressed={alertTab === 'lowStock'} className={`rounded-control px-3 py-1.5 text-xs font-semibold ${alertTab === 'lowStock' ? 'bg-amber-100 text-amber-950' : 'border border-erp-border'}`}>Stock bajo ({data.alerts?.summary.lowStock ?? '—'})</button>
@@ -226,13 +226,13 @@ export function InventoryDashboardPage() {
           <ul className="divide-y divide-erp-border">{alertRows.slice(0, 4).map(item => <li key={item.id}><Link to={`/inventory/items?highlight=${item.id}`} className="flex items-center gap-2 py-2 hover:text-[#006348]"><Package className="size-4 shrink-0 text-[#8b663e]" aria-hidden="true"/><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{item.name}</span><span className="text-xs text-erp-text-muted">{item.code} · Mínimo: {item.minimumQuantity}</span></span><span className="shrink-0 rounded-md bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-950">Stock: {item.currentQuantity}</span><ChevronRight className="size-4 shrink-0" aria-hidden="true"/></Link></li>)}</ul>}
         </Panel>
 
-        <Panel title="Movimientos recientes" icon={ArrowLeftRight} className="xl:col-span-4"
+        <Panel title="Movimientos recientes" icon={ArrowLeftRight} className="min-[1200px]:col-span-4"
           action={<Link to="/inventory/movements" className="text-xs font-semibold text-[#006348] hover:underline">Ver todos <ArrowRight className="inline size-3" /></Link>}>
           {loading ? <p className="text-sm text-erp-text-muted">Cargando movimientos…</p> : errors.recent ? <PanelError message={errors.recent} /> : data.recent?.length === 0 ? <p className="py-5 text-sm text-erp-text-muted">No hay movimientos registrados.</p> :
             <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="bg-erp-canvas text-erp-text-muted"><th className="p-2">Fecha</th><th className="p-2">Artículo</th><th className="p-2">Tipo</th><th className="p-2 text-right">Cantidad</th></tr></thead><tbody className="divide-y divide-erp-border">{data.recent?.map(m => <tr key={m.id}><td className="whitespace-nowrap p-2">{new Date(m.createdAt).toLocaleDateString('es-CR')}</td><td className="p-2 font-medium">{m.item.name}</td><td className="p-2">{movementTypeLabels[m.type]}</td><td className="p-2 text-right tabular-nums">{m.quantity}</td></tr>)}</tbody></table></div>}
         </Panel>
 
-        <Panel title="Stock por categoría" icon={Boxes} className="xl:col-span-4">
+        <Panel title="Stock por categoría" icon={Boxes} className="min-[1200px]:col-span-4">
           {loading ? <p className="text-sm text-erp-text-muted">Cargando categorías…</p> : errors.items ? <PanelError message={errors.items} /> : categories.length === 0 ? <p className="py-5 text-sm text-erp-text-muted">No hay artículos para distribuir.</p> :
           <div className="grid items-center gap-2 sm:grid-cols-[minmax(140px,1fr)_minmax(0,1.25fr)]">
             <div className="relative h-44 min-w-0" role="img" aria-label="Distribución de artículos por categoría">
@@ -243,16 +243,16 @@ export function InventoryDashboardPage() {
           </div>}
           <p className="mt-2 text-xs text-erp-text-muted">Distribución de artículos cargados en el tablero, no de unidades físicas.</p>
         </Panel>
-      </div>
+      </section>
 
-      <div className="grid gap-3 xl:grid-cols-12">
-        <Panel title="Estado del inventario" icon={Package} className="xl:col-span-7"
+      <section aria-label="Detalle del inventario" className="grid gap-3 min-[1200px]:grid-cols-12">
+        <Panel title="Estado del inventario" icon={Package} className="min-[1200px]:col-span-7"
           action={<Link to="/inventory/items" className="text-xs font-semibold text-[#006348] hover:underline">Ver catálogo completo <ArrowRight className="inline size-3"/></Link>}>
           {loading ? <p className="text-sm text-erp-text-muted">Cargando artículos…</p> : errors.items ? <PanelError message={errors.items} /> : filteredItems.length === 0 ? <p className="py-5 text-sm text-erp-text-muted">No se encontraron artículos.</p> :
           <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="bg-erp-canvas text-erp-text-muted"><th className="p-2">Artículo</th><th className="p-2">Categoría</th><th className="p-2 text-right">Stock</th><th className="p-2 text-right">Mínimo</th><th className="p-2">Estado</th><th className="p-2">Detalle</th></tr></thead><tbody className="divide-y divide-erp-border">{filteredItems.slice(0, 6).map(item => <tr key={item.id}><td className="p-2"><span className="block font-semibold">{item.name}</span><span className="text-erp-text-muted">{item.code}</span></td><td className="p-2">{item.category.name}</td><td className="p-2 text-right font-semibold tabular-nums">{item.currentQuantity}</td><td className="p-2 text-right tabular-nums">{item.minimumQuantity}</td><td className="p-2"><StatusBadge variant={toneFor(item)}>{item.status === 'INACTIVE' ? 'Inactivo' : item.currentQuantity === 0 ? 'Agotado' : item.currentQuantity <= item.minimumQuantity ? 'Stock bajo' : 'Activo'}</StatusBadge></td><td className="p-2"><Link aria-label={`Ver artículo ${item.name}`} to={`/inventory/items?highlight=${item.id}`} className="text-[#006348] underline-offset-2 hover:underline">Ver</Link></td></tr>)}</tbody></table></div>}
         </Panel>
 
-        <Panel title="Tendencia de movimientos" icon={Activity} className="xl:col-span-5"
+        <Panel title="Tendencia de movimientos" icon={Activity} className="min-[1200px]:col-span-5"
           action={<label className="flex items-center gap-1 text-xs"><span className="sr-only">Período de tendencia</span><select className="rounded-control border border-erp-border bg-transparent px-2 py-1 text-xs" value={trendDays} onChange={e => setTrendDays(Number(e.target.value))}><option value={7}>Últimos 7 días</option><option value={14}>Últimos 14 días</option><option value={30}>Últimos 30 días</option></select></label>}>
           {loading ? <p className="text-sm text-erp-text-muted">Cargando tendencia…</p> : errors.movements ? <PanelError message={errors.movements} /> : !data.movements ? <p className="text-sm text-erp-text-muted">Sin datos disponibles.</p> :
           <div className="h-64 w-full" role="img" aria-label="Tendencia diaria de cantidad de movimientos de entrada, salida y ajuste">
@@ -260,7 +260,7 @@ export function InventoryDashboardPage() {
           </div>}
           <p className="mt-2 text-xs text-erp-text-muted">Número de operaciones por día, basado en hasta 100 movimientos del período.</p>
         </Panel>
-      </div>
+      </section>
     </div>
   </InventoryPageContainer>
 }

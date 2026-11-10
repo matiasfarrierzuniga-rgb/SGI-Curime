@@ -73,11 +73,30 @@ describe('InventoryDashboardPage', () => {
     page()
     await screen.findByText('Artículos')
     const quickAccess = screen.getByRole('navigation', { name: 'Accesos rápidos de inventario' })
+    expect(within(quickAccess).getAllByRole('link')).toHaveLength(5)
     expect(within(quickAccess).getByRole('link', { name: 'Artículos' })).toHaveAttribute('href', '/inventory/items')
     expect(within(quickAccess).getByRole('link', { name: 'Categorías' })).toHaveAttribute('href', '/inventory/categories')
     expect(within(quickAccess).getByRole('link', { name: 'Movimientos' })).toHaveAttribute('href', '/inventory/movements')
     expect(within(quickAccess).getByRole('link', { name: 'Préstamos' })).toHaveAttribute('href', '/inventory/loans')
     expect(within(quickAccess).getByRole('link', { name: 'Reportes' })).toHaveAttribute('href', '/inventory/reports')
+  })
+
+  it('keeps dashboard regions responsive and excludes functional coverage metrics', async () => {
+    page()
+    await screen.findByText('10')
+
+    expect(screen.getByRole('navigation', { name: 'Accesos rápidos de inventario' })).toHaveClass(
+      'min-[390px]:grid-cols-2',
+      'min-[900px]:grid-cols-3',
+      'min-[1200px]:grid-cols-5',
+    )
+    expect(screen.getByRole('region', { name: 'Indicadores de inventario' })).toHaveClass(
+      'min-[900px]:grid-cols-4',
+      'min-[1280px]:grid-cols-8',
+    )
+    expect(screen.getByRole('region', { name: 'Paneles principales de inventario' })).toHaveClass('min-[1200px]:grid-cols-12')
+    expect(screen.getByRole('region', { name: 'Detalle del inventario' })).toHaveClass('min-[1200px]:grid-cols-12')
+    expect(screen.queryByText(/Cobertura funcional|CRUD/)).not.toBeInTheDocument()
   })
 
   it('does not invent category or movement statistics when datasets are empty', async () => {
