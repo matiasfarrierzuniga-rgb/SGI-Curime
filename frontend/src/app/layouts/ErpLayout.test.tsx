@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ErpLayout } from './ErpLayout'
@@ -107,18 +107,20 @@ describe('ErpLayout', () => {
 
   it('allows an active group to close and reopen without losing its current location', () => {
     renderLayout('/inventory')
-    const collapse = screen.getByRole('button', { name: 'Contraer Inventario' })
+    const sidebar = document.getElementById('erp-sidebar-navigation')!
+    const sidebarNavigation = within(sidebar)
+    const collapse = sidebarNavigation.getByRole('button', { name: 'Contraer Inventario' })
 
     expect(collapse).toHaveAttribute('aria-expanded', 'true')
     expect(collapse).toHaveAttribute('aria-controls', 'sidebar-inventario-subnav')
     expect(document.getElementById('sidebar-inventario-subnav')).toBeInTheDocument()
     fireEvent.click(collapse)
 
-    expect(screen.getByRole('button', { name: 'Expandir Inventario' })).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByRole('link', { name: 'Artículos' })).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Inventario' })).toHaveAttribute('aria-current', 'page')
-    fireEvent.click(screen.getByRole('button', { name: 'Expandir Inventario' }))
-    expect(screen.getByRole('link', { name: 'Artículos' })).toBeInTheDocument()
+    expect(sidebarNavigation.getByRole('button', { name: 'Expandir Inventario' })).toHaveAttribute('aria-expanded', 'false')
+    expect(sidebarNavigation.queryByRole('link', { name: 'Artículos' })).not.toBeInTheDocument()
+    expect(sidebarNavigation.getByRole('link', { name: 'Inventario' })).toHaveAttribute('aria-current', 'page')
+    fireEvent.click(sidebarNavigation.getByRole('button', { name: 'Expandir Inventario' }))
+    expect(sidebarNavigation.getByRole('link', { name: 'Artículos' })).toBeInTheDocument()
   })
 
   it('keeps submenus independently expandable', () => {

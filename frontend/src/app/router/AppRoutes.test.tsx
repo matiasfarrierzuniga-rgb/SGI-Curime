@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -25,6 +25,17 @@ vi.mock('@/services/inventoryReportsService', () => ({
 }))
 
 let httpGet: ReturnType<typeof vi.spyOn>
+const queryClients = new Set<QueryClient>()
+
+function createTestQueryClient() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0, refetchOnWindowFocus: false },
+    },
+  })
+  queryClients.add(queryClient)
+  return queryClient
+}
 
 const SYSTEM_ADMIN_CAPABILITIES = ['adm.affiliates.read', 'adm.institutional-profile.read', 'aud.logs.read', 'don.donations.read', 'ent.ventures.read', 'erp.dashboard.read', 'fin.charges.read', 'fin.dinadeco.read', 'fin.movements.read', 'usr.profile.read', 'usr.users.read', 'vol.opportunities.read']
 const TREASURER_CAPABILITIES = ['don.donations.cancel', 'don.donations.create', 'don.donations.read', 'don.donations.update', 'erp.dashboard.read', 'fin.charges.read', 'fin.dinadeco.read', 'fin.movements.create', 'fin.movements.read', 'fin.payments.record', 'usr.profile.read']
@@ -54,8 +65,13 @@ function renderRoute(path: string, role: string | null, canAccessErp = role !== 
     })
   }
 
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const queryClient = createTestQueryClient()
   return render(<QueryClientProvider client={queryClient}><ToastProvider><AuthProvider><MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter></AuthProvider></ToastProvider></QueryClientProvider>)
+}
+
+async function settleRouteTransition() {
+  await waitFor(() => expect(screen.queryByText('Restaurando sesión…')).not.toBeInTheDocument())
+  await act(async () => {})
 }
 
 beforeEach(() => {
@@ -68,7 +84,7 @@ beforeEach(() => {
   vi.spyOn(affiliatesService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
   vi.mocked(rolesService.listActive).mockResolvedValue([])
   vi.mocked(auditLogsService.list).mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
-  vi.mocked(inventoryReportsService.summary).mockResolvedValue({ activeItems: 0, lowStockCount: 0, outOfStockCount: 0, overdueLoans: 0 })
+  vi.mocked(inventoryReportsService.summary).mockResolvedValue({ totalItems: 0, activeItems: 0, inactiveItems: 0, totalCategories: 0, lowStockCount: 0, outOfStockCount: 0, activeLoans: 0, overdueLoans: 0 })
   httpGet = vi.spyOn(httpClient, 'get').mockImplementation((url) => {
     if (url === '/affiliate-requests') return Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 20 } })
     if (url === '/events') return Promise.resolve({ data: [] })
@@ -95,6 +111,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  queryClients.forEach(queryClient => queryClient.clear())
+  queryClients.clear()
   localStorage.clear()
   sessionStorage.clear()
   vi.restoreAllMocks()
@@ -110,6 +128,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('renders a public volunteering detail and optional account links without a session', async () => {
     renderRoute('/voluntariado/7', null)
+    await waitFor(() => expect(httpGet).toHaveBeenCalledWith('/public/volunteering/opportunities/7'))
     expect(await screen.findByRole('heading', { name: 'Limpieza comunitaria' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Postularme como voluntario' })).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Iniciar sesión' }).some(link => link.getAttribute('href') === '/login')).toBe(true)
@@ -132,6 +151,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('sends authenticated portal access to the panel', async () => {
     renderRoute('/', 'ROLE_SYSTEM_ADMIN')
+    await settleRouteTransition()
 
     expect(await screen.findAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
     screen.getAllByRole('link', { name: 'Ir al panel' }).forEach((link) => expect(link).toHaveAttribute('href', '/app'))
@@ -151,12 +171,14 @@ describe('AppRoutes capability deep links', () => {
 
   it('logs out a general account from the mobile public menu', async () => {
     renderRoute('/servicios', 'Subscription_L1', false)
+    await settleRouteTransition()
 
-    await screen.findByRole('heading', { name: 'Servicios para la comunidad' })
+    expect(screen.getByRole('heading', { name: 'Servicios para la comunidad' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar sesión' })[0])
 
     await waitFor(() => expect(sessionStorage.getItem('sgi-curime-session')).toBeNull())
+    await act(async () => {})
     expect(screen.getAllByRole('link', { name: 'Iniciar sesión' })).not.toHaveLength(0)
     expect(screen.getAllByRole('link', { name: 'Solicitar una cuenta' })).not.toHaveLength(0)
   })
@@ -222,6 +244,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('redirects canonical system administrators from /app to the dashboard', async () => {
     renderRoute('/app', 'ROLE_SYSTEM_ADMIN', true, ['erp.dashboard.read'])
+    await settleRouteTransition()
 
     expect(await screen.findByRole('heading', { name: /Buenos días/ })).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Inicio' })[0]).toHaveAttribute('href', '/app/dashboard')
@@ -253,18 +276,20 @@ describe('AppRoutes capability deep links', () => {
 
   it('redirects a canonical operator without dashboard access from /app to inventory', async () => {
     renderRoute('/app', 'ROLE_INSTITUTIONAL_OPERATOR', true, ['inv.inventory.read'])
-    expect(await screen.findByRole('heading', { name: 'Inventario' }, { timeout: 5000 })).toBeInTheDocument()
+    await settleRouteTransition()
+    expect(screen.getByRole('heading', { name: 'Panel de Inventario' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
   })
 
   it('allows an inventory deep link without dashboard access', async () => {
     renderRoute('/inventory', 'ROLE_INSTITUTIONAL_OPERATOR', true, ['inv.inventory.read'])
-    expect(await screen.findByRole('heading', { name: 'Inventario' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Panel de Inventario' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
   })
 
   it('denies an inventory deep link before rendering its module without the capability', async () => {
     renderRoute('/inventory', 'Vecino/Afiliado', true, [])
+    await settleRouteTransition()
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Inventario' })).not.toBeInTheDocument()
     expect(inventoryReportsService.summary).not.toHaveBeenCalled()
@@ -287,7 +312,7 @@ describe('AppRoutes capability deep links', () => {
     const user = { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role: 'ROLE_SYSTEM_ADMIN', canAccessErp: true, permissionCodes: ['erp.dashboard.read', 'usr.profile.read'] }
     sessionStorage.setItem('sgi-curime-session', JSON.stringify({ token: 'test-token', user }))
     vi.spyOn(authService, 'me').mockResolvedValue(user)
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const queryClient = createTestQueryClient()
     const erpView = render(<QueryClientProvider client={queryClient}><ToastProvider><AuthProvider><MemoryRouter initialEntries={['/app/profile']}><AppRoutes /></MemoryRouter></AuthProvider></ToastProvider></QueryClientProvider>)
 
     expect(await screen.findByRole('heading', { name: 'Mi perfil' })).toBeInTheDocument()
@@ -302,6 +327,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('denies an ERP profile deep link without the profile capability while keeping community profile access', async () => {
     renderRoute('/app/profile', 'ROLE_INSTITUTIONAL_PRESIDENT', true, ['erp.dashboard.read'])
+    await settleRouteTransition()
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Mi perfil' })).not.toBeInTheDocument()
@@ -316,11 +342,14 @@ describe('AppRoutes capability deep links', () => {
 
   it('preserves the authenticated session when returning to the public portal', async () => {
     renderRoute('/app/dashboard', 'ROLE_SYSTEM_ADMIN', true, ['erp.dashboard.read'])
+    await settleRouteTransition()
 
-    await screen.findByRole('heading', { name: /Buenos días/ })
+    expect(screen.getByRole('heading', { name: /Buenos días/ })).toBeInTheDocument()
     fireEvent.click(screen.getAllByRole('link', { name: 'Ver sitio público' })[0])
+    await act(async () => {})
 
-    expect(await screen.findAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
+    expect(document.getElementById('public-content')).toBeInTheDocument()
+    expect(sessionStorage.getItem('sgi-curime-session')).not.toBeNull()
   })
 
   it('clears the session and redirects logout to login', async () => {
@@ -350,6 +379,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('redirects unknown roles from /app/admin/affiliates to 403', async () => {
     renderRoute('/app/admin/affiliates', 'Rol desconocido')
+    await settleRouteTransition()
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Afiliados' })).not.toBeInTheDocument()
@@ -379,6 +409,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('redirects authenticated users without affiliate capability to 403', async () => {
     renderRoute('/app/admin/affiliates', 'Vecino/Afiliado')
+    await settleRouteTransition()
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByText('No hay afiliados')).not.toBeInTheDocument()
@@ -395,11 +426,12 @@ describe('AppRoutes capability deep links', () => {
     renderRoute('/app/admin/ventures/summary', 'ROLE_SYSTEM_ADMIN')
 
     expect(await screen.findByRole('heading', { name: 'Emprendimientos' })).toBeInTheDocument()
-    expect(httpGet).toHaveBeenCalledWith('/ventures', { params: { page: 1, limit: 1 } })
+    await waitFor(() => expect(httpGet).toHaveBeenCalledWith('/ventures', { params: { page: 1, limit: 1 } }))
   })
 
   it('denies venture summary deep links without venture read capability before requesting data', async () => {
     renderRoute('/app/admin/ventures/summary', 'Vecino/Afiliado')
+    await settleRouteTransition()
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(httpGet).not.toHaveBeenCalledWith('/ventures', expect.anything())
@@ -422,6 +454,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('default-denies unknown roles from affiliate requests', async () => {
     renderRoute('/app/admin/requests', 'Rol desconocido')
+    await settleRouteTransition()
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
@@ -442,7 +475,7 @@ describe('AppRoutes capability deep links', () => {
   it('renders donation requests for persisted readers', async () => {
     renderRoute('/app/donation-requests', 'ROLE_SYSTEM_ADMIN', true, [...SYSTEM_ADMIN_CAPABILITIES, 'don.requests.read', 'don.requests.review'])
     expect(await screen.findByRole('heading', { name: 'Solicitudes públicas' })).toBeInTheDocument()
-    expect(httpGet).toHaveBeenCalledWith('/donation-requests', { params: { page: 1, limit: 20 } })
+    await waitFor(() => expect(httpGet).toHaveBeenCalledWith('/donation-requests', { params: { page: 1, limit: 20 } }))
   })
 
   it('denies donation requests without their read permission', async () => {
@@ -468,6 +501,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('redirects users without donations read capability to 403', async () => {
     renderRoute('/app/donations', 'ROLE_INSTITUTIONAL_TREASURER', true, ['fin.charges.read', 'fin.movements.read'])
+    await settleRouteTransition()
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Donaciones' })).not.toBeInTheDocument()
@@ -530,6 +564,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('denies the DINADECO report to roles without capability', async () => {
     renderRoute('/app/financial/dinadeco', 'Gestor de Inventario')
+    await settleRouteTransition()
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
 
@@ -554,6 +589,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('denies volunteering opportunity deep links without read capability', async () => {
     renderRoute('/app/admin/volunteering', 'Vecino/Afiliado')
+    await settleRouteTransition()
 
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Voluntariado' })).not.toBeInTheDocument()
