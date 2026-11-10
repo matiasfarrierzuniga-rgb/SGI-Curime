@@ -34,7 +34,7 @@ describe('getErpNavigation', () => {
        'governance.assembly.session',
       'adm.institutional-profile.read',
       'adm.institutional-board.read',
-      'pub.events.manage',
+      'events.proposal.approve',
       'ent.ventures.read',
       'vol.opportunities.read',
       'res.reservations.read',
@@ -146,7 +146,7 @@ describe('getErpNavigation', () => {
   })
 
   it('keeps public routes out of ERP navigation while preserving administrative routes', () => {
-    const items = getErpNavigation(['res.reservations.read', 'adm.affiliates.read', 'padron.application.review', 'pub.events.manage'])
+    const items = getErpNavigation(['res.reservations.read', 'adm.affiliates.read', 'padron.application.review', 'events.proposal.approve'])
       .flatMap(section => section.items)
     expect(items.some(item => item.path === '/servicios/reservas' || item.path === '/afiliacion' || item.path === '/eventos')).toBe(false)
     expect(items).toEqual(expect.arrayContaining([

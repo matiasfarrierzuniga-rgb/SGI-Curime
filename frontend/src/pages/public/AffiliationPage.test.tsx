@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { identityLookupService } from '@/features/identity'
 import { httpClient } from '@/shared/api/httpClient'
 import { affiliateRequestsService } from '../../services/affiliateRequestsService'
@@ -11,10 +11,17 @@ vi.mock('../../services/affiliateRequestsService', () => ({ affiliateRequestsSer
 vi.mock('@/features/identity', () => ({ identityLookupService: { lookup: vi.fn() } }))
 vi.mock('@/shared/api/httpClient', () => ({ httpClient: { get: vi.fn() } }))
 
-const renderPage = () => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemoryRouter><AffiliationPage /></MemoryRouter></QueryClientProvider>)
+const queryClients = new Set<QueryClient>()
+
+const renderPage = () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, refetchOnWindowFocus: false } } })
+  queryClients.add(queryClient)
+  return render(<QueryClientProvider client={queryClient}><MemoryRouter><AffiliationPage /></MemoryRouter></QueryClientProvider>)
+}
 
 async function reachContact() {
-  fireEvent.change(screen.getByLabelText(/Número de identificación/), { target: { value: '123456789' } })
+  fireEvent.change(screen.getByLabelText(/Tipo de identificación/), { target: { value: 'DIMEX' } })
+  fireEvent.change(screen.getByLabelText(/Número de identificación/), { target: { value: '123456789012' } })
   fireEvent.change(screen.getByLabelText(/Nombre\(s\)/), { target: { value: 'Ana' } })
   fireEvent.change(screen.getByLabelText(/Primer apellido/), { target: { value: 'Pérez' } })
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
@@ -28,6 +35,12 @@ async function reachApplication() {
   expect(await screen.findByRole('heading', { name: 'Información de la solicitud' })).toBeVisible()
 }
 
+async function chooseTerritory(label: string, value: string) {
+  await act(async () => {
+    fireEvent.change(screen.getByLabelText(label), { target: { value } })
+  })
+}
+
 function finishApplication() {
   fireEvent.change(screen.getByLabelText(/Fecha de nacimiento/), { target: { value: '01/01/1990' } })
   fireEvent.blur(screen.getByLabelText(/Fecha de nacimiento/))
@@ -35,6 +48,11 @@ function finishApplication() {
 }
 
 describe('AffiliationPage public flow', () => {
+  afterEach(() => {
+    queryClients.forEach(queryClient => queryClient.clear())
+    queryClients.clear()
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(affiliateRequestsService.create).mockResolvedValue({} as never)
@@ -80,13 +98,13 @@ describe('AffiliationPage public flow', () => {
     await reachContact()
     fireEvent.change(screen.getByLabelText(/Dirección/), { target: { value: 'Curime Centro' } })
     await waitFor(() => expect(screen.getByLabelText('Provincia')).not.toBeDisabled())
-    fireEvent.change(screen.getByLabelText('Provincia'), { target: { value: '5' } })
+    await chooseTerritory('Provincia', '5')
     await waitFor(() => expect(screen.getByLabelText('Cantón')).not.toBeDisabled())
-    fireEvent.change(screen.getByLabelText('Cantón'), { target: { value: '02' } })
+    await chooseTerritory('Cantón', '02')
     await waitFor(() => expect(screen.getByLabelText('Distrito')).not.toBeDisabled())
-    fireEvent.change(screen.getByLabelText('Distrito'), { target: { value: '01' } })
+    await chooseTerritory('Distrito', '01')
     await waitFor(() => expect(screen.getByLabelText('Localidad')).not.toBeDisabled())
-    fireEvent.change(screen.getByLabelText('Localidad'), { target: { value: 'loc_1234567890abcdef12345678' } })
+    await chooseTerritory('Localidad', 'loc_1234567890abcdef12345678')
     expect(screen.getByText(/no verifica residencia ni determina la aprobación/i)).toBeVisible()
     fireEvent.change(screen.getByLabelText(/Teléfono/), { target: { value: '88888888' } })
     fireEvent.change(screen.getByLabelText(/Correo electrónico/), { target: { value: ' ANA@EXAMPLE.COM ' } })
@@ -96,7 +114,7 @@ describe('AffiliationPage public flow', () => {
     finishApplication()
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
     await waitFor(() => expect(affiliateRequestsService.create).toHaveBeenCalledWith(expect.objectContaining({
-      identificationType: 'NATIONAL', identification: '123456789', firstName: 'Ana', firstSurname: 'Pérez',
+      identificationType: 'DIMEX', identification: '123456789012', firstName: 'Ana', firstSurname: 'Pérez',
       birthDate: expect.stringMatching(/^1990-01-01T\d{2}:\d{2}:\d{2}\.\d{3}Z$/), address: 'Curime Centro',
       affiliationReason: 'Participar en la comunidad', phoneCountryCode: '+506', phoneNationalNumber: '88888888', email: 'ana@example.com',
        provinceCode: '5', cantonCode: '02', districtCode: '01', catalogVersion: 'fixture-v1', localityKey: 'loc_1234567890abcdef12345678',
@@ -111,15 +129,15 @@ describe('AffiliationPage public flow', () => {
     renderPage()
     await reachContact()
     await waitFor(() => expect(screen.getByLabelText('Provincia')).not.toBeDisabled())
-    fireEvent.change(screen.getByLabelText('Provincia'), { target: { value: '5' } })
+    await chooseTerritory('Provincia', '5')
     await waitFor(() => expect(screen.getByLabelText('Cantón')).not.toBeDisabled())
-    fireEvent.change(screen.getByLabelText('Cantón'), { target: { value: '02' } })
+    await chooseTerritory('Cantón', '02')
     await waitFor(() => expect(screen.getByLabelText('Distrito')).not.toBeDisabled())
-    fireEvent.change(screen.getByLabelText('Distrito'), { target: { value: '01' } })
+    await chooseTerritory('Distrito', '01')
     await waitFor(() => expect(screen.getByLabelText('Localidad')).not.toBeDisabled())
-    fireEvent.change(screen.getByLabelText('Localidad'), { target: { value: 'loc_1234567890abcdef12345678' } })
+    await chooseTerritory('Localidad', 'loc_1234567890abcdef12345678')
 
-    fireEvent.change(screen.getByLabelText('Provincia'), { target: { value: '' } })
+    await chooseTerritory('Provincia', '')
 
     expect(screen.getByLabelText('Cantón')).toHaveValue('')
     expect(screen.getByLabelText('Distrito')).toHaveValue('')

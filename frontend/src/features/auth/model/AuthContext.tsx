@@ -26,10 +26,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearLocalSession])
 
   useEffect(() => {
+    let active = true
     const unauthorized = () => clearLocalSession()
-    const tokenRefreshed = (event: Event) => setToken((event as CustomEvent<string>).detail)
+    const tokenRefreshed = (event: Event) => { if (active) setToken((event as CustomEvent<string>).detail) }
     const accessChanged = () => {
       authService.me().then((fresh) => {
+        if (!active) return
         setUser(fresh)
         const current = sessionStorageService.get<StoredSession>()
         if (current) sessionStorageService.set({ ...current, user: fresh })
@@ -41,8 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener('auth:unauthorized', unauthorized)
     window.addEventListener('auth:token-refreshed', tokenRefreshed)
     window.addEventListener('auth:access-changed', accessChanged)
-    if (stored?.token) authService.me().then(fresh => { setUser(fresh); sessionStorageService.set({ token: stored.token, user: fresh }) }).catch(clearLocalSession).finally(() => setIsLoading(false))
-    return () => { window.removeEventListener('auth:unauthorized', unauthorized); window.removeEventListener('auth:token-refreshed', tokenRefreshed); window.removeEventListener('auth:access-changed', accessChanged) }
+    if (stored?.token) authService.me().then(fresh => {
+      if (!active) return
+      setUser(fresh)
+      sessionStorageService.set({ token: stored.token, user: fresh })
+    }).catch(() => { if (active) clearLocalSession() }).finally(() => { if (active) setIsLoading(false) })
+    return () => {
+      active = false
+      window.removeEventListener('auth:unauthorized', unauthorized)
+      window.removeEventListener('auth:token-refreshed', tokenRefreshed)
+      window.removeEventListener('auth:access-changed', accessChanged)
+    }
   }, [clearLocalSession, stored?.token])
 
   const login = async (credentials: LoginCredentials) => {
