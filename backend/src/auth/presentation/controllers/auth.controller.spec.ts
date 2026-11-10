@@ -10,7 +10,8 @@ process.env.REFRESH_TOKEN_TTL = '3600';
 describe('AuthController error boundary', () => {
   const request = {
     ip: '127.0.0.1',
-    get: () => 'test-agent',
+    get: (header: string) =>
+      header === 'origin' ? 'http://localhost:5173' : 'test-agent',
   } as never;
   const response = { cookie: jest.fn() } as never;
 
@@ -120,6 +121,11 @@ describe('AuthController error boundary', () => {
       permissionCodes: ['usr.users.read'],
       canAccessErp: true,
     });
+    expect(result).toEqual({
+      accessToken: 'access-token',
+      user: expect.any(Object),
+    });
+    expect(result).not.toHaveProperty('refreshToken');
   });
 
   it('exposes persisted permission codes in auth/me response', () => {

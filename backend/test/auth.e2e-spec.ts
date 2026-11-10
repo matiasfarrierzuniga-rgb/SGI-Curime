@@ -38,7 +38,6 @@ type AuthenticatedUser = {
 
 type LoginResponseBody = {
   accessToken: string;
-  refreshToken: string;
   user: AuthenticatedUser;
 };
 
@@ -110,6 +109,7 @@ describe('AuthController (e2e)', () => {
   function login(email = 'admin@curime.test', password = 'valid-password') {
     return request(app.getHttpServer())
       .post('/auth/login')
+      .set('Origin', 'http://localhost:5173')
       .send({ email, password });
   }
 
@@ -340,6 +340,7 @@ describe('AuthController (e2e)', () => {
       canAccessErp: true,
     });
     expect(body.user.passwordHash).toBeUndefined();
+    expect(body).not.toHaveProperty('refreshToken');
     expect(response.headers['set-cookie']).toEqual(
       expect.arrayContaining([expect.stringContaining('HttpOnly')]),
     );
@@ -352,21 +353,32 @@ describe('AuthController (e2e)', () => {
     );
   });
 
-  it('supports academic POST /login with body and HTTP-only refresh tokens', async () => {
+  it('supports POST /login with a cookie-only refresh contract', async () => {
     const response = await request(app.getHttpServer())
       .post('/login')
+      .set('Origin', 'http://localhost:5173')
       .send({ email: 'admin@curime.test', password: 'valid-password' })
       .expect(200);
 
     const body = loginResponseBody(response);
     expect(body.accessToken).toEqual(expect.any(String));
-    expect(body.refreshToken).toEqual(expect.any(String));
+    expect(body).not.toHaveProperty('refreshToken');
     expect(response.headers['set-cookie']).toEqual(
       expect.arrayContaining([
         expect.stringContaining('HttpOnly'),
         expect.stringContaining('Path=/'),
       ]),
     );
+  });
+
+  it('denies login cookie issuance from an untrusted origin before creating a session', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .set('Origin', 'https://untrusted.example')
+      .send({ email: 'admin@curime.test', password: 'valid-password' })
+      .expect(403);
+
+    expect(sessions).toHaveLength(0);
   });
 
   it('rotates the refresh cookie once and rejects the old credential', async () => {
@@ -383,40 +395,29 @@ describe('AuthController (e2e)', () => {
       expect.any(String),
     );
     expect(loginResponseBody(response).accessToken).toEqual(expect.any(String));
+    expect(loginResponseBody(response)).not.toHaveProperty('refreshToken');
     expect(response.headers['set-cookie']).toEqual(
       expect.arrayContaining([expect.stringContaining('HttpOnly')]),
     );
     await refresh().expect(401);
   });
 
-  it('supports academic POST /refresh using a body token and rotates it', async () => {
+  it.each(['/refresh', '/auth/refresh', '/logout', '/auth/logout'])(
+    'rejects refresh credentials in the %s request body',
+    async (path) => {
+      const response = await request(app.getHttpServer())
+        .post(path)
+        .send({ refreshToken: 'browser-readable-refresh-token' })
+        .expect(400);
+
+      expect(response.headers['set-cookie']).toBeUndefined();
+    },
+  );
+
+  it('supports POST /refresh using the HTTP-only cookie', async () => {
     const loginResponse = await request(app.getHttpServer())
       .post('/login')
-      .send({ email: 'admin@curime.test', password: 'valid-password' })
-      .expect(200);
-    const firstRefreshToken = loginResponseBody(loginResponse).refreshToken;
-
-    const refreshed = await request(app.getHttpServer())
-      .post('/refresh')
-      .send({ refreshToken: firstRefreshToken })
-      .expect(200);
-    const body = loginResponseBody(refreshed);
-    expect(body.accessToken).toEqual(expect.any(String));
-    expect(body.refreshToken).toEqual(expect.any(String));
-    expect(body.refreshToken).not.toBe(firstRefreshToken);
-    expect(refreshed.headers['set-cookie']).toEqual(
-      expect.arrayContaining([expect.stringContaining('HttpOnly')]),
-    );
-
-    await request(app.getHttpServer())
-      .post('/refresh')
-      .send({ refreshToken: firstRefreshToken })
-      .expect(401);
-  });
-
-  it('supports academic POST /refresh using the HTTP-only cookie', async () => {
-    const loginResponse = await request(app.getHttpServer())
-      .post('/login')
+      .set('Origin', 'http://localhost:5173')
       .send({ email: 'admin@curime.test', password: 'valid-password' })
       .expect(200);
 
@@ -488,35 +489,21 @@ describe('AuthController (e2e)', () => {
       .expect(401);
   });
 
-  it('supports academic POST /logout using body or cookie refresh tokens', async () => {
-    const bodyLogin = await request(app.getHttpServer())
-      .post('/login')
-      .send({ email: 'admin@curime.test', password: 'valid-password' })
-      .expect(200);
-    const bodyRefreshToken = loginResponseBody(bodyLogin).refreshToken;
-
-    const bodyLogout = await request(app.getHttpServer())
-      .post('/logout')
-      .send({ refreshToken: bodyRefreshToken })
-      .expect(200);
-    expect(bodyLogout.headers['set-cookie']).toEqual(
-      expect.arrayContaining([expect.stringContaining('sgi_refresh=;')]),
-    );
-    await request(app.getHttpServer())
-      .post('/refresh')
-      .send({ refreshToken: bodyRefreshToken })
-      .expect(401);
-
+  it('supports both logout aliases with an HTTP-only refresh cookie', async () => {
     const cookieLogin = await request(app.getHttpServer())
       .post('/login')
+      .set('Origin', 'http://localhost:5173')
       .send({ email: 'admin@curime.test', password: 'valid-password' })
       .expect(200);
     const cookie = refreshCookie(cookieLogin);
-    await request(app.getHttpServer())
+    const response = await request(app.getHttpServer())
       .post('/logout')
       .set('Origin', 'http://localhost:5173')
       .set('Cookie', cookie)
       .expect(200);
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('sgi_refresh=;')]),
+    );
   });
 
   it('rejects an incorrect password', async () => {
@@ -553,6 +540,7 @@ describe('AuthController (e2e)', () => {
     currentUser = { ...currentUser!, status: 'INACTIVE' };
     await request(app.getHttpServer())
       .post('/login')
+      .set('Origin', 'http://localhost:5173')
       .send({ email: 'admin@curime.test', password: 'valid-password' })
       .expect(401);
 
@@ -563,6 +551,7 @@ describe('AuthController (e2e)', () => {
     };
     await request(app.getHttpServer())
       .post('/login')
+      .set('Origin', 'http://localhost:5173')
       .send({ email: 'admin@curime.test', password: 'valid-password' })
       .expect(403);
   });

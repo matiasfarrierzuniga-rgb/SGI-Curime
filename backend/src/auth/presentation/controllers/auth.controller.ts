@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
   HttpCode,
@@ -55,6 +56,7 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
+    assertCookieRequestOrigin(request);
     const result = await this.handle(() =>
       this.loginUseCase.execute(
         loginDto.email,
@@ -65,7 +67,6 @@ export class AuthController {
     this.setRefreshCookie(response, result.refreshToken);
     return {
       accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
       user: result.user,
     };
   }
@@ -77,10 +78,12 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const refreshToken = refreshTokenFrom(request, dto);
-    if (refreshTokenFromCookie(request, getRefreshCookiePolicy().name)) {
-      assertCookieRequestOrigin(request);
-    }
+    rejectBodyRefreshToken(dto);
+    const refreshToken = refreshTokenFromCookie(
+      request,
+      getRefreshCookiePolicy().name,
+    );
+    assertCookieRequestOrigin(request);
     const result = await this.handle(() =>
       this.refreshSessionUseCase.execute(refreshToken, this.context(request)),
     );
@@ -94,7 +97,6 @@ export class AuthController {
     );
     return {
       accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
     };
   }
 
@@ -106,10 +108,9 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const policy = getRefreshCookiePolicy();
-    const refreshToken = refreshTokenFrom(request, dto);
-    if (refreshTokenFromCookie(request, policy.name)) {
-      assertCookieRequestOrigin(request);
-    }
+    rejectBodyRefreshToken(dto);
+    const refreshToken = refreshTokenFromCookie(request, policy.name);
+    assertCookieRequestOrigin(request);
     try {
       return await this.logoutUseCase.execute(
         refreshToken,
@@ -215,14 +216,10 @@ export class AuthController {
   }
 }
 
-function refreshTokenFrom(
-  request: Request,
-  dto: RefreshTokenDto,
-): string | undefined {
-  return (
-    refreshTokenFromCookie(request, getRefreshCookiePolicy().name) ??
-    dto.refreshToken
-  );
+function rejectBodyRefreshToken(dto: RefreshTokenDto): void {
+  if (dto.refreshToken !== undefined) {
+    throw new BadRequestException('Refresh credentials must be sent by cookie.');
+  }
 }
 
 function refreshTokenFromCookie(
