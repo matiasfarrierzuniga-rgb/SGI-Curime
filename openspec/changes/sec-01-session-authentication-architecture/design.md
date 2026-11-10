@@ -143,19 +143,18 @@ No server grace window or refresh-family persistence is proposed. Detectable reu
 
 ### D6 — Deterministic renewal coordination
 
-**PROPOSED frontend algorithm:**
+**IMPLEMENTED in G3.2; browser certification remains NOT_VERIFIED.**
 
-1. Keep one in-flight refresh promise per JavaScript context.
-2. Request a named Web Lock before cross-tab refresh when Web Locks is available.
-3. Use `BroadcastChannel` only for `refresh-started`, `refresh-completed`, `session-invalidated` and logout events; never include credentials or user data.
-4. After acquiring the lock, re-check whether another context completed rotation before sending refresh.
-5. Retry each original protected request at most once; never recursively refresh login, refresh or logout.
-6. Bound lock/event waiting; tab closure releases the Web Lock. Timeout falls back to one cookie-backed refresh attempt.
-7. If Web Locks is unavailable but `BroadcastChannel` exists, wait a bounded interval for an active peer, then perform one refresh attempt using the current cookie.
-8. If neither API exists, retain per-context single-flight. A losing concurrent rotation waits once and retries refresh once with the latest cookie; a second failure transitions that context to anonymous.
-9. Ignore stale completion events by operation identifier. Since credentials never cross the channel, stale events cannot overwrite tokens or cookies.
+1. `AuthProvider` starts `initializing`, performs cookie-backed `POST /refresh` without Bearer, then fetches `/users/me`; only the resulting access token remains in provider memory.
+2. A shared coordinator serializes cookie-mutating bootstrap refresh, 401 renewal, login and logout operations inside a JavaScript context.
+3. When available, a named same-origin Web Lock guards each cookie operation. Acquisition waits at most five seconds through `AbortSignal`; lock release is guaranteed by the request callback settlement.
+4. `BroadcastChannel` uses only `session-changed`, `session-invalidated`, `refresh-started` and `refresh-completed`, with ephemeral operation identifier and timestamp. It never carries credentials, cookie material, user/session IDs, roles, capabilities or personal data.
+5. Duplicate and expired channel events are ignored. Remote `session-changed` invalidates local epoch/cache then performs its own cookie refresh plus `/users/me`; remote `session-invalidated` only clears local frontend context and never rebroadcasts or auto-recovers.
+6. No tab receives or reuses another tab's access token. `sessionEpoch` prevents stale bootstrap, refresh, login or `/users/me` results from restoring obsolete state.
+7. If Web Locks is unavailable, only local serialization remains. If BroadcastChannel is unavailable, only single-context behavior remains; Web Storage is never used as a fallback channel.
+8. Original protected requests retain one retry maximum. Login, refresh and logout are never recursively refreshed.
 
-The supported-browser baseline is **NOT_VERIFIED**; repository browser evidence covers Chromium only. Human approval of this progressive-enhancement fallback is required, but lack of Web Locks does not weaken the credential boundary.
+Cooperation is same-origin and best-effort. It does not revoke issued JWTs, synchronize unsupported/non-cooperative contexts, or replace server-side revocation. Real browser multi-tab behavior and supported-browser baseline remain **NOT_VERIFIED**; repository browser evidence covers Chromium only.
 
 ### D7 — Revocation and generation are transactional security state
 

@@ -9,6 +9,8 @@ import { authService } from '../api/auth.api'
 vi.mock('../api/auth.api', () => ({ authService: { me: vi.fn(), login: vi.fn(), logout: vi.fn(), refresh: vi.fn() } }))
 
 const user = { id: 1, fullName: 'Ana', email: 'ana@curime.cr', role: 'Usuario', status: 'ACTIVE' } as any
+const userB = { id: 2, fullName: 'Bea', email: 'bea@curime.cr', role: 'Usuario', status: 'ACTIVE' } as any
+const unauthorized = { isAxiosError: true, response: { status: 401 } }
 
 function Probe() {
   const auth = useAuth()
@@ -37,24 +39,51 @@ describe('AuthContext memory-only session ownership', () => {
     localStorage.clear()
     sessionStorage.clear()
     vi.clearAllMocks()
+    vi.mocked(authService.refresh).mockRejectedValue(unauthorized)
     vi.mocked(authService.logout).mockResolvedValue({ message: 'Logged out' })
   })
 
-  it('purges only the legacy session key on mount', async () => {
+  it('recovers a valid cookie session into memory after reload', async () => {
+    vi.mocked(authService.refresh).mockResolvedValue({ accessToken: 'cookie-token' })
+    vi.mocked(authService.me).mockResolvedValue(user)
+    renderAuth()
+
+    expect(screen.getByText('loading')).toBeInTheDocument()
+    await screen.findByText('Ana')
+    expect(screen.getByText('phase:authenticated')).toBeInTheDocument()
+    expect(getAuthSessionAdapter()?.getAccessToken()).toBe('cookie-token')
+    expect(sessionStorage.length).toBe(0)
+    expect(localStorage.length).toBe(0)
+  })
+
+  it('purges only the legacy key and becomes anonymous for an invalid cookie', async () => {
     sessionStorage.setItem(LEGACY_SESSION_STORAGE_KEY, JSON.stringify({ token: 'legacy', user }))
     sessionStorage.setItem('unrelated', 'keep')
     renderAuth()
-    await waitFor(() => expect(sessionStorage.getItem(LEGACY_SESSION_STORAGE_KEY)).toBeNull())
+
+    await screen.findByText('phase:anonymous')
+    expect(sessionStorage.getItem(LEGACY_SESSION_STORAGE_KEY)).toBeNull()
     expect(sessionStorage.getItem('unrelated')).toBe('keep')
-    expect(screen.getByText('phase:anonymous')).toBeInTheDocument()
+    expect(getAuthSessionAdapter()?.getAccessToken()).toBeNull()
+  })
+
+  it('reports a transient bootstrap failure without automatic retry', async () => {
+    vi.mocked(authService.refresh).mockRejectedValue(new Error('network unavailable'))
+    renderAuth()
+
+    await screen.findByText('phase:refresh-failed')
+    expect(authService.refresh).toHaveBeenCalledOnce()
+    expect(getAuthSessionAdapter()?.getAccessToken()).toBeNull()
   })
 
   it('keeps successful login credentials in provider memory only', async () => {
     vi.mocked(authService.login).mockResolvedValue({ accessToken: 'new-token', user })
     vi.mocked(authService.me).mockResolvedValue(user)
     renderAuth()
+    await screen.findByText('phase:anonymous')
     fireEvent.click(screen.getByText('login'))
     await screen.findByText('Ana')
+
     expect(getAuthSessionAdapter()?.getAccessToken()).toBe('new-token')
     expect(sessionStorage.length).toBe(0)
     expect(localStorage.length).toBe(0)
@@ -65,59 +94,62 @@ describe('AuthContext memory-only session ownership', () => {
     vi.mocked(authService.login).mockResolvedValue({ accessToken: 'token', user })
     vi.mocked(authService.me).mockResolvedValue(user)
     const { queryClient } = renderAuth()
+    await screen.findByText('phase:anonymous')
     fireEvent.click(screen.getByText('login'))
     await screen.findByText('Ana')
     queryClient.setQueryData(['sensitive'], user)
     fireEvent.click(screen.getByText('logout'))
-    await waitFor(() => expect(screen.getByText('phase:anonymous')).toBeInTheDocument())
+    await screen.findByText('phase:anonymous')
+
     expect(getAuthSessionAdapter()?.getAccessToken()).toBeNull()
     expect(queryClient.getQueryData(['sensitive'])).toBeUndefined()
   })
 
-  it('ignores a late login result after the session epoch changes', async () => {
-    const pendingLogin = deferred<{ accessToken: string; user: typeof user }>()
-    vi.mocked(authService.login).mockReturnValue(pendingLogin.promise)
-    const { queryClient } = renderAuth()
-    queryClient.setQueryData(['sensitive'], user)
-    fireEvent.click(screen.getByText('login'))
-    fireEvent.click(screen.getByText('logout'))
-    await waitFor(() => expect(authService.logout).toHaveBeenCalledOnce())
-    await act(async () => pendingLogin.resolve({ accessToken: 'stale-token', user }))
-    expect(screen.getByText('phase:anonymous')).toBeInTheDocument()
-    expect(getAuthSessionAdapter()?.getAccessToken()).toBeNull()
-    expect(queryClient.getQueryData(['sensitive'])).toBeUndefined()
-  })
-
-  it('delegates transport invalidation to provider session cleanup', async () => {
-    vi.mocked(authService.login).mockResolvedValue({ accessToken: 'token', user })
-    vi.mocked(authService.me).mockResolvedValue(user)
-    const { queryClient } = renderAuth()
+  it('cannot let a late logout erase a newer login context', async () => {
+    let resolveLogout!: (value: { message: string }) => void
+    const pendingLogout = new Promise<{ message: string }>((resolve) => { resolveLogout = resolve })
+    vi.mocked(authService.login)
+      .mockResolvedValueOnce({ accessToken: 'token-a', user })
+      .mockResolvedValueOnce({ accessToken: 'token-b', user: userB })
+    vi.mocked(authService.me)
+      .mockResolvedValueOnce(user)
+      .mockResolvedValueOnce(userB)
+    vi.mocked(authService.logout).mockReturnValue(pendingLogout)
+    renderAuth()
+    await screen.findByText('phase:anonymous')
     fireEvent.click(screen.getByText('login'))
     await screen.findByText('Ana')
-    queryClient.setQueryData(['sensitive'], user)
-    act(() => getAuthSessionAdapter()?.invalidateSession('renewal-failed'))
-    expect(screen.getByText('anonymous')).toBeInTheDocument()
-    expect(screen.getByText('phase:refresh-failed')).toBeInTheDocument()
-    expect(getAuthSessionAdapter()?.getAccessToken()).toBeNull()
-    expect(queryClient.getQueryData(['sensitive'])).toBeUndefined()
+
+    fireEvent.click(screen.getByText('logout'))
+    fireEvent.click(screen.getByText('login'))
+    await act(async () => resolveLogout({ message: 'Logged out' }))
+
+    await screen.findByText('Bea')
+    expect(getAuthSessionAdapter()?.getAccessToken()).toBe('token-b')
+    expect(screen.getByText('phase:authenticated')).toBeInTheDocument()
   })
 
-  it('rejects a late renewal after its session epoch is invalidated', async () => {
+  it('ignores a late bootstrap refresh after local invalidation', async () => {
     const pendingRefresh = deferred<{ accessToken: string }>()
-    vi.mocked(authService.login).mockResolvedValue({ accessToken: 'token', user })
-    vi.mocked(authService.me).mockResolvedValue(user)
     vi.mocked(authService.refresh).mockReturnValue(pendingRefresh.promise)
     renderAuth()
-    fireEvent.click(screen.getByText('login'))
-    await screen.findByText('Ana')
-
-    const renewal = getAuthSessionAdapter()!.renewAccessToken()
-    const rejectedRenewal = expect(renewal).rejects.toThrow('Session operation superseded')
-    act(() => getAuthSessionAdapter()?.invalidateSession('logout'))
-    await act(async () => pendingRefresh.resolve({ accessToken: 'late-token' }))
-
-    await rejectedRenewal
-    expect(getAuthSessionAdapter()?.getAccessToken()).toBeNull()
+    fireEvent.click(screen.getByText('logout'))
     expect(screen.getByText('phase:anonymous')).toBeInTheDocument()
+    await act(async () => pendingRefresh.resolve({ accessToken: 'stale-token' }))
+
+    expect(screen.getByText('phase:anonymous')).toBeInTheDocument()
+    expect(getAuthSessionAdapter()?.getAccessToken()).toBeNull()
+    expect(authService.me).not.toHaveBeenCalled()
+    await waitFor(() => expect(authService.logout).toHaveBeenCalledOnce())
+  })
+
+  it('unregisters the adapter and invalidates pending work on unmount', async () => {
+    const pendingRefresh = deferred<{ accessToken: string }>()
+    vi.mocked(authService.refresh).mockReturnValue(pendingRefresh.promise)
+    const view = renderAuth()
+    expect(getAuthSessionAdapter()).not.toBeNull()
+    view.unmount()
+    await act(async () => pendingRefresh.resolve({ accessToken: 'late-token' }))
+    expect(getAuthSessionAdapter()).toBeNull()
   })
 })

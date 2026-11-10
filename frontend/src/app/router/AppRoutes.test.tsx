@@ -44,15 +44,15 @@ function permissionCodesFor(role: string, canAccessErp: boolean) {
 }
 
 function SeedAuthenticatedRoutes({ path }: { path: string }) {
-  const { login, isAuthenticated } = useAuth()
+  const { login, isAuthenticated, isLoading } = useAuth()
   const started = useRef(false)
   const [ready, setReady] = useState(false)
   useEffect(() => {
-    if (!started.current) {
+    if (!isLoading && !started.current) {
       started.current = true
-      void login({ email: 'ana@example.test', password: 'test-password' })
+      void login({ email: 'ana@example.test', password: 'test-password' }).catch(() => undefined)
     }
-  }, [login])
+  }, [isLoading, login])
   useEffect(() => {
     if (isAuthenticated) setReady(true)
   }, [isAuthenticated])
@@ -80,6 +80,7 @@ beforeEach(() => {
   localStorage.clear()
   sessionStorage.clear()
   vi.clearAllMocks()
+  vi.spyOn(authService, 'refresh').mockRejectedValue({ isAxiosError: true, response: { status: 401 } })
   vi.spyOn(authService, 'logout').mockResolvedValue({ message: 'Logged out' })
   vi.spyOn(usersService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 })
   vi.spyOn(affiliatesService, 'list').mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 })
@@ -181,10 +182,10 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.getAllByRole('link', { name: 'Solicitar una cuenta' })).not.toHaveLength(0)
   })
 
-  it('redirects anonymous users from /app to login', () => {
+  it('redirects anonymous users from /app to login', async () => {
     renderRoute('/app', null)
 
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Área de gestión' })).not.toBeInTheDocument()
   })
 
@@ -202,10 +203,10 @@ describe('AppRoutes capability deep links', () => {
     expect(sessionStorage.getItem('sgi-curime-session')).toBeNull()
   })
 
-  it('redirects anonymous users from /admin/users to login before privileged content renders', () => {
+  it('redirects anonymous users from /admin/users to login before privileged content renders', async () => {
     renderRoute('/admin/users', null)
 
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Usuarios' })).not.toBeInTheDocument()
   })
 
@@ -354,11 +355,11 @@ describe('AppRoutes capability deep links', () => {
 
     sessionView.unmount()
     const appView = renderRoute('/app', null)
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
 
     appView.unmount()
     renderRoute('/admin/users', null)
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
   })
 
   it('redirects basic authenticated users from /admin/users to 403', async () => {
@@ -382,10 +383,10 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.queryByRole('heading', { name: 'Algo no salió como esperábamos' })).not.toBeInTheDocument()
   })
 
-  it('redirects anonymous users from /app/admin/affiliates to login', () => {
+  it('redirects anonymous users from /app/admin/affiliates to login', async () => {
     renderRoute('/app/admin/affiliates', null)
 
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Afiliados' })).not.toBeInTheDocument()
   })
 
@@ -404,10 +405,10 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.queryByText('No hay afiliados')).not.toBeInTheDocument()
   })
 
-  it('redirects anonymous users from affiliate requests to login', () => {
+  it('redirects anonymous users from affiliate requests to login', async () => {
     renderRoute('/app/admin/requests', null)
 
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Solicitudes de afiliación' })).not.toBeInTheDocument()
   })
 
@@ -446,10 +447,10 @@ describe('AppRoutes capability deep links', () => {
     expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
   })
 
-  it('redirects anonymous users from /app/financial to login', () => {
+  it('redirects anonymous users from /app/financial to login', async () => {
     renderRoute('/app/financial', null)
 
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Financiero' })).not.toBeInTheDocument()
   })
 
@@ -471,10 +472,10 @@ describe('AppRoutes capability deep links', () => {
     expect(httpGet).not.toHaveBeenCalledWith('/donation-requests', expect.anything())
   }, 10000)
 
-  it('redirects anonymous users from /app/donations to login', () => {
+  it('redirects anonymous users from /app/donations to login', async () => {
     renderRoute('/app/donations', null)
 
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Donaciones' })).not.toBeInTheDocument()
   })
 
