@@ -15,6 +15,7 @@ import { isSubscriptionExpired } from '../../domain/policies/subscription-expira
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { toAuthHttpError } from '../errors/auth-http-error.mapper';
 import { canAccessErp } from '../../domain/policies/internal-access.policy';
+import { SessionService } from '../../application/services/session.service';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -32,6 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   constructor(
     @Inject(AUTH_REPOSITORY) private readonly repository: AuthRepository,
+    private readonly sessions: SessionService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -44,19 +46,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     let account: Awaited<ReturnType<AuthRepository['findCredentialsById']>>;
+    let session: Awaited<ReturnType<SessionService['findActiveById']>>;
+    const sessionId = payload.sid;
 
-    if (!Number.isSafeInteger(payload.sub) || payload.sub <= 0) {
+    if (
+      !Number.isSafeInteger(payload.sub) ||
+      payload.sub <= 0 ||
+      typeof sessionId !== 'number' ||
+      !Number.isSafeInteger(sessionId) ||
+      sessionId <= 0
+    ) {
       throw new UnauthorizedException('Unauthorized');
     }
 
     try {
       account = await this.repository.findCredentialsById(payload.sub);
+      session = await this.sessions.findActiveById(sessionId);
     } catch {
       throw new UnauthorizedException('Unauthorized');
     }
 
     if (
       !account ||
+      !session ||
+      session.userId !== payload.sub ||
       account.status !== 'ACTIVE' ||
       !Array.isArray(account.permissionCodes) ||
       !isCurrentSessionGeneration(
@@ -102,6 +115,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ...(account.subscriptionExpirationDate
         ? { subscriptionExpirationDate: account.subscriptionExpirationDate }
         : {}),
+      sessionId: session.id,
     };
   }
 }

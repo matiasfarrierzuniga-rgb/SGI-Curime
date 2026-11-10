@@ -1,68 +1,74 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { configureAuthSessionAdapter } from './authSessionAdapter'
 import { httpClient } from './httpClient'
-import { sessionStorageService } from '@/shared/session/sessionStorage'
 
-const responseError = (url: string, status = 401) => ({ isAxiosError: true, config: { url, headers: {} }, response: { status } })
+const responseError = (url: string, status = 401, epoch = 1) => ({ isAxiosError: true, config: { url, headers: {}, _sessionEpoch: epoch }, response: { status } })
 const responseHandler = () => (httpClient.interceptors.response as any).handlers[0].rejected
 const requestHandler = () => (httpClient.interceptors.request as any).handlers[0].fulfilled
 
 describe('httpClient session handling', () => {
-  afterEach(() => { localStorage.clear(); vi.restoreAllMocks() })
+  let unregister: (() => void) | undefined
 
-  it('enables credentials and keeps the stored access token as Bearer', async () => {
-    sessionStorageService.set({ token: 'access-token', user: {} })
-    const config = await requestHandler()({ headers: {} })
-    expect(httpClient.defaults.withCredentials).toBe(true)
-    expect(config.headers.Authorization).toBe('Bearer access-token')
+  afterEach(() => {
+    unregister?.()
+    unregister = undefined
+    vi.restoreAllMocks()
   })
 
-  it('refreshes once, stores access token, and retries a protected request once', async () => {
-    sessionStorageService.set({ token: 'expired', user: { id: 1 } })
-    const post = vi.spyOn(httpClient, 'post').mockResolvedValue({ data: { accessToken: 'fresh' } } as any)
+  function adapter(overrides: Partial<Parameters<typeof configureAuthSessionAdapter>[0]> = {}) {
+    const value = {
+      getAccessToken: vi.fn(() => 'access-token'),
+      getSessionEpoch: vi.fn(() => 1),
+      renewAccessToken: vi.fn(async () => 'fresh'),
+      invalidateSession: vi.fn(),
+      refreshAccessContext: vi.fn(async () => undefined),
+      ...overrides,
+    }
+    unregister = configureAuthSessionAdapter(value)
+    return value
+  }
+
+  it('uses the registered in-memory token without Web Storage', async () => {
+    const auth = adapter()
+    const config = await requestHandler()({ url: '/users/me', headers: {} })
+    expect(httpClient.defaults.withCredentials).toBe(true)
+    expect(config.headers.Authorization).toBe('Bearer access-token')
+    expect(config._sessionEpoch).toBe(1)
+    expect(sessionStorage.length).toBe(0)
+    expect(localStorage.length).toBe(0)
+    expect(auth.getAccessToken).toHaveBeenCalledOnce()
+  })
+
+  it('refreshes once through the adapter and retries a protected request once', async () => {
+    const auth = adapter()
     const request = vi.spyOn(httpClient, 'request').mockResolvedValue({ data: 'retried' } as any)
     const result = await responseHandler()(responseError('/users/me'))
-    expect(post).toHaveBeenCalledWith('/refresh')
-    expect(sessionStorageService.get<{ token: string }>()?.token).toBe('fresh')
+    expect(auth.renewAccessToken).toHaveBeenCalledOnce()
     expect(request).toHaveBeenCalledWith(expect.objectContaining({ _retry: true, headers: expect.objectContaining({ Authorization: 'Bearer fresh' }) }))
     expect(result).toEqual({ data: 'retried' })
   })
 
-  it('shares one refresh request across concurrent 401 responses', async () => {
-    const post = vi.spyOn(httpClient, 'post').mockResolvedValue({ data: { accessToken: 'fresh' } } as any)
+  it('shares one adapter renewal across concurrent 401 responses', async () => {
+    const auth = adapter()
     vi.spyOn(httpClient, 'request').mockResolvedValue({} as any)
     await Promise.all([responseHandler()(responseError('/one')), responseHandler()(responseError('/two'))])
-    expect(post).toHaveBeenCalledOnce()
+    expect(auth.renewAccessToken).toHaveBeenCalledOnce()
   })
 
-  it('emits unauthorized when refresh fails without clearing session itself', async () => {
-    sessionStorageService.set({ token: 'expired', user: {} })
-    vi.spyOn(httpClient, 'post').mockRejectedValue(new Error('expired cookie'))
-    const listener = vi.fn(); window.addEventListener('auth:unauthorized', listener)
+  it('delegates failed renewal invalidation to the provider without persisting state', async () => {
+    const auth = adapter({ renewAccessToken: vi.fn().mockRejectedValue(new Error('expired cookie')) })
     await expect(responseHandler()(responseError('/users/me'))).rejects.toMatchObject({ response: { status: 401 } })
-    expect(listener).toHaveBeenCalledOnce()
-    expect(sessionStorageService.get<{ token: string }>()?.token).toBe('expired')
-    window.removeEventListener('auth:unauthorized', listener)
+    expect(auth.invalidateSession).toHaveBeenCalledWith('renewal-failed')
+    expect(sessionStorage.length).toBe(0)
   })
 
-  it('does not refresh or emit unauthorized for logout, refresh, or login 401 responses', async () => {
-    const post = vi.spyOn(httpClient, 'post')
-    const request = vi.spyOn(httpClient, 'request')
-    const listener = vi.fn(); window.addEventListener('auth:unauthorized', listener)
-    await expect(responseHandler()(responseError('/logout'))).rejects.toMatchObject({ response: { status: 401 } })
+  it('does not renew session endpoint 401 responses and keeps 403 as context refresh', async () => {
+    const auth = adapter()
     await expect(responseHandler()(responseError('/refresh'))).rejects.toMatchObject({ response: { status: 401 } })
-    await expect(responseHandler()(responseError('/login'))).rejects.toMatchObject({ response: { status: 401 } })
-    expect(post).not.toHaveBeenCalled()
-    expect(request).not.toHaveBeenCalled()
-    expect(listener).not.toHaveBeenCalled()
-    window.removeEventListener('auth:unauthorized', listener)
-  })
-
-  it('does not refresh or emit unauthorized for 403 responses', async () => {
-    const post = vi.spyOn(httpClient, 'post')
-    const listener = vi.fn(); window.addEventListener('auth:unauthorized', listener)
+    await expect(responseHandler()(responseError('/logout'))).rejects.toMatchObject({ response: { status: 401 } })
     await expect(responseHandler()(responseError('/users/me', 403))).rejects.toMatchObject({ response: { status: 403 } })
-    expect(post).not.toHaveBeenCalled()
-    expect(listener).not.toHaveBeenCalled()
-    window.removeEventListener('auth:unauthorized', listener)
+    expect(auth.renewAccessToken).not.toHaveBeenCalled()
+    expect(auth.invalidateSession).not.toHaveBeenCalled()
+    expect(auth.refreshAccessContext).toHaveBeenCalledOnce()
   })
 })

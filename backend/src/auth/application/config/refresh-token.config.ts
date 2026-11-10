@@ -1,6 +1,7 @@
 import type { CookieOptions } from 'express';
 
-const DEFAULT_COOKIE_NAME = 'sgi_refresh';
+const DEVELOPMENT_COOKIE_NAME = 'sgi_refresh';
+const PRODUCTION_COOKIE_NAME = '__Host-sgi_refresh';
 
 export interface RefreshCookiePolicy {
   name: string;
@@ -21,8 +22,17 @@ export function getRefreshTokenTtlSeconds(): number {
 export function getRefreshCookiePolicy(expiresAt?: Date): RefreshCookiePolicy {
   const sameSite = parseSameSite(process.env.REFRESH_COOKIE_SAME_SITE);
   const secure = process.env.NODE_ENV === 'production' || sameSite === 'none';
-  const name = process.env.REFRESH_COOKIE_NAME?.trim() || DEFAULT_COOKIE_NAME;
+  const production = process.env.NODE_ENV === 'production';
+  const configuredName = process.env.REFRESH_COOKIE_NAME?.trim();
+  const name = production
+    ? productionCookieName(configuredName)
+    : configuredName || DEVELOPMENT_COOKIE_NAME;
 
+  if (name.startsWith('__Host-') && (!secure || sameSite === 'none')) {
+    throw new Error(
+      'A __Host- refresh cookie requires Secure=true and an approved same-site policy.',
+    );
+  }
   if (name.startsWith('__Secure-') && !secure) {
     throw new Error('A __Secure- refresh cookie requires Secure=true.');
   }
@@ -46,6 +56,15 @@ export function getRefreshCookiePolicy(expiresAt?: Date): RefreshCookiePolicy {
       expires: expiresAt,
     },
   };
+}
+
+function productionCookieName(configuredName: string | undefined): string {
+  if (configuredName && configuredName !== PRODUCTION_COOKIE_NAME) {
+    throw new Error(
+      `Production refresh cookie must be named ${PRODUCTION_COOKIE_NAME}.`,
+    );
+  }
+  return PRODUCTION_COOKIE_NAME;
 }
 
 function parseSameSite(value: string | undefined): CookieOptions['sameSite'] {

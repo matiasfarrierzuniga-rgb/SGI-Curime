@@ -56,7 +56,10 @@ describe('LoginUseCase', () => {
     tokens.sign.mockResolvedValue('signed-token');
     refreshTokens.generate.mockReturnValue('raw-refresh-token');
     refreshTokens.hash.mockReturnValue('refresh-hash');
-    repository.recordLoginSuccessAndCreateSession.mockResolvedValue(1);
+    repository.recordLoginSuccessAndCreateSession.mockResolvedValue({
+      sessionId: 9,
+      sessionGeneration: 1,
+    });
     repository.recordFailedLogin.mockResolvedValue(false);
   });
 
@@ -191,6 +194,7 @@ describe('LoginUseCase', () => {
       email: 'admin@example.com',
       role: 'ROLE_SYSTEM_ADMIN',
       sessionGeneration: 1,
+      sid: 9,
     });
     expect(repository.recordLoginSuccessAndCreateSession).toHaveBeenCalledWith(
       1,
@@ -323,6 +327,7 @@ describe('LoginUseCase', () => {
         email: 'admin@example.com',
         role: roleName,
         sessionGeneration: 1,
+        sid: 9,
       });
       expect(repository.recordLoginSuccessAndCreateSession).toHaveBeenCalled();
     },

@@ -150,7 +150,7 @@ export class PrismaAuthRepository implements AuthRepository {
     id: number,
     refreshTokenHash: string,
     expiresAt: Date,
-  ): Promise<number> {
+  ): Promise<{ sessionId: number; sessionGeneration: number }> {
     return this.db.$transaction(
       async (tx: Prisma.TransactionClient) => {
         const locked = await tx.user.updateMany({
@@ -166,10 +166,13 @@ export class PrismaAuthRepository implements AuthRepository {
           where: { id },
           select: { sessionGeneration: true },
         });
-        await tx.session.create({
+        const session = await tx.session.create({
           data: { userId: id, refreshTokenHash, expiresAt },
         });
-        return current.sessionGeneration;
+        return {
+          sessionId: session.id,
+          sessionGeneration: current.sessionGeneration,
+        };
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -298,6 +301,23 @@ function toAuthTransaction(tx: Prisma.TransactionClient): AuthTransaction {
       return changed.count === 1;
     },
     async revokeUserSessions(userId: number, reason: string): Promise<number> {
+      const revoked = await tx.session.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date(), revocationReason: reason },
+      });
+      return revoked.count;
+    },
+    async invalidateUserSessions(
+      userId: number,
+      reason: string,
+    ): Promise<number> {
+      const updated = await tx.user.updateMany({
+        where: { id: userId, status: 'ACTIVE' },
+        data: { sessionGeneration: { increment: 1 } },
+      });
+      if (updated.count !== 1) {
+        throw new Error('Account is no longer active.');
+      }
       const revoked = await tx.session.updateMany({
         where: { userId, revokedAt: null },
         data: { revokedAt: new Date(), revocationReason: reason },

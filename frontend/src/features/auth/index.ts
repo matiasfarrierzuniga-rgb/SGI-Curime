@@ -11,5 +11,5 @@ export type {
   LoginCredentials,
   LoginResponse,
   PasswordWithConfirmation,
-  StoredSession,
+  ChangePasswordPayload,
 } from './model/auth.types'

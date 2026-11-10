@@ -10,7 +10,7 @@ describe('ChangePasswordUseCase', () => {
   const audit = { record: jest.fn() };
   const tx = {
     setUserPassword: jest.fn(),
-    revokeUserSessions: jest.fn(),
+    invalidateUserSessions: jest.fn(),
   };
   let useCase: ChangePasswordUseCase;
 
@@ -28,7 +28,7 @@ describe('ChangePasswordUseCase', () => {
     repository.withTransaction.mockImplementation(
       (work: (transaction: typeof tx) => Promise<unknown>) => work(tx),
     );
-    tx.revokeUserSessions.mockResolvedValue(1);
+    tx.invalidateUserSessions.mockResolvedValue(1);
   });
 
   it('throws an application error when new passwords do not match', async () => {
@@ -86,7 +86,7 @@ describe('ChangePasswordUseCase', () => {
 
     expect(hasher.compare).toHaveBeenCalledTimes(2);
     expect(tx.setUserPassword).toHaveBeenCalledWith(1, 'new-hash');
-    expect(tx.revokeUserSessions).toHaveBeenCalledWith(1, 'password-change');
+    expect(tx.invalidateUserSessions).toHaveBeenCalledWith(1, 'password-change');
     expect(audit.record).toHaveBeenCalledWith({
       userId: 1,
       action: AuditAction.PASSWORD_CHANGED,
@@ -99,7 +99,7 @@ describe('ChangePasswordUseCase', () => {
   });
 
   it('fails the transaction when session revocation fails', async () => {
-    tx.revokeUserSessions.mockRejectedValueOnce(new Error('db failure'));
+    tx.invalidateUserSessions.mockRejectedValueOnce(new Error('db failure'));
 
     await expect(
       useCase.execute(1, 'current', 'NewPassword1!', 'NewPassword1!'),
@@ -114,6 +114,6 @@ describe('ChangePasswordUseCase', () => {
     await expect(
       useCase.execute(1, 'current', 'NewPassword1!', 'NewPassword1!'),
     ).rejects.toThrow('password failure');
-    expect(tx.revokeUserSessions).not.toHaveBeenCalled();
+    expect(tx.invalidateUserSessions).not.toHaveBeenCalled();
   });
 });
