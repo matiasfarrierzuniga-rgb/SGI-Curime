@@ -33,7 +33,7 @@ function toAuthAccount(user: AccountRow): AuthAccount {
     fullName:
       canonicalPersonName(user.person) ??
       user.fullName ??
-      'Cuenta comunitaria',
+       'Cuenta',
     status: user.status,
     passwordHash: user.passwordHash,
     lockedAt: user.lockedAt,
@@ -271,7 +271,7 @@ function toAuthTransaction(tx: Prisma.TransactionClient): AuthTransaction {
           id: userId,
           status: 'INACTIVE',
           role: {
-            name: { notIn: ['Cuenta comunitaria', 'ROLE_COMMUNITY_USER'] },
+            name: { not: 'ROLE_COMMUNITY_USER' },
           },
         },
         data: { passwordHash, status: 'ACTIVE' },

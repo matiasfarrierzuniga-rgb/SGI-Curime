@@ -7,7 +7,6 @@ import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
 } from '../../domain/policies/account-lockout.policy';
-import { isSubscriptionExpired } from '../../domain/policies/subscription-expiration.policy';
 import { canAccessErp } from '../../domain/policies/internal-access.policy';
 import type { AuthAccount } from '../../domain/entities/auth-account';
 import {
@@ -124,18 +123,6 @@ export class LoginUseCase {
       throw new AuthApplicationError(
         'INVALID_CREDENTIALS',
         'Invalid credentials',
-      );
-    }
-
-    if (
-      isSubscriptionExpired(
-        account.roleName,
-        account.subscriptionExpirationDate,
-      )
-    ) {
-      throw new AuthApplicationError(
-        'SUBSCRIPTION_EXPIRED',
-        'Subscription has expired',
       );
     }
 

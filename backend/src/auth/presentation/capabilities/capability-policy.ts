@@ -137,47 +137,7 @@ export function isKnownCapability(
   return CAPABILITIES.includes(capability as Capability);
 }
 
-const ROLE_ADMIN = 'Administrador';
-const ROLE_INVENTORY_MANAGER = 'Gestor de Inventario';
-const ROLE_TREASURER = 'Tesorero';
-
-export const ROLE_CAPABILITIES: Readonly<
-  Record<string, readonly Capability[]>
-> = {
-  [ROLE_ADMIN]: LEGACY_CAPABILITIES,
-  [ROLE_INVENTORY_MANAGER]: [
-    'erp.dashboard.read',
-    'usr.profile.read',
-    'inv.inventory.read',
-  ],
-  [ROLE_TREASURER]: [
-    'fin.charges.read',
-    'fin.payments.record',
-    'fin.movements.read',
-    'fin.movements.create',
-    'fin.dinadeco.read',
-    DONATION_CAPABILITIES.read,
-    DONATION_CAPABILITIES.create,
-    DONATION_CAPABILITIES.update,
-    DONATION_CAPABILITIES.cancel,
-  ],
-};
-
-export function hasCapability(
-  role: string | undefined,
-  capability: string,
-): boolean {
-  return (
-    isKnownCapability(capability) &&
-    role !== undefined &&
-    ROLE_CAPABILITIES[role]?.includes(capability) === true
-  );
-}
-
-/**
- * Runtime authorization source. ROLE_CAPABILITIES/hasCapability remain only
- * as seed and equivalence-reference data during the RBAC cutover.
- */
+/** Runtime authorization source. Role labels never grant capabilities. */
 export function hasPersistedCapability(
   permissionCodes: readonly string[] | undefined,
   capability: string,

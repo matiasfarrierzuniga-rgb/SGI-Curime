@@ -11,7 +11,6 @@ import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
 } from '../../domain/policies/account-lockout.policy';
-import { isSubscriptionExpired } from '../../domain/policies/subscription-expiration.policy';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { toAuthHttpError } from '../errors/auth-http-error.mapper';
 import { canAccessErp } from '../../domain/policies/internal-access.policy';
@@ -84,20 +83,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (account.lockedAt) {
       await this.repository.clearLockout(account.id);
     }
-    if (
-      isSubscriptionExpired(
-        account.roleName,
-        account.subscriptionExpirationDate,
-      )
-    ) {
-      throw toAuthHttpError(
-        new AuthApplicationError(
-          'SUBSCRIPTION_EXPIRED',
-          'Subscription has expired',
-        ),
-      );
-    }
-
     return {
       id: account.id,
       fullName: account.fullName,
