@@ -47,19 +47,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     let account: Awaited<ReturnType<AuthRepository['findCredentialsById']>>;
     let session: Awaited<ReturnType<SessionService['findActiveById']>>;
+    const sessionId = payload.sid;
 
     if (
       !Number.isSafeInteger(payload.sub) ||
       payload.sub <= 0 ||
-      !Number.isSafeInteger(payload.sid) ||
-      payload.sid <= 0
+      typeof sessionId !== 'number' ||
+      !Number.isSafeInteger(sessionId) ||
+      sessionId <= 0
     ) {
       throw new UnauthorizedException('Unauthorized');
     }
 
     try {
       account = await this.repository.findCredentialsById(payload.sub);
-      session = await this.sessions.findActiveById(payload.sid);
+      session = await this.sessions.findActiveById(sessionId);
     } catch {
       throw new UnauthorizedException('Unauthorized');
     }

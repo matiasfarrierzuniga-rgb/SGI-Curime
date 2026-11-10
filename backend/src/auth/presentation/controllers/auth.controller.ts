@@ -38,6 +38,7 @@ import { assertCookieRequestOrigin } from '../security/cookie-origin.policy';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
+type OptionalAuthenticatedRequest = Request & { user?: AuthenticatedUser };
 
 @Controller()
 export class AuthController {
@@ -108,7 +109,7 @@ export class AuthController {
   @UseGuards(OptionalJwtAuthGuard)
   async logout(
     @Body() dto: RefreshTokenDto,
-    @Req() request: Request,
+    @Req() request: OptionalAuthenticatedRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
     const policy = getRefreshCookiePolicy();

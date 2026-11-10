@@ -40,7 +40,10 @@
   - [x] Certification checkpoint: disposable PostgreSQL isolation/migration/smoke passed on loopback port `55434`, then container and tmpfs were destroyed.
   - [x] Certification checkpoint: `backend/test/auth-postgres-certification.ts` passed real Prisma persistence, revocation, password transactions, forced rollback, refresh/logout race and JWT `sid` rejection checks on loopback port `55435`; container and tmpfs were destroyed.
   - [x] Certification checkpoint: focused auth refresh/logout/password/reset HTTP-contract tests and focused config/JWT/rate-limit tests passed.
-  - [ ] Certification matrix remains incomplete: auth persistence transactions/concurrency on PostgreSQL, real browser/multi-tab behavior, production infrastructure and operational recovery remain `NOT_VERIFIED`.
+  - [ ] Certification matrix remains incomplete: production infrastructure and operational recovery remain `NOT_VERIFIED`.
+  - [ ] CERT-02 browser certification is `PARTIAL`: Chrome, login, reload, storage/cookie behavior, tabs, independent context, logout, password invalidation and bounded network failure passed on the existing development services.
+  - [x] CERT-02 fallback is `EXPECTED_FAIL_CLOSED`: sequential single-tab rotations passed without duplicates or loops; a controlled two-tab race produced one atomic `200` rotation and one `401` without clearing the valid shared cookie, followed by a successful sequential refresh. Fallback does not guarantee cross-tab session continuity and requires no functional correction.
+  - [ ] Account switch A → B remains `NOT_VERIFIED` because no second authorized development account was available.
 - [ ] 5.2 **SEC-01-12 — Close implementation plan traceability.** Map every requirement and scenario to changed files, focused tests, rollout evidence and residual risk; verify all SEC-01 tasks and acceptance criteria are resolved before requesting `VERIFY` or `ARCHIVE`, with RBAC, Inventario, ERP and unrelated account lifecycle behavior unchanged.
 
 ## Workflow follow-up
