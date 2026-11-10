@@ -27,7 +27,7 @@
   - [x] Gate 2 focused unit and HTTP-contract coverage: individual/global logout, password change/reset, account deactivation, missing `sid`, session ownership and refresh/logout race.
   - [x] Gate 3 frontend password-change success clears memory/query caches, broadcasts `session-invalidated`, avoids `/logout` and automatic refresh, and requires login again.
   - [ ] Gate 3 browser multi-tab, production/runtime and final certification remain `NOT_VERIFIED`.
-  - [ ] PostgreSQL transaction/concurrency integration and production/runtime certification remain pending.
+  - [x] PostgreSQL transaction/concurrency integration for SEC-01 auth persistence passed with real Prisma on the disposable database; production/runtime certification remains pending.
 
 ## 4. Compatibility, transition and rollback
 
@@ -37,6 +37,10 @@
 ## 5. Security verification and implementation closure
 
 - [ ] 5.1 **SEC-01-10 — Execute security certification matrix.** In an identified safe environment, run authorized unit, HTTP-contract and browser checks for login/login-CSRF, reload, TTLs, concurrent tabs/fallbacks, invalid rotated credentials, individual/global logout, password change/reset, deactivation, cookie flags, CORS, abuse limits, aliases and safe rollback; record evidence statuses without credentials.
+  - [x] Certification checkpoint: disposable PostgreSQL isolation/migration/smoke passed on loopback port `55434`, then container and tmpfs were destroyed.
+  - [x] Certification checkpoint: `backend/test/auth-postgres-certification.ts` passed real Prisma persistence, revocation, password transactions, forced rollback, refresh/logout race and JWT `sid` rejection checks on loopback port `55435`; container and tmpfs were destroyed.
+  - [x] Certification checkpoint: focused auth refresh/logout/password/reset HTTP-contract tests and focused config/JWT/rate-limit tests passed.
+  - [ ] Certification matrix remains incomplete: auth persistence transactions/concurrency on PostgreSQL, real browser/multi-tab behavior, production infrastructure and operational recovery remain `NOT_VERIFIED`.
 - [ ] 5.2 **SEC-01-12 — Close implementation plan traceability.** Map every requirement and scenario to changed files, focused tests, rollout evidence and residual risk; verify all SEC-01 tasks and acceptance criteria are resolved before requesting `VERIFY` or `ARCHIVE`, with RBAC, Inventario, ERP and unrelated account lifecycle behavior unchanged.
 
 ## Workflow follow-up

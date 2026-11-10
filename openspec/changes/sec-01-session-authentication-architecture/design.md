@@ -26,7 +26,7 @@ Current static evidence shows:
 
 Tracked configuration proposes a one-hour access-token lifetime and contains conflicting refresh examples of fourteen and thirty days. Production documentation describes one HTTPS site behind one Caddy hop with `SameSite=Lax`, exact frontend origin and credentialed CORS. Effective deployed values remain **NOT_VERIFIED**.
 
-One adjacent mismatch requires preservation as explicit evidence: frontend password change currently sends `password` and `passwordConfirmation`, while the backend DTO expects `newPassword` and `newPasswordConfirmation`. SEC-01 SHALL characterize this contract before implementation but SHALL NOT silently repair it outside approved scope.
+Historical adjacent mismatch: frontend password change sent `password` and `passwordConfirmation`, while the backend DTO expects `newPassword` and `newPasswordConfirmation`. G3.3 corrected the frontend contract; token-based activation/reset retains its separate payload.
 
 ## Goals / Non-Goals
 
@@ -308,3 +308,12 @@ Proposed activation signals are sustained login/refresh failure above the human-
 The proposed operational owner is the incident commander designated by the project owner, with backend and frontend maintainers executing their boundaries. No person is assigned by this document. Activation requires that designated owner plus architectural/security approval, except emergency containment under the project's incident authority. Proposed maximum rollback window is 24 hours; continued rollback requires renewed human approval. Closure requires restored service indicators, no browser refresh exposure, reconciliation of affected sessions and recorded validation evidence. Ownership, thresholds and 24-hour limit are **APPROVAL_REQUIRED**.
 
 No schema rollback is expected. Any later refresh-family persistence proposal requires separate Prisma migration and rollback approval.
+
+### Integrated certification checkpoint — 2026-11-10
+
+- **VERIFIED:** disposable PostgreSQL guard, tmpfs isolation, health, Prisma migration deployment, smoke, and ownership-safe destruction on loopback port `55434`; no institutional/shared database was used.
+- **VERIFIED:** focused auth HTTP contract tests for refresh, cookie rotation, logout, logout-all, password/reset and related session transitions; focused config, rate-limit and JWT strategy tests passed.
+- **VERIFIED:** `backend/test/auth-postgres-certification.ts` used Prisma repositories/use cases against the disposable PostgreSQL database and verified real rows for sessions, generation increments, individual/global revocation, password change/reset, forced rollback, refresh/logout race and revoked/expired JWT `sid`; the container and tmpfs were destroyed.
+- **PARTIAL:** controller-level auth HTTP tests still use Prisma mocks; they do not replace production topology or browser evidence. The real Prisma certification is focused on the SEC-01 persistence scenarios listed above.
+- **NOT_VERIFIED:** real browser login/reload, multi-tab coordination, fallback APIs, Web Storage observation, production Caddy/HTTPS/CORS/cookie runtime, effective deployed TTL/inactivity and anti-abuse values, JWT performance, and operational recovery ownership.
+- **FAILED / OUT OF SCOPE:** existing `events-auth.e2e-spec.ts` failures and unrelated `canAccessErp` expectations in `auth.e2e-spec.ts`; no SEC-01 files or behavior were changed in response.
