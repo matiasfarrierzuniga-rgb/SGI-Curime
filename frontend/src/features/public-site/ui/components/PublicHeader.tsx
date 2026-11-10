@@ -61,15 +61,15 @@ export function PublicHeader() {
 
   return (
     <header ref={headerRef} className="sticky top-0 z-[var(--z-nav)] border-b border-border/90 bg-brand-ivory/95 font-sans text-brand-deep backdrop-blur-sm">
-      <div className="public-container grid min-h-[4.25rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 min-[1200px]:min-h-[4.75rem] min-[1200px]:grid-cols-[11rem_minmax(0,1fr)_auto] min-[1200px]:gap-x-5">
-        <Link to="/" aria-label="ADI Curime, inicio" className="flex h-10 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-11 sm:w-40 min-[1200px]:h-14 min-[1200px]:w-44">
+      <div className="public-container grid min-h-[4.25rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 lg:min-h-[4.75rem] lg:grid-cols-[11rem_minmax(0,1fr)_auto] lg:gap-x-5">
+        <Link to="/" aria-label="ADI Curime, inicio" className="flex h-10 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-11 sm:w-40 lg:h-14 lg:w-44">
           <img src="/brand/adi-curime-logo-horizontal-color-header-tight.png" alt="" width="1331" height="535" className="block size-full object-contain" />
         </Link>
-        <button ref={menuButtonRef} type="button" onClick={() => { setOpen(!open); setOpenGroup(null) }} aria-label={open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={open} aria-controls={id} className="inline-flex size-11 items-center justify-center rounded-control border border-primary text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring min-[1200px]:hidden">
+        <button ref={menuButtonRef} type="button" onClick={() => { setOpen(!open); setOpenGroup(null) }} aria-label={open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={open} aria-controls={id} className="inline-flex size-11 items-center justify-center rounded-control border border-primary text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring lg:hidden">
           {open ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
         </button>
-        <nav id={id} aria-label="Navegación pública" className={`${open ? 'flex' : 'hidden'} col-span-2 mt-2 w-full flex-col items-stretch rounded-surface border border-border bg-surface-muted p-2 shadow-surface min-[1200px]:col-auto min-[1200px]:mt-0 min-[1200px]:flex min-[1200px]:w-auto min-[1200px]:flex-row min-[1200px]:justify-self-center min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none`}>
-          <ul className="flex flex-col gap-0.5 min-[1200px]:flex-row min-[1200px]:items-center min-[1200px]:gap-1 2xl:gap-2">
+        <nav id={id} aria-label="Navegación pública" className={`${open ? 'flex' : 'hidden'} col-span-2 mt-2 w-full flex-col items-stretch rounded-surface border border-border bg-surface-muted p-2 shadow-surface lg:col-auto lg:mt-0 lg:flex lg:w-auto lg:flex-row lg:justify-self-center lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none`}>
+          <ul className="flex flex-col gap-0.5 lg:flex-row lg:items-center lg:gap-1 2xl:gap-2">
             {mainItems.map((label) => {
               if (label !== 'Comunidad' && label !== 'Servicios') {
                 const item = site.nav.find((entry) => entry.label === label)!
@@ -91,10 +91,10 @@ export function PublicHeader() {
                       setOpenGroup(label)
                       requestAnimationFrame(() => focusItem(event.key === 'ArrowDown' ? 0 : destinations.length - 1))
                     }
-                  }} className={`${linkClass} public-nav-trigger w-full justify-between gap-2 text-left data-[active=true]:font-semibold data-[active=true]:text-primary min-[1200px]:w-auto`}>
+                  }} className={`${linkClass} public-nav-trigger w-full justify-between gap-2 text-left data-[active=true]:font-semibold data-[active=true]:text-primary lg:w-auto`}>
                     {label}<ChevronDown className={`size-4 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </button>
-                  <ul id={panelId} hidden={!expanded} className="mt-1 space-y-0.5 rounded-control border border-border bg-brand-ivory p-1.5 shadow-surface min-[1200px]:absolute min-[1200px]:left-0 min-[1200px]:top-full min-[1200px]:z-10 min-[1200px]:mt-2 min-[1200px]:min-w-48">
+                  <ul id={panelId} hidden={!expanded} className="mt-1 space-y-0.5 rounded-control border border-border bg-brand-ivory p-1.5 shadow-surface lg:absolute lg:left-0 lg:top-full lg:z-10 lg:mt-2 lg:min-w-48">
                     {destinations.map((destination) => {
                       const item = site.nav.find((entry) => entry.label === destination)!
                       return <li key={destination}><NavLink to={item.to} onClick={close} className={`${linkClass} ${linkHoverClass}`}>{destination}</NavLink></li>
@@ -104,12 +104,12 @@ export function PublicHeader() {
               )
             })}
           </ul>
-          <div className="flex flex-col gap-2 min-[1200px]:hidden">
+          <div className="flex flex-col gap-2 lg:hidden">
             <Button nativeButton={false} render={<Link to={accessTo} />} onClick={close} size="sm" className="mt-2 w-full">{accessLabel}</Button>
             {isAuthenticated && <Button onClick={handleLogout} size="sm" variant="outline" className="w-full"><LogOut className="size-4" aria-hidden="true" />Cerrar sesión</Button>}
           </div>
         </nav>
-        <div className="hidden items-center justify-self-end gap-2.5 min-[1200px]:flex">
+        <div className="hidden items-center justify-self-end gap-2.5 lg:flex">
           <Button nativeButton={false} render={<Link to={accessTo} />} size="sm" className="px-4"><LogIn className="size-4" aria-hidden="true" />{accessLabel}</Button>
           {isAuthenticated && <Button onClick={handleLogout} size="sm" variant="outline" className="px-4"><LogOut className="size-4" aria-hidden="true" />Cerrar sesión</Button>}
         </div>

@@ -27,7 +27,7 @@ export function AgendaSection() {
     .slice(0, 3) ?? []
 
   return (
-    <section aria-labelledby="agenda-title" className="bg-[#f3eee3] py-12 md:py-16 xl:py-20">
+    <section aria-labelledby="agenda-title" className="bg-surface-muted py-12 md:py-16 xl:py-20">
       <div className="public-container grid gap-8 lg:grid-cols-[minmax(15rem,.7fr)_minmax(0,1.3fr)] lg:gap-14">
         <header className="flex flex-col gap-4 lg:pb-2">
           <div>

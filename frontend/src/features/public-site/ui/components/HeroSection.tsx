@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 export function HeroSection() {
   return (
-    <section aria-labelledby="hero-title" className="relative isolate overflow-hidden border-b border-brand-sage/70 bg-[#efe7d8] py-0">
+    <section aria-labelledby="hero-title" className="relative isolate overflow-hidden border-b border-brand-sage/70 bg-surface-muted py-0">
       <div className="relative z-10 grid min-w-0 gap-0 px-4 sm:px-5 md:px-6 lg:grid-cols-2 lg:px-0 lg:items-stretch">
         <div className="relative z-10 flex min-w-0 flex-col justify-center px-1 py-12 sm:py-16 lg:py-20 lg:pl-[max(2rem,calc((100vw-var(--container-max))/2+2rem))] lg:pr-12 xl:pl-[max(3rem,calc((100vw-var(--container-max))/2+3rem))] xl:pr-20">
           <p className="public-eyebrow text-brand-primary">
@@ -44,7 +44,7 @@ export function HeroSection() {
             />
           </picture>
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-brand-ink/25 to-transparent lg:hidden" />
-          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[30%] bg-[linear-gradient(90deg,#efe7d8_0%,rgba(239,231,216,0.72)_42%,rgba(239,231,216,0.18)_72%,transparent_100%)] lg:block" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[30%] bg-gradient-to-r from-surface-muted via-surface-muted/70 to-transparent lg:block" />
         </figure>
       </div>
     </section>

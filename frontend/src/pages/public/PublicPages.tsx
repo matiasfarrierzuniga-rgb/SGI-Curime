@@ -41,8 +41,8 @@ export function AboutPage() {
             <source srcSet="/images/public/home/hero-curime-wide.webp" type="image/webp" />
             <img src="/images/public/home/hero-curime-fallback.jpg" alt="Paisaje rural de Curime, Guanacaste." width="1600" height="1200" className="size-full object-cover object-[58%_59%]" />
           </picture>
-          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-brand-ivory via-brand-ivory/90 to-brand-ivory/40" />
-          <div className="relative flex min-h-[22rem] items-center px-5 py-12 md:min-h-[26rem] md:px-10 lg:min-h-[30rem]">
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-brand-ivory via-brand-ivory/90 to-brand-ivory/40 lg:bg-gradient-to-r" />
+          <div className="relative flex min-h-[22rem] items-center px-5 py-12 md:min-h-[26rem] md:px-10 lg:min-h-[30rem] lg:px-12">
             <div className="max-w-xl">
               <p className="public-eyebrow text-brand-primary">ADI Curime · Nicoya · Guanacaste</p>
               <h1 id="about-title" className="public-heading mt-4 text-display text-brand-ink">Conozca nuestra <span className="block">Asociación</span></h1>
