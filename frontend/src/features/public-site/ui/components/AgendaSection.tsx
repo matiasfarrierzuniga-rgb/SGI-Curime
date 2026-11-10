@@ -27,9 +27,9 @@ export function AgendaSection() {
     .slice(0, 3) ?? []
 
   return (
-    <section aria-labelledby="agenda-title" className="bg-brand-ivory py-12 md:py-16 xl:py-20">
-      <div className="public-container">
-        <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-8">
+    <section aria-labelledby="agenda-title" className="bg-[#f3eee3] py-12 md:py-16 xl:py-20">
+      <div className="public-container grid gap-8 lg:grid-cols-[minmax(15rem,.7fr)_minmax(0,1.3fr)] lg:gap-14">
+        <header className="flex flex-col gap-4 lg:pb-2">
           <div>
             <p className="public-eyebrow text-brand-primary">Agenda comunitaria</p>
             <h2 id="agenda-title" className="public-heading mt-2 text-brand-ink">Próximas actividades</h2>
@@ -37,7 +37,7 @@ export function AgendaSection() {
           </div>
           <Link to="/eventos" className="inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">Ver agenda completa</Link>
         </header>
-        <div className="mt-8 max-w-5xl md:mt-10">
+        <div className="max-w-5xl">
           {eventsQuery.isPending ? <LoadingState className="min-h-36 rounded-surface border border-brand-sage/80 bg-card-white px-6 shadow-sm" label="Cargando agenda comunitaria..." /> : null}
           {eventsQuery.isError ? <ErrorState className="border-brand-sage/80 px-6 py-6 shadow-sm" message={getErrorMessage(eventsQuery.error, 'No fue posible cargar la agenda comunitaria.')} action={<button className="min-h-11 rounded-control border border-border px-4 font-semibold focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" type="button" onClick={() => void eventsQuery.refetch()}>Reintentar</button>} /> : null}
           {!eventsQuery.isPending && !eventsQuery.isError && upcomingEvents.length === 0 ? <EmptyState className="mx-auto max-w-3xl border-brand-sage bg-card-white px-6 py-10 shadow-sm md:px-8 md:py-12" title="No hay actividades próximas publicadas" description="Cuando la Asociación publique una nueva actividad, podrá consultarla aquí." /> : null}

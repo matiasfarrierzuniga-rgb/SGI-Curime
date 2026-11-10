@@ -30,13 +30,13 @@ export function LandingPage() {
       <AgendaSection />
       <LatestNewsSection />
       <AboutSection />
-      <section aria-labelledby="community-title" className="border-y border-brand-sage/70 bg-surface-muted py-12 md:py-16 lg:flex lg:min-h-[min(44rem,calc(100svh-var(--size-header-desktop)))] lg:min-h-[min(44rem,calc(100dvh-var(--size-header-desktop)))] lg:items-center xl:py-20">
-        <div className="public-container grid gap-8 md:gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-20 xl:gap-28">
+      <section aria-labelledby="community-title" className="border-y border-brand-sage/70 bg-[#f3eee3] py-14 md:py-18 xl:py-20">
+        <div className="public-container grid gap-8 md:gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)] lg:items-center lg:gap-20 xl:gap-28">
           <figure className="order-2 relative aspect-[4/3] overflow-hidden rounded-surface border border-brand-sage/80 bg-brand-ivory shadow-sm lg:order-1 lg:aspect-[3/2]">
             <picture className="block size-full">
               <source media="(max-width: 767px)" srcSet="/images/public/home/community-curime-mobile.webp" type="image/webp" />
               <source srcSet="/images/public/home/community-curime-wide.webp" type="image/webp" />
-              <img src="/images/public/home/community-curime-fallback.jpg" alt="Actividad comunitaria en la cancha de la comunidad." width="1500" height="1000" loading="lazy" className="size-full object-cover object-[50%_42%]" />
+              <img src="/images/public/home/community-curime-fallback.jpg" alt="Actividad comunitaria en la cancha de la comunidad." width="1500" height="1000" className="size-full object-cover object-[50%_42%]" />
             </picture>
           </figure>
           <div className="order-1 max-w-xl md:py-6 lg:order-2">

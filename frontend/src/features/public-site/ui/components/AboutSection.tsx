@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom'
 import { site } from '@/content/publicSiteContent'
-import { CurimeBrandAccent } from '@/shared/ui/brand/CurimeBrandAccent'
 
 export function AboutSection() {
   return (
-    <section aria-labelledby="about-title" className="relative overflow-hidden border-y border-brand-sage/70 bg-surface-muted py-12 md:py-16 lg:flex lg:min-h-[min(44rem,calc(100svh-var(--size-header-desktop)))] lg:min-h-[min(44rem,calc(100dvh-var(--size-header-desktop)))] lg:items-center xl:py-20">
-      <CurimeBrandAccent className="absolute -bottom-10 -left-6 hidden size-36 opacity-15 md:block md:size-44 lg:-left-4 lg:size-52" />
+    <section aria-labelledby="about-title" className="relative overflow-hidden border-y border-brand-sage/70 bg-[#fffcf5] py-12 md:py-16 xl:py-20">
       <div className="public-container relative grid gap-8 md:gap-10 lg:grid-cols-[minmax(13rem,4fr)_minmax(0,8fr)] lg:gap-20 xl:gap-28">
         <div className="max-w-md">
           <p className="public-eyebrow text-brand-primary">
@@ -15,7 +13,7 @@ export function AboutSection() {
             Un pueblo unido, un futuro compartido
           </h2>
         </div>
-        <div className="grid gap-8 border-t border-brand-sage/80 pt-8 md:gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(12rem,4fr)] lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0 xl:gap-14 xl:pl-16">
+        <div className="grid gap-8 border-t border-brand-sage/80 pt-8 md:gap-10 lg:grid-cols-[minmax(0,.85fr)_minmax(12rem,1.15fr)] lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0 xl:gap-14 xl:pl-16">
           <div className="flex max-w-[38rem] flex-col items-start">
             <p className="max-w-[56ch] text-pretty text-body leading-relaxed text-brand-ink/80">
               La Asociación de Desarrollo Integral de Curime, en el corazón de la península de Nicoya, coordina esfuerzos vecinales para el desarrollo del distrito. Este sistema acompaña esa labor con información clara y gestiones digitales al servicio de la comunidad.
@@ -31,9 +29,8 @@ export function AboutSection() {
             </Link>
           </div>
           <figure className="relative aspect-[5/4] overflow-hidden rounded-surface border border-brand-sage/80 bg-background-subtle shadow-sm md:aspect-[3/2] lg:aspect-[5/6]">
-            <figcaption className="absolute inset-x-0 bottom-0 border-t border-brand-sage/80 bg-brand-ivory/95 p-4 text-body-small leading-relaxed text-brand-ink/75">
-              Fotografía institucional pendiente de autorización.
-            </figcaption>
+            <picture className="block size-full"><source media="(max-width: 767px)" srcSet="/images/public/home/community-curime-mobile.webp" type="image/webp" /><img src="/images/public/home/community-curime-wide.webp" alt="Actividad comunitaria en Curime." width="1500" height="1000" className="size-full object-cover" /></picture>
+            <figcaption className="absolute inset-x-0 bottom-0 border-t border-brand-sage/80 bg-brand-ivory/95 p-4 text-body-small leading-relaxed text-brand-ink/75">Imagen institucional de la vida comunitaria en Curime.</figcaption>
           </figure>
         </div>
       </div>

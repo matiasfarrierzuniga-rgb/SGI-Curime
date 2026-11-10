@@ -1,43 +1,44 @@
-import { ArrowUpRight, CalendarDays, HandHeart, Sprout, UsersRound } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Store, UsersRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 const quickLinks = [
   {
     icon: UsersRound,
-    title: 'Nuestra comunidad',
-    text: 'Conozca iniciativas, actividades y proyectos que nacen en Curime.',
-    to: '/comunidad',
-  },
-  {
-    icon: Sprout,
-    title: 'Emprendimientos',
-    text: 'Conozca emprendimientos locales publicados por la Asociación.',
-    to: '/ventures',
-  },
-  {
-    icon: HandHeart,
-    title: 'Voluntariado',
-    text: 'Súmese a acciones que fortalecen el bienestar de la comunidad.',
-    to: '/voluntariado',
+    title: 'Afiliación',
+    text: 'Inicie una solicitud para formar parte de la Asociación.',
+    to: '/afiliacion',
   },
   {
     icon: CalendarDays,
-    title: 'Agenda y eventos',
+    title: 'Reservas',
+    text: 'Consulte y solicite el uso de espacios comunitarios.',
+    to: '/servicios',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Eventos',
     text: 'Revise actividades y encuentros publicados por la Asociación.',
     to: '/eventos',
+  },
+  {
+    icon: Store,
+    title: 'Emprendimientos',
+    text: 'Conozca emprendimientos locales publicados por la Asociación.',
+    to: '/ventures',
   },
 ] as const
 
 export function QuickLinksSection() {
   return (
-    <nav aria-label="Accesos comunitarios" className="border-y border-brand-sage/70 bg-surface-muted">
-      <div className="public-container py-5 md:py-6">
-        <ul className="grid overflow-hidden rounded-surface border border-brand-sage/70 bg-card-white sm:grid-cols-2 lg:grid-cols-4">
+    <section aria-labelledby="quick-links-title" className="border-y border-brand-sage/70 bg-[#fffcf5] py-10 md:py-12">
+      <div className="public-container">
+        <header className="mb-6 max-w-2xl"><p className="public-eyebrow text-brand-primary">Accesos prioritarios</p><h2 id="quick-links-title" className="public-heading mt-2 text-brand-ink">Lo que puede hacer hoy</h2><p className="mt-3 text-body leading-relaxed text-foreground-muted">Accesos orientados a necesidades frecuentes de la comunidad.</p></header>
+        <nav aria-label="Accesos comunitarios"><ul className="grid overflow-hidden rounded-surface border border-brand-sage/70 bg-card-white sm:grid-cols-2 lg:grid-cols-4">
           {quickLinks.map(({ icon: Icon, title, text, to }) => (
             <li key={title} className="min-w-0 border-b border-brand-sage/70 last:border-b-0 sm:border-r sm:[&:nth-child(2n)]:border-r-0 sm:[&:nth-last-child(-n+2)]:border-b-0 lg:border-b-0 lg:[&:nth-child(2n)]:border-r lg:[&:last-child]:border-r-0">
               <Link
                 to={to}
-                className="group flex min-h-32 flex-col p-4 transition-[background-color,color] duration-200 hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-ring md:min-h-36 md:p-5"
+                className="group flex min-h-40 flex-col p-5 transition-[background-color,color] duration-200 hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-ring md:p-6"
               >
                 <span className="flex items-center justify-between gap-4 text-brand-primary">
                   <Icon className="size-5" aria-hidden="true" />
@@ -48,8 +49,8 @@ export function QuickLinksSection() {
               </Link>
             </li>
           ))}
-        </ul>
+        </ul></nav>
       </div>
-    </nav>
+    </section>
   )
 }

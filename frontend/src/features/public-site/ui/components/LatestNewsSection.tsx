@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 export function LatestNewsSection() {
   return (
-    <section aria-labelledby="latest-news-title" className="public-section bg-brand-ivory">
+    <section aria-labelledby="latest-news-title" className="public-section bg-[#f3eee3]">
       <div className="public-container">
         <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-8">
           <div className="max-w-2xl">
@@ -15,9 +15,9 @@ export function LatestNewsSection() {
             Ver todo <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />
           </Link>
         </header>
-        <div className="mt-8 grid overflow-hidden rounded-surface border border-brand-sage/80 bg-card-white shadow-sm md:mt-10 md:grid-cols-[minmax(0,7fr)_minmax(16rem,5fr)]">
+        <div className="mt-8 grid overflow-hidden rounded-surface border border-dashed border-brand-sage bg-[#fffcf5] shadow-sm md:mt-10 md:grid-cols-[minmax(0,1fr)_minmax(15rem,.65fr)]">
           <div className="p-6 md:p-8"><p className="public-eyebrow text-brand-primary">Información verificada</p><h3 className="mt-3 font-heading text-heading-2 font-normal text-brand-ink">Aún no hay noticias publicadas</h3><p className="mt-4 max-w-xl text-body leading-relaxed text-foreground-muted">Los comunicados y novedades aparecerán aquí cuando la Asociación los revise y autorice.</p><Link to="/noticias" className="mt-6 inline-flex min-h-11 items-center gap-2 font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">Consultar noticias <ArrowRight className="size-4" aria-hidden="true" /></Link></div>
-          <div className="relative min-h-48 overflow-hidden bg-brand-deep"><img src="/images/public/home/community-curime-wide.webp" alt="Actividad comunitaria en la cancha de la comunidad." width="1600" height="900" loading="lazy" className="size-full object-cover opacity-75" /><span aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-brand-deep/35 to-transparent" /></div>
+          <div className="flex min-h-44 items-end border-t border-brand-sage/70 bg-brand-deep p-6 text-brand-ivory md:min-h-full md:border-l md:border-t-0"><p className="max-w-[18ch] font-heading text-heading-2 leading-tight">Las publicaciones oficiales aparecerán en este espacio.</p></div>
         </div>
       </div>
     </section>
