@@ -1,61 +1,120 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { configureAuthSessionAdapter, type SessionInvalidationReason } from '@/shared/api/authSessionAdapter'
+import { clearLegacySession } from '@/shared/session/sessionStorage'
 import { authService } from '../api/auth.api'
-import type { AuthenticatedUser, LoginCredentials, StoredSession } from './auth.types'
-import { sessionStorageService } from '@/shared/session/sessionStorage'
+import type { AuthenticatedUser, LoginCredentials } from './auth.types'
 
-interface AuthValue { user: AuthenticatedUser | null; token: string | null; isAuthenticated: boolean; isLoading: boolean; login: (data: LoginCredentials) => Promise<AuthenticatedUser>; logout: () => Promise<void> }
+export type SessionPhase = 'initializing' | 'authenticated' | 'anonymous' | 'refresh-failed'
+
+interface AuthValue {
+  user: AuthenticatedUser | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  phase: SessionPhase
+  login: (data: LoginCredentials) => Promise<AuthenticatedUser>
+  logout: () => Promise<void>
+}
+
 const AuthContext = createContext<AuthValue | undefined>(undefined)
+
+class SupersededSessionOperationError extends Error {
+  constructor() {
+    super('Session operation superseded')
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
-  const stored = sessionStorageService.get<StoredSession>()
-  const [user, setUser] = useState<AuthenticatedUser | null>(stored?.user ?? null)
-  const [token, setToken] = useState<string | null>(stored?.token ?? null)
-  const [isLoading, setIsLoading] = useState(Boolean(stored?.token))
-  const clearLocalSession = useCallback(() => {
-    sessionStorageService.clear()
+  const tokenRef = useRef<string | null>(null)
+  const epochRef = useRef(0)
+  const mountedRef = useRef(false)
+  const [user, setUser] = useState<AuthenticatedUser | null>(null)
+  const [phase, setPhase] = useState<SessionPhase>('anonymous')
+
+  const isCurrent = useCallback((epoch: number) => mountedRef.current && epoch === epochRef.current, [])
+
+  const clearSession = useCallback((reason: SessionInvalidationReason) => {
+    epochRef.current += 1
+    tokenRef.current = null
+    clearLegacySession()
+    void queryClient.cancelQueries()
     queryClient.clear()
-    setUser(null)
-    setToken(null)
+    if (mountedRef.current) {
+      setUser(null)
+      setPhase(reason === 'renewal-failed' ? 'refresh-failed' : 'anonymous')
+    }
   }, [queryClient])
-  const logout = useCallback(async () => {
-    try { await authService.logout() }
-    catch { /* Local cleanup must not depend on logout response. */ }
-    finally { clearLocalSession() }
-  }, [clearLocalSession])
+
+  const refreshAccessContext = useCallback(async () => {
+    const epoch = epochRef.current
+    if (!tokenRef.current) return
+    try {
+      const fresh = await authService.me()
+      if (isCurrent(epoch)) setUser(fresh)
+    } catch {
+      // A 403 reports authorization scope; it must not end an authenticated session.
+    }
+  }, [isCurrent])
+
+  const renewAccessToken = useCallback(async () => {
+    const epoch = epochRef.current
+    const { accessToken } = await authService.refresh()
+    if (!isCurrent(epoch)) throw new SupersededSessionOperationError()
+    tokenRef.current = accessToken
+    return accessToken
+  }, [isCurrent])
 
   useEffect(() => {
-    const unauthorized = () => clearLocalSession()
-    const tokenRefreshed = (event: Event) => setToken((event as CustomEvent<string>).detail)
-    const accessChanged = () => {
-      authService.me().then((fresh) => {
-        setUser(fresh)
-        const current = sessionStorageService.get<StoredSession>()
-        if (current) sessionStorageService.set({ ...current, user: fresh })
-      }).catch(() => {
-        // A 403 reports authorization scope, not an invalid authenticated session.
-        // Invalid or expired sessions are cleared only by auth:unauthorized after refresh fails.
-      })
-    }
-    window.addEventListener('auth:unauthorized', unauthorized)
-    window.addEventListener('auth:token-refreshed', tokenRefreshed)
-    window.addEventListener('auth:access-changed', accessChanged)
-    if (stored?.token) authService.me().then(fresh => { setUser(fresh); sessionStorageService.set({ token: stored.token, user: fresh }) }).catch(clearLocalSession).finally(() => setIsLoading(false))
-    return () => { window.removeEventListener('auth:unauthorized', unauthorized); window.removeEventListener('auth:token-refreshed', tokenRefreshed); window.removeEventListener('auth:access-changed', accessChanged) }
-  }, [clearLocalSession, stored?.token])
+    mountedRef.current = true
+    clearLegacySession()
+    return configureAuthSessionAdapter({
+      getAccessToken: () => tokenRef.current,
+      getSessionEpoch: () => epochRef.current,
+      renewAccessToken,
+      invalidateSession: clearSession,
+      refreshAccessContext,
+    })
+  }, [clearSession, refreshAccessContext, renewAccessToken])
 
-  const login = async (credentials: LoginCredentials) => {
+  useEffect(() => () => {
+    mountedRef.current = false
+    epochRef.current += 1
+    tokenRef.current = null
+  }, [])
+
+  const logout = useCallback(async () => {
+    const epoch = epochRef.current
+    try {
+      await authService.logout()
+    } catch {
+      // Local cleanup must not depend on logout response.
+    } finally {
+      if (epoch === epochRef.current) clearSession('logout')
+    }
+  }, [clearSession])
+
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    clearSession('session-replaced')
+    const epoch = epochRef.current
     const session = await authService.login(credentials)
-    sessionStorageService.set({ token: session.accessToken, user: session.user })
-    setToken(session.accessToken)
+    if (!isCurrent(epoch)) throw new SupersededSessionOperationError()
+
+    tokenRef.current = session.accessToken
     const fresh = await authService.me()
-    sessionStorageService.set({ token: session.accessToken, user: fresh })
+    if (!isCurrent(epoch)) throw new SupersededSessionOperationError()
+
     setUser(fresh)
+    setPhase('authenticated')
     return fresh
-  }
-  return <AuthContext.Provider value={{ user, token, isAuthenticated: Boolean(token && user), isLoading, login, logout }}>{children}</AuthContext.Provider>
+  }, [clearSession, isCurrent])
+
+  return <AuthContext.Provider value={{ user, isAuthenticated: phase === 'authenticated' && user !== null, isLoading: phase === 'initializing', phase, login, logout }}>{children}</AuthContext.Provider>
 }
 
 // oxlint-disable-next-line react/only-export-components -- hook and provider intentionally share their private context
-export function useAuth() { const value = useContext(AuthContext); if (!value) throw new Error('useAuth debe usarse dentro de AuthProvider'); return value }
+export function useAuth() {
+  const value = useContext(AuthContext)
+  if (!value) throw new Error('useAuth debe usarse dentro de AuthProvider')
+  return value
+}

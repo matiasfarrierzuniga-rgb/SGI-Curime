@@ -14,6 +14,10 @@
 ## 3. Frontend runtime session
 
 - [ ] 3.1 **SEC-01-04 — Move browser credentials to approved storage.** Make auth runtime the sole access-token owner, remove access/user session dependence on Web Storage and safely purge the obsolete session key; verify frontend unit tests show no access or refresh credential in `localStorage` or `sessionStorage` after login, refresh, reload or logout.
+  - [x] G3.1: `AuthProvider` owns in-memory access credential, user, session epoch and anonymous transition; public `useAuth()` no longer exposes the credential.
+  - [x] G3.1: remove credential/identity persistence and purge only legacy `sgi-curime-session` keys from both Web Storage areas.
+  - [x] G3.1: HTTP transport consumes registered auth callbacks without directly persisting credentials, clearing React state or mutating query caches.
+  - [ ] G3.2: cookie-only reload recovery and cross-context coordination remain pending; G3.1 alone intentionally reaches anonymous after reload.
 - [ ] 3.2 **SEC-01-06 — Implement renewal and invalid-credential contract.** Preserve atomic one-time rotation and absolute expiry; recover through cookie refresh then `/users/me`; implement per-context single-flight, Web Locks, credential-free BroadcastChannel events and bounded fallbacks; verify concurrent tabs, stale cookies/events, API absence, timeout, expiry, generic refresh-failure audit and no false replay-family claim.
 - [ ] 3.3 **SEC-01-07 — Complete transactional revocation and cleanup.** Implement individual logout plus approved global logout; atomically increment generation and revoke sessions for password change/reset and deactivation; end the initiating session; preserve `401`/`403` semantics and cache cleanup; verify persistence rollback, best-effort audit failure and that already-issued bearer tokens fail generation checks immediately, without changing RBAC grants.
   - [x] Gate 2 backend: issue mandatory JWT `sid`, fail closed on inactive/foreign/expired persisted sessions, and revoke individual logout by stable `Session.id`.
