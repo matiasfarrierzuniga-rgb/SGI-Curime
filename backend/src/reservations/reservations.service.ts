@@ -13,6 +13,7 @@ import { PublicReservationOccupancyDto, PublicReservableResourceDto, QueryPublic
 import { QueryReservationsDto } from './dto/query-reservations.dto';
 import { assertReservationTransition } from './reservation-transition.policy';
 import { InboxNotificationService } from '../modules/notifications/application/inbox-notification.service';
+import { getReservationTariff } from './reservation-tariffs';
 
 const BLOCKING_STATUSES = [
   ReservationStatus.PENDING,
@@ -44,6 +45,9 @@ const reservationSelect = {
   startAt: true,
   endAt: true,
   purpose: true,
+  activity: true,
+  applicantCategory: true,
+  tariffAmount: true,
   estimatedAttendees: true,
   notes: true,
   status: true,
@@ -85,6 +89,9 @@ const adminReservationSelect = {
   startAt: true,
   endAt: true,
   purpose: true,
+  activity: true,
+  applicantCategory: true,
+  tariffAmount: true,
   estimatedAttendees: true,
   notes: true,
   status: true,
@@ -111,7 +118,7 @@ export class ReservationsService {
 
   findActiveResources() {
     return this.prisma.reservableResource.findMany({
-      where: { status: ReservableResourceStatus.ACTIVE },
+      where: { status: ReservableResourceStatus.ACTIVE, name: { in: ["Salón Comunal", "Play de los niños"] } },
       select: resourceSelect,
       orderBy: { name: 'asc' },
     });
@@ -119,7 +126,7 @@ export class ReservationsService {
 
   async findPublicActiveResources(): Promise<PublicReservableResourceDto[]> {
     const resources = await this.prisma.reservableResource.findMany({
-      where: { status: ReservableResourceStatus.ACTIVE },
+      where: { status: ReservableResourceStatus.ACTIVE, name: { in: ["Salón Comunal", "Play de los niños"] } },
       select: publicResourceSelect,
       orderBy: { name: 'asc' },
     });
@@ -165,6 +172,8 @@ export class ReservationsService {
   async create(dto: CreateReservationDto, requesterUserId: number) {
     return this.withSerializableTransaction(async (tx) => {
       this.assertTimeRange(dto.startAt, dto.endAt);
+      const tariffAmount = getReservationTariff(dto.activity, dto.applicantCategory);
+      if (tariffAmount === null) throw new BadRequestException("No hay una tarifa definida para esta actividad y categoría.");
       await this.requireActiveResource(tx, dto.resourceId);
       if (dto.eventId) await this.requireEvent(tx, dto.eventId);
 
@@ -184,6 +193,9 @@ export class ReservationsService {
           startAt: dto.startAt,
           endAt: dto.endAt,
           purpose: dto.purpose,
+          activity: dto.activity,
+          applicantCategory: dto.applicantCategory,
+          tariffAmount,
           estimatedAttendees: dto.estimatedAttendees,
           notes: dto.notes,
           status: ReservationStatus.PENDING,
@@ -251,9 +263,10 @@ export class ReservationsService {
           resourceId: true,
           startAt: true,
           endAt: true,
+          tariffAmount: true,
         },
       });
-      if (!reservation) throw new NotFoundException('Reservation not found');
+      if (!reservation) throw new NotFoundException("Reservation not found");
       if (reservation.status !== ReservationStatus.PENDING) {
         throw new ConflictException(
           'Only pending reservations can be approved',
@@ -284,14 +297,16 @@ export class ReservationsService {
         throw new ConflictException('Reservable resource is inactive');
       }
 
-      const price = resource.price;
+      const price = reservation.tariffAmount ?? resource.price;
       if (
+        reservation.tariffAmount === null &&
         resource.pricingType === ResourcePricingType.FREE &&
         price !== null
       ) {
         throw new ConflictException('Reservable resource has invalid pricing');
       }
       if (
+        reservation.tariffAmount === null &&
         resource.pricingType !== ResourcePricingType.FREE &&
         (resource.pricingType !== ResourcePricingType.FIXED ||
           price === null ||
@@ -311,7 +326,7 @@ export class ReservationsService {
       });
 
       if (
-        resource.pricingType === ResourcePricingType.FIXED &&
+        (reservation.tariffAmount !== null || resource.pricingType === ResourcePricingType.FIXED) &&
         price !== null
       ) {
         try {
@@ -429,11 +444,11 @@ export class ReservationsService {
   ) {
     const resource = await client.reservableResource.findUnique({
       where: { id },
-      select: { id: true, status: true },
+      select: { id: true, name: true, status: true },
     });
     if (!resource) throw new NotFoundException('Reservable resource not found');
-    if (resource.status !== ReservableResourceStatus.ACTIVE) {
-      throw new ConflictException('Reservable resource is inactive');
+    if (resource.status !== ReservableResourceStatus.ACTIVE || !['Salón Comunal', 'Play de los niños'].includes(resource.name)) {
+      throw new ConflictException('Reservable resource is inactive or not available for new requests');
     }
   }
 

@@ -617,6 +617,9 @@ model Reservation {
   startAt            DateTime
   endAt              DateTime
   purpose            String
+  activity           String?
+  applicantCategory  String?
+  tariffAmount       Decimal?           @db.Decimal(14, 2)
   estimatedAttendees Int?
   notes              String?
   status             ReservationStatus  @default(PENDING)

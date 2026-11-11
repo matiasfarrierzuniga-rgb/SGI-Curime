@@ -1,6 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import {
   IsDate,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -18,6 +19,8 @@ export class CreateReservationDto {
   @Type(() => Date) @IsDate() startAt!: Date;
   @Type(() => Date) @IsDate() endAt!: Date;
   @Transform(trim) @IsString() @IsNotEmpty() @MaxLength(1000) purpose!: string;
+  @IsIn(["DANCES", "SPORTS", "BINGO", "TEA_BASKET", "BIRTHDAY", "WEDDING", "MOVIE", "MOONLIGHT", "TALKS"]) activity!: string;
+  @IsIn(["GROUPS_COMMITTEES", "MEMBERS", "PRIVATE"]) applicantCategory!: string;
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) estimatedAttendees?: number;
   @Transform(trim) @IsOptional() @IsString() @IsNotEmpty() @MaxLength(5000) notes?: string;
 }
