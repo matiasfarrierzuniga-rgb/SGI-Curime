@@ -320,31 +320,31 @@ export function TransparencyPage() {
     <>
       <Seo title="Transparencia" description="Información pública y transparencia de ADI Curime." />
       <header className="border-b border-brand-sage/70 bg-surface-muted">
-        <div className="public-container">
+        <div className="public-container pb-8 md:pb-10">
           <Breadcrumbs current="Transparencia" variant="hero" />
-          <div className="grid gap-8 lg:min-h-[24rem] lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] lg:items-center lg:gap-14">
-            <div>
-            <p className="public-eyebrow text-brand-primary">ADI Curime · Información pública</p>
-            <h1 className="public-heading mt-4 text-display text-brand-ink">Transparencia</h1>
-            <p className="mt-5 max-w-xl text-body-large leading-relaxed text-foreground-muted">Un espacio preparado para publicar información institucional cuando cuente con autorización de la Asociación.</p>
+          <div className="grid gap-7 md:gap-10 lg:min-h-72 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)] lg:items-center lg:gap-12">
+            <div className="lg:py-6">
+              <p className="public-eyebrow text-brand-primary">ADI Curime · Información pública</p>
+              <h1 className="public-heading mt-4 text-display text-brand-ink">Transparencia</h1>
+              <p className="mt-5 max-w-xl text-pretty text-body-large leading-relaxed text-foreground-muted">Un espacio preparado para publicar información institucional cuando cuente con autorización de la Asociación.</p>
             </div>
-            <picture className="block overflow-hidden rounded-surface bg-surface-muted shadow-surface">
-            <source media="(max-width: 767px)" srcSet="/images/public/home/hero-curime-mobile.webp" type="image/webp" />
-            <source srcSet="/images/public/home/hero-curime-wide.webp" type="image/webp" />
-            <img src="/images/public/home/hero-curime-fallback.jpg" alt="Paisaje rural de Curime, Guanacaste." width="1600" height="1200" className="aspect-[16/10] w-full object-cover" />
+            <picture className="block aspect-[16/10] overflow-hidden rounded-surface border border-brand-sage/70 bg-surface-muted shadow-surface lg:min-h-72">
+              <source media="(max-width: 767px)" srcSet="/images/public/home/hero-curime-mobile.webp" type="image/webp" />
+              <source srcSet="/images/public/home/hero-curime-wide.webp" type="image/webp" />
+              <img src="/images/public/home/hero-curime-fallback.jpg" alt="Paisaje rural de Curime, Guanacaste." width="1600" height="1200" className="size-full object-cover object-[58%_59%]" />
             </picture>
           </div>
         </div>
       </header>
       <SectionContainer className="space-y-10 md:space-y-16">
-        <section aria-labelledby="transparency-status" className="grid gap-5 border-y border-brand-sage/70 py-7 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-6"><span aria-hidden="true" className="grid size-12 place-items-center rounded-control bg-brand-accent/25 text-brand-deep"><Eye className="size-6" /></span><div><p className="public-eyebrow text-brand-primary">Estado de publicación</p><h2 id="transparency-status" className="mt-2 font-heading text-heading-2 text-brand-ink">No hay documentos publicados por el momento</h2><p className="mt-2 max-w-3xl text-pretty text-body leading-relaxed text-foreground-muted">La información se publica únicamente cuando cuenta con autorización institucional. Cuando existan documentos disponibles, se mostrarán aquí con su información de consulta.</p></div></section>
+        <section aria-labelledby="transparency-status" className="grid gap-5 rounded-surface border border-brand-sage/70 bg-card-white p-6 shadow-sm md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-6 md:p-8"><span aria-hidden="true" className="grid size-12 place-items-center rounded-control bg-brand-accent/25 text-brand-deep"><Eye className="size-6" /></span><div><p className="public-eyebrow text-brand-primary">Estado de publicación</p><h2 id="transparency-status" className="mt-2 font-heading text-heading-2 text-brand-ink">No hay documentos publicados por el momento</h2><p className="mt-2 max-w-3xl text-pretty text-body leading-relaxed text-foreground-muted">La información se publica únicamente cuando cuenta con autorización institucional. Cuando existan documentos disponibles, se mostrarán aquí con su información de consulta.</p></div></section>
         <section aria-labelledby="transparency-areas">
           <div className="mb-8 max-w-3xl"><p className="public-eyebrow text-brand-primary">Consulta pública</p><h2 id="transparency-areas" className="public-heading mt-3 text-brand-ink">Áreas previstas de información</h2><p className="mt-4 text-pretty text-body leading-relaxed text-foreground-muted">Estas áreas orientan la publicación futura. No representan documentos, informes ni datos disponibles actualmente.</p></div>
           <div className="grid gap-8 lg:grid-cols-3">
-            {transparencyGroups.map((group) => <section key={group.title} aria-labelledby={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="border-t-2 border-brand-accent pt-5"><h3 id={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="font-heading text-heading-3 text-brand-ink">{group.title}</h3><ul className="mt-4 divide-y divide-brand-sage/70 border-y border-brand-sage/70">{group.items.map((title) => { const Icon = categoryIcons[title]; return <li key={title} className="flex gap-3 py-4"><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Icon className="size-4" /></span><div><h4 className="font-semibold text-brand-ink">{title}</h4><p className="mt-1 text-body-small leading-relaxed text-foreground-muted">{categoryDescriptions[title]}</p><p className="mt-2 text-caption font-bold uppercase tracking-[0.12em] text-brand-primary">En preparación</p></div></li> })}</ul></section>)}
+            {transparencyGroups.map((group) => <section key={group.title} aria-labelledby={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-sm"><h3 id={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="border-b-2 border-brand-accent pb-4 font-heading text-heading-3 text-brand-ink">{group.title}</h3><ul className="divide-y divide-brand-sage/70">{group.items.map((title) => { const Icon = categoryIcons[title]; return <li key={title} className="flex gap-3 py-4"><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Icon className="size-4" /></span><div><h4 className="font-semibold text-brand-ink">{title}</h4><p className="mt-1 text-body-small leading-relaxed text-foreground-muted">{categoryDescriptions[title]}</p><p className="mt-2 text-caption font-bold uppercase tracking-[0.12em] text-brand-primary">En preparación</p></div></li> })}</ul></section>)}
           </div>
         </section>
-        <section aria-labelledby="transparency-contact" className="grid gap-5 border-t border-brand-sage/70 pt-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"><div><p className="public-eyebrow text-brand-primary">Consulta institucional</p><h2 id="transparency-contact" className="public-heading mt-3 text-brand-ink">¿Busca información específica?</h2><p className="mt-3 max-w-2xl text-body leading-relaxed text-foreground-muted">Use los canales oficiales para consultar por información que todavía no esté publicada en este portal.</p></div><Link to="/contacto" className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-deep px-5 font-semibold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring">Ir a contacto</Link></section>
+        <section aria-labelledby="transparency-contact" className="grid gap-5 rounded-surface bg-brand-deep p-6 text-brand-ivory md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:p-9"><div><p className="public-eyebrow text-brand-accent">Consulta institucional</p><h2 id="transparency-contact" className="font-heading text-heading-2 text-brand-ivory">¿Busca información específica?</h2><p className="mt-3 max-w-2xl text-body leading-relaxed text-brand-ivory/80">Use los canales oficiales para consultar por información que todavía no esté publicada en este portal.</p></div><Link to="/contacto" className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-ivory px-5 font-semibold text-brand-deep transition-colors hover:bg-white focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-brand-accent">Ir a contacto</Link></section>
       </SectionContainer>
     </>
   );
