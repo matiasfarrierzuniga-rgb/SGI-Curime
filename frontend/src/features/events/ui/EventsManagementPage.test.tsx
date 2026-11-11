@@ -17,7 +17,7 @@ const mutations = {
 describe('EventsManagementPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['pub.events.manage', 'pub.events.publish'] } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['events.proposal.create', 'events.proposal.review', 'events.proposal.approve', 'events.publish'] } } as never)
     vi.mocked(useEventMutations).mockReturnValue(mutations as never)
   })
 
@@ -43,7 +43,7 @@ describe('EventsManagementPage', () => {
   })
 
   it('uses permission codes rather than role names for publication actions', () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { role: 'Administrador', permissionCodes: ['pub.events.manage'] } } as never)
+    vi.mocked(useAuth).mockReturnValue({ user: { role: 'Administrador', permissionCodes: ['events.proposal.review'] } } as never)
     vi.mocked(useAdminEvents).mockReturnValue({ isPending: false, isError: false, data: [{ id: 1, publicId: 'event-1', title: 'Asamblea', summary: 'Resumen', description: null, startAt: '2030-01-02T10:00:00.000Z', endAt: null, location: null, status: 'SCHEDULED', publicationStatus: 'REVIEW', createdAt: '2030-01-01T10:00:00.000Z', updatedAt: '2030-01-01T10:00:00.000Z' }] } as never)
 
     render(<EventsManagementPage />)
