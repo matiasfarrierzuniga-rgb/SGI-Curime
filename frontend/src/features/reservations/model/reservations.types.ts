@@ -1,6 +1,6 @@
 export type ResourcePricingType = 'FREE' | 'FIXED'
 export type ReservableResource = { id: number; name: string; description: string | null; location: string | null; capacity: number | null; status: 'ACTIVE' | 'INACTIVE'; pricingType: ResourcePricingType; price: string | null; currency: string }
-export type CreateReservationRequest = { resourceId: number; startAt: string; endAt: string; purpose: string; estimatedAttendees?: number; notes?: string }
+export type CreateReservationRequest = { resourceId: number; startAt: string; endAt: string; activity: string; applicantCategory: string; purpose: string; estimatedAttendees?: number; notes?: string }
 export type ReservationAvailabilityResponse = { available: boolean }
 
 export type ReservationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'CONFIRMED' | 'COMPLETED'
@@ -20,6 +20,9 @@ export type AdminReservation = {
   startAt: string
   endAt: string
   purpose: string
+  activity: string | null
+  applicantCategory: string | null
+  tariffAmount: string | null
   estimatedAttendees: number | null
   notes: string | null
   status: ReservationStatus

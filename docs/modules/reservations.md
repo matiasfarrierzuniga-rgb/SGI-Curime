@@ -155,6 +155,16 @@ La creación ocurre dentro de una transacción `Serializable` y vuelve a comprob
 
 Si existe conflicto, responde con conflicto de disponibilidad en vez de crear una reserva solapada.
 
+### Actividad, categoría y tarifa
+
+Quien solicita elige una actividad y una categoría: grupos y comités, socios o particulares. El backend calcula y valida la tarifa; no acepta montos enviados por el navegador. Las combinaciones sin tarifa publicada se rechazan.
+
+La matriz vigente en Reservas toma como fuente la tabla aprobada en la sesión extraordinaria del 23-08-2026. Se guarda en cada solicitud una instantánea de actividad, categoría y monto. Al aprobar, Financiero crea el cargo usando ese monto. Las reservas históricas sin instantánea conservan su regla de precio previa.
+
+Actividades y montos (CRC): Bailes: 90.000 para las tres categorías; Actividades deportivas: sin tarifa; Bingo: 40.000 / 35.000 / 50.000; Té de canastilla, Cumpleaños y Boda: sin tarifa para grupos y comités, 35.000 para socios y 50.000 para particulares; Cine y Lunada: 40.000 solo para grupos y comités; Charlas: sin tarifa.
+
+Los únicos espacios disponibles para nuevas solicitudes son Salón Comunal y Play de los niños. El salón informa mobiliario (mesas y sillas), área de cocina y área de bar. La migración agrega el Play solo si aún no existe y no altera ni elimina recursos o reservas anteriores.
+
 ## Aprobación
 
 Solo una reserva `PENDING` puede aprobarse.
@@ -165,7 +175,7 @@ Antes de aprobar, el servicio vuelve a validar:
 2. que no exista otra reserva bloqueante para ese recurso y horario;
 3. que el recurso siga existiendo;
 4. que el recurso siga `ACTIVE`;
-5. que el recurso tenga pricing válido de tipo `FIXED` y precio positivo.
+5. para solicitudes nuevas, usar la tarifa guardada; las reservas históricas sin tarifa conservan la validación previa del precio del recurso.
 
 Después:
 
@@ -223,7 +233,7 @@ Este mecanismo protege especialmente:
 
 | Método | Ruta | Protección | Propósito |
 | --- | --- | --- | --- |
-| GET | `/reservable-resources` | JWT | Lista recursos activos |
+| GET | `/reservable-resources` | JWT | Lista Salón Comunal y Play de los niños cuando están activos |
 
 ### Reservas
 
@@ -271,6 +281,8 @@ Una reserva administrativa incluye, entre otros:
 - solicitante;
 - evento opcional;
 - inicio y fin;
+- actividad y categoría de quien solicita;
+- tarifa guardada para la solicitud;
 - propósito;
 - asistentes estimados;
 - notas;

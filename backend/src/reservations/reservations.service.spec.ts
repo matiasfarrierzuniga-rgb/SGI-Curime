@@ -22,6 +22,8 @@ function createDto(overrides = {}) {
     startAt,
     endAt,
     purpose: 'Actividad comunitaria',
+    activity: 'DANCES',
+    applicantCategory: 'GROUPS_COMMITTEES',
     ...overrides,
   };
 }
@@ -49,6 +51,9 @@ const adminSelect = {
   startAt: true,
   endAt: true,
   purpose: true,
+  activity: true,
+  applicantCategory: true,
+  tariffAmount: true,
   estimatedAttendees: true,
   notes: true,
   status: true,
@@ -81,6 +86,9 @@ function makeReservation(overrides: Record<string, unknown> = {}) {
     startAt,
     endAt,
     purpose: 'Reunión',
+    activity: null,
+    applicantCategory: null,
+    tariffAmount: null,
     estimatedAttendees: null,
     notes: null,
     status: ReservationStatus.PENDING,
@@ -141,6 +149,7 @@ describe('ReservationsService', () => {
     );
     prisma.reservableResource.findUnique.mockResolvedValue({
       id: 1,
+      name: "Salón Comunal",
       status: ReservableResourceStatus.ACTIVE,
       pricingType: ResourcePricingType.FIXED,
       price: new Prisma.Decimal('25000'),
@@ -183,7 +192,7 @@ describe('ReservationsService', () => {
 
     expect(prisma.reservableResource.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { status: ReservableResourceStatus.ACTIVE },
+        where: { status: ReservableResourceStatus.ACTIVE, name: { in: ['Salón Comunal', 'Play de los niños'] } },
         orderBy: { name: 'asc' },
       }),
     );
@@ -193,7 +202,7 @@ describe('ReservationsService', () => {
     await service.findPublicActiveResources();
 
     expect(prisma.reservableResource.findMany).toHaveBeenCalledWith({
-      where: { status: ReservableResourceStatus.ACTIVE },
+      where: { status: ReservableResourceStatus.ACTIVE, name: { in: ['Salón Comunal', 'Play de los niños'] } },
       select: {
         id: true, name: true, description: true, location: true, capacity: true,
         pricingType: true, price: true, currency: true,
@@ -328,6 +337,11 @@ describe('ReservationsService', () => {
         }),
       }),
     );
+  });
+
+  it('rejects an activity/category combination without a tariff', async () => {
+    await expect(service.create(createDto({ activity: 'SPORTS' }), 7)).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.reservation.create).not.toHaveBeenCalled();
   });
 
   it('rejects an unknown linked event', async () => {
@@ -551,6 +565,14 @@ describe('ReservationsService', () => {
       );
     });
 
+    it('creates the financial charge from the saved tariff snapshot', async () => {
+      const pending = makeReservation({ status: ReservationStatus.PENDING, tariffAmount: new Prisma.Decimal('90000') });
+      prisma.reservation.findUnique.mockResolvedValue(pending);
+      prisma.reservation.findFirst.mockResolvedValue(null);
+      await service.approve(1, 99);
+      expect(prisma.financialCharge.create).toHaveBeenCalledWith(expect.objectContaining({ data: { reservationId: 1, amount: pending.tariffAmount } }));
+    });
+
     it('validates availability excluding the own reservation', async () => {
       const pending = makeReservation({ status: ReservationStatus.PENDING });
       prisma.reservation.findUnique.mockResolvedValue(pending);
@@ -643,6 +665,7 @@ describe('ReservationsService', () => {
     function mockFreeResource() {
       prisma.reservableResource.findUnique.mockResolvedValue({
         id: 1,
+        name: "Salón Comunal",
         status: ReservableResourceStatus.ACTIVE,
         pricingType: ResourcePricingType.FREE,
         price: null,
@@ -652,6 +675,7 @@ describe('ReservationsService', () => {
     function mockFixedResource(price: Prisma.Decimal | null) {
       prisma.reservableResource.findUnique.mockResolvedValue({
         id: 1,
+        name: "Salón Comunal",
         status: ReservableResourceStatus.ACTIVE,
         pricingType: ResourcePricingType.FIXED,
         price,
