@@ -3,6 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
 import { SYSTEM_ADMIN_ROLE } from '../src/auth/domain/policies/canonical-role-catalog';
+import { getPostgresConnectionConfig } from '../src/prisma/postgres-connection';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -22,7 +23,7 @@ async function main(): Promise<void> {
   const adminPassword = requiredEnvironmentVariable('ADMIN_PASSWORD');
 
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    adapter: new PrismaPg(getPostgresConnectionConfig(connectionString)),
   });
 
   try {

@@ -1,7 +1,7 @@
 # Variables de entorno
 
 Estado: Vigente  
-Última revisión: 2026-09  
+Última revisión: 2026-11
 Fuente primaria: `.env.example`, `compose.yaml` y configuración actual de `main`
 
 ## Propósito
@@ -10,7 +10,9 @@ Este documento clasifica las variables de entorno utilizadas por SGI-Curime y ac
 
 ## Regla general
 
-`.env.example` es una plantilla de referencia para desarrollo local.
+`.env.example` es una plantilla de referencia para desarrollo local. Las
+plantillas no contienen credenciales funcionales. Cada entorno tiene una
+fuente distinta para sus conexiones y secretos.
 
 El archivo real `.env` no debe versionarse cuando contiene secretos o credenciales reales.
 
@@ -24,6 +26,21 @@ El archivo real `.env` no debe versionarse cuando contiene secretos o credencial
 | `POSTGRES_PORT` | Puerto publicado en host | No |
 
 En Docker, `compose.yaml` construye `DATABASE_URL` y `DIRECT_URL` usando el hostname interno `postgres`.
+
+### Perfiles de conexión
+
+| Entorno | `DATABASE_URL` | `DIRECT_URL` | Fuente |
+| --- | --- | --- | --- |
+| Node fuera de Docker | `localhost:5432` | `localhost:5432` | `backend/.env` ignorado |
+| Docker Compose | `postgres:5432` | `postgres:5432` | `compose.yaml` |
+| Supabase / Render | Session Pooler `:5432` | Session Pooler o conexión directa | secretos del proveedor |
+
+No copiar URLs de Supabase a `backend/.env` local ni URLs `localhost` a Render.
+El runtime NestJS identifica hosts Supabase y usa el certificado público
+`backend/certs/supabase-prod-ca-2021.crt` con verificación de CA y hostname.
+Prisma CLI recibe `sslmode=verify-full` y `sslrootcert` mediante
+`backend/prisma.config.ts`. `SUPABASE_CA_CERT_PATH` permite indicar una ruta
+montada alternativa.
 
 ## Puertos
 
@@ -44,7 +61,7 @@ En Docker, `compose.yaml` construye `DATABASE_URL` y `DIRECT_URL` usando el host
 
 En desarrollo local normalmente apuntan a `localhost`, pero en otros entornos deben reflejar URLs reales.
 
-## Administrador inicial
+## Administrador inicial (bootstrap)
 
 | Variable | Propósito | Sensible |
 | --- | --- | --- |
@@ -53,7 +70,15 @@ En desarrollo local normalmente apuntan a `localhost`, pero en otros entornos de
 | `ADMIN_EMAIL` | Correo inicial | Potencialmente |
 | `ADMIN_PASSWORD` | Contraseña inicial | Sí |
 
-Los valores de `.env.example` son únicamente de desarrollo y deben cambiarse en cualquier entorno real.
+Estas variables solo las consume `prisma/seed.ts` y las herramientas explícitas
+de bootstrap/reset. No son necesarias para que NestJS opere normalmente. En
+Compose no se inyectan al servicio backend. Para Supabase/Render deben
+entregarse solo al proceso controlado de inicialización, nunca versionarse ni
+quedar configuradas como variables permanentes del runtime.
+
+Los valores históricos presentes en `.env` locales son credenciales de
+desarrollo ignoradas por Git; no se modifican automáticamente. Deben
+reemplazarse por credenciales únicas antes de cualquier entorno compartido.
 
 ## JWT y sesión
 
@@ -115,6 +140,23 @@ postgresql://<user>:<password>@postgres:5432/<database>
 ```
 
 Cuando el backend corre fuera de Docker, esas URLs deben apuntar a una base accesible desde el host, normalmente con `localhost` o el hostname correspondiente.
+
+## Supabase y Render
+
+Render debe recibir `DATABASE_URL` con el Session Pooler de Supabase en puerto
+`5432` y `DIRECT_URL` para comandos Prisma autorizados. No se debe usar el
+Transaction Pooler `6543` para este backend persistente ni para migraciones.
+
+La imagen de backend incluye la CA oficial de Supabase y define
+`NODE_EXTRA_CA_CERTS=/app/certs/supabase-prod-ca-2021.crt`. El adaptador
+`@prisma/adapter-pg` además pasa explícitamente esa CA con
+`rejectUnauthorized: true`; no se permite desactivar la validación TLS.
+
+Fuente oficial de la CA:
+`https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt`
+
+Fingerprint SHA-256 validado localmente:
+`80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA`
 
 ## Variables del frontend
 

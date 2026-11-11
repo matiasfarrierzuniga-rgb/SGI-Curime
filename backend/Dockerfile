@@ -9,6 +9,7 @@ RUN apt-get update -y \
 FROM base AS build
 COPY package.json package-lock.json prisma.config.ts ./
 COPY prisma ./prisma
+COPY src/prisma/postgres-connection.ts ./src/prisma/postgres-connection.ts
 
 RUN npm ci
 
@@ -29,6 +30,8 @@ RUN mkdir -p /app/uploads \
 COPY --from=production-dependencies /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/certs/supabase-prod-ca-2021.crt ./certs/supabase-prod-ca-2021.crt
+ENV NODE_EXTRA_CA_CERTS=/app/certs/supabase-prod-ca-2021.crt
 USER node
 
 EXPOSE 3000

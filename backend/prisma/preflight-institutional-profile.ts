@@ -12,6 +12,7 @@ import {
   type MigrationRecord,
   type StructuralState,
 } from '../src/organization-profile/institutional-profile-preflight';
+import { getPostgresConnectionConfig } from '../src/prisma/postgres-connection';
 
 type Queryable = {
   $queryRaw<T>(query: Prisma.Sql): Promise<T>;
@@ -306,7 +307,7 @@ function requiredDatabaseUrl(): string {
 
 async function main(): Promise<void> {
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: requiredDatabaseUrl() }),
+    adapter: new PrismaPg(getPostgresConnectionConfig(requiredDatabaseUrl())),
   });
   try {
     console.log(JSON.stringify(safeInstitutionalPreflightReport(

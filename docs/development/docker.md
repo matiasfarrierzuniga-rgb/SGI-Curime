@@ -70,7 +70,6 @@ Variables relevantes:
 
 - conexión PostgreSQL;
 - URLs frontend/pública;
-- administrador inicial;
 - JWT y refresh tokens;
 - seguridad de activación, lockout y recuperación;
 - rate limiting público;
@@ -214,6 +213,15 @@ En particular, deben considerarse sensibles:
 - `JWT_SECRET`;
 - `GMAIL_APP_PASSWORD`;
 - credenciales externas futuras.
+
+La imagen también incluye la CA pública oficial de Supabase en
+`/app/certs/supabase-prod-ca-2021.crt` y define `NODE_EXTRA_CA_CERTS` para el
+runtime Node. Esto no cambia la conexión local de Docker: el host continúa
+siendo `postgres` y la base local continúa usando su volumen existente.
+
+Las variables `ADMIN_*` no se inyectan al servicio Compose. Son datos de
+bootstrap y solo deben suministrarse a una ejecución explícita de seed sobre
+un destino previamente identificado.
 
 Consulta `environment-variables.md`.
 

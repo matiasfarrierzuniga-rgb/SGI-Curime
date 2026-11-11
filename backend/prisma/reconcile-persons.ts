@@ -17,6 +17,7 @@ import {
   isUserReconciliationCandidate,
   toSource,
 } from '../src/identity-reconciliation/reconciliation-source-adapter';
+import { getPostgresConnectionConfig } from '../src/prisma/postgres-connection';
 
 const ADVISORY_LOCK_ID = 915202605;
 
@@ -84,9 +85,9 @@ async function main(): Promise<void> {
   assertWriteProtection();
   const manifestPath = requiredManifestPath();
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({
-      connectionString: requiredEnvironmentVariable('DATABASE_URL'),
-    }),
+    adapter: new PrismaPg(
+      getPostgresConnectionConfig(requiredEnvironmentVariable('DATABASE_URL')),
+    ),
   });
 
   try {
