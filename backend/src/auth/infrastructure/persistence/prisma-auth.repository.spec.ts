@@ -77,6 +77,7 @@ describe('PrismaAuthRepository', () => {
   beforeEach(() => {
     db = createDb();
     db.user.updateMany.mockResolvedValue({ count: 1 });
+    db.session.create.mockResolvedValue({ id: 12 });
     repository = new PrismaAuthRepository(db as unknown as PrismaService);
   });
 
@@ -252,7 +253,7 @@ describe('PrismaAuthRepository', () => {
         'refresh-hash',
         new Date('2026-09-02T00:00:00.000Z'),
       ),
-    ).resolves.toBe(4);
+    ).resolves.toEqual({ sessionId: 12, sessionGeneration: 4 });
 
     expect(db.session.create).toHaveBeenCalledWith({
       data: {
@@ -385,6 +386,25 @@ describe('PrismaAuthRepository', () => {
         revokedAt: anyDate,
         revocationReason: 'password-reset',
       },
+    });
+  });
+
+  it('increments generation and revokes sessions atomically', async () => {
+    db.session.updateMany.mockResolvedValueOnce({ count: 2 });
+
+    await expect(
+      repository.withTransaction((tx) =>
+        tx.invalidateUserSessions(5, 'logout-all'),
+      ),
+    ).resolves.toBe(2);
+
+    expect(db.user.updateMany).toHaveBeenCalledWith({
+      where: { id: 5, status: 'ACTIVE' },
+      data: { sessionGeneration: { increment: 1 } },
+    });
+    expect(db.session.updateMany).toHaveBeenCalledWith({
+      where: { userId: 5, revokedAt: null },
+      data: { revokedAt: anyDate, revocationReason: 'logout-all' },
     });
   });
 });

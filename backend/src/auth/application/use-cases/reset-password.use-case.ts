@@ -86,7 +86,7 @@ export class ResetPasswordUseCase {
             'RESET_TOKEN_NO_LONGER_VALID',
             'Reset token is no longer valid',
           );
-        return tx.revokeUserSessions(resetToken.userId, 'password-reset');
+        return tx.invalidateUserSessions(resetToken.userId, 'password-reset');
       },
     );
     if (revokedSessions > 0) {

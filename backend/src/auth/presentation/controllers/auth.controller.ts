@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
   HttpCode,
@@ -17,6 +18,7 @@ import { ActivateAccountUseCase } from '../../application/use-cases/activate-acc
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { LogoutUseCase } from '../../application/use-cases/logout.use-case';
+import { LogoutAllUseCase } from '../../application/use-cases/logout-all.use-case';
 import { RefreshSessionUseCase } from '../../application/use-cases/refresh-session.use-case';
 import { getRefreshCookiePolicy } from '../../application/config/refresh-token.config';
 import { RequestPasswordResetUseCase } from '../../application/use-cases/request-password-reset.use-case';
@@ -29,12 +31,14 @@ import { LoginDto } from '../dto/login.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../guards/optional-jwt-auth.guard';
 import { UnsupportedOperationGuard } from '../guards/unsupported-operation.guard';
 import { toAuthHttpError } from '../errors/auth-http-error.mapper';
 import { assertCookieRequestOrigin } from '../security/cookie-origin.policy';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
+type OptionalAuthenticatedRequest = Request & { user?: AuthenticatedUser };
 
 @Controller()
 export class AuthController {
@@ -42,6 +46,7 @@ export class AuthController {
     private readonly loginUseCase: LoginUseCase,
     private readonly refreshSessionUseCase: RefreshSessionUseCase,
     private readonly logoutUseCase: LogoutUseCase,
+    private readonly logoutAllUseCase: LogoutAllUseCase,
     private readonly activateAccountUseCase: ActivateAccountUseCase,
     private readonly requestPasswordResetUseCase: RequestPasswordResetUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
@@ -55,6 +60,7 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
+    assertCookieRequestOrigin(request);
     const result = await this.handle(() =>
       this.loginUseCase.execute(
         loginDto.email,
@@ -65,7 +71,6 @@ export class AuthController {
     this.setRefreshCookie(response, result.refreshToken);
     return {
       accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
       user: result.user,
     };
   }
@@ -77,10 +82,12 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const refreshToken = refreshTokenFrom(request, dto);
-    if (refreshTokenFromCookie(request, getRefreshCookiePolicy().name)) {
-      assertCookieRequestOrigin(request);
-    }
+    rejectBodyRefreshToken(dto);
+    const refreshToken = refreshTokenFromCookie(
+      request,
+      getRefreshCookiePolicy().name,
+    );
+    assertCookieRequestOrigin(request);
     const result = await this.handle(() =>
       this.refreshSessionUseCase.execute(refreshToken, this.context(request)),
     );
@@ -94,26 +101,49 @@ export class AuthController {
     );
     return {
       accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
     };
   }
 
   @Post(['auth/logout', 'logout'])
   @HttpCode(HttpStatus.OK)
+  @UseGuards(OptionalJwtAuthGuard)
   async logout(
     @Body() dto: RefreshTokenDto,
-    @Req() request: Request,
+    @Req() request: OptionalAuthenticatedRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
     const policy = getRefreshCookiePolicy();
-    const refreshToken = refreshTokenFrom(request, dto);
-    if (refreshTokenFromCookie(request, policy.name)) {
-      assertCookieRequestOrigin(request);
-    }
+    rejectBodyRefreshToken(dto);
+    const refreshToken = refreshTokenFromCookie(request, policy.name);
+    assertCookieRequestOrigin(request);
     try {
-      return await this.logoutUseCase.execute(
-        refreshToken,
-        this.context(request),
+      return await this.handle(() =>
+        this.logoutUseCase.execute(
+          refreshToken,
+          this.context(request),
+          request.user?.sessionId,
+        ),
+      );
+    } finally {
+      response.clearCookie(policy.name, {
+        ...policy.options,
+        maxAge: undefined,
+      });
+    }
+  }
+
+  @Post('auth/logout-all')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async logoutAll(
+    @Req() request: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const policy = getRefreshCookiePolicy();
+    assertCookieRequestOrigin(request);
+    try {
+      return await this.handle(() =>
+        this.logoutAllUseCase.execute(request.user.id, this.context(request)),
       );
     } finally {
       response.clearCookie(policy.name, {
@@ -178,7 +208,8 @@ export class AuthController {
   @Get('auth/me')
   @UseGuards(JwtAuthGuard)
   me(@Req() request: AuthenticatedRequest): AuthenticatedUser {
-    return request.user;
+    const { sessionId: _sessionId, ...user } = request.user;
+    return user;
   }
 
   @Get('auth/admin-test')
@@ -215,14 +246,10 @@ export class AuthController {
   }
 }
 
-function refreshTokenFrom(
-  request: Request,
-  dto: RefreshTokenDto,
-): string | undefined {
-  return (
-    refreshTokenFromCookie(request, getRefreshCookiePolicy().name) ??
-    dto.refreshToken
-  );
+function rejectBodyRefreshToken(dto: RefreshTokenDto): void {
+  if (dto.refreshToken !== undefined) {
+    throw new BadRequestException('Refresh credentials must be sent by cookie.');
+  }
 }
 
 function refreshTokenFromCookie(

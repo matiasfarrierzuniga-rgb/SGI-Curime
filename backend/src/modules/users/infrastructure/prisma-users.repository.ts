@@ -105,7 +105,7 @@ function toUser(user: SafeUser): User {
     : null;
   return {
     id: user.id,
-    fullName: canonicalName ?? user.fullName ?? 'Cuenta comunitaria',
+    fullName: canonicalName ?? user.fullName ?? 'Cuenta',
     identification: user.person?.identification ?? user.identification,
     identificationType:
       user.person?.identificationType ?? user.identificationType,

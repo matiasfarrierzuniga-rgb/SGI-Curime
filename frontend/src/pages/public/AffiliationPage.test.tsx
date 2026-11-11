@@ -41,6 +41,12 @@ async function reachApplication() {
   expect(await screen.findByRole('heading', { name: 'Información de la solicitud' })).toBeVisible()
 }
 
+async function chooseTerritory(label: string, value: string) {
+  await act(async () => {
+    fireEvent.change(screen.getByLabelText(label), { target: { value } })
+  })
+}
+
 function finishApplication() {
   fireEvent.change(screen.getByLabelText(/Fecha de nacimiento/), { target: { value: '01/01/1990' } })
   fireEvent.blur(screen.getByLabelText(/Fecha de nacimiento/))

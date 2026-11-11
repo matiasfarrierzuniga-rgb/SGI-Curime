@@ -1,9 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../model/AuthContext";
-import {
-  LEGACY_ROLE_COMMUNITY_ACCOUNT,
-  ROLE_COMMUNITY_ACCOUNT,
-} from "@/shared/security/roles";
+import { ROLE_COMMUNITY_ACCOUNT } from "@/shared/security/roles";
 
 export function InternalErpRoute() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -14,9 +11,7 @@ export function InternalErpRoute() {
   return (
     <Navigate
       to={
-        [ROLE_COMMUNITY_ACCOUNT, LEGACY_ROLE_COMMUNITY_ACCOUNT].includes(
-          user?.role ?? "",
-        )
+        user?.role === ROLE_COMMUNITY_ACCOUNT
           ? "/mi-comunidad"
           : "/servicios"
       }

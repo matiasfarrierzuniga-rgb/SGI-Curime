@@ -32,12 +32,14 @@ describe('JwtStrategy persisted RBAC mapping', () => {
     findCredentialsById,
     clearLockout: jest.fn(),
   } as unknown as AuthRepository;
+  const sessions = { findActiveById: jest.fn() };
   let strategy: JwtStrategy;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    strategy = new JwtStrategy(repository);
+    strategy = new JwtStrategy(repository, sessions as never);
     findCredentialsById.mockResolvedValue(account);
+    sessions.findActiveById.mockResolvedValue({ id: 7, userId: 1 });
   });
 
   it('returns current canonical role and persisted permission codes', async () => {
@@ -46,6 +48,8 @@ describe('JwtStrategy persisted RBAC mapping', () => {
         sub: 1,
         email: account.email,
         role: account.roleName,
+        sessionGeneration: 0,
+        sid: 7,
       }),
     ).resolves.toEqual({
       id: 1,
@@ -55,6 +59,7 @@ describe('JwtStrategy persisted RBAC mapping', () => {
       role: 'ROLE_SYSTEM_ADMIN',
       permissionCodes: ['usr.users.read'],
       canAccessErp: true,
+      sessionId: 7,
     });
     expect(findCredentialsById).toHaveBeenCalledWith(1);
   });
@@ -66,6 +71,7 @@ describe('JwtStrategy persisted RBAC mapping', () => {
         email: account.email,
         role: 'ROLE_COMMUNITY_USER',
         sessionGeneration: 0,
+        sid: 7,
       }),
     ).resolves.toMatchObject({
       role: 'ROLE_SYSTEM_ADMIN',
@@ -83,6 +89,7 @@ describe('JwtStrategy persisted RBAC mapping', () => {
           email: account.email,
           role: account.roleName,
           sessionGeneration: 0,
+          sid: 7,
         }),
       ).rejects.toBeInstanceOf(UnauthorizedException);
       expect(findCredentialsById).not.toHaveBeenCalled();
@@ -102,6 +109,7 @@ describe('JwtStrategy persisted RBAC mapping', () => {
         role: account.roleName,
         iat: 2000,
         sessionGeneration: 0,
+        sid: 7,
       }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     await expect(
@@ -111,18 +119,19 @@ describe('JwtStrategy persisted RBAC mapping', () => {
         role: account.roleName,
         iat: 2000,
         sessionGeneration: 1,
+        sid: 7,
       }),
     ).resolves.toBeDefined();
   });
 
-  it('accepts historical tokens only before the first deactivation', async () => {
+  it('rejects JWTs without sid', async () => {
     await expect(
       strategy.validate({
         sub: 1,
         email: account.email,
         role: account.roleName,
       }),
-    ).resolves.toBeDefined();
+    ).rejects.toBeInstanceOf(UnauthorizedException);
     findCredentialsById.mockResolvedValue({
       ...account,
       sessionGeneration: 1,
@@ -132,6 +141,7 @@ describe('JwtStrategy persisted RBAC mapping', () => {
         sub: 1,
         email: account.email,
         role: account.roleName,
+        sid: 7,
       }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
@@ -157,7 +167,7 @@ describe('JwtStrategy persisted RBAC mapping', () => {
       roleIsActive: false,
     });
     await expect(
-      strategy.validate({ sub: 1, email: account.email, role: account.roleName, sessionGeneration: 0 }),
+      strategy.validate({ sub: 1, email: account.email, role: account.roleName, sessionGeneration: 0, sid: 7 }),
     ).resolves.toMatchObject({ canAccessErp: false });
   });
 
@@ -166,12 +176,43 @@ describe('JwtStrategy persisted RBAC mapping', () => {
     findCredentialsById.mockRejectedValue(databaseError);
 
     const error: unknown = await strategy
-      .validate({ sub: 1, email: account.email, role: account.roleName })
+      .validate({ sub: 1, email: account.email, role: account.roleName, sid: 7 })
       .catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(UnauthorizedException);
     expect(error).not.toBe(databaseError);
     expect((error as UnauthorizedException).getStatus()).toBe(401);
     expect((error as UnauthorizedException).message).toBe('Unauthorized');
+  });
+
+  it.each([
+    ['foreign', { id: 7, userId: 2 }],
+    ['revoked or expired', null],
+  ])('rejects a %s session', async (_label, session) => {
+    sessions.findActiveById.mockResolvedValueOnce(session);
+
+    await expect(
+      strategy.validate({
+        sub: 1,
+        email: account.email,
+        role: account.roleName,
+        sessionGeneration: 0,
+        sid: 7,
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('fails closed when session lookup fails', async () => {
+    sessions.findActiveById.mockRejectedValueOnce(new Error('database unavailable'));
+
+    await expect(
+      strategy.validate({
+        sub: 1,
+        email: account.email,
+        role: account.roleName,
+        sessionGeneration: 0,
+        sid: 7,
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

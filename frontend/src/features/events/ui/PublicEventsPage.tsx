@@ -15,6 +15,8 @@ function formatDate(value: string) {
 
 export function PublicEventsPage() {
   const eventsQuery = usePublicEvents()
+  const upcomingEvents = (eventsQuery.data ?? []).filter((event) => !getPublicEventPresentation(event).isPast)
+  const pastEvents = (eventsQuery.data ?? []).filter((event) => getPublicEventPresentation(event).isPast)
 
   useEffect(() => {
     document.title = 'Eventos | ADI Curime'
@@ -29,15 +31,14 @@ export function PublicEventsPage() {
 
   return (
     <>
-      <PublicPageHeader breadcrumb="Eventos" eyebrow="Agenda comunitaria" title="Eventos" intro="Consulte las actividades comunicadas oficialmente por la Asociación." />
+      <PublicPageHeader breadcrumb="Eventos" eyebrow="Agenda comunitaria" title="Eventos" intro="Consulte las actividades comunicadas oficialmente por la Asociación." image={{ src: '/images/public/home/community-curime-wide.webp', mobileSrc: '/images/public/home/community-curime-mobile.webp', alt: 'Actividad comunitaria en Curime.' }} />
       <PublicPageContent className="bg-brand-ivory">
         <section aria-label="Eventos publicados">
           {eventsQuery.isPending ? <LoadingState label="Cargando eventos publicados..." /> : null}
           {eventsQuery.isError ? <ErrorState message={getErrorMessage(eventsQuery.error, 'No fue posible cargar los eventos publicados.')} action={<button className="min-h-11 rounded-md border border-border px-4 font-semibold" type="button" onClick={() => void eventsQuery.refetch()}>Reintentar</button>} /> : null}
           {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length === 0 ? <EmptyState title="No hay eventos publicados en este momento" description="Cuando la Asociación publique una actividad, aparecerá en esta agenda." /> : null}
-          {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length > 0 ? (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {eventsQuery.data.map((event) => {
+          {!eventsQuery.isPending && !eventsQuery.isError && eventsQuery.data.length > 0 ? <div className="space-y-10">
+            <section aria-labelledby="upcoming-events-title"><div className="mb-5 flex items-end justify-between gap-4 border-b border-brand-sage/70 pb-4"><div><p className="public-eyebrow text-brand-primary">Agenda comunitaria</p><h2 id="upcoming-events-title" className="mt-2 font-heading text-heading-2 text-brand-ink">Próximas actividades</h2></div></div>{upcomingEvents.length === 0 ? <EmptyState title="No hay próximas actividades publicadas" description="Las nuevas actividades aparecerán aquí cuando la Asociación las comunique oficialmente." /> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{upcomingEvents.map((event) => {
                 const presentation = getPublicEventPresentation(event)
                 return <article key={event.publicId} className={`flex min-w-0 flex-col rounded-xl border bg-white p-6 shadow-sm ${presentation.isPast ? 'border-brand-sage/80' : 'border-border'}`}>
                   <div className="flex items-start justify-between gap-4">
@@ -51,9 +52,9 @@ export function PublicEventsPage() {
                   </dl>
                   <Link aria-label={`Ver detalle de ${event.title}`} className="mt-6 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to={`/eventos/${event.publicId}`}>Ver detalle</Link>
                 </article>
-              })}
-            </div>
-          ) : null}
+              })}</div>}</section>
+            {pastEvents.length > 0 ? <section aria-labelledby="past-events-title"><div className="mb-5 border-b border-brand-sage/70 pb-4"><p className="public-eyebrow text-brand-primary">Archivo</p><h2 id="past-events-title" className="mt-2 font-heading text-heading-2 text-brand-ink">Eventos anteriores</h2></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{pastEvents.map((event) => { const presentation = getPublicEventPresentation(event); return <article key={event.publicId} className="flex min-w-0 flex-col rounded-surface border border-brand-sage/80 bg-card-white p-6 shadow-sm"><p className="text-caption font-bold uppercase tracking-[0.14em] text-foreground-muted">{presentation.label}</p><h3 className="mt-4 font-heading text-heading-3 text-brand-ink"><Link to={`/eventos/${event.publicId}`} className="hover:text-brand-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring">{event.title}</Link></h3><p className="mt-3 flex-1 text-body-small leading-relaxed text-foreground-muted">{event.summary}</p><Link to={`/eventos/${event.publicId}`} className="mt-6 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring">Ver detalle</Link></article> })}</div></section> : null}
+          </div> : null}
         </section>
       </PublicPageContent>
     </>

@@ -1,5 +1,4 @@
 export const ROLE_COMMUNITY_ACCOUNT = "ROLE_COMMUNITY_USER";
-export const LEGACY_ROLE_COMMUNITY_ACCOUNT = "Cuenta comunitaria";
 
 export type RoleLike =
   | string
@@ -21,9 +20,7 @@ export function getRoleName(role: RoleLike): string | undefined {
 
 export function homePathForRole(role: RoleLike, canAccessErp = false): string {
   if (
-    [ROLE_COMMUNITY_ACCOUNT, LEGACY_ROLE_COMMUNITY_ACCOUNT].includes(
-      getRoleName(role) ?? "",
-    )
+    getRoleName(role) === ROLE_COMMUNITY_ACCOUNT
   )
     return "/mi-comunidad";
   return getRoleName(role) && canAccessErp ? "/app" : "/servicios";

@@ -13,7 +13,6 @@ import {
 } from '../ports/auth-repository.port';
 import { TOKEN_SERVICE, type TokenService } from '../ports/token-service.port';
 import { SessionService } from '../services/session.service';
-import { isSubscriptionExpired } from '../../domain/policies/subscription-expiration.policy';
 import {
   REFRESH_TOKEN_SERVICE,
   type RefreshTokenPort,
@@ -58,14 +57,6 @@ export class RefreshSessionUseCase {
       await this.auditFailure(context, session.userId);
       throw invalidRefresh();
     }
-    if (isSubscriptionExpired(user.roleName, user.subscriptionExpirationDate)) {
-      await this.auditFailure(context, session.userId);
-      throw new AuthApplicationError(
-        'SUBSCRIPTION_EXPIRED',
-        'Subscription has expired',
-      );
-    }
-
     const nextRefreshToken = this.refreshTokens.generate();
     const rotated = await this.sessions.rotate(
       session.id,
@@ -83,6 +74,7 @@ export class RefreshSessionUseCase {
       email: user.email,
       role: user.roleName,
       sessionGeneration: user.sessionGeneration,
+      sid: session.id,
     });
     await recordAuditBestEffort(this.audit, {
       userId: user.id,

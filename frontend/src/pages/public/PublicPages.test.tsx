@@ -84,7 +84,7 @@ describe('portal público', () => {
     expect(main.getAllByText('En preparación')).toHaveLength(7)
     expect(main.getByText('Informes de gestión y resultados de la Asociación.')).toBeVisible()
     expect(main.getAllByRole('listitem')).toHaveLength(7)
-    expect(main.getAllByRole('link')).toHaveLength(1) // Solo la ruta de Inicio del breadcrumb.
+    expect(main.getAllByRole('link')).toHaveLength(2) // Inicio del breadcrumb y consulta institucional.
   })
 
   it('mantiene fuera del listado las noticias pendientes y muestra el estado vacío', () => {
@@ -289,6 +289,7 @@ describe('portal público', () => {
     expect(container.querySelectorAll('main h1')).toHaveLength(1)
     expect(headings).toEqual([
       'Curime, más cerca de su comunidad',
+      'Lo que puede hacer hoy',
       'Encuentre lo que necesita',
       'Próximas actividades',
       'Lo más reciente',
@@ -302,7 +303,7 @@ describe('portal público', () => {
     renderPublic()
     expect(screen.getByRole('heading', { name: /encuentre lo que necesita/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /consultar sobre afiliación/i })).toHaveAttribute('href', '/afiliacion')
-    expect(screen.getByRole('link', { name: /agenda y eventos/i })).toHaveAttribute('href', '/eventos')
+    expect(screen.getByRole('link', { name: /ver agenda completa/i })).toHaveAttribute('href', '/eventos')
     const communityAccess = within(screen.getByRole('navigation', { name: 'Accesos comunitarios' }))
     expect(communityAccess.getByRole('link', { name: /emprendimientos/i })).toHaveAttribute('href', '/ventures')
     expect(screen.getByRole('link', { name: /ver todo/i })).toHaveAttribute('href', '/noticias')

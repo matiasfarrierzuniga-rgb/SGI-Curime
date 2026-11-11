@@ -12,8 +12,20 @@ import {
   USERS_REPOSITORY,
   type UsersRepository,
 } from '../../domain/repositories/users-repository';
-import type { RegisterUserData } from './register-user.use-case';
 import { SYSTEM_ADMIN_ROLE } from '../../../../auth/domain/policies/canonical-role-catalog';
+
+export interface RegisterUserData {
+  firstName: string;
+  firstSurname: string;
+  secondSurname?: string;
+  identificationType: 'NATIONAL' | 'DIMEX';
+  identification: string;
+  email: string;
+  phoneCountryCode?: string;
+  phoneNationalNumber?: string;
+  address?: string;
+  password: string;
+}
 
 export interface AdministratorRegistrationActor {
   id: number;

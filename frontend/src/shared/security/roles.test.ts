@@ -25,6 +25,6 @@ describe("shared security role policy", () => {
     expect(homePathForRole("Administrador", false)).toBe("/servicios");
     expect(homePathForRole(undefined)).toBe("/servicios");
     expect(homePathForRole("ROLE_COMMUNITY_USER")).toBe("/mi-comunidad");
-    expect(homePathForRole("Cuenta comunitaria")).toBe("/mi-comunidad");
+    expect(homePathForRole("Cuenta comunitaria")).toBe("/servicios");
   });
 });
