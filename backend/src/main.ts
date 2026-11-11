@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { getFrontendOrigin } from './auth/application/config/frontend-origin.config';
+import { getFrontendOrigins } from './auth/application/config/frontend-origin.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -19,7 +19,7 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: getFrontendOrigin(),
+    origin: getFrontendOrigins(),
     credentials: true,
   });
   app.enableShutdownHooks();
