@@ -394,12 +394,12 @@ export function ContactPage() {
         breadcrumb="Contacto"
       />
       <SectionContainer>
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:gap-12 xl:gap-16">
-          <div className="min-w-0 lg:py-4">
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12 xl:gap-16">
+          <section aria-labelledby="contact-channels-title" className="min-w-0 rounded-surface bg-surface-muted p-6 md:p-8 lg:py-9">
             <p className="public-eyebrow text-brand-primary">Canales confirmados</p>
-            <h2 className="public-heading mt-3 text-brand-ink">Contáctese con nosotros</h2>
+            <h2 id="contact-channels-title" className="public-heading mt-3 text-brand-ink">Contáctese con nosotros</h2>
             <p className="mt-4 max-w-xl text-pretty text-body-large leading-relaxed text-foreground-muted">Use estos canales oficiales para realizar una consulta directamente con la Asociación.</p>
-            <div className="mt-8 divide-y divide-brand-sage/70 border-y border-brand-sage/70" aria-label="Canales oficiales de contacto">
+            <div className="mt-8 divide-y divide-brand-sage/70 border-y border-brand-sage/70">
               {channels.map(({ name, detail, action, ariaLabel, href, icon: Icon, external }) => (
                 <article key={name} className="grid min-w-0 grid-cols-[auto_1fr] gap-4 py-5 first:pt-0 last:pb-0">
                   <div aria-hidden="true" className="grid size-11 place-items-center rounded-control bg-brand-soft/20 text-brand-deep">
@@ -421,10 +421,10 @@ export function ContactPage() {
                 </article>
               ))}
             </div>
-          </div>
+          </section>
           <ContactForm />
         </div>
-        <aside className="mt-10 grid gap-5 border-t border-brand-sage/70 pt-7 md:grid-cols-[auto_minmax(0,1fr)] md:items-start"><span aria-hidden="true" className="grid size-12 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Landmark className="size-6" /></span><div><p className="public-eyebrow text-brand-primary">Orientación</p><h2 className="mt-2 font-heading text-heading-2 text-brand-ink">Canales para la comunidad</h2><p className="mt-2 max-w-3xl text-body leading-relaxed text-foreground-muted">{site.location}. El formulario prepara su mensaje; para comunicarse con la Asociación use el correo o las redes oficiales mostradas arriba.</p></div></aside>
+        <aside className="mt-10 grid gap-5 border-l-4 border-brand-accent bg-brand-ivory px-6 py-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-start md:gap-6 md:px-8 md:py-6"><span aria-hidden="true" className="grid size-12 place-items-center rounded-control bg-brand-accent/25 text-brand-deep"><Landmark className="size-6" /></span><div><p className="public-eyebrow text-brand-primary">Orientación</p><h2 className="mt-2 font-heading text-heading-2 text-brand-ink">Canales para la comunidad</h2><p className="mt-2 max-w-3xl text-body leading-relaxed text-foreground-muted">{site.location}. El formulario prepara su mensaje; para comunicarse con la Asociación use el correo o las redes oficiales mostradas arriba.</p></div></aside>
       </SectionContainer>
     </>
   );
