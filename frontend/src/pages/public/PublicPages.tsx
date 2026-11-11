@@ -4,7 +4,6 @@ import { moduleAvailability, services, site } from "../../content/publicSiteCont
 import { publicContentService } from "../../services/publicContentService";
 import {
   Breadcrumbs,
-  CTASection,
   EmptyContentState,
   NewsCard,
   PublicPageHeader,
@@ -20,11 +19,6 @@ const transparencyGroups = [
   { title: 'Marco institucional', items: ['Información relacionada con DINADECO'] },
 ] as const;
 export function AboutPage() {
-  const valueCards = [
-    { title: "Comunidad", description: "Personas unidas por un propósito común.", icon: UsersRound },
-    { title: "Desarrollo local", description: "Más oportunidades para nuestra gente.", icon: Building2 },
-    { title: "Transparencia", description: "Una gestión responsable y abierta a la comunidad.", icon: Landmark },
-  ] as const;
   const identityCards = [
     { title: "Misión", icon: Target, description: "Promover el desarrollo integral de la comunidad de Curime mediante proyectos y servicios que generen bienestar y oportunidades para todas las personas." },
     { title: "Visión", icon: Building2, description: "Ser una Asociación reconocida por su liderazgo, transparencia y capacidad de gestión, contribuyendo al desarrollo sostenible de Curime y sus alrededores." },
@@ -42,8 +36,8 @@ export function AboutPage() {
             <img src="/images/public/home/hero-curime-fallback.jpg" alt="Paisaje rural de Curime, Guanacaste." width="1600" height="1200" className="size-full object-cover object-[58%_59%]" />
           </picture>
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-brand-ivory via-brand-ivory/90 to-brand-ivory/40 lg:bg-gradient-to-r" />
-          <div className="relative flex min-h-[22rem] items-center px-5 py-12 md:min-h-[26rem] md:px-10 lg:min-h-[30rem] lg:px-12">
-            <div className="max-w-xl">
+          <div className="relative flex min-h-[22rem] items-center px-5 py-12 md:min-h-[25rem] md:px-10 lg:min-h-[28rem] lg:px-12 xl:min-h-[30rem]">
+            <div className="max-w-xl lg:max-w-[35rem]">
               <p className="public-eyebrow text-brand-primary">ADI Curime · Nicoya · Guanacaste</p>
               <h1 id="about-title" className="public-heading mt-4 text-display text-brand-ink">Conozca nuestra <span className="block">Asociación</span></h1>
               <p className="mt-5 text-body-large leading-relaxed text-foreground-muted">Trabajamos por el desarrollo integral de nuestra comunidad, con transparencia y compromiso.</p>
@@ -55,21 +49,21 @@ export function AboutPage() {
       <SectionContainer className="space-y-10 md:space-y-16">
         <section aria-labelledby="about-intro" className="grid gap-7 border-b border-brand-sage/70 pb-10 lg:grid-cols-[minmax(14rem,4fr)_minmax(0,6fr)] lg:gap-12 lg:pb-14">
           <div><p className="public-eyebrow text-brand-primary">La Asociación</p><h2 id="about-intro" className="public-heading mt-3 text-brand-ink">Quiénes somos</h2></div>
-          <div className="max-w-3xl space-y-4 text-pretty text-body-large leading-relaxed text-foreground-muted"><p>La Asociación de Desarrollo Integral de Curime cuenta con este espacio para presentar su identidad, historia y organización a la comunidad.</p><p>Los datos institucionales específicos se publicarán cuando hayan sido revisados y autorizados por la Asociación.</p></div>
+          <div className="max-w-3xl space-y-4 text-pretty text-body-large leading-relaxed text-foreground-muted"><p>La Asociación de Desarrollo Integral de Curime cuenta con este espacio para presentar su identidad, historia y organización a la comunidad.</p><p>Personas unidas por un propósito común.</p><p>Los datos institucionales específicos se publicarán cuando hayan sido revisados y autorizados por la Asociación.</p></div>
         </section>
-        <section aria-labelledby="about-values">
-          <div className="mb-8 grid gap-4 lg:grid-cols-[minmax(14rem,4fr)_minmax(0,6fr)] lg:gap-12"><div><p className="public-eyebrow text-brand-primary">Identidad institucional</p><h2 id="about-values" className="public-heading mt-3 text-brand-ink">Valores por validar</h2></div><p className="max-w-2xl text-pretty text-body leading-relaxed text-foreground-muted">Estas categorías son una propuesta de presentación. Su contenido institucional está pendiente de validación con la ADI.</p></div>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:items-stretch">
-            <div className="divide-y divide-brand-sage/70 border-y border-brand-sage/70">{valueCards.map(({ title, description, icon: Icon }) => <article key={title} className="flex items-center gap-4 py-5 first:pt-0 last:pb-0"><span className="grid size-12 shrink-0 place-items-center rounded-full bg-brand-deep text-brand-ivory"><Icon className="size-6" aria-hidden="true" /></span><div><h3 className="font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-1 text-body-small text-foreground-muted">{description}</p></div></article>)}</div>
-            <figure className="min-h-64 overflow-hidden rounded-surface border border-brand-sage/70 bg-surface-muted shadow-surface"><img src="/images/public/home/community-curime-fallback.jpg" alt="Espacio de encuentro comunitario en Curime." width="1500" height="1000" loading="lazy" className="size-full object-cover" /></figure>
+        <section aria-labelledby="identity-title">
+          <div className="mb-8 grid gap-4 lg:grid-cols-[minmax(14rem,4fr)_minmax(0,6fr)] lg:items-end lg:gap-12"><div><p className="public-eyebrow text-brand-primary">Nuestra orientación</p><h2 id="identity-title" className="public-heading mt-3 text-brand-ink">Misión, visión y objetivos</h2></div><p className="max-w-2xl text-pretty text-body leading-relaxed text-foreground-muted">Textos propuestos, pendientes de validación institucional.</p></div>
+          <div className="grid divide-y divide-brand-sage/70 border-y border-brand-sage/70 md:grid-cols-3 md:divide-x md:divide-y-0">{identityCards.map(({ title, icon: Icon, description }) => <article key={title} className="py-6 md:px-6 md:first:pl-0 md:last:pr-0"><span className="grid size-12 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Icon className="size-5" aria-hidden="true" /></span><h3 className="mt-5 font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-3 text-body-small leading-relaxed text-foreground-muted">{description}</p></article>)}</div>
+        </section>
+        <section aria-labelledby="notice-title" className="rounded-surface border border-brand-sage/70 bg-surface-muted p-6 md:p-8">
+          <div className="mb-7"><p className="public-eyebrow text-brand-primary">Información pendiente</p><h2 id="notice-title" className="public-heading mt-3 text-brand-ink">Historia y Junta Directiva</h2><p className="mt-3 max-w-2xl text-pretty text-body leading-relaxed text-foreground-muted">Publicar solo información institucional validada.</p></div>
+          <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
+            <article className="border-t border-brand-sage/70 pt-5"><div className="flex items-start gap-4"><span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-full bg-brand-accent/25 text-brand-deep"><CalendarDays className="size-6" /></span><div><h3 id="history-title" className="font-heading text-heading-3 text-brand-ink">Nuestra historia</h3><p className="mt-3 text-body leading-relaxed text-foreground-muted">La historia institucional se publicará cuando las fechas y acontecimientos hayan sido revisados con la ADI. Por ahora, no se presentan hitos ni cronologías sin validación.</p></div></div></article>
+            <article className="border-t border-brand-sage/70 pt-5"><div className="flex items-start gap-4"><span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-full bg-brand-deep text-brand-ivory"><UsersRound className="size-6" /></span><div><h3 id="governance-title" className="font-heading text-heading-3 text-brand-ink">Junta Directiva</h3><p className="mt-3 text-body leading-relaxed text-foreground-muted">Integrantes, cargos y período pendientes de validación con la ADI. No se publica una nómina sin confirmación institucional.</p></div></div></article>
           </div>
         </section>
-        <section aria-labelledby="identity-title"><div className="mb-8"><p className="public-eyebrow text-brand-primary">Nuestra identidad</p><h2 id="identity-title" className="public-heading mt-3 text-brand-ink">Misión, visión y objetivos</h2><p className="mt-3 max-w-2xl text-body text-foreground-muted">Textos propuestos, pendientes de validación institucional.</p></div><div className="grid divide-y divide-brand-sage/70 border-y border-brand-sage/70 md:grid-cols-3 md:divide-x md:divide-y-0">{identityCards.map(({ title, icon: Icon, description }) => <article key={title} className="py-6 md:px-6 md:first:pl-0 md:last:pr-0"><span className="grid size-12 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Icon className="size-5" aria-hidden="true" /></span><h3 className="mt-5 font-heading text-heading-3 text-brand-ink">{title}</h3><p className="mt-3 text-body-small leading-relaxed text-foreground-muted">{description}</p></article>)}</div></section>
-        <section aria-labelledby="history-title" className="grid gap-6 border-y border-brand-sage/70 py-8 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-8 md:py-10"><span aria-hidden="true" className="grid size-14 place-items-center rounded-full bg-brand-accent/25 text-brand-deep"><CalendarDays className="size-7" /></span><div><p className="public-eyebrow text-brand-primary">Trayectoria</p><h2 id="history-title" className="public-heading mt-3 text-brand-ink">Nuestra historia</h2><p className="mt-3 max-w-3xl text-pretty text-body leading-relaxed text-foreground-muted">La historia institucional se publicará cuando las fechas y acontecimientos hayan sido revisados con la ADI. Por ahora, no se presentan hitos ni cronologías sin validación.</p></div></section>
-        <section aria-labelledby="governance-title" className="grid gap-7 rounded-surface bg-brand-deep p-6 text-brand-ivory md:p-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-12"><div><p className="public-eyebrow text-brand-accent">Organización</p><h2 id="governance-title" className="public-heading mt-3 text-brand-ivory">Junta Directiva</h2></div><div className="flex items-center gap-5 rounded-surface border border-brand-ivory/30 p-5"><span className="grid size-14 shrink-0 place-items-center rounded-full bg-brand-ivory/15"><UsersRound className="size-7" aria-hidden="true" /></span><p className="text-body leading-relaxed text-brand-ivory">Integrantes, cargos y período pendientes de validación con la ADI. No se publica una nómina sin confirmación institucional.</p></div></section>
-        <section aria-labelledby="about-participation" className="grid gap-5 border-t border-brand-sage/70 pt-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"><div><p className="public-eyebrow text-brand-primary">Participación comunitaria</p><h2 id="about-participation" className="public-heading mt-3 text-brand-ink">Conozca cómo participar</h2><p className="mt-3 max-w-2xl text-body leading-relaxed text-foreground-muted">Explore oportunidades, actividades y canales oficiales de la Asociación sin asumir funciones, cargos o procesos aún no publicados.</p></div><Link to="/comunidad" className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-deep px-5 font-semibold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring">Ir a comunidad</Link></section>
+        <section aria-labelledby="about-participation" className="rounded-surface bg-brand-deep px-6 py-8 text-brand-ivory md:px-10 md:py-10"><p className="public-eyebrow text-brand-accent">Formar parte</p><div className="mt-3 grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-10"><div><h2 id="about-participation" className="font-heading text-heading-2 font-normal text-brand-ivory">Conozca las formas de participación</h2><p className="mt-3 max-w-2xl text-body leading-relaxed text-brand-ivory/80">Explore oportunidades, actividades y canales oficiales de la Asociación sin asumir funciones, cargos o procesos aún no publicados.</p></div><Link to="/comunidad" className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-accent px-5 font-semibold text-brand-deep transition-colors hover:bg-brand-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-accent">Ir a comunidad</Link></div></section>
       </SectionContainer>
-      <CTASection />
     </>
   );
 }
