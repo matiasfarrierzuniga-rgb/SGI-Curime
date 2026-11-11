@@ -215,85 +215,70 @@ export function ServicesPage() {
   return (
     <>
       <Seo title="Servicios" description="Servicios digitales de ADI Curime." />
-      <section aria-labelledby="services-title" className="relative isolate overflow-hidden bg-brand-ivory">
-        <div className="public-container relative z-20"><Breadcrumbs current="Servicios" variant="hero" /></div>
-        <picture className="relative mx-4 mt-8 block aspect-[16/10] overflow-hidden rounded-surface border border-brand-sage/70 shadow-surface lg:absolute lg:inset-y-0 lg:right-0 lg:mx-0 lg:mt-0 lg:h-full lg:w-[62%] lg:aspect-auto lg:rounded-none lg:border-0 lg:shadow-none">
-          <source media="(max-width: 767px)" srcSet="/images/public/home/hero-curime-mobile.webp" />
-          <source srcSet="/images/public/home/hero-curime-wide.webp" />
-          <img src="/images/public/home/hero-curime-fallback.jpg" alt="Paisaje rural de Curime, Guanacaste." width="1600" height="1200" className="size-full object-cover object-[58%_59%]" />
-        </picture>
-        <div aria-hidden="true" className="absolute inset-y-0 left-[32%] z-10 hidden w-[30%] bg-gradient-to-r from-brand-ivory to-transparent lg:block" />
-        <div className="public-container relative z-20 flex items-center py-12 md:py-16 lg:min-h-[34rem]">
-          <div className="max-w-xl">
-            <p className="public-eyebrow text-brand-primary">ADI Curime · Servicios a la comunidad</p>
-            <h1 id="services-title" className="public-heading mt-4 text-display text-brand-ink">Servicios para la comunidad</h1>
-            <p className="mt-5 max-w-[50ch] text-body-large leading-relaxed text-foreground-muted">Conozca las gestiones que puede iniciar en línea y las opciones que la Asociación está preparando para la comunidad.</p>
-            <a href="#servicios-disponibles" className="mt-7 inline-flex min-h-11 items-center justify-center rounded-control bg-brand-deep px-6 font-semibold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">Explorar servicios</a>
+      <section aria-labelledby="services-title" className="border-b border-brand-sage/70 bg-surface-muted">
+        <div className="public-container">
+          <Breadcrumbs current="Servicios" variant="hero" />
+          <div className="grid overflow-hidden rounded-surface border border-brand-sage/70 bg-brand-ivory md:grid-cols-[1.02fr_0.98fr] md:items-stretch">
+            <div className="flex flex-col justify-center px-5 py-10 sm:px-8 md:py-11 lg:min-h-72 lg:px-12">
+              <p className="public-eyebrow text-brand-primary">Gestiones comunitarias</p>
+              <h1 id="services-title" className="public-heading mt-3 text-display text-brand-ink">Servicios para la comunidad</h1>
+              <p className="mt-4 max-w-[38ch] text-pretty text-body-large leading-relaxed text-foreground-muted">Elija qué necesita hacer. Las solicitudes se revisan; no implican aprobación automática.</p>
+              <a href="#servicios-disponibles" className="mt-6 inline-flex min-h-11 w-fit items-center justify-center rounded-control bg-brand-deep px-5 font-semibold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">Explorar servicios</a>
+            </div>
+            <picture className="block aspect-[16/10] overflow-hidden bg-surface-muted md:aspect-[16/10] lg:min-h-full lg:aspect-auto">
+              <source media="(max-width: 767px)" srcSet="/images/public/home/hero-curime-mobile.webp" />
+              <source srcSet="/images/public/home/hero-curime-wide.webp" />
+              <img src="/images/public/home/hero-curime-fallback.jpg" alt="Paisaje rural de Curime, Guanacaste." width="1600" height="1200" className="size-full object-cover object-[58%_59%]" />
+            </picture>
           </div>
         </div>
       </section>
-      <section id="servicios-disponibles" aria-labelledby="available-services-title" className="border-b border-brand-sage/70 bg-surface-muted py-12 md:py-16">
+      <section id="servicios-disponibles" aria-labelledby="available-services-title" className="border-b border-brand-sage/70 bg-card-white py-10 md:py-14">
         <div className="public-container">
-          <header className="mb-8 max-w-3xl md:mb-10">
+          <header className="mb-7 max-w-3xl md:mb-9">
             <p className="public-eyebrow text-brand-primary">Servicios disponibles</p>
             <h2 id="available-services-title" className="public-heading mt-3 text-heading-1 text-brand-ink">Gestiones que puede iniciar en línea</h2>
             <p className="mt-4 text-body leading-relaxed text-foreground-muted">Cada servicio indica cómo comenzar y qué ocurre después de enviar una solicitud o consultar información.</p>
           </header>
-          <div className="grid gap-6 lg:grid-cols-2">
-            {services.filter((item) => moduleAvailability[item.key].enabled).map((item) => {
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {services.map((item) => {
               const detail = serviceDetails[item.key];
               const Icon = detail.icon;
-              return <article key={item.key} className="flex flex-col overflow-hidden rounded-surface border border-border bg-card-white shadow-sm">
-                <figure className="relative aspect-[16/9] overflow-hidden bg-surface-muted">
-                  <img src={detail.image} alt={detail.alt} width="1500" height="1000" loading="lazy" className="size-full object-cover" />
-                  <span className="absolute left-4 top-4 inline-flex min-h-9 items-center gap-2 rounded-control bg-brand-ivory/95 px-3 text-body-small font-semibold text-brand-deep shadow-sm"><Icon className="size-4" aria-hidden="true" />Disponible</span>
-                </figure>
-                <div className="flex flex-1 flex-col p-5 md:p-7">
-                  <h3 className="font-heading text-heading-2 font-normal text-brand-ink">{item.title}</h3>
-                  <p className="mt-3 flex-1 text-body leading-relaxed text-foreground-muted">{detail.description}</p>
-                  <ol className="mt-6 grid gap-3 sm:grid-cols-3">
+              const enabled = moduleAvailability[item.key].enabled;
+              return <article key={item.key} className="flex min-h-full flex-col rounded-surface border border-brand-sage/70 bg-card-white p-5 transition-[border-color,box-shadow] hover:border-brand-primary hover:shadow-md md:p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <span aria-hidden="true" className="grid size-10 place-items-center rounded-control bg-brand-soft/20 text-brand-deep"><Icon className="size-5" /></span>
+                  <span className={`inline-flex min-h-8 items-center rounded-control px-3 text-caption font-bold uppercase tracking-[0.1em] ${enabled ? "bg-success-bg text-success" : "bg-surface-muted text-foreground-muted"}`}>{enabled ? "Disponible" : "Próximamente"}</span>
+                </div>
+                <h3 className="mt-5 font-heading text-heading-3 text-brand-ink">{item.title}</h3>
+                <div className="flex flex-1 flex-col">
+                  <p className="mt-3 flex-1 text-body leading-relaxed text-foreground-muted">{item.text}</p>
+                  <ol className="mt-5 grid gap-2 border-t border-brand-sage/60 pt-4 text-body-small sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                     {detail.steps?.map((step, index) => <li key={step} className="flex items-start gap-2 text-body-small leading-relaxed text-foreground-secondary"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-accent/35 font-bold text-brand-deep">{index + 1}</span><span>{step}</span></li>)}
                   </ol>
-                  <div className="mt-7 flex flex-wrap gap-3">
+                  {enabled ? <div className="mt-6 flex flex-wrap gap-3">
                     {serviceActions[item.key].map((action, index) => <Link key={`${action.to}-${action.label}`} to={action.to} className={`inline-flex min-h-11 items-center justify-center rounded-control px-4 py-2 text-body-small font-semibold transition-colors focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${index === 0 ? "bg-brand-deep text-brand-ivory hover:bg-brand-primary" : "border border-brand-deep text-brand-deep hover:bg-brand-deep/10"}`}>{action.label}</Link>)}
-                  </div>
+                  </div> : <p className="mt-6 text-body-small font-semibold text-foreground-muted">Disponible próximamente</p>}
                 </div>
               </article>;
             })}
           </div>
         </div>
       </section>
-      <section aria-labelledby="service-process-title" className="bg-brand-ivory py-12 md:py-16">
+      <section aria-labelledby="service-process-title" className="border-b border-brand-sage/70 bg-surface-muted py-10 md:py-14">
         <div className="public-container">
-          <div className="grid gap-7 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
+          <div className="grid gap-8 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
             <header><p className="public-eyebrow text-brand-primary">Antes de enviar</p><h2 id="service-process-title" className="public-heading mt-3 text-brand-ink">Cómo funciona una solicitud</h2><p className="mt-4 max-w-md text-body leading-relaxed text-foreground-muted">Cada gestión tiene requisitos propios. Enviar información o consultar disponibilidad no equivale a una aprobación de la Asociación.</p></header>
-            <ol className="grid gap-4 sm:grid-cols-3">{['Seleccione una gestión', 'Complete o consulte la información', 'Revise y confirme cuando corresponda'].map((step, index) => <li key={step} className="border-t-2 border-brand-accent pt-4"><span className="text-caption font-bold tracking-[0.14em] text-brand-primary">0{index + 1}</span><p className="mt-3 font-heading text-heading-3 text-brand-ink">{step}</p></li>)}</ol>
+            <ol className="grid gap-5 sm:grid-cols-3">{['Seleccione una gestión', 'Complete o consulte la información', 'Revise y confirme cuando corresponda'].map((step, index) => <li key={step} className="border-t-2 border-brand-accent pt-4"><span className="grid size-7 place-items-center rounded-full bg-brand-accent/35 text-caption font-bold text-brand-deep">{index + 1}</span><p className="mt-3 font-heading text-heading-3 text-brand-ink">{step}</p></li>)}</ol>
           </div>
         </div>
       </section>
-      <section aria-labelledby="upcoming-services-title" className="public-container py-12 md:py-16">
-        <header className="mb-8 max-w-3xl md:mb-10">
-          <p className="public-eyebrow text-brand-primary">Próximamente</p>
-          <h2 id="upcoming-services-title" className="public-heading mt-3 text-heading-1 text-brand-ink">Más formas de participar</h2>
-          <p className="mt-4 text-body leading-relaxed text-foreground-muted">Estas opciones se habilitarán cuando la Asociación confirme sus condiciones y canales.</p>
-        </header>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {services.filter((item) => !moduleAvailability[item.key].enabled).map((item) => {
-            const detail = serviceDetails[item.key];
-            const Icon = detail.icon;
-            return <article key={item.key} className="overflow-hidden rounded-surface border border-border bg-card-white shadow-sm">
-              <figure className="aspect-[16/10] overflow-hidden bg-surface-muted"><img src={detail.image} alt={detail.alt} width="1500" height="1000" loading="lazy" className="size-full object-cover" /></figure>
-              <div className="p-5"><span className="inline-flex min-h-9 items-center gap-2 rounded-control bg-brand-accent/25 px-3 text-body-small font-semibold text-brand-deep"><Icon className="size-4" aria-hidden="true" />Próximamente</span><h3 className="mt-4 font-heading text-heading-3 font-normal text-brand-ink">{item.title}</h3><p className="mt-2 text-body-small leading-relaxed text-foreground-muted">{detail.description}</p></div>
-            </article>;
-          })}
+      <section aria-labelledby="services-help-title" className="bg-brand-deep text-brand-ivory">
+        <div className="public-container grid gap-6 py-10 md:py-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="max-w-3xl"><p className="public-eyebrow text-brand-accent">Orientación institucional</p><h2 id="services-help-title" className="mt-3 font-heading text-heading-1 font-normal">¿Necesita orientación?</h2><p className="mt-4 text-body leading-relaxed text-brand-ivory/80">Utilice los canales oficiales de contacto para consultar una gestión. Si necesita solicitar una reserva, cree una cuenta o inicie sesión para continuar.</p></div>
+          <div className="flex flex-wrap gap-3 lg:justify-end"><Link to="/contacto" className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-ivory px-5 py-2 font-bold text-brand-deep transition-colors hover:bg-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-accent">Contactar a la Asociación</Link>{!isAuthenticated && moduleAvailability.userRegistration.enabled ? <><Link to="/register" className="inline-flex min-h-11 items-center justify-center rounded-control border border-brand-ivory/70 px-5 py-2 font-semibold text-brand-ivory transition-colors hover:bg-brand-ivory/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-accent">Crear una cuenta</Link><Link to="/login" className="inline-flex min-h-11 items-center justify-center rounded-control border border-brand-ivory/70 px-5 py-2 font-semibold text-brand-ivory transition-colors hover:bg-brand-ivory/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-accent">Iniciar sesión</Link></> : null}</div>
         </div>
       </section>
-      {!isAuthenticated && moduleAvailability.userRegistration.enabled && <section aria-labelledby="account-title" className="border-t border-brand-sage/70 bg-surface-muted py-12 md:py-16">
-        <div className="public-container grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-          <div className="max-w-3xl"><p className="public-eyebrow text-brand-primary">Acceso al portal</p><h2 id="account-title" className="public-heading mt-3 text-heading-1 text-brand-ink">Crear una cuenta</h2><p className="mt-4 text-body leading-relaxed text-foreground-muted">Cree una cuenta comunitaria y verifique su correo para acceder a las gestiones que requieren sesión, como solicitar una reserva. Si ya tiene una cuenta, puede iniciar sesión.</p></div>
-          <div className="flex flex-wrap gap-3 lg:justify-end"><Link to="/register" className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-deep px-5 py-2 font-semibold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring">Crear una cuenta</Link><Link to="/login" className="inline-flex min-h-11 items-center justify-center rounded-control border border-brand-deep px-5 py-2 font-semibold text-brand-deep transition-colors hover:bg-brand-deep/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring">Iniciar sesión</Link></div>
-        </div>
-      </section>}
     </>
   );
 }
