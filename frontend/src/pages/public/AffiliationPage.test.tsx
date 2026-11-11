@@ -28,12 +28,6 @@ async function reachContact() {
   expect(await screen.findByRole('heading', { name: 'Información de contacto' })).toBeVisible()
 }
 
-async function chooseTerritory(label: string, value: string) {
-  await act(async () => {
-    fireEvent.change(screen.getByLabelText(label), { target: { value } })
-  })
-}
-
 async function reachApplication() {
   await reachContact()
   fireEvent.change(screen.getByLabelText(/Dirección/), { target: { value: 'Curime Centro' } })
