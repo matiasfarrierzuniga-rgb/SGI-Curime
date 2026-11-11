@@ -8,6 +8,10 @@ import {
 } from '../generated/prisma/client';
 import { ensureInitialRoles } from './seed-roles';
 import { SYSTEM_ADMIN_ROLE } from '../src/auth/domain/policies/canonical-role-catalog';
+import {
+  applyCanonicalRbacPlan,
+  inspectCanonicalRbac,
+} from './canonical-rbac-sync';
 
 const INITIAL_RESERVABLE_RESOURCES = [
   {
@@ -87,6 +91,60 @@ async function main(): Promise<void> {
 
   try {
     await ensureInitialRoles(prisma);
+    const roles = await prisma.role.findMany({
+      select: {
+        id: true,
+        name: true,
+        isActive: true,
+        permissions: { select: { permission: { select: { code: true } } } },
+      },
+    });
+    const canonicalPlan = inspectCanonicalRbac(
+      roles.map((role) => ({
+        ...role,
+        permissionCodes: role.permissions.map(
+          ({ permission }) => permission.code,
+        ),
+      })),
+    );
+    await applyCanonicalRbacPlan(
+      {
+        ensurePermission: async (code) => {
+          await prisma.permission.upsert({
+            where: { code },
+            update: {},
+            create: { code, name: code },
+          });
+        },
+        ensureRolePermission: async (roleName, permissionCode) => {
+          const [role, permission] = await Promise.all([
+            prisma.role.findUniqueOrThrow({ where: { name: roleName } }),
+            prisma.permission.findUniqueOrThrow({
+              where: { code: permissionCode },
+            }),
+          ]);
+          await prisma.rolePermission.upsert({
+            where: {
+              roleId_permissionId: {
+                roleId: role.id,
+                permissionId: permission.id,
+              },
+            },
+            update: {},
+            create: { roleId: role.id, permissionId: permission.id },
+          });
+        },
+        revokeRolePermission: async (roleName, permissionCode) => {
+          await prisma.rolePermission.deleteMany({
+            where: {
+              role: { name: roleName },
+              permission: { code: permissionCode },
+            },
+          });
+        },
+      },
+      canonicalPlan,
+    );
 
     for (const resource of INITIAL_RESERVABLE_RESOURCES) {
       const existing = await prisma.reservableResource.findFirst({

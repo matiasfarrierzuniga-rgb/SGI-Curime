@@ -19,7 +19,7 @@ describe('InternalErpRoute', () => {
   })
 
   it('sends a community account to Mi Comunidad without rendering ERP content', () => {
-    state.value = { isLoading: false, isAuthenticated: true, user: { role: 'Cuenta comunitaria', canAccessErp: false, permissionCodes: [] } }
+    state.value = { isLoading: false, isAuthenticated: true, user: { role: 'ROLE_COMMUNITY_USER', canAccessErp: false, permissionCodes: [] } }
     renderRoute('/app')
     expect(screen.getByText('Mi Comunidad')).toBeInTheDocument()
     expect(screen.queryByText('Interno')).not.toBeInTheDocument()

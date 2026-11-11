@@ -1,26 +1,23 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { sessionStorageService } from './sessionStorage'
+import { clearLegacySession, LEGACY_SESSION_STORAGE_KEY } from './sessionStorage'
 
-describe('sessionStorageService', () => {
-  beforeEach(() => { sessionStorage.clear(); localStorage.clear() })
-
-  it('stores sessions only for the current browser tab', () => {
-    sessionStorageService.set({ token: 'opaque' })
-    expect(sessionStorage.getItem('sgi-curime-session')).not.toBeNull()
-    expect(localStorage.getItem('sgi-curime-session')).toBeNull()
+describe('clearLegacySession', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
   })
 
-  it('removes stale legacy localStorage sessions', () => {
-    localStorage.setItem('sgi-curime-session', JSON.stringify({ token: 'old' }))
-    expect(sessionStorageService.get()).toBeNull()
-    expect(localStorage.getItem('sgi-curime-session')).toBeNull()
-  })
+  it('removes only the obsolete authentication key from both storage areas', () => {
+    localStorage.setItem(LEGACY_SESSION_STORAGE_KEY, 'legacy-access-token')
+    sessionStorage.setItem(LEGACY_SESSION_STORAGE_KEY, 'legacy-access-token')
+    localStorage.setItem('unrelated-local', 'keep')
+    sessionStorage.setItem('unrelated-session', 'keep')
 
-  it('clears both current and legacy storage', () => {
-    sessionStorage.setItem('sgi-curime-session', 'current')
-    localStorage.setItem('sgi-curime-session', 'legacy')
-    sessionStorageService.clear()
-    expect(sessionStorage.getItem('sgi-curime-session')).toBeNull()
-    expect(localStorage.getItem('sgi-curime-session')).toBeNull()
+    clearLegacySession()
+
+    expect(localStorage.getItem(LEGACY_SESSION_STORAGE_KEY)).toBeNull()
+    expect(sessionStorage.getItem(LEGACY_SESSION_STORAGE_KEY)).toBeNull()
+    expect(localStorage.getItem('unrelated-local')).toBe('keep')
+    expect(sessionStorage.getItem('unrelated-session')).toBe('keep')
   })
 })

@@ -43,7 +43,7 @@ export function PublicVenturesPage() {
 
   return (
     <>
-      <PublicPageHeader breadcrumb="Emprendimientos" eyebrow="Directorio comunitario" title="Emprendimientos" intro="Conozca los emprendimientos locales publicados por la Asociación." />
+      <PublicPageHeader breadcrumb="Emprendimientos" eyebrow="Directorio comunitario" title="Emprendimientos" intro="Conozca los emprendimientos locales publicados por la Asociación." image={{ src: '/images/public/home/community-curime-wide.webp', mobileSrc: '/images/public/home/community-curime-mobile.webp', alt: 'Espacio comunitario de Curime.' }} />
       <PublicPageContent className="bg-brand-ivory">
 
         <form className="flex max-w-2xl flex-col gap-3 sm:flex-row" onSubmit={submitSearch} role="search">
@@ -70,6 +70,7 @@ export function PublicVenturesPage() {
             <Pagination className="mt-8" label="Paginación de emprendimientos" page={venturesQuery.data.page} total={venturesQuery.data.total} limit={venturesQuery.data.limit} onChange={(page) => setQuery((current) => ({ ...current, page }))} />
           </> : null}
         </section>
+        <aside className="mt-10 flex flex-col gap-4 border-t border-brand-sage/70 pt-7 sm:flex-row sm:items-center sm:justify-between"><div><p className="public-eyebrow text-brand-primary">Directorio público</p><p className="mt-2 max-w-2xl text-body-small leading-relaxed text-foreground-muted">Solo se muestran iniciativas publicadas por la Asociación. Para información adicional, use los canales oficiales.</p></div><Link to="/contacto" className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-control border border-brand-deep px-4 font-semibold text-brand-deep transition-colors hover:bg-brand-deep hover:text-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring">Consultar canales</Link></aside>
       </PublicPageContent>
     </>
   )

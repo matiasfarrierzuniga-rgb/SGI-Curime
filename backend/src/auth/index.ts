@@ -5,9 +5,7 @@ export { CapabilityGuard } from './presentation/guards/capability.guard';
 export { UnsupportedOperationGuard } from './presentation/guards/unsupported-operation.guard';
 export {
   CAPABILITIES,
-  ROLE_CAPABILITIES,
   VENTURE_CAPABILITIES,
-  hasCapability,
   hasPersistedCapability,
   isKnownCapability,
   type Capability,
@@ -17,7 +15,7 @@ export { RequireAnyCapabilities } from './presentation/decorators/require-any-ca
 export { RequireCapabilityByBodyValue } from './presentation/decorators/require-capability-by-body-value.decorator';
 export { RolesGuard } from './presentation/guards/roles.guard';
 export type { AuthenticatedUser } from './domain/entities/auth-user';
-export { canAccessErp, GENERAL_ACCOUNT_ROLE } from './domain/policies/internal-access.policy';
+export { canAccessErp } from './domain/policies/internal-access.policy';
 export {
   getAccountLockoutPolicy,
   isTemporaryLockActive,

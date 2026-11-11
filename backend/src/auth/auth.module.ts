@@ -7,6 +7,7 @@ import { ActivateAccountUseCase } from './application/use-cases/activate-account
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { LogoutUseCase } from './application/use-cases/logout.use-case';
+import { LogoutAllUseCase } from './application/use-cases/logout-all.use-case';
 import { RefreshSessionUseCase } from './application/use-cases/refresh-session.use-case';
 import { RequestPasswordResetUseCase } from './application/use-cases/request-password-reset.use-case';
 import { ResetPasswordUseCase } from './application/use-cases/reset-password.use-case';
@@ -27,6 +28,7 @@ import { JwtTokenService } from './infrastructure/security/jwt-token-service';
 import { RefreshTokenService } from './infrastructure/security/refresh-token.service';
 import { AuthController } from './presentation/controllers/auth.controller';
 import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from './presentation/guards/optional-jwt-auth.guard';
 import { CapabilityGuard } from './presentation/guards/capability.guard';
 import { UnsupportedOperationGuard } from './presentation/guards/unsupported-operation.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
@@ -85,6 +87,7 @@ import { PublicRequestRateLimitModule } from '../common/rate-limit/public-reques
     },
     LoginUseCase,
     LogoutUseCase,
+    LogoutAllUseCase,
     RefreshSessionUseCase,
     ActivateAccountUseCase,
     RequestPasswordResetUseCase,
@@ -93,6 +96,7 @@ import { PublicRequestRateLimitModule } from '../common/rate-limit/public-reques
     SessionService,
     JwtStrategy,
     JwtAuthGuard,
+    OptionalJwtAuthGuard,
     CapabilityGuard,
     RolesGuard,
     UnsupportedOperationGuard,

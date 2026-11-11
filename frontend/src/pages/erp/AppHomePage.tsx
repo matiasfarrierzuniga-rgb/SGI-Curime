@@ -64,8 +64,7 @@ const communityLinks = [
 export function AppHomePage() {
   const { user } = useAuth();
   const roleName = getRoleName(user?.role);
-  const isCommunityUser =
-    roleName === "Vecino/Afiliado" || roleName === "ROLE_COMMUNITY_USER";
+  const isCommunityUser = roleName === "ROLE_COMMUNITY_USER";
   const canViewInventory = hasCapability(
     user?.permissionCodes,
     "inv.inventory.read",

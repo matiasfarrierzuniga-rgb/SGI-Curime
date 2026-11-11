@@ -22,7 +22,6 @@ import { AuditContext, AuditService } from '../audit/audit.service';
 import { CorrectCommunityEmailDto } from './dto/correct-community-email.dto';
 import {
   COMMUNITY_ACCOUNT_ROLE,
-  COMMUNITY_ACCOUNT_ROLES,
   isCommunityAccountRole,
 } from '../auth/domain/policies/internal-access.policy';
 
@@ -109,7 +108,7 @@ export class CommunityAccountsService {
               id,
               email: user.email,
               status: 'PENDING_EMAIL_VERIFICATION',
-              role: { name: { in: COMMUNITY_ACCOUNT_ROLES } },
+              role: { name: COMMUNITY_ROLE },
             },
             data: { email },
           });
@@ -202,7 +201,7 @@ export class CommunityAccountsService {
             status: 'INACTIVE',
             communityEmailVerifiedAt: null,
             role: {
-              name: { in: COMMUNITY_ACCOUNT_ROLES },
+              name: COMMUNITY_ROLE,
               isActive: true,
               permissions: { none: {} },
             },
@@ -394,7 +393,7 @@ export class CommunityAccountsService {
             id: activationToken.userId,
             status: 'PENDING_EMAIL_VERIFICATION',
             role: {
-              name: { in: COMMUNITY_ACCOUNT_ROLES },
+              name: COMMUNITY_ROLE,
               isActive: true,
               permissions: { none: {} },
             },

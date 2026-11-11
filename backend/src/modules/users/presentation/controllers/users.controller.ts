@@ -27,13 +27,11 @@ import { ListUsersUseCase } from '../../application/use-cases/list-users.use-cas
 import { ListAccountsUseCase } from '../../application/use-cases/list-accounts.use-case';
 import { UnlockUserUseCase } from '../../application/use-cases/unlock-user.use-case';
 import { UpdateUserUseCase } from '../../application/use-cases/update-user.use-case';
-import { UpdateSubscriptionExpirationUseCase } from '../../application/use-cases/update-subscription-expiration.use-case';
 import { ListPersonLinkCandidatesUseCase } from '../../application/use-cases/list-person-link-candidates.use-case';
 import { ChangeRoleDto } from '../dto/change-role.dto';
 import { QueryUsersDto } from '../dto/query-users.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UpdateIsActiveDto } from '../dto/update-is-active.dto';
-import { UpdateSubscriptionExpirationDto } from '../dto/update-subscription-expiration.dto';
 import { PersonLinkCandidatesQueryDto } from '../dto/person-link-candidates-query.dto';
 import { QueryBoardPrivilegeReviewsDto } from '../dto/query-board-privilege-reviews.dto';
 import { ResolveBoardPrivilegeReviewDto } from '../dto/resolve-board-privilege-review.dto';
@@ -56,7 +54,6 @@ export class UsersController {
     private readonly activateUser: ActivateUserUseCase,
     private readonly deactivateUser: DeactivateUserUseCase,
     private readonly unlockUser: UnlockUserUseCase,
-    private readonly updateSubscriptionExpiration: UpdateSubscriptionExpirationUseCase,
     private readonly listPersonLinkCandidates: ListPersonLinkCandidatesUseCase,
     private readonly resolveBoardPrivilegeReview: ResolveBoardPrivilegeReviewUseCase,
   ) {}
@@ -182,24 +179,6 @@ export class UsersController {
             req.user.id,
             this.context(req),
           );
-      return toUserResponse(user);
-    });
-  }
-
-  @Patch(':id/subscription-expiration')
-  @RequireCapabilities('usr.users.update')
-  updateSubscriptionExpirationDate(
-    @Param('id', ParseIntPipe) accessId: number,
-    @Body() dto: UpdateSubscriptionExpirationDto,
-    @Req() req: Request & { user: AuthenticatedUser },
-  ) {
-    return this.run(async () => {
-      const user = await this.updateSubscriptionExpiration.execute(
-        accessId,
-        new Date(dto.subscriptionExpirationDate),
-        req.user.id,
-        this.context(req),
-      );
       return toUserResponse(user);
     });
   }

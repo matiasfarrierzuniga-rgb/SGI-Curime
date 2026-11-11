@@ -1,12 +1,14 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { authService } from '@/features/auth'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ToastProvider } from '@/shared/ui/Toast'
 import { ProfilePage } from './ProfilePage'
 
-vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { fullName: 'Ana', email: 'ana@test.com', role: 'ROLE_SYSTEM_ADMIN', status: 'ACTIVE' } }), authService: { changePassword: vi.fn() } }))
+const changePassword = vi.fn()
+const logout = vi.fn()
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { fullName: 'Ana', email: 'ana@test.com', role: 'ROLE_SYSTEM_ADMIN', status: 'ACTIVE' }, changePassword, logout }) }))
 
-const renderPage = () => render(<ToastProvider><ProfilePage /></ToastProvider>)
+const renderPage = () => render(<MemoryRouter initialEntries={['/profile']}><ToastProvider><Routes><Route path="/profile" element={<ProfilePage />} /><Route path="/login" element={<p>Iniciar sesión</p>} /></Routes></ToastProvider></MemoryRouter>)
 
 function fill(confirmation = 'New1234567') {
   fireEvent.change(screen.getByLabelText(/^contraseña actual/i), { target: { value: 'Old1234567' } })
@@ -15,7 +17,10 @@ function fill(confirmation = 'New1234567') {
 }
 
 describe('ProfilePage', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    changePassword.mockResolvedValue({ message: 'Actualizada' })
+  })
 
   it('shows account data, localized active state, and password fields', () => {
     renderPage()
@@ -35,18 +40,18 @@ describe('ProfilePage', () => {
   })
 
   it('sends current, new, and confirmation passwords then clears values', async () => {
-    vi.mocked(authService.changePassword).mockResolvedValue({ message: 'Actualizada' })
     renderPage()
     fill()
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar contraseña' }))
 
-    await waitFor(() => expect(authService.changePassword).toHaveBeenCalledWith({ currentPassword: 'Old1234567', password: 'New1234567', passwordConfirmation: 'New1234567' }))
+    await waitFor(() => expect(changePassword).toHaveBeenCalledWith({ currentPassword: 'Old1234567', newPassword: 'New1234567', newPasswordConfirmation: 'New1234567' }))
     expect(await screen.findByText('Actualizada')).toBeInTheDocument()
-    for (const field of screen.getAllByLabelText(/contraseña/i)) expect(field).toHaveValue('')
+    expect(logout).not.toHaveBeenCalled()
+    expect(await screen.findByText('Iniciar sesión')).toBeInTheDocument()
   })
 
   it('shows a service error', async () => {
-    vi.mocked(authService.changePassword).mockRejectedValue({ isAxiosError: true, response: { status: 400, data: { message: 'Actual no válida' } } })
+    changePassword.mockRejectedValue({ isAxiosError: true, response: { status: 400, data: { message: 'Actual no válida' } } })
     renderPage()
     fill()
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar contraseña' }))

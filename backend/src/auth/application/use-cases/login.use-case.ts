@@ -7,7 +7,6 @@ import {
   getAccountLockoutPolicy,
   isTemporaryLockActive,
 } from '../../domain/policies/account-lockout.policy';
-import { isSubscriptionExpired } from '../../domain/policies/subscription-expiration.policy';
 import { canAccessErp } from '../../domain/policies/internal-access.policy';
 import type { AuthAccount } from '../../domain/entities/auth-account';
 import {
@@ -127,21 +126,9 @@ export class LoginUseCase {
       );
     }
 
-    if (
-      isSubscriptionExpired(
-        account.roleName,
-        account.subscriptionExpirationDate,
-      )
-    ) {
-      throw new AuthApplicationError(
-        'SUBSCRIPTION_EXPIRED',
-        'Subscription has expired',
-      );
-    }
-
     const refreshToken = this.refreshTokens.generate();
     const expiresAt = new Date(Date.now() + getRefreshTokenTtlSeconds() * 1000);
-    const sessionGeneration =
+    const session =
       await this.repository.recordLoginSuccessAndCreateSession(
         account.id,
         this.refreshTokens.hash(refreshToken),
@@ -151,7 +138,8 @@ export class LoginUseCase {
       sub: account.id,
       email: account.email,
       role: account.roleName,
-      sessionGeneration,
+      sessionGeneration: session.sessionGeneration,
+      sid: session.sessionId,
     });
     await recordAuditBestEffort(this.audit, {
       userId: account.id,

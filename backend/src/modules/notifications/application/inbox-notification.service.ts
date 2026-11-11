@@ -149,7 +149,10 @@ export class InboxNotificationService {
     requestId: number,
   ) {
     const users = await tx.user.findMany({
-      where: { status: UserStatus.ACTIVE, role: { name: 'Administrador' } },
+      where: {
+        status: UserStatus.ACTIVE,
+        role: { permissions: { some: { permission: { code: 'padron.application.review' } } } },
+      },
       select: { id: true },
     });
     return this.create(tx, {
@@ -276,8 +279,7 @@ function notificationAction(
   if (!actor.canAccessErp) return null;
   if (
     resourceType === NotificationResourceType.AFFILIATE_REQUEST &&
-    actor.role === 'Administrador' &&
-    hasPersistedCapability(actor.permissionCodes, 'adm.requests.read')
+    hasPersistedCapability(actor.permissionCodes, 'padron.application.review')
   )
     return {
       label: 'Ver solicitudes de afiliación',
