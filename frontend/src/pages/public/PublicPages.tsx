@@ -390,41 +390,28 @@ export function ContactPage() {
       <Seo title="Contacto" description="Canales de contacto de ADI Curime." />
       <PublicPageHeader
         title="Contacto"
-        intro="Canales de contacto confirmados de la Asociación."
+        intro="Hable con la Asociación a través de sus medios oficiales."
+        eyebrow="Canales institucionales"
         breadcrumb="Contacto"
       />
-      <SectionContainer>
-        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12 xl:gap-16">
-          <section aria-labelledby="contact-channels-title" className="min-w-0 rounded-surface bg-surface-muted p-6 md:p-8 lg:py-9">
-            <p className="public-eyebrow text-brand-primary">Canales confirmados</p>
-            <h2 id="contact-channels-title" className="public-heading mt-3 text-brand-ink">Contáctese con nosotros</h2>
-            <p className="mt-4 max-w-xl text-pretty text-body-large leading-relaxed text-foreground-muted">Use estos canales oficiales para realizar una consulta directamente con la Asociación.</p>
-            <div className="mt-8 divide-y divide-brand-sage/70 border-y border-brand-sage/70">
-              {channels.map(({ name, detail, action, ariaLabel, href, icon: Icon, external }) => (
-                <article key={name} className="grid min-w-0 grid-cols-[auto_1fr] gap-4 py-5 first:pt-0 last:pb-0">
-                  <div aria-hidden="true" className="grid size-11 place-items-center rounded-control bg-brand-soft/20 text-brand-deep">
-                    <Icon className="size-5" strokeWidth={1.8} />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="font-semibold text-brand-deep">{name}</h4>
-                    <p className="mt-1 [overflow-wrap:anywhere] text-body-small text-foreground-muted">{detail}</p>
-                    <a
-                      className="mt-2 inline-flex min-h-11 items-center rounded-control font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring"
-                      href={href}
-                      aria-label={ariaLabel}
-                      target={external ? "_blank" : undefined}
-                      rel={external ? "noopener noreferrer" : undefined}
-                    >
-                      {action}
-                    </a>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+      <SectionContainer className="space-y-10 md:space-y-16">
+        <section aria-labelledby="contact-channels-title">
+          <div className="mb-7 max-w-3xl"><p className="public-eyebrow text-brand-primary">Canales disponibles</p><h2 id="contact-channels-title" className="public-heading mt-3 text-brand-ink">Comuníquese con la Asociación</h2><p className="mt-4 text-pretty text-body leading-relaxed text-foreground-muted">Utilice los medios oficiales confirmados para realizar una consulta directamente con la Asociación.</p></div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {channels.map(({ name, detail, action, ariaLabel, href, icon: Icon, external }) => (
+              <article key={name} className="flex min-w-0 min-h-full flex-col rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-sm md:p-6">
+                <span aria-hidden="true" className="grid size-11 place-items-center rounded-control bg-brand-soft/20 text-brand-deep"><Icon className="size-5" strokeWidth={1.8} /></span>
+                <h3 className="mt-4 font-heading text-heading-3 text-brand-ink">{name}</h3>
+                <p className="mt-2 min-w-0 [overflow-wrap:anywhere] text-body-small leading-relaxed text-foreground-muted">{detail}</p>
+                <a className="mt-auto inline-flex min-h-11 items-center pt-4 font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" href={href} aria-label={ariaLabel} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}>{action}</a>
+              </article>
+            ))}
+          </div>
+        </section>
+        <section aria-label="Preparar una consulta" className="bg-surface-muted p-6 md:p-8 lg:p-10">
           <ContactForm />
-        </div>
-        <aside className="mt-10 grid gap-5 border-l-4 border-brand-accent bg-brand-ivory px-6 py-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-start md:gap-6 md:px-8 md:py-6"><span aria-hidden="true" className="grid size-12 place-items-center rounded-control bg-brand-accent/25 text-brand-deep"><Landmark className="size-6" /></span><div><p className="public-eyebrow text-brand-primary">Orientación</p><h2 className="mt-2 font-heading text-heading-2 text-brand-ink">Canales para la comunidad</h2><p className="mt-2 max-w-3xl text-body leading-relaxed text-foreground-muted">{site.location}. El formulario prepara su mensaje; para comunicarse con la Asociación use el correo o las redes oficiales mostradas arriba.</p></div></aside>
+        </section>
+        <section aria-labelledby="contact-notice" className="border-l-4 border-brand-accent bg-brand-ivory px-5 py-4 md:px-6"><div className="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-start md:gap-5"><span aria-hidden="true" className="grid size-11 place-items-center rounded-control bg-brand-accent/25 text-brand-deep"><Landmark className="size-5" /></span><div><p className="public-eyebrow text-brand-primary">Transparencia de envío</p><h2 id="contact-notice" className="mt-2 font-heading text-heading-2 text-brand-ink">Contacto por canales oficiales</h2><p className="mt-2 max-w-3xl text-body leading-relaxed text-foreground-muted">{site.location}. Para comunicarse con la Asociación, use el correo o las redes oficiales mostradas arriba. El formulario solo prepara su mensaje.</p></div></div></section>
       </SectionContainer>
     </>
   );

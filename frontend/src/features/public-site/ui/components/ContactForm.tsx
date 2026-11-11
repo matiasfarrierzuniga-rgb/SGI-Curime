@@ -75,10 +75,10 @@ export function ContactForm() {
   })
 
   return (
-    <section aria-labelledby="contact-form-title" className="rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-surface sm:p-7 lg:p-8">
+    <section aria-labelledby="contact-form-title" className="mx-auto w-full max-w-4xl">
       <p className="public-eyebrow text-brand-primary">Prepare su consulta</p>
-      <h2 id="contact-form-title" className="mt-3 font-heading text-heading-2 text-brand-ink">Organice su mensaje antes de enviarlo por correo</h2>
-      <p className="mt-3 text-pretty text-body-small leading-relaxed text-foreground-muted">Este formulario no envía mensajes automáticamente. Le ayuda a revisar los datos antes de contactar a la Asociación mediante el correo oficial.</p>
+      <h2 id="contact-form-title" className="mt-3 font-heading text-heading-2 text-brand-ink">Preparar una consulta</h2>
+      <p className="mt-3 text-pretty text-body-small leading-relaxed text-foreground-muted">Este formulario ayuda a revisar los datos, pero no envía mensajes automáticamente. Contacte a la Asociación mediante el correo oficial.</p>
       <form className="mt-6 grid gap-5" onSubmit={submit} noValidate>
         <div className="grid gap-5 sm:grid-cols-2">
           <FormField id="firstName" label="Nombre" required error={errors.firstName}><Input minLength={2} maxLength={80} autoComplete="given-name" {...fieldProps('firstName')} /></FormField>
