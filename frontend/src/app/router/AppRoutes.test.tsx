@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
@@ -26,6 +26,17 @@ vi.mock('@/services/inventoryReportsService', () => ({
 }))
 
 let httpGet: ReturnType<typeof vi.spyOn>
+const queryClients = new Set<QueryClient>()
+
+function createTestQueryClient() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0, refetchOnWindowFocus: false },
+    },
+  })
+  queryClients.add(queryClient)
+  return queryClient
+}
 
 const SYSTEM_ADMIN_CAPABILITIES = ['adm.affiliates.read', 'adm.institutional-profile.read', 'aud.logs.read', 'don.donations.read', 'ent.ventures.read', 'erp.dashboard.read', 'fin.charges.read', 'fin.dinadeco.read', 'fin.movements.read', 'usr.profile.read', 'usr.users.read', 'vol.opportunities.read']
 const TREASURER_CAPABILITIES = ['don.donations.cancel', 'don.donations.create', 'don.donations.read', 'don.donations.update', 'erp.dashboard.read', 'fin.charges.read', 'fin.dinadeco.read', 'fin.movements.create', 'fin.movements.read', 'fin.payments.record', 'usr.profile.read']
@@ -71,8 +82,13 @@ function renderRoute(path: string, role: string | null, canAccessErp = role !== 
     authenticatedRoute = <SeedAuthenticatedRoutes path={path} />
   }
 
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const queryClient = createTestQueryClient()
   return render(<QueryClientProvider client={queryClient}><ToastProvider><AuthProvider>{authenticatedRoute}</AuthProvider></ToastProvider></QueryClientProvider>)
+}
+
+async function settleRouteTransition() {
+  await waitFor(() => expect(screen.queryByText('Restaurando sesión…')).not.toBeInTheDocument())
+  await act(async () => {})
 }
 
 beforeEach(() => {
@@ -116,6 +132,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  queryClients.forEach(queryClient => queryClient.clear())
+  queryClients.clear()
   localStorage.clear()
   sessionStorage.clear()
   vi.restoreAllMocks()
@@ -274,6 +292,7 @@ describe('AppRoutes capability deep links', () => {
 
   it('redirects a canonical operator without dashboard access from /app to inventory', async () => {
     renderRoute('/app', 'ROLE_INSTITUTIONAL_OPERATOR', true, ['inv.inventory.read'])
+    await settleRouteTransition()
     expect(await screen.findByRole('heading', { name: 'Panel de Inventario' }, { timeout: 5000 })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Inicio' })).not.toBeInTheDocument()
   })
@@ -308,7 +327,7 @@ describe('AppRoutes capability deep links', () => {
     const user = { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role: 'ROLE_SYSTEM_ADMIN', canAccessErp: true, permissionCodes: ['erp.dashboard.read', 'usr.profile.read'] }
     vi.spyOn(authService, 'login').mockResolvedValue({ accessToken: 'test-token', user })
     vi.spyOn(authService, 'me').mockResolvedValue(user)
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const queryClient = createTestQueryClient()
     const erpView = render(<QueryClientProvider client={queryClient}><ToastProvider><AuthProvider><SeedAuthenticatedRoutes path="/app/profile" /></AuthProvider></ToastProvider></QueryClientProvider>)
 
     expect(await screen.findByRole('heading', { name: 'Mi perfil' })).toBeInTheDocument()

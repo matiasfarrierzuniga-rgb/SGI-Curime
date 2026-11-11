@@ -6,15 +6,21 @@ import { ReservationRequestPage } from './ReservationRequestPage'
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 vi.mock('../hooks/useReservations', () => ({ useReservableResources: vi.fn(), useReservationAvailability: vi.fn(), useCreateReservation: vi.fn() }))
+vi.mock('@/shared/ui/date-picker/DatePicker', () => ({
+  DateRangePicker: ({ startId, endId, startLabel, endLabel, startValue, endValue, onStartChange, onEndChange }: {
+    startId?: string; endId?: string; startLabel: string; endLabel: string; startValue: string; endValue: string
+    onStartChange: (value: string) => void; onEndChange: (value: string) => void
+  }) => <>
+    <label htmlFor={startId}>{startLabel}</label><input id={startId} type="date" value={startValue} onChange={event => onStartChange(event.target.value)} />
+    <label htmlFor={endId}>{endLabel}</label><input id={endId} type="date" value={endValue} onChange={event => onEndChange(event.target.value)} />
+  </>,
+}))
 
 const resources = [{ id: 1, name: 'Salón comunal', description: 'Espacio para actividades comunitarias', location: 'Curime', capacity: 50, status: 'ACTIVE' as const, pricingType: 'FREE' as const, price: null, currency: 'CRC' }]
 
 function selectReservationDateRange() {
-  fireEvent.click(screen.getByRole('button', { name: /Período de reserva y fin/ }))
-  fireEvent.change(screen.getByLabelText('Año del rango'), { target: { value: '2030' } })
-  fireEvent.change(screen.getByLabelText('Mes del rango'), { target: { value: '1' } })
-  fireEvent.click(screen.getByRole('gridcell', { name: 'Seleccionar 01/01/2030' }))
-  fireEvent.click(screen.getByRole('gridcell', { name: 'Seleccionar 01/01/2030' }))
+  fireEvent.change(document.getElementById('reservation-start-date')!, { target: { value: '2030-01-01' } })
+  fireEvent.change(document.getElementById('reservation-end-date')!, { target: { value: '2030-01-01' } })
 }
 
 function reservationTimeInput(id: 'reservation-start-time' | 'reservation-end-time') {
@@ -74,7 +80,9 @@ describe('ReservationRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
     expect(await screen.findByText(/Disponible en este horario/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeEnabled()
-    fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '11:00' } })
+    await act(async () => {
+      fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '11:00' } })
+    })
     expect(screen.getByText('Aún no ha consultado la disponibilidad.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeDisabled()
   })
@@ -115,7 +123,8 @@ describe('ReservationRequestPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Enviar solicitud' }))
     expect(await screen.findByRole('button', { name: 'Revisar solicitud' })).toBeInTheDocument()
     expect(screen.getByLabelText(/Espacio/)).toHaveValue('1')
-    expect(screen.getByRole('button', { name: /Período de reserva y fin: 01\/01\/2030 — 01\/01\/2030/ })).toBeInTheDocument()
+    expect(document.getElementById('reservation-start-date')).toHaveValue('2030-01-01')
+    expect(document.getElementById('reservation-end-date')).toHaveValue('2030-01-01')
     expect(reservationTimeInput('reservation-start-time')).toHaveValue('10:00')
     expect(reservationTimeInput('reservation-end-time')).toHaveValue('12:00')
     expect(screen.getByLabelText(/Motivo/)).toHaveValue('Reunión vecinal')
