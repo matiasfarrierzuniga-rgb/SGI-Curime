@@ -18,6 +18,8 @@ import {
   AccountPersonLinkData,
   UserCreateData,
   AccountPage,
+  PersonCreateData,
+  PersonCreateResult,
   PersonLinkCandidate,
   UserPage,
   UserAffiliationContext,
@@ -29,6 +31,10 @@ import {
 import { AuditAction } from '../../../audit/audit-actions';
 import { AccountPersonLinkConflictError } from '../domain/errors/account-person-link-conflict.error';
 import { PersonNotFoundError } from '../domain/errors/person-not-found.error';
+import {
+  PersonRegistrationConflictError,
+  type PersonRegistrationConflictCode,
+} from '../domain/errors/person-registration-conflict.error';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error';
 
 const userSelect = {
@@ -194,14 +200,20 @@ export class PrismaUsersRepository implements UsersRepository {
   ): Promise<T> {
     return this.prisma.$transaction(
       async (tx) => {
-        return work(new PrismaUsersRepository(this.prisma, this.personResolver, tx), tx);
+        return work(
+          new PrismaUsersRepository(this.prisma, this.personResolver, tx),
+          tx,
+        );
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
   }
 
   async withRegistrationTransaction<T>(
-    work: (repo: UsersRepository) => Promise<T>,
+    work: (
+      repo: UsersRepository,
+      client: Prisma.TransactionClient,
+    ) => Promise<T>,
   ): Promise<T> {
     const maxAttempts = 3;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -210,6 +222,7 @@ export class PrismaUsersRepository implements UsersRepository {
           async (tx) =>
             work(
               new PrismaUsersRepository(this.prisma, this.personResolver, tx),
+              tx,
             ),
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
         );
@@ -351,6 +364,77 @@ export class PrismaUsersRepository implements UsersRepository {
         error.code === 'P2002'
       ) {
         throw new RegistrationDataConflictError(classifyUserUnique(error));
+      }
+      throw error;
+    }
+  }
+
+  async createPerson(data: PersonCreateData): Promise<PersonCreateResult> {
+    try {
+      return await this.withRegistrationTransaction(async (repo, client) => {
+        const resolution = await repo.resolvePerson({
+          identificationType: data.identificationType,
+          identification: data.identification,
+          firstName: data.firstName,
+          firstSurname: data.firstSurname,
+          secondSurname: data.secondSurname,
+          phoneCountryCode: data.phoneCountryCode,
+          phoneNationalNumber: data.phoneNationalNumber,
+          address: data.address,
+        });
+
+        if (
+          resolution.status !== 'PERSON_CREATED' &&
+          resolution.status !== 'PERSON_REUSED'
+        ) {
+          throw new PersonRegistrationConflictError(
+            resolutionStatusToConflictCode(resolution.status),
+          );
+        }
+        if (resolution.profileEnrichmentRequired) {
+          throw new PersonRegistrationConflictError(
+            'PROFILE_ENRICHMENT_REQUIRED',
+          );
+        }
+        if (
+          resolution.status === 'PERSON_REUSED' &&
+          (await repo.findByPersonId(resolution.person.id))
+        ) {
+          throw new PersonRegistrationConflictError('PERSON_ALREADY_HAS_USER');
+        }
+
+        const created = resolution.status === 'PERSON_CREATED';
+        await client.auditLog.create({
+          data: {
+            userId: data.actorId,
+            action: AuditAction.PERSON_CREATED,
+            module: 'IDENTITY',
+            entityType: 'Person',
+            entityId: String(resolution.person.id),
+            details: {
+              result: created ? 'CREATED' : 'REUSED',
+              reason: data.reason,
+              identificationType: resolution.person.identificationType,
+            },
+            ipAddress: data.ipAddress,
+            userAgent: data.userAgent,
+          },
+        });
+
+        return {
+          personId: resolution.person.id,
+          created,
+          person: resolution.person,
+        };
+      });
+    } catch (error) {
+      if (error instanceof PersonRegistrationConflictError) throw error;
+      if (error instanceof RegistrationDataConflictError) {
+        throw new PersonRegistrationConflictError(
+          error.code === 'PERSON_ALREADY_HAS_USER'
+            ? 'PERSON_ALREADY_HAS_USER'
+            : 'PERSON_IDENTITY_RACE',
+        );
       }
       throw error;
     }
@@ -680,6 +764,19 @@ export class PrismaUsersRepository implements UsersRepository {
       ...(query.blocked === false ? { AND: [...textConditions, { status: { not: UserStatus.BLOCKED } }, { OR: [{ lockedAt: null }, { lockedAt: { lte: cutoff } }] }] } : {}),
     };
   }
+}
+
+function resolutionStatusToConflictCode(
+  status: string,
+): PersonRegistrationConflictCode {
+  if (status === 'IDENTITY_CONFLICT') return 'IDENTITY_CONFLICT';
+  if (status === 'IDENTITY_DUPLICATE_CORRUPTION') {
+    return 'IDENTITY_DUPLICATE_CORRUPTION';
+  }
+  if (status === 'MANUAL_REVIEW_REQUIRED') {
+    return 'PROFILE_ENRICHMENT_REQUIRED';
+  }
+  return 'INVALID_IDENTITY';
 }
 
 function isRetriableRegistrationConflict(error: unknown): boolean {

@@ -8,6 +8,7 @@ import type { Prisma } from '../../../../../generated/prisma/client';
 import { RegistrationConflictError } from '../errors/registration-conflict.error';
 import type {
   RuntimePersonIdentityInput,
+  RuntimePersonRecord,
   RuntimePersonResolutionResult,
 } from '../../../../identity/runtime-person-resolution';
 
@@ -68,6 +69,27 @@ export interface AccountPersonLinkData {
   userAgent?: string;
 }
 
+export interface PersonCreateData {
+  identificationType: 'NATIONAL' | 'DIMEX';
+  identification: string;
+  firstName: string;
+  firstSurname: string;
+  secondSurname?: string;
+  phoneCountryCode?: string;
+  phoneNationalNumber?: string;
+  address?: string;
+  actorId: number;
+  reason: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export interface PersonCreateResult {
+  personId: number;
+  created: boolean;
+  person: RuntimePersonRecord;
+}
+
 export interface UserCreateData {
   fullName: string;
   identification: string;
@@ -110,7 +132,7 @@ export interface UsersRepository {
     work: (repo: UsersRepository, client: UsersTransactionClient) => Promise<T>,
   ): Promise<T>;
   withRegistrationTransaction<T>(
-    work: (repo: UsersRepository) => Promise<T>,
+    work: (repo: UsersRepository, client: UsersTransactionClient) => Promise<T>,
   ): Promise<T>;
   findPage(query: UserQuery): Promise<UserPage>;
   findAccountsPage(query: UserQuery): Promise<AccountPage>;
@@ -126,6 +148,7 @@ export interface UsersRepository {
   findRoleById(id: number): Promise<UserRole | null>;
   findRoleByName(name: string): Promise<UserRole | null>;
   create(data: UserCreateData): Promise<User>;
+  createPerson(data: PersonCreateData): Promise<PersonCreateResult>;
   resolvePerson(
     input: RuntimePersonIdentityInput,
   ): Promise<RuntimePersonResolutionResult>;

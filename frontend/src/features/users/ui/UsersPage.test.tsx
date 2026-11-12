@@ -2,14 +2,12 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '@/shared/ui/Toast'
+import { useAuth } from '@/features/auth'
 import { usersService } from '../api/users.api'
 import { UsersPage } from './UsersPage'
 
 vi.mock('@/features/auth', () => ({
-  useAuth: () => ({
-    user: { permissionCodes: ['usr.users.read', 'usr.roles.read'] },
-    isLoading: false,
-  }),
+  useAuth: vi.fn(),
 }))
 
 vi.mock('../api/users.api', () => ({
@@ -21,6 +19,7 @@ vi.mock('../api/users.api', () => ({
     activate: vi.fn(),
     deactivate: vi.fn(),
     unlock: vi.fn(),
+    createPerson: vi.fn(),
   },
 }))
 
@@ -81,6 +80,10 @@ const open = async () => {
 describe('UsersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(useAuth).mockReturnValue({
+      user: { permissionCodes: ['usr.users.read', 'usr.roles.read'] },
+      isLoading: false,
+    } as never)
     vi.mocked(usersService.list).mockResolvedValue({ data: [personWithAccountAndAffiliation], total: 1, page: 1, limit: 10 })
     vi.mocked(usersService.get).mockResolvedValue(personWithAccountAndAffiliation as never)
     vi.mocked(usersService.update).mockResolvedValue({} as never)
@@ -109,6 +112,55 @@ describe('UsersPage', () => {
     vi.mocked(usersService.list).mockRejectedValueOnce(new Error('x'))
     page()
     expect(await screen.findByRole('alert')).toBeInTheDocument()
+  })
+
+  it('shows Person registration only with system.identity.manage', async () => {
+    const first = page()
+    await screen.findByText('Ana Pérez')
+    expect(screen.queryByRole('button', { name: 'Registrar Persona' })).not.toBeInTheDocument()
+    first.unmount()
+
+    vi.mocked(useAuth).mockReturnValue({
+      user: { permissionCodes: ['usr.users.read', 'system.identity.manage'] },
+      isLoading: false,
+    } as never)
+    page()
+
+    expect(await screen.findByRole('button', { name: 'Registrar Persona' })).toBeInTheDocument()
+  })
+
+  it('registers a Person from the administrative UI and refreshes Person-root candidates', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { permissionCodes: ['usr.users.read', 'system.identity.manage'] },
+      isLoading: false,
+    } as never)
+    vi.mocked(usersService.createPerson).mockResolvedValue({
+      personId: '105',
+      created: true,
+      person: { id: '105', firstName: 'Elena', firstSurname: 'Nueva', identification: '123456789', identificationType: 'NATIONAL' },
+    } as never)
+    const { queryClient } = page()
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+    await screen.findByText('Ana Pérez')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar Persona' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Registrar Persona' })
+    fireEvent.change(within(dialog).getByLabelText('Identificación'), { target: { value: '123456789' } })
+    fireEvent.change(within(dialog).getByLabelText('Nombre'), { target: { value: 'Elena' } })
+    fireEvent.change(within(dialog).getByLabelText('Primer apellido'), { target: { value: 'Nueva' } })
+    fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: 'Alta administrativa para aprovisionamiento RBAC.' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Registrar Persona' }))
+
+    await waitFor(() => expect(usersService.createPerson).toHaveBeenCalledWith({
+      identificationType: 'NATIONAL',
+      identification: '123456789',
+      firstName: 'Elena',
+      firstSurname: 'Nueva',
+      reason: 'Alta administrativa para aprovisionamiento RBAC.',
+    }))
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }))
+    expect(await screen.findByText(/Persona registrada/)).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Registrar Persona' })).not.toBeInTheDocument()
   })
 
   it('renders Person-root rows with independent account and affiliation contexts', async () => {

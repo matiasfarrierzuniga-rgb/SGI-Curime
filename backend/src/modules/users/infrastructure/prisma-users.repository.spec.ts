@@ -26,6 +26,7 @@ describe('PrismaUsersRepository registration methods', () => {
       findMany: jest.fn(),
       count: jest.fn(),
     },
+    auditLog: { create: jest.fn() },
   };
   const prisma = { $transaction: jest.fn() };
   const resolver = { resolve: jest.fn(), resolveWithinTransaction: jest.fn() };
@@ -84,6 +85,123 @@ describe('PrismaUsersRepository registration methods', () => {
     await repository.resolvePerson(input);
 
     expect(resolver.resolveWithinTransaction).toHaveBeenCalledWith(input, db);
+  });
+
+  describe('createPerson', () => {
+    const input = {
+      identificationType: 'NATIONAL' as const,
+      identification: '123456789',
+      firstName: 'Ana',
+      firstSurname: 'Pérez',
+      reason: 'Alta administrativa para aprovisionamiento RBAC.',
+      actorId: 7,
+      ipAddress: '127.0.0.1',
+      userAgent: 'test-agent',
+    };
+    const person = {
+      id: 12,
+      firstName: 'Ana',
+      firstSurname: 'Pérez',
+      secondSurname: null,
+      identification: '123456789',
+      identificationType: 'NATIONAL',
+      normalizedIdentification: '123456789',
+    };
+
+    beforeEach(() => {
+      prisma.$transaction.mockImplementation(
+        (work: (tx: unknown) => Promise<unknown>) => work(db),
+      );
+    });
+
+    it('creates the canonical Person and audits actor, reason and result transactionally', async () => {
+      resolver.resolveWithinTransaction.mockResolvedValue({
+        status: 'PERSON_CREATED',
+        person,
+        profileEnrichmentRequired: false,
+      });
+
+      await expect(repository.createPerson(input)).resolves.toMatchObject({
+        personId: 12,
+        created: true,
+      });
+
+      expect(db.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: 7,
+            action: 'PERSON_CREATED',
+            module: 'IDENTITY',
+            entityType: 'Person',
+            entityId: '12',
+            details: expect.objectContaining({
+              result: 'CREATED',
+              reason: input.reason,
+              identificationType: 'NATIONAL',
+            }),
+            ipAddress: '127.0.0.1',
+            userAgent: 'test-agent',
+          }),
+        }),
+      );
+      expect(JSON.stringify(db.auditLog.create.mock.calls)).not.toContain(
+        input.identification,
+      );
+    });
+
+    it('reuses an unlinked compatible Person and records the reuse result', async () => {
+      resolver.resolveWithinTransaction.mockResolvedValue({
+        status: 'PERSON_REUSED',
+        person,
+        profileEnrichmentRequired: false,
+      });
+      db.user.findUnique.mockResolvedValue(null);
+
+      await expect(repository.createPerson(input)).resolves.toMatchObject({
+        personId: 12,
+        created: false,
+      });
+
+      expect(db.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            details: expect.objectContaining({ result: 'REUSED' }),
+          }),
+        }),
+      );
+    });
+
+    it('rejects a Person already linked to an account without auditing', async () => {
+      resolver.resolveWithinTransaction.mockResolvedValue({
+        status: 'PERSON_REUSED',
+        person,
+        profileEnrichmentRequired: false,
+      });
+      db.user.findUnique.mockResolvedValue({ id: 9 });
+
+      await expect(repository.createPerson(input)).rejects.toMatchObject({
+        code: 'PERSON_ALREADY_HAS_USER',
+      });
+      expect(db.auditLog.create).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['IDENTITY_CONFLICT', 'IDENTITY_CONFLICT'],
+      ['IDENTITY_DUPLICATE_CORRUPTION', 'IDENTITY_DUPLICATE_CORRUPTION'],
+      ['MANUAL_REVIEW_REQUIRED', 'PROFILE_ENRICHMENT_REQUIRED'],
+      ['INCOMPLETE', 'INVALID_IDENTITY'],
+    ])('maps resolver status %s to %s', async (status, code) => {
+      resolver.resolveWithinTransaction.mockResolvedValue({
+        status,
+        profileEnrichmentRequired: false,
+        reason: 'test',
+      });
+
+      await expect(repository.createPerson(input)).rejects.toEqual(
+        expect.objectContaining({ code }),
+      );
+      expect(db.auditLog.create).not.toHaveBeenCalled();
+    });
   });
 
   it('projects non-sensitive affiliation context for /users/me', async () => {
