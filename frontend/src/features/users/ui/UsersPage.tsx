@@ -7,7 +7,8 @@ import { ErrorState } from "@/shared/ui/ErrorState";
 import { LoadingState } from "@/shared/ui/LoadingState";
 import { AdministrativeListLayout, AdministrativeListResults } from "@/shared/ui/AdministrativeListLayout";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import type { User, UserStatus, UserUpdate } from "../model/users.types";
+import { UserPlus } from "lucide-react";
+import type { CreatePersonInput, User, UserStatus, UserUpdate } from "../model/users.types";
 import { getErrorMessage } from "@/shared/lib/errors";
 import {
   useUserDetail,
@@ -19,6 +20,7 @@ import { UsersTable } from "./UsersTable";
 import { UserDetailsModal } from "./UserDetailsModal";
 import { UserManagementDialogs } from "./UserManagementDialogs";
 import { AccountPersonLinkDialog } from './AccountPersonLinkDialog'
+import { CreatePersonDialog } from './CreatePersonDialog'
 import { usersService } from "../api/users.api";
 import { usersKeys } from "../hooks/useUsersQueries";
 import { useToast } from "@/shared/ui/Toast";
@@ -38,11 +40,13 @@ export function UsersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [management, setManagement] = useState<{ user: User; action: ManagementAction } | null>(null);
   const [linkingAccount, setLinkingAccount] = useState<User | null>(null)
+  const [creatingPerson, setCreatingPerson] = useState(false)
   const queryClient = useQueryClient();
   const { notify } = useToast();
   const { user, isLoading: isSessionLoading } = useAuth();
   const mayReadUsers = hasCapability(user?.permissionCodes, "usr.users.read");
   const mayReadRoles = hasCapability(user?.permissionCodes, "usr.roles.read");
+  const mayCreatePerson = hasCapability(user?.permissionCodes, "system.identity.manage");
   const queriesEnabled = !isSessionLoading && mayReadUsers;
 
   const filters = { page, limit, name: query, status: status || undefined, roleId: roleId ? Number(roleId) : 0 };
@@ -98,6 +102,14 @@ export function UsersPage() {
       notify('Cuenta SGI vinculada con la Persona seleccionada.', 'success')
     },
   })
+  const createPersonMutation = useMutation({
+    mutationFn: (payload: CreatePersonInput) => usersService.createPerson(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: usersKeys.all })
+      setCreatingPerson(false)
+      notify('Persona registrada. Ya puede vincularla a una cuenta SGI.', 'success')
+    },
+  })
 
   const clearFilters = () => {
     setPage(1);
@@ -116,6 +128,12 @@ export function UsersPage() {
         context="Administración"
         title="Usuarios"
         description="Administre cuentas SGI, incluidos registros comunitarios sin persona vinculada."
+        actions={mayCreatePerson ? (
+          <Button type="button" onClick={() => setCreatingPerson(true)}>
+            <UserPlus aria-hidden="true" />
+            Registrar Persona
+          </Button>
+        ) : undefined}
       />}
       filters={<UserFilters
         name={name}
@@ -187,6 +205,14 @@ export function UsersPage() {
         onClose={() => { if (!linkMutation.isPending) setLinkingAccount(null) }}
         onConfirm={({ personId, evidenceReference, reason }) => linkingAccount && linkMutation.mutate({ user: linkingAccount, personId, evidenceReference, reason })}
       />
+      {creatingPerson ? (
+        <CreatePersonDialog
+          busy={createPersonMutation.isPending}
+          error={createPersonMutation.error}
+          onClose={() => { if (!createPersonMutation.isPending) setCreatingPerson(false) }}
+          onConfirm={(payload) => createPersonMutation.mutate(payload)}
+        />
+      ) : null}
     </AdministrativeListLayout>
   );
 }

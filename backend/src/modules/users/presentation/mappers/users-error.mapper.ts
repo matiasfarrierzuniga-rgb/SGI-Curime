@@ -10,6 +10,7 @@ import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
 import { NonAssignableRoleError } from '../../domain/errors/non-assignable-role.error';
 import { AccountPersonLinkConflictError } from '../../domain/errors/account-person-link-conflict.error';
 import { PersonNotFoundError } from '../../domain/errors/person-not-found.error';
+import { PersonRegistrationConflictError } from '../../domain/errors/person-registration-conflict.error';
 
 export function toHttpError(error: unknown): never {
   if (
@@ -26,7 +27,10 @@ export function toHttpError(error: unknown): never {
   ) {
     throw new BadRequestException(error.message);
   }
-  if (error instanceof AccountPersonLinkConflictError) {
+  if (
+    error instanceof AccountPersonLinkConflictError ||
+    error instanceof PersonRegistrationConflictError
+  ) {
     throw new ConflictException(error.message);
   }
   throw new ConflictException(
