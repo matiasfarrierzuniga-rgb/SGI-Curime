@@ -19,17 +19,17 @@ export function FinancialSectionNav() {
   if (!inRouterContext || availableLinks.length < 2) return null
 
   return (
-    <nav aria-label="Secciones de gestión financiera" className="grid gap-2 border-b border-border-default pb-5 sm:grid-cols-2 xl:grid-cols-4">
+    <nav aria-label="Secciones de gestión financiera" className="grid gap-2 border-b border-erp-border pb-5 sm:grid-cols-2 xl:grid-cols-4">
       {availableLinks.map(({ label, description, to, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
           end={to === '/app/financial'}
           className={({ isActive }) => cn(
-            'group flex min-h-16 items-center gap-3 rounded-control border px-3 py-2.5 transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+            'group flex min-h-16 items-center gap-3 rounded-control border px-3 py-2.5 transition-[background-color,border-color,box-shadow] focus-visible:border-erp-focus focus-visible:ring-3 focus-visible:ring-erp-focus/30',
             isActive
-              ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-              : 'border-border-default bg-surface-card text-text-primary hover:border-border-strong hover:bg-surface-muted',
+              ? 'border-erp-navigation bg-erp-navigation text-erp-navigation-foreground shadow-elevation-1'
+              : 'border-erp-border bg-erp-surface-raised text-erp-text hover:border-erp-border-strong hover:bg-erp-surface-subtle',
           )}
         >
           <Icon aria-hidden="true" className="size-5 shrink-0" />

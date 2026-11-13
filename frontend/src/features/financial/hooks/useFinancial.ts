@@ -25,7 +25,7 @@ export function useFinancialChargeDetail(id: number | null) { return useQuery({ 
 export function useFinancialMovementsList(filters: FinancialMovementListFilters, enabled = true) { return useQuery({ queryKey: financialKeys.movementList(filters), queryFn: () => financialApi.listMovements(filters), enabled }) }
 export function useFinancialMovementDetail(id: number | null) { return useQuery({ queryKey: financialKeys.movementDetail(id ?? 0), queryFn: () => financialApi.getMovement(id!), enabled: id !== null }) }
 export function useFinancialMovementSummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>, enabled = true) { return useQuery({ queryKey: financialKeys.movementSummary(filters), queryFn: () => financialApi.getMovementSummary(filters), enabled }) }
-export function useTreasurySummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>) { return useQuery({ queryKey: financialKeys.treasurySummary(filters), queryFn: () => financialApi.getTreasurySummary(filters) }) }
+export function useTreasurySummary(filters: Pick<FinancialMovementListFilters, 'dateFrom' | 'dateTo'>, enabled = true) { return useQuery({ queryKey: financialKeys.treasurySummary(filters), queryFn: () => financialApi.getTreasurySummary(filters), enabled }) }
 export function useDinadecoAnnualReport(year: number) { return useQuery({ queryKey: financialKeys.dinadecoAnnual(year), queryFn: () => financialApi.getDinadecoAnnualReport(year) }) }
 export function useCreateFinancialMovement() {
   const queryClient = useQueryClient()
