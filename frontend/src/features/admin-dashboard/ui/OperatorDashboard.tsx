@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { Boxes, FileClock, Package, TriangleAlert } from "lucide-react";
 import { Link } from "react-router-dom";
-import type { InventoryReportSummary } from "@/types/inventory";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -11,10 +10,17 @@ type OperatorDashboardProps = {
   permissionCodes?: readonly string[];
   userName?: string;
   canViewInventory: boolean;
-  summary: InventoryReportSummary | null;
+  summary: InventorySummary | null;
   loading: boolean;
   summaryUnavailable: boolean;
   quickActions: readonly { label: string; path: string; icon?: LucideIcon }[];
+};
+
+type InventorySummary = {
+  activeItems: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  overdueLoans: number;
 };
 
 export function OperatorDashboard({ permissionCodes, userName, canViewInventory, summary, loading, summaryUnavailable, quickActions }: OperatorDashboardProps) {
@@ -27,7 +33,7 @@ export function OperatorDashboard({ permissionCodes, userName, canViewInventory,
   </section>;
 }
 
-function InventorySummary({ summary, loading, unavailable }: { summary: InventoryReportSummary | null; loading: boolean; unavailable: boolean }) {
+function InventorySummary({ summary, loading, unavailable }: { summary: InventorySummary | null; loading: boolean; unavailable: boolean }) {
   if (loading) return <section aria-label="Cargando resumen de inventario" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Skeleton className="h-36" /><Skeleton className="h-36" /><Skeleton className="h-36" /><Skeleton className="h-36" /></section>;
   if (!summary) return <EmptyState title={unavailable ? "El resumen de inventario no está disponible." : "No hay datos de inventario para mostrar."} description="Puede consultar el módulo de Inventario si cuenta con acceso." />;
   const indicators = [{ label: "Artículos activos", value: summary.activeItems, icon: Package, attention: false }, { label: "Stock bajo", value: summary.lowStockCount, icon: TriangleAlert, attention: summary.lowStockCount > 0 }, { label: "Artículos agotados", value: summary.outOfStockCount, icon: Boxes, attention: summary.outOfStockCount > 0 }, { label: "Préstamos vencidos", value: summary.overdueLoans, icon: FileClock, attention: summary.overdueLoans > 0 }];
