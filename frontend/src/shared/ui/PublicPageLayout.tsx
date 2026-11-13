@@ -20,17 +20,17 @@ export function Breadcrumbs({ current, variant = 'simple' }: { current: string; 
 
 type PublicHeaderImage = { src: string; mobileSrc?: string; alt: string }
 
-export function PublicPageHeader({ title, intro, eyebrow = 'ADI Curime · Información institucional', breadcrumb, image }: { title: string; intro: string; eyebrow?: string; breadcrumb?: string; image?: PublicHeaderImage }) {
-  return <header className="border-b border-brand-sage/70 bg-surface-muted">
+export function PublicPageHeader({ title, intro, eyebrow = 'ADI Curime · Información institucional', breadcrumb, image, titleClassName = '' }: { title: string; intro: string; eyebrow?: string; breadcrumb?: string; image?: PublicHeaderImage; titleClassName?: string }) {
+  return <header className="border-b border-border/70 bg-surface-muted">
     <div className={`public-container ${image ? 'pb-8 md:pb-10' : 'pb-7 md:pb-10'}`}>
       {breadcrumb && <Breadcrumbs current={breadcrumb} variant="simple" />}
       <div className={image ? 'grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)] lg:items-center lg:gap-12' : ''}>
         <div className={image ? 'lg:py-6' : ''}>
           <p className="public-eyebrow text-brand-primary">{eyebrow}</p>
-          <h1 className="public-heading mt-2 max-w-3xl text-display text-brand-ink md:mt-3">{title}</h1>
+          <h1 className={`public-heading mt-2 max-w-3xl text-display text-text-primary md:mt-3 ${titleClassName}`}>{title}</h1>
           <p className="mt-3 max-w-2xl text-pretty text-body-large leading-relaxed text-foreground-secondary md:mt-4">{intro}</p>
         </div>
-        {image ? <picture className="block aspect-[16/9] overflow-hidden rounded-surface border border-brand-sage/70 bg-brand-ivory shadow-surface lg:min-h-72">
+        {image ? <picture className="block aspect-[16/9] overflow-hidden rounded-surface border border-border/70 bg-surface-page shadow-surface lg:min-h-72">
           {image.mobileSrc ? <source media="(max-width: 767px)" srcSet={image.mobileSrc} type="image/webp" /> : null}
           <img src={image.src} alt={image.alt} width="1500" height="1000" className="size-full object-cover" />
         </picture> : null}

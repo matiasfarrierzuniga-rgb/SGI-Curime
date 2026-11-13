@@ -63,7 +63,7 @@ export function TokenPasswordPage({ mode }: { mode: 'activate' | 'reset' }) {
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-primary">{isActivation ? 'Primer acceso' : 'Recuperación de acceso'}</p>
       <h1 className="mt-2 font-heading text-heading-1 font-bold text-brand-deep">{title}</h1>
       <p className="mt-3 leading-relaxed text-foreground-muted">{isActivation ? 'Defina una contraseña para completar la activación de su cuenta.' : 'Defina una nueva contraseña para volver a ingresar a su cuenta.'}</p>
-      <p id="password-requirements" className="mt-3 rounded-lg bg-brand-ivory p-3 text-sm leading-relaxed text-foreground-muted">La contraseña debe tener al menos 10 caracteres e incluir mayúscula, minúscula y número.</p>
+      <p id="password-requirements" className="mt-3 rounded-lg bg-surface-page p-3 text-sm leading-relaxed text-foreground-muted">La contraseña debe tener al menos 10 caracteres e incluir mayúscula, minúscula y número.</p>
       <StatusMessage error={error || (isActivation && !hasToken ? 'Falta el token de activación. Abra el enlace recibido por correo o solicite ayuda a la administración.' : '')} success={success} />
       {!success && <form className="mt-6 grid gap-5" onSubmit={submit}>
         <label className="grid gap-2 text-sm font-bold" htmlFor="access-token">Token

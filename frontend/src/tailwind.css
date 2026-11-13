@@ -22,43 +22,43 @@
   --color-brand-sage: #b8c4b4;
   --color-card-white: #fffdf9;
 
-  /* Semantic color foundation. Values remain raw so legacy aliases stay stable. */
-  --color-foreground-primary: #2b2723;
-  --color-foreground-secondary: #5f574f;
-  --color-foreground-muted: #766d64;
-  --color-foreground-disabled: #a69d92;
-  --color-foreground-brand: #2f4a38;
-  --color-foreground-institutional: #4a2f1a;
-  --color-background-app: #faf4ea;
+  /* Semantic surface foundation. Keep legacy brand aliases stable for excluded identity surfaces. */
+  --color-foreground-primary: #243c34;
+  --color-foreground-secondary: #536358;
+  --color-foreground-muted: #64756b;
+  --color-foreground-disabled: #8b9a91;
+  --color-foreground-brand: #07503f;
+  --color-foreground-institutional: #07503f;
+  --color-background-app: #f7f9f7;
   --color-background-surface: #ffffff;
-  --color-background-subtle: #f4efe8;
-  --color-background-muted: #e9e2d9;
-  --color-background-selected: #f5e8cf;
-  --color-border-subtle: #e4ddd4;
-  --color-border-default: #d8d0c6;
-  --color-border-strong: #b8aea3;
-  --color-border-focus: #2f4a38;
+  --color-background-subtle: #e8f1eb;
+  --color-background-muted: #e8f1eb;
+  --color-background-selected: #e8f1eb;
+  --color-border-subtle: #eef3ef;
+  --color-border-default: #dee7df;
+  --color-border-strong: #b9cbbd;
+  --color-border-focus: #07503f;
   --color-border-error: #b03a2e;
-  --color-background: #faf4ea;
-  --color-foreground: #4a2f1a;
-  --color-surface: #fffdf9;
-  --color-surface-muted: #f2eadf;
+  --color-background: #f7f9f7;
+  --color-foreground: #243c34;
+  --color-surface: #ffffff;
+  --color-surface-muted: #e8f1eb;
   --color-surface-elevated: #ffffff;
   --color-surface-overlay: rgb(17 24 39 / 40%);
-  --color-foreground-subtle: #8b7c70;
-  --color-focus: #b03a2e;
+  --color-foreground-subtle: #73847a;
+  --color-focus: #07503f;
 
   --color-admin-primary: #2f5f91;
   --color-admin-border: #d9dde3;
 
   /* ERP semantic palette. Public-site aliases above remain intentionally unchanged. */
-  --color-erp-canvas: #f7f8f6;
+  --color-erp-canvas: #f7f9f7;
   --color-erp-surface: #ffffff;
   --color-erp-surface-raised: #ffffff;
-  --color-erp-surface-subtle: #f1f4f1;
-  --color-erp-border: #dce4dd;
-  --color-erp-border-strong: #bccbc0;
-  --color-erp-text: #24342a;
+  --color-erp-surface-subtle: #e8f1eb;
+  --color-erp-border: #dee7df;
+  --color-erp-border-strong: #b9cbbd;
+  --color-erp-text: #243c34;
   --color-erp-text-muted: #536358;
   --color-erp-accent: #c98a2d;
   --color-erp-secondary: #75b5a6;
@@ -71,27 +71,27 @@
   --color-erp-action: #243e2f;
   --color-erp-action-hover: #314c3b;
   --color-erp-action-active: #1c3024;
-  --color-erp-focus: #c98a2d;
+  --color-erp-focus: #07503f;
 
-  --color-primary: #2f4a38;
-  --color-primary-foreground: #fffdf9;
+  --color-primary: #07503f;
+  --color-primary-foreground: #ffffff;
 
   --color-secondary: #c98a2d;
-  --color-secondary-foreground: #4a2f1a;
+  --color-secondary-foreground: #243c34;
 
   --color-accent: #c98a2d;
-  --color-accent-foreground: #4a2f1a;
+  --color-accent-foreground: #243c34;
   --color-institutional: #b03a2e;
-  --color-institutional-foreground: #fffdf9;
+  --color-institutional-foreground: #ffffff;
 
-  --color-card: #fffdf9;
-  --color-card-foreground: #4a2f1a;
+  --color-card: #ffffff;
+  --color-card-foreground: #243c34;
 
-  --color-border: #d9cbbc;
-  --color-ring: #b03a2e;
+  --color-border: #dee7df;
+  --color-ring: #07503f;
 
-  --color-muted: #f2eadf;
-  --color-muted-foreground: #6c5b4d;
+  --color-muted: #e8f1eb;
+  --color-muted-foreground: #536358;
 
   --color-destructive: #9d3027;
   --color-destructive-foreground: #fff4f2;
@@ -108,29 +108,39 @@
   --color-info: #1f5f8b;
   --color-info-bg: #e8f3f9;
 
-  --color-surface-page: #faf4ea;
-  --color-surface-card: #fffdf9;
-  --color-text-primary: #4a2f1a;
-  --color-text-secondary: #6c5b4d;
-  --color-text-muted: #6c5b4d;
-  --color-text-inverse: #fffdf9;
-  --color-control: #fffdf9;
-  --color-control-disabled: #f2eadf;
+  --color-surface-page: #f7f9f7;
+  --color-surface-card: #ffffff;
+  --color-text-primary: #243c34;
+  --color-text-secondary: #536358;
+  --color-text-muted: #64756b;
+  --color-text-inverse: #ffffff;
+  --color-control: #ffffff;
+  --color-control-disabled: #e8f1eb;
   --color-status-success-surface: #e7efe9;
   --color-status-success-border: #afc3b4;
   --color-status-success-foreground: #2f4a38;
   --color-status-warning-surface: #f6ebd6;
   --color-status-warning-border: #d7b56a;
-  --color-status-warning-foreground: #4a2f1a;
+  --color-status-warning-foreground: #243c34;
   --color-status-error-surface: #f7e7e4;
   --color-status-error-border: #d99a92;
   --color-status-error-foreground: #b03a2e;
   --color-status-info-surface: #e8eeec;
   --color-status-info-border: #aabbb4;
   --color-status-info-foreground: #2f4a38;
-  --color-status-neutral-surface: #f2eadf;
-  --color-status-neutral-border: #d9cbbc;
-  --color-status-neutral-foreground: #6c5b4d;
+  --color-status-neutral-surface: #e8f1eb;
+  --color-status-neutral-border: #dee7df;
+  --color-status-neutral-foreground: #536358;
+  /* Account lifecycle badges remain distinct from general module statuses. */
+  --color-status-account-active-surface: #e7f3eb;
+  --color-status-account-active-border: #a8d2b5;
+  --color-status-account-active-foreground: #21653a;
+  --color-status-account-inactive-surface: #fcebea;
+  --color-status-account-inactive-border: #e6b5b1;
+  --color-status-account-inactive-foreground: #a12f2a;
+  --color-status-account-pending-surface: #f0f2f4;
+  --color-status-account-pending-border: #d0d5da;
+  --color-status-account-pending-foreground: #52606d;
   --color-status-success: #2f6840;
   --color-status-success-surface: #e8f2e8;
   --color-status-warning: #72500f;
@@ -141,10 +151,10 @@
   --color-status-danger-foreground: #9d3027;
   --color-status-info: #1f5f8b;
   --color-status-info-surface: #e8f3f9;
-  --color-status-neutral: #6c5b4d;
-  --color-interaction-primary-default: #2f4a38;
-  --color-interaction-primary-hover: #263d2e;
-  --color-interaction-primary-active: #1e3226;
+  --color-status-neutral: #536358;
+  --color-interaction-primary-default: #07503f;
+  --color-interaction-primary-hover: #064735;
+  --color-interaction-primary-active: #043b2c;
   --color-interaction-danger-default: #b03a2e;
   --color-interaction-danger-hover: #922f26;
   --color-interaction-danger-active: #78271f;
@@ -231,14 +241,14 @@
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 28px rgba(74, 47, 26, 0.1);
-  --shadow-xl: 0 16px 40px rgba(74, 47, 26, 0.18);
+  --shadow-lg: 0 10px 28px rgb(36 60 52 / 10%);
+  --shadow-xl: 0 16px 40px rgb(36 60 52 / 18%);
   --shadow-surface: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-overlay: 0 20px 48px rgba(74, 47, 26, 0.2);
+  --shadow-overlay: 0 20px 48px rgb(36 60 52 / 20%);
   --shadow-elevation-0: none;
   --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-elevation-2: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-elevation-3: 0 10px 28px rgba(74, 47, 26, 0.1);
+  --shadow-elevation-3: 0 10px 28px rgb(36 60 52 / 10%);
 
   --breakpoint-xs: 320px;
   --breakpoint-sm: 375px;

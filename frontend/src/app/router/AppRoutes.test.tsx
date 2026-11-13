@@ -12,6 +12,7 @@ import { inventoryReportsService } from '@/services/inventoryReportsService'
 import { httpClient } from '@/shared/api/httpClient'
 import { AppRoutes } from './AppRoutes'
 import { ToastProvider } from '@/shared/ui/Toast'
+import { ROLE_COMMUNITY_ACCOUNT } from '@/shared/security/roles'
 
 vi.mock('@/features/roles', () => ({
   rolesService: { listActive: vi.fn() },
@@ -216,7 +217,7 @@ describe('AppRoutes capability deep links', () => {
   })
 
   it('keeps a community session and redirects /app to Mi Comunidad', async () => {
-    renderRoute('/app', 'Cuenta comunitaria', false)
+    renderRoute('/app', ROLE_COMMUNITY_ACCOUNT, false)
     expect(await screen.findByRole('heading', { name: 'Bienvenido a Mi Comunidad' })).toBeInTheDocument()
     expect(sessionStorage.getItem('sgi-curime-session')).toBeNull()
   })

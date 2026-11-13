@@ -155,11 +155,11 @@ export function AffiliationPage() {
   return <>
     <Seo title="Afiliación | ADI Curime" description="Solicitud de afiliación a la Asociación de Desarrollo Integral de Curime." />
     <PublicPageHeader breadcrumb="Afiliación" eyebrow="ADI Curime · Solicitudes" title="Solicitud de afiliación" intro="Complete su información en tres pasos para que la Asociación revise su solicitud." />
-    <SectionContainer spacing="compact" className="bg-brand-ivory pb-8 md:pb-10 lg:pb-12">
+    <SectionContainer spacing="compact" className="bg-surface-page pb-8 md:pb-10 lg:pb-12">
       {success ? <Success /> : (
         <div className="mx-auto grid max-w-[68.75rem] gap-3 sm:gap-4">
           <AffiliationIntro />
-          <form className="overflow-hidden rounded-surface border border-brand-sage/80 bg-card-white p-3 shadow-surface sm:p-4 lg:p-5" noValidate onBlur={validateEnteredField} onSubmitCapture={() => { if (step === 3) setShowApplicationErrors(true) }} onSubmit={form.handleSubmit(submit)} aria-busy={form.formState.isSubmitting}>
+          <form className="overflow-hidden rounded-surface border border-border/80 bg-surface-card p-3 shadow-surface sm:p-4 lg:p-5" noValidate onBlur={validateEnteredField} onSubmitCapture={() => { if (step === 3) setShowApplicationErrors(true) }} onSubmit={form.handleSubmit(submit)} aria-busy={form.formState.isSubmitting}>
             <Stepper currentStep={step} />
             {requestError ? <p role="alert" className="mt-4 flex items-center gap-2 rounded-control border border-status-error-border bg-status-error-surface px-3 py-2 text-body-small font-medium text-status-error-foreground"><CircleAlert aria-hidden="true" className="size-4 shrink-0" />{requestError}</p> : null}
             <fieldset disabled={form.formState.isSubmitting} className="contents">
@@ -169,7 +169,7 @@ export function AffiliationPage() {
                   {step === 2 ? <ContactStep form={form} headingRef={stepHeadingRef} showErrors={errorVisibleSteps.has(2) && hasFormErrors} /> : null}
                   {step === 3 ? <ApplicationStep form={form} headingRef={stepHeadingRef} showErrors={showApplicationErrors && hasFormErrors} /> : null}
                 </div>
-                <div className="flex flex-col-reverse gap-3 border-t border-border-subtle bg-card-white px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6 lg:px-7">
+                <div className="flex flex-col-reverse gap-3 border-t border-border-subtle bg-surface-card px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6 lg:px-7">
                   {step === 1
                     ? <Link className="inline-flex min-h-11 w-full items-center justify-center rounded-control border border-brand-deep px-4 text-sm font-semibold text-brand-deep transition-colors hover:bg-brand-deep/5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-auto" to="/">Cancelar</Link>
                     : <Button className="min-h-11 w-full md:w-auto" variant="outline" type="button" onClick={() => showStep(step - 1)}><ChevronLeft aria-hidden="true" />Anterior</Button>}
@@ -187,8 +187,8 @@ export function AffiliationPage() {
 }
 
 function AffiliationIntro() {
-  return <aside className="flex items-center gap-3 rounded-surface border border-brand-accent/25 bg-brand-accent/10 p-3.5 text-brand-ink sm:max-w-md">
-      <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-full border border-brand-accent/35 bg-brand-ivory text-brand-brown"><UsersRound className="size-6" /></span>
+  return <aside className="flex items-center gap-3 rounded-surface border border-brand-accent/25 bg-brand-accent/10 p-3.5 text-text-primary sm:max-w-md">
+      <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-full border border-brand-accent/35 bg-surface-page text-text-primary"><UsersRound className="size-6" /></span>
       <div><h2 className="text-body-small font-bold leading-tight">Forme parte de nuestra comunidad</h2><p className="mt-1 text-caption leading-snug text-foreground-secondary">Su participación fortalece el desarrollo de Curime.</p></div>
     </aside>
 }
@@ -270,9 +270,9 @@ function ApplicationStep({ form, headingRef, showErrors }: StepProps) {
 }
 
 function StepHeading({ id, icon, title, description, ref }: { id: string; icon: ReactElement; title: string; description: string; ref: RefObject<HTMLHeadingElement | null> }) {
-  return <div className="flex items-start gap-3 border-b border-border-subtle pb-4"><span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-red text-white shadow-sm [&_svg]:size-5">{icon}</span><div><h2 ref={ref} tabIndex={-1} id={id} className="font-heading text-heading-3 text-brand-ink outline-none">{title}</h2><p className="mt-0.5 text-body-small leading-relaxed text-muted-foreground">{description}</p></div></div>
+  return <div className="flex items-start gap-3 border-b border-border-subtle pb-4"><span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-red text-white shadow-sm [&_svg]:size-5">{icon}</span><div><h2 ref={ref} tabIndex={-1} id={id} className="font-heading text-heading-3 text-text-primary outline-none">{title}</h2><p className="mt-0.5 text-body-small leading-relaxed text-muted-foreground">{description}</p></div></div>
 }
 
-function Success() { return <section className="mx-auto max-w-2xl rounded-surface border border-success/40 bg-success-bg p-6 shadow-sm sm:p-8" aria-labelledby="affiliation-success-title"><h2 id="affiliation-success-title" className="font-heading text-heading-2">Recibimos su solicitud</h2><p className="mt-3 text-body leading-relaxed">La Asociación se comunicará con usted. No necesita enviar otra solicitud.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Link className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-deep px-4 font-bold text-brand-ivory transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/">Volver al inicio</Link><Link className="inline-flex min-h-11 items-center justify-center rounded-control border border-brand-deep px-4 font-bold text-brand-deep transition-colors hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/contacto">Contactar a la Asociación</Link></div></section> }
+function Success() { return <section className="mx-auto max-w-2xl rounded-surface border border-success/40 bg-success-bg p-6 shadow-sm sm:p-8" aria-labelledby="affiliation-success-title"><h2 id="affiliation-success-title" className="font-heading text-heading-2">Recibimos su solicitud</h2><p className="mt-3 text-body leading-relaxed">La Asociación se comunicará con usted. No necesita enviar otra solicitud.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Link className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-deep px-4 font-bold text-white transition-colors hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/">Volver al inicio</Link><Link className="inline-flex min-h-11 items-center justify-center rounded-control border border-brand-deep px-4 font-bold text-brand-deep transition-colors hover:bg-surface-page focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" to="/contacto">Contactar a la Asociación</Link></div></section> }
 
 function Field({ className, label, id, error, description, required, optional, children }: { className?: string; label: ReactNode; id: string; error?: string; description?: ReactNode; required?: boolean; optional?: boolean; children: ReactElement<FieldControlProps> }) { return <FormField className={className} id={id} label={label} error={error} description={description} required={required} optional={optional} reserveMessageSpace>{children}</FormField> }

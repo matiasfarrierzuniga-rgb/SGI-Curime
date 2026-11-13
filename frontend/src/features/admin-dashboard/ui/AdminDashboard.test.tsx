@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AdminDashboard } from "@/features/admin-dashboard";
+import { AttentionPanel } from "./sections/AttentionPanel";
 import { httpClient } from "@/shared/api/httpClient";
 import { civilDateKey, currentCostaRicaMonth } from "@/shared/lib/calendar";
 
@@ -73,6 +74,67 @@ function renderDashboard(permissionCodes?: readonly string[]) {
       </QueryClientProvider>
     </MemoryRouter>,
   );
+}
+
+function renderAttentionCount(count: number) {
+  return render(
+    <MemoryRouter>
+      <AttentionPanel
+        data={{ affiliateRequests: { pending: count } }}
+        permissionCodes={["padron.application.review"]}
+      />
+    </MemoryRouter>,
+  );
+}
+
+function calendarSources(activityStart: string) {
+  return {
+    events: {
+      publicId: "event-1",
+      title: "Evento público",
+      summary: "Resumen",
+      description: null,
+      startAt: activityStart,
+      endAt: null,
+      location: null,
+      status: "SCHEDULED",
+    },
+    reservation: {
+      id: 1,
+      resourceId: 1,
+      resource: { id: 1, name: "Salón", location: null, pricingType: "FREE", price: null, currency: "CRC" },
+      requesterUserId: 1,
+      requester: { id: 1, fullName: "Ana", email: "ana@example.com" },
+      eventId: null,
+      event: null,
+      startAt: activityStart,
+      endAt: activityStart,
+      purpose: "Actividad",
+      estimatedAttendees: null,
+      notes: null,
+      status: "CONFIRMED",
+      approvedAt: null,
+      approvedById: null,
+      approvedBy: null,
+      rejectionReason: null,
+      cancelledAt: null,
+      createdAt: activityStart,
+      updatedAt: activityStart,
+      financialCharge: null,
+    },
+    assembly: {
+      id: 1,
+      title: "Asamblea",
+      type: null,
+      date: activityStart,
+      place: "Salón",
+      description: null,
+      status: "SCHEDULED",
+      quorumType: null,
+      quorumValue: null,
+      convocationsLockedAt: null,
+    },
+  };
 }
 
 afterEach(() => vi.mocked(httpClient.get).mockReset());
@@ -176,6 +238,16 @@ describe("AdminDashboard", () => {
     expect(screen.queryByText("Reservas pendientes")).not.toBeInTheDocument();
     expect(screen.queryByText("Donaciones")).not.toBeInTheDocument();
   });
+
+  it.each([0, 4, 12, 125])(
+    "keeps the attention count %i as a compact badge",
+    (count) => {
+      renderAttentionCount(count);
+      const badge = screen.getByLabelText(`${count} pendientes`);
+      expect(badge).toHaveClass("inline-flex", "shrink-0", "rounded-full");
+      expect(badge).toHaveTextContent(String(count));
+    },
+  );
 
   it("marks real authorized reservations, assemblies and public events by category on the same Costa Rica day", async () => {
     const month = currentCostaRicaMonth();
@@ -295,6 +367,77 @@ describe("AdminDashboard", () => {
     expect(httpClient.get).toHaveBeenCalledWith("/assemblies", {
       params: { page: 1, limit: 100 },
     });
+  });
+
+  it("keeps available sources and retries only reservations when reservations fail", async () => {
+    const month = currentCostaRicaMonth();
+    const activityStart = `${civilDateKey(month.getFullYear(), month.getMonth() + 1, 7)}T12:00:00-06:00`;
+    const sources = calendarSources(activityStart);
+    vi.mocked(httpClient.get).mockImplementation((url: string) => {
+      if (url === "/admin-reports/dashboard") return Promise.resolve({ data: response });
+      if (url === "/public/events") return Promise.resolve({ data: [sources.events] });
+      if (url === "/reservations") return Promise.reject(new Error("reservations unavailable"));
+      if (url === "/assemblies") return Promise.resolve({ data: { data: [sources.assembly] } });
+      return Promise.reject(new Error(`unexpected endpoint ${url}`));
+    });
+
+    renderDashboard(["res.reservations.read", "governance.assembly.session"]);
+
+    expect(await screen.findByText("No se pudieron cargar: reservas.")).toBeInTheDocument();
+    expect(screen.getByRole("gridcell", { name: /2 actividades: Asambleas, Eventos/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar reservas" }));
+    await waitFor(() =>
+      expect(
+        vi.mocked(httpClient.get).mock.calls.filter(([url]) => url === "/reservations"),
+      ).toHaveLength(2),
+    );
+    expect(vi.mocked(httpClient.get).mock.calls.filter(([url]) => url === "/assemblies")).toHaveLength(1);
+  });
+
+  it("shows an error only when every enabled calendar source fails", async () => {
+    vi.mocked(httpClient.get).mockImplementation((url: string) => {
+      if (url === "/admin-reports/dashboard") return Promise.resolve({ data: response });
+      return Promise.reject(new Error(`unavailable ${url}`));
+    });
+
+    renderDashboard(["res.reservations.read", "governance.assembly.session"]);
+
+    expect(await screen.findByText("No fue posible cargar actividades institucionales.")).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("Calendario institucional")).getByRole("button", {
+        name: "Reintentar",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps assemblies when events and reservations fail", async () => {
+    const month = currentCostaRicaMonth();
+    const activityStart = `${civilDateKey(month.getFullYear(), month.getMonth() + 1, 7)}T12:00:00-06:00`;
+    const sources = calendarSources(activityStart);
+    vi.mocked(httpClient.get).mockImplementation((url: string) => {
+      if (url === "/admin-reports/dashboard") return Promise.resolve({ data: response });
+      if (url === "/assemblies") return Promise.resolve({ data: { data: [sources.assembly] } });
+      return Promise.reject(new Error(`unavailable ${url}`));
+    });
+
+    renderDashboard(["res.reservations.read", "governance.assembly.session"]);
+
+    expect(await screen.findByText(/No se pudieron cargar: eventos, reservas\./i)).toBeInTheDocument();
+    expect(screen.getByRole("gridcell", { name: /1 actividad: Asambleas/ })).toBeInTheDocument();
+  });
+
+  it("does not query unauthorized calendar sources and shows a truthful empty month", async () => {
+    vi.mocked(httpClient.get).mockImplementation((url: string) => {
+      if (url === "/admin-reports/dashboard") return Promise.resolve({ data: response });
+      if (url === "/public/events") return Promise.resolve({ data: [] });
+      return Promise.reject(new Error(`unauthorized source queried: ${url}`));
+    });
+
+    renderDashboard();
+
+    expect(await screen.findByText("No hay actividades institucionales para este mes.")).toBeInTheDocument();
+    expect(vi.mocked(httpClient.get)).not.toHaveBeenCalledWith("/reservations", expect.anything());
+    expect(vi.mocked(httpClient.get)).not.toHaveBeenCalledWith("/assemblies", expect.anything());
   });
 
   it("does not expose broader administrative quick actions without their effective capabilities", async () => {

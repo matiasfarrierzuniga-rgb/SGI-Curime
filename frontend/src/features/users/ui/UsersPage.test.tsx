@@ -176,6 +176,18 @@ describe('UsersPage', () => {
     expect(screen.queryByText('999')).not.toBeInTheDocument()
   })
 
+  it('renders account lifecycle badges with distinct semantic tokens', async () => {
+    const inactive = { ...personWithAccount, id: '105', fullName: 'Inés Inactiva', access: { ...personWithAccount.access, id: 9, status: 'INACTIVE' } }
+    const pending = { ...personWithAccount, id: '106', fullName: 'Pablo Pendiente', access: { ...personWithAccount.access, id: 10, status: 'PENDING_EMAIL_VERIFICATION' } }
+    vi.mocked(usersService.list).mockResolvedValue({ data: [personWithAccountAndAffiliation, inactive, pending] as never, total: 3, page: 1, limit: 10 })
+    page()
+
+    expect(await screen.findByText('Ana Pérez')).toBeInTheDocument()
+    expect(screen.getByText('Activo', { selector: '[data-variant="accountActive"]' })).toHaveClass('bg-status-account-active-surface', 'text-status-account-active-foreground')
+    expect(screen.getByText('Inactivo', { selector: '[data-variant="accountInactive"]' })).toHaveClass('bg-status-account-inactive-surface', 'text-status-account-inactive-foreground')
+    expect(screen.getByText('Correo pendiente de verificación', { selector: '[data-variant="accountPending"]' })).toHaveClass('bg-status-account-pending-surface', 'text-status-account-pending-foreground')
+  })
+
   it('searches/filters and gets detail with Person ID', async () => {
     page()
     await screen.findByText('Ana Pérez')

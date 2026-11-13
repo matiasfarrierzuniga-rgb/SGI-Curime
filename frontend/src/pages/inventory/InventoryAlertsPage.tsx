@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Ban, Box, Clock3, PackageX, ShieldAlert } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { inventoryAlertsService } from '../../services/inventoryAlertsService'
 import type { InventoryAlerts, InventoryLoanAlert } from '../../types/inventory'
@@ -64,12 +65,12 @@ export function InventoryAlertsPage() {
     )
   }
 
-  const groups: { key: keyof InventoryAlerts['summary']; title: string; count: number }[] = [
-    { key: 'lowStock', title: 'Stock bajo', count: data.summary.lowStock },
-    { key: 'outOfStock', title: 'Agotados', count: data.summary.outOfStock },
-    { key: 'overdueLoans', title: 'Préstamos vencidos', count: data.summary.overdueLoans },
-    { key: 'inactiveItems', title: 'Artículos inactivos', count: data.summary.inactiveItems },
-    { key: 'damagedItems', title: 'Artículos dañados', count: data.summary.damagedItems },
+  const groups: { key: keyof InventoryAlerts['summary']; title: string; count: number; icon: typeof Box }[] = [
+    { key: 'lowStock', title: 'Stock bajo', count: data.summary.lowStock, icon: Box },
+    { key: 'outOfStock', title: 'Agotados', count: data.summary.outOfStock, icon: PackageX },
+    { key: 'overdueLoans', title: 'Préstamos vencidos', count: data.summary.overdueLoans, icon: Clock3 },
+    { key: 'inactiveItems', title: 'Artículos inactivos', count: data.summary.inactiveItems, icon: Ban },
+    { key: 'damagedItems', title: 'Artículos dañados', count: data.summary.damagedItems, icon: ShieldAlert },
   ]
 
   const isEmpty = groups.every((g) => data.summary[g.key] === 0)
@@ -80,7 +81,7 @@ export function InventoryAlertsPage() {
       {error && <ErrorState message={error} />}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {groups.map((g) => (
-          <MetricCard key={g.key} label={g.title} value={g.count} state={g.count > 0 ? (g.key === 'overdueLoans' || g.key === 'outOfStock' ? 'danger' : 'warning') : 'success'} stateLabel={g.count > 0 ? 'Requiere atención' : 'Sin pendientes'} />
+          <MetricCard key={g.key} label={g.title} value={g.count} icon={<g.icon />} state={g.count > 0 ? (g.key === 'overdueLoans' || g.key === 'outOfStock' ? 'danger' : 'warning') : 'success'} stateLabel={g.count > 0 ? 'Requiere atención' : 'Sin pendientes'} />
         ))}
       </div>
       {isEmpty ? (

@@ -207,7 +207,7 @@ export function AffiliateAbsenceJustificationPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <button type="submit" className="min-h-11 rounded-control bg-brand-deep px-5 font-semibold text-brand-ivory disabled:cursor-not-allowed disabled:opacity-70" disabled={submitting || loadingAssemblies}>
+            <button type="submit" className="min-h-11 rounded-control bg-brand-deep px-5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70" disabled={submitting || loadingAssemblies}>
               {submitting ? 'Enviando…' : 'Enviar justificación'}
             </button>
             <span className="text-sm text-text-secondary">La solicitud será revisada por la administración.</span>

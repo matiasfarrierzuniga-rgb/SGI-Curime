@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { Eye, Link2, MoreHorizontal, Pencil, ShieldCheck, UserRoundCheck, UserRoundX } from "lucide-react";
 import type { User } from "../model/users.types";
-import { statusLabel } from "../model/userStatus";
+import { accountStatusBadgeVariant, statusLabel } from "../model/userStatus";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from "@/shared/ui/DataTable";
@@ -110,7 +110,7 @@ export function UsersTable({ users, onOpen, onManage, onLinkPerson }: UsersTable
             </DataTableCell>
             <DataTableCell className="hidden w-56 max-w-56 overflow-hidden text-ellipsis whitespace-nowrap text-text-secondary xl:table-cell">{user.person ? user.person.contactEmail || "Persona vinculada sin correo" : "Sin persona vinculada"}</DataTableCell>
             <DataTableCell className="min-w-48 max-w-56">
-              {user.access ? <div className="grid gap-1"><Badge variant={user.access.isBlocked ? "warning" : user.access.status === "ACTIVE" ? "success" : "neutral"}>{statusLabel(user.access)}</Badge><span className="overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text-secondary">{user.access.email}</span></div> : <span className="text-text-secondary">Sin cuenta SGI</span>}
+              {user.access ? <div className="grid gap-1"><Badge variant={accountStatusBadgeVariant(user.access)}>{statusLabel(user.access)}</Badge><span className="overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text-secondary">{user.access.email}</span></div> : <span className="text-text-secondary">Sin cuenta SGI</span>}
             </DataTableCell>
             <DataTableCell className="hidden whitespace-nowrap lg:table-cell">{user.access?.role.label || "Sin rol de cuenta"}</DataTableCell>
             <DataTableCell className="hidden xl:table-cell"><Badge variant={user.affiliate?.status === "ACTIVE" ? "success" : "neutral"}>{user.affiliate ? user.affiliate.status === "ACTIVE" ? "Afiliación activa" : "Afiliación inactiva" : "Sin afiliación"}</Badge></DataTableCell>

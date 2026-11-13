@@ -22,7 +22,7 @@ export function PublicVentureDetailPage() {
 
   return (
     <><div className="public-container"><Breadcrumbs current="Emprendimientos" variant="simple" /></div>
-    <PublicPageContent className="max-w-4xl bg-brand-ivory" spacing="normal">
+    <PublicPageContent className="max-w-4xl bg-surface-page" spacing="normal">
         <Link className="inline-flex min-h-11 items-center gap-2 rounded-sm font-semibold text-brand-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to="/ventures"><ChevronLeft className="size-4" aria-hidden="true" />Volver a emprendimientos</Link>
         {!ventureId ? <ErrorState className="mt-10" title="Emprendimiento no disponible" message="El emprendimiento solicitado no está disponible." action={<Link className="inline-flex min-h-11 items-center rounded-md border border-border px-4 font-semibold" to="/ventures">Ver emprendimientos</Link>} /> : null}
         {ventureId && ventureQuery.isPending ? <LoadingState className="mt-10" label="Cargando emprendimiento..." /> : null}
@@ -39,10 +39,10 @@ function VentureDetail({ venture }: { venture: PublicVenture }) {
 
   return <article className="mt-8 rounded-xl border border-border bg-white p-6 shadow-sm md:p-10">
     <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">Directorio comunitario</p>
-    <h1 className="mt-3 font-heading text-heading-1 font-bold text-brand-ink">{venture.name}</h1>
-    {venture.offerDescription ? <p className="mt-5 text-body-large leading-relaxed text-brand-ink/80">{venture.offerDescription}</p> : null}
-    {venture.description ? <div className="mt-8 whitespace-pre-line text-body leading-relaxed text-brand-ink/80">{venture.description}</div> : null}
-    {venture.locationText || hasContact ? <dl className="mt-8 grid gap-5 border-y border-border py-6 text-body text-brand-ink/80 sm:grid-cols-2">
+    <h1 className="mt-3 font-heading text-heading-1 font-bold text-text-primary">{venture.name}</h1>
+    {venture.offerDescription ? <p className="mt-5 text-body-large leading-relaxed text-text-primary/80">{venture.offerDescription}</p> : null}
+    {venture.description ? <div className="mt-8 whitespace-pre-line text-body leading-relaxed text-text-primary/80">{venture.description}</div> : null}
+    {venture.locationText || hasContact ? <dl className="mt-8 grid gap-5 border-y border-border py-6 text-body text-text-primary/80 sm:grid-cols-2">
       {venture.locationText ? <Detail icon={MapPin} label="Ubicación"><span>{venture.locationText}</span></Detail> : null}
       {venture.businessPhone ? <Detail icon={Phone} label="Teléfono"><a className="break-all text-brand-primary underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary" href={`tel:${venture.businessPhone}`}>{venture.businessPhone}</a></Detail> : null}
       {venture.businessEmail ? <Detail icon={Mail} label="Correo electrónico"><a className="break-all text-brand-primary underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary" href={`mailto:${venture.businessEmail}`}>{venture.businessEmail}</a></Detail> : null}
@@ -53,7 +53,7 @@ function VentureDetail({ venture }: { venture: PublicVenture }) {
 }
 
 function Detail({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: ReactNode }) {
-  return <div className="flex gap-3"><Icon className="mt-0.5 size-5 shrink-0 text-brand-primary" aria-hidden="true" /><div><dt className="font-semibold text-brand-ink">{label}</dt><dd className="mt-1">{children}</dd></div></div>
+  return <div className="flex gap-3"><Icon className="mt-0.5 size-5 shrink-0 text-brand-primary" aria-hidden="true" /><div><dt className="font-semibold text-text-primary">{label}</dt><dd className="mt-1">{children}</dd></div></div>
 }
 
 function ExternalDetail({ label, href }: { label: string; href: string }) {

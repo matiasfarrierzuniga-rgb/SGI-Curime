@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { CheckCircle2, CirclePause, CircleX, Search, Store, X } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { getErrorMessage } from '@/shared/lib/errors'
@@ -73,8 +72,8 @@ function SummaryContent({ filtersActive, filteredTotal, activePublishedTotal, st
 
   return <>
     <section aria-label="Indicadores de emprendimientos" className="grid gap-4 md:grid-cols-2">
-      <MetricCard label="Total de emprendimientos" value={formatCount(filteredTotal)} supportingText="Total según los filtros aplicados." icon={<IconTile icon={Store} />} className="min-h-36 border-l-brand-primary" />
-      <MetricCard label="Emprendimientos activos y publicados" value={formatCount(activePublishedTotal)} supportingText="Activos y publicados; limitado por la búsqueda actual." icon={<IconTile icon={CheckCircle2} />} state="success" stateLabel="Visibles en el directorio" className="min-h-36" />
+      <MetricCard label="Total de emprendimientos" value={formatCount(filteredTotal)} supportingText="Total según los filtros aplicados." icon={<Store />} />
+      <MetricCard label="Emprendimientos activos y publicados" value={formatCount(activePublishedTotal)} supportingText="Activos y publicados; limitado por la búsqueda actual." icon={<CheckCircle2 />} state="success" stateLabel="Visibles en el directorio" />
     </section>
 
     <section aria-labelledby="ventures-status-title">
@@ -92,5 +91,4 @@ function StatusOverview({ status, total }: { status: VentureStatus; total: numbe
   return <div className="rounded-surface border border-border-subtle bg-surface-muted p-4"><dt className="flex items-center gap-2 text-label font-semibold text-text-primary"><Icon className="size-4" aria-hidden="true" />{metadata.label}</dt><dd className="mt-3 flex items-end justify-between gap-3"><span className="text-heading-2 font-bold tabular-nums text-text-primary">{formatCount(total)}</span><StatusBadge variant={metadata.variant}>{metadata.description}</StatusBadge></dd></div>
 }
 
-function IconTile({ icon: Icon }: { icon: LucideIcon }) { return <span className="flex size-10 items-center justify-center rounded-control border border-border-subtle bg-background-subtle text-foreground-brand"><Icon className="size-5" aria-hidden="true" /></span> }
 function formatCount(value: number) { return value.toLocaleString('es-CR') }

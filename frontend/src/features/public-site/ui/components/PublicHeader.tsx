@@ -60,7 +60,7 @@ export function PublicHeader() {
   const handleLogout = () => { close(); void logout() }
 
   return (
-    <header ref={headerRef} className="sticky top-0 z-[var(--z-nav)] border-b border-border/90 bg-brand-ivory font-sans text-brand-deep">
+    <header ref={headerRef} className="sticky top-0 z-[var(--z-nav)] border-b border-border/90 bg-surface-muted font-sans text-brand-deep">
       <div className="public-container grid min-h-[4.25rem] grid-cols-[1fr_auto] items-center gap-x-3 py-2 lg:min-h-[4.75rem] lg:grid-cols-[11rem_minmax(0,1fr)_auto] lg:gap-x-5">
         <Link to="/" aria-label="ADI Curime, inicio" className="flex h-10 w-36 shrink-0 items-center rounded-control focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring sm:h-11 sm:w-40 lg:h-14 lg:w-44">
           <img src="/brand/adi-curime-logo-horizontal-color-header-tight.png" alt="" width="1331" height="535" className="block size-full object-contain" />

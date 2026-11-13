@@ -17,7 +17,15 @@ import { useAuth } from "@/features/auth";
 import {
   AdminDashboard,
   canUseAdministrativeDashboard,
+  canUsePresidentDashboard,
+  canUseSecretaryDashboard,
+  canUseOperatorDashboard,
+  canUseTreasuryDashboard,
   InstitutionalDashboardWelcome,
+  OperatorDashboard,
+  PresidentDashboard,
+  SecretaryDashboard,
+  TreasuryDashboard,
 } from "@/features/admin-dashboard";
 import { getRoleName } from "@/shared/security/roles";
 import { hasCapability } from "@/shared/security/access";
@@ -76,8 +84,26 @@ export function AppHomePage() {
   const canViewAdministrativeMetrics = canUseAdministrativeDashboard(
     user?.permissionCodes,
   );
+  const canViewSecretaryDashboard =
+    roleName === "ROLE_INSTITUTIONAL_SECRETARY" &&
+    canUseSecretaryDashboard(user?.permissionCodes);
+  const canViewPresidentDashboard =
+    roleName === "ROLE_INSTITUTIONAL_PRESIDENT" &&
+    canUsePresidentDashboard(user?.permissionCodes);
+  const canViewTreasuryDashboard =
+    roleName === "ROLE_INSTITUTIONAL_TREASURER" &&
+    canUseTreasuryDashboard(user?.permissionCodes);
+  const canViewOperatorDashboard =
+    roleName === "ROLE_INSTITUTIONAL_OPERATOR" &&
+    canUseOperatorDashboard(user?.permissionCodes);
+  const shouldLoadInventorySummary =
+    canViewInventory &&
+    !canViewAdministrativeMetrics &&
+    !canViewSecretaryDashboard &&
+    !canViewPresidentDashboard &&
+    !canViewTreasuryDashboard;
   const showStandaloneInventorySummary =
-    canViewInventory && !canViewAdministrativeMetrics;
+    shouldLoadInventorySummary && !canViewOperatorDashboard;
   const authorizedDestinations = getErpNavigation(user?.permissionCodes)
     .flatMap((section) => section.items)
     .flatMap((item) => (item.children?.length ? item.children : [item]))
@@ -86,11 +112,11 @@ export function AppHomePage() {
         item.path !== undefined && item.path !== "/app/dashboard",
     );
   const [summary, setSummary] = useState<InventoryReportSummary | null>(null);
-  const [loading, setLoading] = useState(showStandaloneInventorySummary);
+  const [loading, setLoading] = useState(shouldLoadInventorySummary);
   const [summaryUnavailable, setSummaryUnavailable] = useState(false);
 
   useEffect(() => {
-    if (!showStandaloneInventorySummary) return;
+    if (!shouldLoadInventorySummary) return;
     let active = true;
     inventoryReportsService
       .summary()
@@ -106,7 +132,7 @@ export function AppHomePage() {
     return () => {
       active = false;
     };
-  }, [showStandaloneInventorySummary]);
+  }, [shouldLoadInventorySummary]);
 
   const firstName = user?.fullName?.trim().split(/\s+/)[0];
 
@@ -120,6 +146,28 @@ export function AppHomePage() {
         <AdminDashboard
           permissionCodes={user?.permissionCodes}
           userName={user?.fullName}
+        />
+      ) : canViewSecretaryDashboard ? (
+        <SecretaryDashboard
+          permissionCodes={user?.permissionCodes}
+          userName={user?.fullName}
+        />
+      ) : canViewPresidentDashboard ? (
+        <PresidentDashboard
+          permissionCodes={user?.permissionCodes}
+          userName={user?.fullName}
+        />
+      ) : canViewTreasuryDashboard ? (
+        <TreasuryDashboard permissionCodes={user?.permissionCodes} userName={user?.fullName} />
+      ) : canViewOperatorDashboard ? (
+        <OperatorDashboard
+          permissionCodes={user?.permissionCodes}
+          userName={user?.fullName}
+          canViewInventory={canViewInventory}
+          summary={summary}
+          loading={loading}
+          summaryUnavailable={summaryUnavailable}
+          quickActions={authorizedDestinations}
         />
       ) : canViewDashboard ? (
         <InstitutionalDashboardWelcome fullName={user?.fullName} />
@@ -142,7 +190,7 @@ export function AppHomePage() {
             <div>
               <h2
                 id="summary-title"
-                className="text-xl font-bold text-brand-ink"
+                className="text-xl font-bold text-text-primary"
               >
                 Resumen de inventario
               </h2>
@@ -205,13 +253,13 @@ export function AppHomePage() {
         </section>
       )}
 
-      {canViewDashboard && (
+      {canViewDashboard && !canViewAdministrativeMetrics && !canViewSecretaryDashboard && !canViewPresidentDashboard && !canViewTreasuryDashboard && !canViewOperatorDashboard && (
         <section aria-labelledby="authorized-destinations-title">
           <Card>
             <CardContent className="p-5">
               <h2
                 id="authorized-destinations-title"
-                className="text-xl font-bold text-brand-ink"
+                className="text-xl font-bold text-text-primary"
               >
                 Accesos autorizados
               </h2>
@@ -246,7 +294,7 @@ export function AppHomePage() {
           <section aria-labelledby="community-actions-title">
             <h2
               id="community-actions-title"
-              className="text-xl font-bold text-brand-ink"
+              className="text-xl font-bold text-text-primary"
             >
               ¿Qué desea hacer?
             </h2>
@@ -260,7 +308,7 @@ export function AppHomePage() {
           <section aria-labelledby="community-links-title">
             <h2
               id="community-links-title"
-              className="text-xl font-bold text-brand-ink"
+              className="text-xl font-bold text-text-primary"
             >
               También puede consultar
             </h2>

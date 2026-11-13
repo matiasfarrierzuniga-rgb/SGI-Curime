@@ -20,7 +20,7 @@ export function LandingPage() {
   }, [])
 
   return (
-    <div className="overflow-clip bg-brand-ivory font-sans text-brand-ink">
+    <div className="overflow-clip bg-surface-page font-sans text-text-primary">
       <HeroSection />
       <QuickLinksSection />
       <AgendaSection />

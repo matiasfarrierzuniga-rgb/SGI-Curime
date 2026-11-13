@@ -1,37 +1,37 @@
 .institutional-agenda {
-  --fc-monarch-primary: var(--color-brand-green);
+  --fc-monarch-primary: #07503f;
   --fc-monarch-primary-foreground: var(--color-primary-foreground);
-  --fc-monarch-primary-over: color-mix(in srgb, var(--color-brand-green) 88%, white);
-  --fc-monarch-primary-down: color-mix(in srgb, var(--color-brand-green) 78%, black);
-  --fc-monarch-secondary: var(--color-brand-ivory);
-  --fc-monarch-secondary-foreground: var(--color-brand-ink);
-  --fc-monarch-secondary-over: var(--color-surface-muted);
-  --fc-monarch-secondary-down: color-mix(in srgb, var(--color-brand-ivory) 88%, var(--color-brand-maize));
-  --fc-monarch-tertiary: var(--color-brand-maize);
-  --fc-monarch-tertiary-foreground: var(--color-primary-foreground);
-  --fc-monarch-tertiary-over: color-mix(in srgb, var(--color-brand-maize) 88%, white);
-  --fc-monarch-tertiary-down: color-mix(in srgb, var(--color-brand-maize) 82%, black);
-  --fc-monarch-event: var(--color-brand-green);
+  --fc-monarch-primary-over: color-mix(in srgb, #07503f 88%, white);
+  --fc-monarch-primary-down: color-mix(in srgb, #07503f 78%, black);
+  --fc-monarch-secondary: #e8f1eb;
+  --fc-monarch-secondary-foreground: #243c34;
+  --fc-monarch-secondary-over: #e8f1eb;
+  --fc-monarch-secondary-down: #dee7df;
+  --fc-monarch-tertiary: #e8f1eb;
+  --fc-monarch-tertiary-foreground: #07503f;
+  --fc-monarch-tertiary-over: color-mix(in srgb, #e8f1eb 88%, white);
+  --fc-monarch-tertiary-down: #dee7df;
+  --fc-monarch-event: #07503f;
   --fc-monarch-event-contrast: var(--color-primary-foreground);
-  --fc-monarch-highlight: color-mix(in srgb, var(--color-brand-maize) 18%, transparent);
+  --fc-monarch-highlight: color-mix(in srgb, #07503f 10%, transparent);
   --fc-monarch-now: var(--color-brand-red);
-  --fc-monarch-selected: var(--color-brand-green);
+  --fc-monarch-selected: #07503f;
   --fc-monarch-selected-foreground: var(--color-primary-foreground);
   --fc-monarch-selected-over: var(--fc-monarch-primary-over);
   --fc-monarch-selected-down: var(--fc-monarch-primary-down);
   --fc-monarch-outline: var(--color-ring);
-  --fc-monarch-popover: var(--color-surface-card);
-  --fc-monarch-background: var(--color-surface-card);
-  --fc-monarch-faint: color-mix(in srgb, var(--color-brand-ink) 4%, transparent);
-  --fc-monarch-muted: var(--color-surface-muted);
-  --fc-monarch-strong: color-mix(in srgb, var(--color-brand-ink) 18%, transparent);
-  --fc-monarch-stronger: color-mix(in srgb, var(--color-brand-ink) 28%, transparent);
-  --fc-monarch-strongest: color-mix(in srgb, var(--color-brand-ink) 38%, transparent);
-  --fc-monarch-foreground: var(--color-text-primary);
-  --fc-monarch-faint-foreground: var(--color-text-muted);
-  --fc-monarch-muted-foreground: var(--color-text-secondary);
-  --fc-monarch-border: var(--color-border-default);
-  --fc-monarch-strong-border: var(--color-border-strong);
+  --fc-monarch-popover: #ffffff;
+  --fc-monarch-background: #ffffff;
+  --fc-monarch-faint: color-mix(in srgb, #243c34 4%, transparent);
+  --fc-monarch-muted: #e8f1eb;
+  --fc-monarch-strong: color-mix(in srgb, #243c34 18%, transparent);
+  --fc-monarch-stronger: color-mix(in srgb, #243c34 28%, transparent);
+  --fc-monarch-strongest: color-mix(in srgb, #243c34 38%, transparent);
+  --fc-monarch-foreground: #243c34;
+  --fc-monarch-faint-foreground: color-mix(in srgb, #243c34 60%, white);
+  --fc-monarch-muted-foreground: color-mix(in srgb, #243c34 72%, white);
+  --fc-monarch-border: #dee7df;
+  --fc-monarch-strong-border: #dee7df;
   font-family: var(--font-sans);
 }
 
@@ -41,13 +41,13 @@
   justify-content: space-between;
   gap: .75rem;
   padding: .75rem;
-  border-bottom: 1px solid var(--color-border-subtle);
-  background: var(--color-surface-card);
+  border-bottom: 1px solid #dee7df;
+  background: #ffffff;
 }
 
 .calendar-toolbar-title {
   min-width: 0;
-  color: var(--color-brand-ink);
+  color: #07503f;
   font-size: var(--text-heading-3);
   font-weight: 700;
   line-height: 1.2;
@@ -66,18 +66,18 @@
   display: flex;
   gap: .125rem;
   padding: .1875rem;
-  border: 1px solid var(--color-border-default);
+  border: 1px solid #dee7df;
   border-radius: var(--radius-control);
-  background: var(--color-surface-muted);
+  background: #e8f1eb;
 }
 
 .calendar-view-switcher [data-slot='button'] { min-width: 0; }
 
 .calendar-canvas { overflow-x: auto; }
 
-.institutional-agenda .fc-sgi-selected-day { background: color-mix(in srgb, var(--color-brand-maize) 18%, transparent); }
-.institutional-agenda .fc-sgi-selected-day .fc-daygrid-day-number { color: var(--color-brand-ink); font-weight: 800; }
-.institutional-agenda .fc-event { border-radius: var(--radius-control); }
+.institutional-agenda .fc-sgi-selected-day { background: #e8f1eb; }
+.institutional-agenda .fc-sgi-selected-day .fc-daygrid-day-number { color: #07503f; font-weight: 800; }
+.institutional-agenda .fc-event { border: 0; border-radius: var(--radius-control); box-shadow: 0 1px 2px color-mix(in srgb, #243c34 10%, transparent); }
 
 @media (max-width: 900px) {
   .calendar-toolbar { flex-wrap: wrap; }
