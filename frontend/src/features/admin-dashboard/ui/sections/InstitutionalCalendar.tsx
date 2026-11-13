@@ -1,0 +1,464 @@
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  CalendarCheck,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  CircleDot,
+  Clock3,
+  MapPin,
+  UsersRound,
+} from "lucide-react";
+import type { Assembly } from "@/features/assemblies";
+import type { PublicEvent } from "@/features/events";
+import type { AdminReservation } from "@/features/reservations";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardHeader } from "@/shared/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { calendarKey, calendarMonthDays, formatCalendarDate } from "@/shared/lib/calendar";
+import { calendarActivities, formatCalendarDay, groupActivitiesByDay } from "../../model/calendar";
+import type { CalendarActivity, CalendarCategory } from "../../model/calendar";
+import { InlineRetry } from "../primitives";
+export function InstitutionalCalendar({
+  month,
+  onMonthChange,
+  events,
+  reservations,
+  assemblies,
+  includeReservations,
+  includeAssemblies,
+  agendaPath,
+  isPending,
+  isError,
+  onRetry,
+}: {
+  month: Date;
+  onMonthChange: (month: Date) => void;
+  events?: PublicEvent[];
+  reservations?: AdminReservation[];
+  assemblies?: Assembly[];
+  includeReservations: boolean;
+  includeAssemblies: boolean;
+  agendaPath: string;
+  isPending: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}) {
+  const activities = useMemo(
+    () =>
+      calendarActivities(
+        events,
+        reservations,
+        assemblies,
+        includeReservations,
+        includeAssemblies,
+      ),
+    [assemblies, events, includeAssemblies, includeReservations, reservations],
+  );
+  const activitiesByDay = useMemo(
+    () => groupActivitiesByDay(activities, month),
+    [activities, month],
+  );
+  const calendar = calendarMonthDays(month);
+  const monthLabel = formatCalendarDate(month, {
+    month: "long",
+    year: "numeric",
+  });
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  return (
+    <section aria-label="Calendario institucional">
+      <Card className="h-full gap-0 overflow-hidden rounded-[17px] border-0 bg-[#fffdf7] py-0 shadow-elevation-0">
+        <CardHeader className="flex min-h-[75px] flex-row items-center gap-2.5 bg-[#073f30] px-5 py-4">
+          <CalendarDays
+            className="size-6 shrink-0 text-[#d4a547]"
+            aria-hidden="true"
+          />
+          <h2 className="font-sans text-body font-bold text-white">
+            Calendario institucional
+          </h2>
+        </CardHeader>
+        <CardContent className="p-4 pt-5">
+          <div className="grid grid-cols-[2.125rem_minmax(0,1fr)_2.125rem] items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="size-[2.125rem] rounded-[9px] bg-[#e5ece2] text-[#073f30] hover:bg-[#d8e3d7]"
+              aria-label="Mes anterior"
+              onClick={() =>
+                onMonthChange(
+                  new Date(month.getFullYear(), month.getMonth() - 1, 1),
+                )
+              }
+            >
+              <ChevronLeft aria-hidden="true" />
+            </Button>
+            <p className="min-w-0 whitespace-nowrap rounded-full border border-[#d4a547] bg-[#fffdf7] px-1 py-2 text-center text-label font-bold capitalize leading-none text-[#073f30]">
+              {monthLabel}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="size-[2.125rem] rounded-[9px] bg-[#e5ece2] text-[#073f30] hover:bg-[#d8e3d7]"
+              aria-label="Mes siguiente"
+              onClick={() =>
+                onMonthChange(
+                  new Date(month.getFullYear(), month.getMonth() + 1, 1),
+                )
+              }
+            >
+              <ChevronRight aria-hidden="true" />
+            </Button>
+          </div>
+          {isPending ? (
+            <Skeleton className="mt-5 h-60" />
+          ) : isError ? (
+            <InlineRetry
+              message="No fue posible cargar actividades institucionales."
+              onRetry={onRetry}
+            />
+          ) : (
+            <>
+              <div
+                className="mt-4 grid grid-cols-7 border-b border-[#d4a547] pb-2.5 text-center text-caption font-bold text-[#073f30]"
+                aria-hidden="true"
+              >
+                {["L", "M", "X", "J", "V", "S", "D"].map((day) => (
+                  <span key={day}>{day}</span>
+                ))}
+              </div>
+              <div
+                className="mt-2.5 grid grid-cols-7 gap-y-1.5"
+                role="grid"
+                aria-label="Días del mes"
+              >
+                {calendar.map((day) => (
+                  <CalendarDay
+                    key={day.key}
+                    day={day}
+                    activities={activitiesByDay.get(day.key) ?? []}
+                    onSelect={setSelectedDay}
+                  />
+                ))}
+              </div>
+              <CalendarLegend
+                includeReservations={includeReservations}
+                includeAssemblies={includeAssemblies}
+              />
+            </>
+          )}
+        </CardContent>
+      </Card>
+      <DashboardCalendarDialog
+        key={selectedDay ?? "closed"}
+        day={selectedDay}
+        activities={activities}
+        agendaPath={agendaPath}
+        onClose={() => setSelectedDay(null)}
+        onSelectDay={setSelectedDay}
+      />
+    </section>
+  );
+}
+
+function CalendarDay({
+  day,
+  activities,
+  onSelect,
+}: {
+  day: { date: Date; key: string; current: boolean };
+  activities: readonly CalendarActivity[];
+  onSelect: (day: string) => void;
+}) {
+  const categories = (["reservations", "assemblies", "events"] as const).filter(
+    (category) => activities.some((activity) => activity.category === category),
+  );
+  const activityLabel = activities.length
+    ? `, ${activities.length} ${activities.length === 1 ? "actividad" : "actividades"}: ${categories.map((category) => calendarCategoryStyles[category].label).join(", ")}`
+    : "";
+  return (
+    <button
+      type="button"
+      role="gridcell"
+      aria-label={`${formatCalendarDay(day.key)}${activityLabel}. Abrir agenda de esta fecha.`}
+      onClick={() => onSelect(day.key)}
+      className={`relative mx-auto size-[2.125rem] rounded-full border text-body-small leading-none transition-transform hover:scale-105 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus ${activities.length ? "border-[#073f30] bg-[#073f30] font-bold text-white" : day.current ? "border-[#d8ded1] bg-[#fffdf7] text-[#073f30]" : "border-transparent bg-[#e5ece2] text-[#869485]"}`}
+    >
+      <span className="absolute inset-0 grid place-items-center">
+        {day.date.getDate()}
+      </span>
+      {categories.length ? (
+        <span
+          aria-hidden="true"
+          className="absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5"
+        >
+          {categories.map((category) => (
+            <span
+              key={category}
+              className={`size-1.5 rounded-[3px] ${calendarCategoryStyles[category].dot}`}
+            />
+          ))}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function CalendarLegend({
+  includeReservations,
+  includeAssemblies,
+}: {
+  includeReservations: boolean;
+  includeAssemblies: boolean;
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap justify-between gap-x-2 gap-y-2 border-t border-[#d4a547] pt-3 text-caption text-[#073f30]">
+      <CalendarLegendItem
+        category="reservations"
+        unavailable={!includeReservations}
+      />
+      <CalendarLegendItem
+        category="assemblies"
+        unavailable={!includeAssemblies}
+      />
+      <CalendarLegendItem category="events" />
+      <span className="flex items-center gap-1.5">
+        <span className="size-2 rounded-full bg-[#8d56dc]" aria-hidden="true" />
+        Otros <span className="sr-only">: sin fuente autorizada</span>
+      </span>
+    </div>
+  );
+}
+
+function CalendarLegendItem({
+  category,
+  unavailable = false,
+}: {
+  category: CalendarCategory;
+  unavailable?: boolean;
+}) {
+  const style = calendarCategoryStyles[category];
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className={`size-2 rounded-full ${style.dot}`} aria-hidden="true" />
+      {style.label}
+      {unavailable ? <span className="sr-only">: sin acceso</span> : null}
+    </span>
+  );
+}
+
+const calendarCategoryStyles: Record<
+  CalendarCategory,
+  { label: string; dot: string; surface: string }
+> = {
+  reservations: {
+    label: "Reservas",
+    dot: "bg-[#2878f0]",
+    surface: "bg-[#e9f2ff] text-[#145ecb]",
+  },
+  assemblies: {
+    label: "Asambleas",
+    dot: "bg-[#279b72]",
+    surface: "bg-[#e6f6ee] text-[#0c7350]",
+  },
+  events: {
+    label: "Eventos",
+    dot: "bg-[#d69b2d]",
+    surface: "bg-[#fdf3df] text-[#9b6610]",
+  },
+};
+
+function DashboardCalendarDialog({
+  day,
+  activities,
+  agendaPath,
+  onClose,
+  onSelectDay,
+}: {
+  day: string | null;
+  activities: readonly CalendarActivity[];
+  agendaPath: string;
+  onClose: () => void;
+  onSelectDay: (day: string) => void;
+}) {
+  const selectedActivities = activities
+    .filter((activity) => calendarKey(activity.startAt) === day)
+    .sort((a, b) => a.startAt.localeCompare(b.startAt));
+  const categorySet = new Set(
+    selectedActivities.map((activity) => activity.category),
+  );
+  const changeDay = (offset: number) => {
+    if (!day) return;
+    const current = new Date(`${day}T12:00:00-06:00`);
+    current.setDate(current.getDate() + offset);
+    onSelectDay(calendarKey(current));
+  };
+  return (
+    <Dialog
+      open={Boolean(day)}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        size="lg"
+        overlayClassName="bg-[rgb(17_24_39_/_40%)]"
+        className="max-w-5xl gap-5 border-erp-border-strong/70 bg-erp-surface-raised p-5 sm:p-7"
+      >
+        <DialogHeader className="pr-9">
+          <DialogTitle className="text-heading-2 text-erp-navigation">
+            Agenda institucional
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-full bg-erp-surface-subtle text-erp-navigation">
+              <CalendarDays className="size-6" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <DialogDescription className="font-heading text-heading-3 font-bold capitalize text-erp-text">
+                {day ? formatCalendarDay(day) : "Calendario institucional"}
+              </DialogDescription>
+              <p className="mt-1 text-body-small text-erp-text-muted">
+                Actividades comunitarias programadas
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Día anterior"
+              onClick={() => changeDay(-1)}
+            >
+              <ChevronLeft aria-hidden="true" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Día siguiente"
+              onClick={() => changeDay(1)}
+            >
+              <ChevronRight aria-hidden="true" />
+            </Button>
+          </div>
+        </div>
+        <div
+          className="flex flex-wrap gap-2"
+          aria-label="Categorías presentes en la agenda"
+        >
+          {(["events", "assemblies", "reservations"] as const).map(
+            (category) => (
+              <span
+                key={category}
+                className={`inline-flex items-center gap-1.5 rounded-full bg-erp-surface-subtle px-3 py-1 text-caption font-bold ${categorySet.has(category) ? "text-erp-text" : "text-erp-text-muted"}`}
+              >
+                <span
+                  className={`size-2 rounded-sm ${calendarCategoryStyles[category].dot}`}
+                  aria-hidden="true"
+                />
+                {calendarCategoryStyles[category].label}
+              </span>
+            ),
+          )}
+        </div>
+        <section aria-label="Actividades del día">
+          {selectedActivities.length ? (
+            <ol className="grid gap-2.5">
+              {selectedActivities.map((activity) => (
+                <AgendaActivity
+                  key={`${activity.category}-${activity.startAt}-${activity.title}`}
+                  activity={activity}
+                />
+              ))}
+            </ol>
+          ) : (
+            <EmptyState
+              className="border border-dashed border-erp-border py-8"
+              title="Sin actividades para esta fecha"
+              description="Seleccione otro día para consultar la agenda institucional."
+            />
+          )}
+        </section>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-erp-border pt-4">
+          <p className="text-body-small font-bold text-erp-text tabular-nums">
+            {selectedActivities.length}{" "}
+            {selectedActivities.length === 1
+              ? "actividad en este día"
+              : "actividades en este día"}
+          </p>
+          <Link
+            to={agendaPath}
+            className="inline-flex min-h-10 items-center gap-2 rounded-control bg-erp-navigation px-4 text-body-small font-bold text-white transition-colors hover:bg-erp-navigation/90 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-erp-focus"
+          >
+            Ver agenda completa{" "}
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AgendaActivity({ activity }: { activity: CalendarActivity }) {
+  const category = calendarCategoryStyles[activity.category];
+  const IconComponent =
+    activity.category === "assemblies"
+      ? UsersRound
+      : activity.category === "reservations"
+        ? CalendarCheck
+        : CircleDot;
+  return (
+    <li className="relative overflow-hidden rounded-control border border-erp-border bg-erp-surface-raised p-4 before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-erp-navigation">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <span className="grid size-10 shrink-0 place-items-center rounded-control bg-erp-surface-subtle text-erp-navigation">
+          <IconComponent className="size-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-body-small font-bold text-erp-text">
+            {activity.title}
+          </p>
+          <p className="mt-1 text-caption text-erp-text-muted">
+            {category.label} institucional programado.
+          </p>
+        </div>
+        <div className="grid gap-1.5 text-caption text-erp-text-muted sm:w-56">
+          <time
+            className="flex items-center gap-2 font-medium text-erp-text"
+            dateTime={activity.startAt}
+          >
+            <Clock3
+              className="size-3.5 shrink-0 text-erp-navigation"
+              aria-hidden="true"
+            />
+            {formatCalendarDate(activity.startAt, {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
+          </time>
+          <p className="flex items-center gap-2 truncate">
+            <MapPin
+              className="size-3.5 shrink-0 text-erp-navigation"
+              aria-hidden="true"
+            />
+            {activity.detail}
+          </p>
+        </div>
+        <Link
+          className="shrink-0 text-caption font-bold text-erp-navigation underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus"
+          to={activity.path}
+        >
+          Ver detalle
+        </Link>
+      </div>
+    </li>
+  );
+}
