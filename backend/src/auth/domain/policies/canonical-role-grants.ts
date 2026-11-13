@@ -13,7 +13,7 @@ export const CANONICAL_ROLE_GRANT_COUNTS: Readonly<
   ROLE_INSTITUTIONAL_PRESIDENT: 16,
   ROLE_INSTITUTIONAL_SECRETARY: 26,
   ROLE_INSTITUTIONAL_TREASURER: 28,
-  ROLE_INSTITUTIONAL_OPERATOR: 12,
+  ROLE_INSTITUTIONAL_OPERATOR: 16,
   ROLE_SYSTEM_ADMIN: 29,
   ROLE_COMMUNITY_USER: 0,
 };
@@ -114,6 +114,10 @@ export const CANONICAL_ROLE_GRANTS: Readonly<
     'inventory.loan.manage',
     'inv.inventory.read',
     'maintenance.order.manage',
+    'res.reservations.approve',
+    'res.reservations.cancel',
+    'res.reservations.read',
+    'res.reservations.reject',
     'usr.profile.read',
   ],
   ROLE_SYSTEM_ADMIN: [
