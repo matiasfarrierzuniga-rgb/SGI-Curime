@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppHomePage } from "./AppHomePage";
 import { inventoryReportsService } from "@/services/inventoryReportsService";
+import { ROLE_COMMUNITY_ACCOUNT } from "@/shared/security/roles";
 
 const auth = vi.hoisted(() => ({
   user: { fullName: "Ana Pérez", role: "Administrador" },
@@ -182,7 +183,7 @@ describe("AppHomePage", () => {
   });
 
   it("shows a clear set of real account actions to community users", () => {
-    auth.user = { fullName: "María Solano", role: "Vecino/Afiliado" };
+    auth.user = { fullName: "María Solano", role: ROLE_COMMUNITY_ACCOUNT };
     render(
       <MemoryRouter>
         <AppHomePage />

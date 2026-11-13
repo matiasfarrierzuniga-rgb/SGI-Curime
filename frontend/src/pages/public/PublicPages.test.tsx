@@ -174,20 +174,20 @@ describe('portal público', () => {
 
     const volunteering = screen.getByRole('heading', { name: 'Voluntariado' }).closest('article')!
     expect(within(volunteering).getByText('Disponible')).toBeVisible()
-    expect(within(volunteering).getByText(/postúlese a las actividades/)).toBeVisible()
+    expect(within(volunteering).getByText(/oportunidades de voluntariado/)).toBeVisible()
     expect(within(volunteering).getByRole('link', { name: 'Ver oportunidades' })).toHaveAttribute('href', '/voluntariado')
 
     const donations = screen.getByRole('heading', { name: 'Donaciones' }).closest('article')!
     expect(within(donations).getByText('Disponible')).toBeVisible()
     expect(within(donations).getByRole('link', { name: 'Solicitar una donación' })).toHaveAttribute('href', '/donaciones')
 
-    const registration = screen.getByRole('heading', { name: 'Crear una cuenta' }).closest('section')!
-    expect(within(registration).getByText(/verifique su correo/)).toBeVisible()
-    expect(within(registration).getAllByRole('link')).toHaveLength(2)
-    expect(within(registration).getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
-    expect(within(registration).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
+    const orientation = screen.getByRole('heading', { name: '¿Necesita orientación?' }).closest('section')!
+    expect(within(orientation).getByText(/cree una cuenta o inicie sesión para continuar/)).toBeVisible()
+    expect(within(orientation).getByRole('link', { name: 'Contactar a la Asociación' })).toHaveAttribute('href', '/contacto')
+    expect(within(orientation).getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/register')
+    expect(within(orientation).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
     expect(within(screen.getByRole('main')).getAllByRole('article')).toHaveLength(5)
-    expect(screen.getByRole('heading', { name: 'Más formas de participar' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Cómo funciona una solicitud' })).toBeVisible()
   })
 
   it('permite reservar y oculta la creación de cuenta cuando hay sesión', () => {
@@ -204,8 +204,8 @@ describe('portal público', () => {
     const volunteering = screen.getByRole('heading', { name: 'Voluntariado' }).closest('article')!
     expect(within(volunteering).getByText('Disponible')).toBeVisible()
     expect(within(volunteering).getByRole('link', { name: 'Participar como voluntario' })).toHaveAttribute('href', '/voluntariado')
-    expect(screen.queryByRole('heading', { name: 'Crear una cuenta' })).not.toBeInTheDocument()
-    expect(screen.queryByText(/verifique su correo para acceder/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Crear una cuenta' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
     expect(within(screen.getByRole('main')).getAllByRole('article')).toHaveLength(5)
     expect(within(screen.getByRole('heading', { name: 'Donaciones' }).closest('article')!).getByRole('link', { name: 'Solicitar una donación' })).toHaveAttribute('href', '/donaciones')
   })
@@ -290,25 +290,23 @@ describe('portal público', () => {
     expect(headings).toEqual([
       'Curime, más cerca de su comunidad',
       'Lo que puede hacer hoy',
-      'Encuentre lo que necesita',
       'Próximas actividades',
-      'Lo más reciente',
       'Un pueblo unido, un futuro compartido',
-      'Un espacio para encontrarnos',
+      'Lo más reciente',
       'Información pública para la comunidad',
     ])
   })
 
   it('muestra accesos comunitarios y noticias con rutas existentes', () => {
     renderPublic()
-    expect(screen.getByRole('heading', { name: /encuentre lo que necesita/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /consultar sobre afiliación/i })).toHaveAttribute('href', '/afiliacion')
+    expect(screen.getByRole('heading', { name: /lo que puede hacer hoy/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /afiliación/i })).toHaveAttribute('href', '/afiliacion')
     expect(screen.getByRole('link', { name: /ver agenda completa/i })).toHaveAttribute('href', '/eventos')
     const communityAccess = within(screen.getByRole('navigation', { name: 'Accesos comunitarios' }))
     expect(communityAccess.getByRole('link', { name: /emprendimientos/i })).toHaveAttribute('href', '/ventures')
     expect(screen.getByRole('link', { name: /ver todo/i })).toHaveAttribute('href', '/noticias')
     expect(screen.getByRole('heading', { name: /lo más reciente/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /consultar sobre reservas/i })).toHaveAttribute('href', '/servicios/reservas')
+    expect(communityAccess.getByRole('link', { name: /reservas/i })).toHaveAttribute('href', '/servicios')
   })
 
   it('separa acceso público e inicio de sesión', () => {

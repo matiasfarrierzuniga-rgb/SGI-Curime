@@ -160,18 +160,18 @@ describe('ErpLayout', () => {
   it('keeps desktop navigation expanded by default', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
-    expect(sidebar).toHaveClass('w-64')
+    expect(sidebar).toHaveClass('w-68')
     fireEvent.mouseEnter(sidebar)
-    expect(sidebar).toHaveClass('w-64')
+    expect(sidebar).toHaveClass('w-68')
     fireEvent.mouseLeave(sidebar)
-    expect(sidebar).toHaveClass('w-64')
+    expect(sidebar).toHaveClass('w-68')
   })
 
   it('keeps the navigation expanded after pointer leaves', () => {
     renderLayout()
     const sidebar = document.getElementById('erp-sidebar-navigation')!
     fireEvent.mouseLeave(sidebar)
-    expect(sidebar).toHaveClass('w-64')
+    expect(sidebar).toHaveClass('w-68')
     expect(screen.getAllByRole('button', { name: 'Contraer navegación' })[0]).toHaveAttribute('aria-expanded', 'true')
   })
 
@@ -194,8 +194,8 @@ describe('ErpLayout', () => {
     const sidebar = document.getElementById('erp-sidebar-navigation')!
     fireEvent.click(screen.getByRole('button', { name: 'Contraer navegación' }))
     fireEvent.click(screen.getByRole('button', { name: 'Expandir navegación' }))
-    expect(sidebar).toHaveClass('w-64')
-    expect(document.getElementById('erp-content')).toHaveClass('md:ml-64')
+    expect(sidebar).toHaveClass('w-68')
+    expect(document.getElementById('erp-content')).toHaveClass('md:ml-68')
   })
 
   it('keeps empty mobile groups collapsed and exposes their state to keyboard users', () => {
