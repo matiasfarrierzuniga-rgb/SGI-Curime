@@ -54,7 +54,7 @@ export function KpiRow({
   return (
     <section
       aria-labelledby="admin-indicators-title"
-      className="grid min-w-0 gap-3 sm:grid-cols-2 min-[1200px]:grid-cols-4"
+      className="grid min-w-0 gap-3 min-[480px]:grid-cols-2 min-[1200px]:grid-cols-4"
     >
       {cards}
     </section>

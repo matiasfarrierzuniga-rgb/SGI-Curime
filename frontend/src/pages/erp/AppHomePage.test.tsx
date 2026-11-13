@@ -64,6 +64,9 @@ describe("AppHomePage", () => {
       screen.queryByRole("heading", { name: "Accesos rápidos" }),
     ).not.toBeInTheDocument();
     expect(
+      screen.queryByRole("heading", { name: "Accesos autorizados" }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.queryByRole("link", {
         name: /Gestionar usuarios|Revisar solicitudes|Consultar bitácora|Movimientos financieros/,
       }),
@@ -126,7 +129,29 @@ describe("AppHomePage", () => {
     expect(
       screen.getByRole("heading", { name: "Buenos días, Sofía" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Accesos autorizados" }),
+    ).toBeInTheDocument();
     expect(inventoryReportsService.summary).not.toHaveBeenCalled();
+  });
+
+  it("keeps authorized destinations for Secretariat", () => {
+    auth.user = {
+      fullName: "Diego Mora",
+      role: "ROLE_INSTITUTIONAL_SECRETARY",
+      permissionCodes: ["erp.dashboard.read"],
+    };
+    render(
+      <MemoryRouter>
+        <AppHomePage />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.getByRole("heading", { name: "Buenos días, Diego" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Accesos autorizados" }),
+    ).toBeInTheDocument();
   });
 
   it("shows a clear set of real account actions to community users", () => {

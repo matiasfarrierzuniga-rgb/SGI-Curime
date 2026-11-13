@@ -10,7 +10,7 @@ export function InstitutionalDashboardWelcome({
   const firstName = fullName?.trim().split(/\s+/)[0];
   const date = generatedAt ? formatDashboardDate(generatedAt) : null;
   return (
-    <header className="relative isolate min-h-42 overflow-hidden border-y border-erp-border bg-erp-surface-subtle xl:-mx-6 xl:-mt-9">
+    <header className="relative isolate overflow-hidden border-y border-erp-border bg-erp-surface-subtle xl:-mx-6 xl:-mt-9">
       <img
         src="/images/public/home/hero-curime-wide.webp"
         alt=""
@@ -20,8 +20,8 @@ export function InstitutionalDashboardWelcome({
         aria-hidden="true"
         className="absolute inset-0 -z-10 bg-gradient-to-r from-surface-card via-surface-card/90 to-surface-card/35"
       />
-      <div className="grid min-h-42 gap-5 px-5 py-6 sm:px-7 md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.62fr)] md:items-center md:px-10 md:py-5">
-        <div className="flex min-w-0 gap-4">
+      <div className="grid gap-5 px-5 py-6 sm:px-7 md:px-10 md:py-7 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.62fr)] lg:items-center">
+        <div className="flex min-w-0 gap-3 sm:gap-4">
           <span className="grid size-12 shrink-0 place-items-center rounded-full bg-status-warning-surface text-erp-accent">
             <Sun className="size-7" aria-hidden="true" />
           </span>
@@ -49,7 +49,7 @@ export function InstitutionalDashboardWelcome({
             ) : null}
           </div>
         </div>
-        <aside className="rounded-surface border border-surface-card/70 bg-surface-card/90 px-5 py-4 text-erp-navigation shadow-lg backdrop-blur-sm">
+        <aside className="rounded-surface border border-surface-card bg-surface-card px-5 py-4 text-erp-navigation shadow-elevation-1">
           <p className="font-sans text-heading-3 font-semibold leading-snug tracking-[-0.01em]">
             Una comunidad organizada construye más oportunidades.
           </p>

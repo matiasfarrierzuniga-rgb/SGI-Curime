@@ -205,7 +205,7 @@ export function AppHomePage() {
         </section>
       )}
 
-      {canViewDashboard && (
+      {canViewDashboard && !canViewAdministrativeMetrics && (
         <section aria-labelledby="authorized-destinations-title">
           <Card>
             <CardContent className="p-5">
