@@ -33,7 +33,7 @@ function QuickActionItem({ action }: { action: QuickAction }) {
   return (
     <Link
       to={action.path}
-      className="group flex min-h-28 flex-col items-center justify-center gap-2 rounded-control border border-erp-border bg-erp-surface-subtle/70 p-2 text-center transition-colors hover:border-erp-border-strong hover:bg-erp-surface-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus"
+      className="group flex min-h-28 flex-col items-center justify-center gap-2 rounded-control border border-erp-border bg-erp-surface-subtle/70 p-2 text-center transition-colors hover:border-erp-border-strong hover:bg-erp-surface-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       <IconTile icon={action.icon} tone={action.tone} />
       <span className="text-body-small font-semibold leading-snug text-erp-text">

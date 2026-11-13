@@ -95,7 +95,7 @@ function KpiCard({
           <Link
             to={action.path}
             aria-label={action.label}
-            className="grid size-8 place-items-center rounded-full text-erp-navigation transition-colors hover:bg-status-success-surface focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-erp-focus"
+            className="grid size-8 place-items-center rounded-full text-erp-navigation transition-colors hover:bg-status-success-surface focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-focus"
           >
             <ArrowRight className="size-4" aria-hidden="true" />
           </Link>

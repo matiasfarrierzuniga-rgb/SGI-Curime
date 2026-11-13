@@ -72,13 +72,13 @@ export function InstitutionalCalendar({
 
   return (
     <section aria-label="Calendario institucional">
-      <Card className="h-full gap-0 overflow-hidden rounded-[17px] border-0 bg-[#fffdf7] py-0 shadow-elevation-0">
-        <CardHeader className="flex min-h-[75px] flex-row items-center gap-2.5 bg-[#073f30] px-5 py-4">
+      <Card className="h-full gap-0 overflow-hidden rounded-surface border-0 bg-surface-card py-0 shadow-elevation-0">
+        <CardHeader className="flex min-h-[75px] flex-row items-center gap-2.5 bg-erp-navigation px-5 py-4">
           <CalendarDays
-            className="size-6 shrink-0 text-[#d4a547]"
+            className="size-6 shrink-0 text-erp-accent"
             aria-hidden="true"
           />
-          <h2 className="font-sans text-body font-bold text-white">
+          <h2 className="font-sans text-body font-bold text-erp-navigation-foreground">
             Calendario institucional
           </h2>
         </CardHeader>
@@ -88,7 +88,7 @@ export function InstitutionalCalendar({
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="size-[2.125rem] rounded-[9px] bg-[#e5ece2] text-[#073f30] hover:bg-[#d8e3d7]"
+              className="size-[2.125rem] rounded-control bg-status-success-surface text-erp-navigation hover:bg-status-success-border"
               aria-label="Mes anterior"
               onClick={() =>
                 onMonthChange(
@@ -98,14 +98,14 @@ export function InstitutionalCalendar({
             >
               <ChevronLeft aria-hidden="true" />
             </Button>
-            <p className="min-w-0 whitespace-nowrap rounded-full border border-[#d4a547] bg-[#fffdf7] px-1 py-2 text-center text-label font-bold capitalize leading-none text-[#073f30]">
+            <p className="min-w-0 whitespace-nowrap rounded-full border border-erp-accent bg-surface-card px-1 py-2 text-center text-label font-bold capitalize leading-none text-erp-navigation">
               {monthLabel}
             </p>
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="size-[2.125rem] rounded-[9px] bg-[#e5ece2] text-[#073f30] hover:bg-[#d8e3d7]"
+              className="size-[2.125rem] rounded-control bg-status-success-surface text-erp-navigation hover:bg-status-success-border"
               aria-label="Mes siguiente"
               onClick={() =>
                 onMonthChange(
@@ -126,7 +126,7 @@ export function InstitutionalCalendar({
           ) : (
             <>
               <div
-                className="mt-4 grid grid-cols-7 border-b border-[#d4a547] pb-2.5 text-center text-caption font-bold text-[#073f30]"
+                className="mt-4 grid grid-cols-7 border-b border-erp-accent pb-2.5 text-center text-caption font-bold text-erp-navigation"
                 aria-hidden="true"
               >
                 {["L", "M", "X", "J", "V", "S", "D"].map((day) => (
@@ -188,7 +188,7 @@ function CalendarDay({
       role="gridcell"
       aria-label={`${formatCalendarDay(day.key)}${activityLabel}. Abrir agenda de esta fecha.`}
       onClick={() => onSelect(day.key)}
-      className={`relative mx-auto size-[2.125rem] rounded-full border text-body-small leading-none transition-transform hover:scale-105 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus ${activities.length ? "border-[#073f30] bg-[#073f30] font-bold text-white" : day.current ? "border-[#d8ded1] bg-[#fffdf7] text-[#073f30]" : "border-transparent bg-[#e5ece2] text-[#869485]"}`}
+      className={`relative mx-auto size-[2.125rem] rounded-full border text-body-small leading-none transition-transform hover:scale-105 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${activities.length ? "border-erp-navigation bg-erp-navigation font-bold text-erp-navigation-foreground" : day.current ? "border-erp-border bg-surface-card text-erp-navigation" : "border-transparent bg-status-success-surface text-erp-text-muted"}`}
     >
       <span className="absolute inset-0 grid place-items-center">
         {day.date.getDate()}
@@ -218,7 +218,7 @@ function CalendarLegend({
   includeAssemblies: boolean;
 }) {
   return (
-    <div className="mt-4 flex flex-wrap justify-between gap-x-2 gap-y-2 border-t border-[#d4a547] pt-3 text-caption text-[#073f30]">
+    <div className="mt-4 flex flex-wrap justify-between gap-x-2 gap-y-2 border-t border-erp-accent pt-3 text-caption text-erp-navigation">
       <CalendarLegendItem
         category="reservations"
         unavailable={!includeReservations}
@@ -229,7 +229,7 @@ function CalendarLegend({
       />
       <CalendarLegendItem category="events" />
       <span className="flex items-center gap-1.5">
-        <span className="size-2 rounded-full bg-[#8d56dc]" aria-hidden="true" />
+        <span className="size-2 rounded-full bg-status-info" aria-hidden="true" />
         Otros <span className="sr-only">: sin fuente autorizada</span>
       </span>
     </div>
@@ -259,18 +259,18 @@ const calendarCategoryStyles: Record<
 > = {
   reservations: {
     label: "Reservas",
-    dot: "bg-[#2878f0]",
-    surface: "bg-[#e9f2ff] text-[#145ecb]",
+    dot: "bg-status-info",
+    surface: "bg-status-info-surface text-status-info",
   },
   assemblies: {
     label: "Asambleas",
-    dot: "bg-[#279b72]",
-    surface: "bg-[#e6f6ee] text-[#0c7350]",
+    dot: "bg-status-success",
+    surface: "bg-status-success-surface text-status-success",
   },
   events: {
     label: "Eventos",
-    dot: "bg-[#d69b2d]",
-    surface: "bg-[#fdf3df] text-[#9b6610]",
+    dot: "bg-erp-accent",
+    surface: "bg-status-warning-surface text-status-warning",
   },
 };
 
@@ -308,7 +308,7 @@ function DashboardCalendarDialog({
     >
       <DialogContent
         size="lg"
-        overlayClassName="bg-[rgb(17_24_39_/_40%)]"
+        overlayClassName="bg-surface-overlay"
         className="max-w-5xl gap-5 border-erp-border-strong/70 bg-erp-surface-raised p-5 sm:p-7"
       >
         <DialogHeader className="pr-9">
@@ -397,7 +397,7 @@ function DashboardCalendarDialog({
           </p>
           <Link
             to={agendaPath}
-            className="inline-flex min-h-10 items-center gap-2 rounded-control bg-erp-navigation px-4 text-body-small font-bold text-white transition-colors hover:bg-erp-navigation/90 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-erp-focus"
+            className="inline-flex min-h-10 items-center gap-2 rounded-control bg-erp-navigation px-4 text-body-small font-bold text-erp-navigation-foreground transition-colors hover:bg-erp-navigation/90 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-focus"
           >
             Ver agenda completa{" "}
             <ArrowRight className="size-4" aria-hidden="true" />
@@ -453,7 +453,7 @@ function AgendaActivity({ activity }: { activity: CalendarActivity }) {
           </p>
         </div>
         <Link
-          className="shrink-0 text-caption font-bold text-erp-navigation underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus"
+          className="shrink-0 text-caption font-bold text-erp-navigation underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
           to={activity.path}
         >
           Ver detalle

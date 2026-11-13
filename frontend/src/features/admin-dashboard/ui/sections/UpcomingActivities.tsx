@@ -58,7 +58,7 @@ export function UpcomingActivities({
 function UpcomingEvent({ event }: { event: PublicEvent }) {
   const date = new Date(event.startAt);
   return (
-    <Link to={`/eventos/${event.publicId}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-erp-surface-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus">
+    <Link to={`/eventos/${event.publicId}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-erp-surface-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <time dateTime={event.startAt} className="grid size-11 shrink-0 place-items-center rounded-control bg-status-info-surface text-center text-caption font-bold leading-tight text-status-info">
         <span>{new Intl.DateTimeFormat("es-CR", { month: "short", timeZone: "America/Costa_Rica" }).format(date).replace(".", "").toUpperCase()}</span>
         <span className="text-body-small">{new Intl.DateTimeFormat("es-CR", { day: "2-digit", timeZone: "America/Costa_Rica" }).format(date)}</span>

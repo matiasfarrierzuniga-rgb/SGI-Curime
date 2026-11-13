@@ -18,7 +18,7 @@ export function InstitutionalDashboardWelcome({
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-gradient-to-r from-[#fffdf7] via-[#fffdf7]/90 to-[#fffdf7]/35"
+        className="absolute inset-0 -z-10 bg-gradient-to-r from-surface-card via-surface-card/90 to-surface-card/35"
       />
       <div className="grid min-h-42 gap-5 px-5 py-6 sm:px-7 md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.62fr)] md:items-center md:px-10 md:py-5">
         <div className="flex min-w-0 gap-4">
@@ -31,7 +31,7 @@ export function InstitutionalDashboardWelcome({
             </p>
             <h1
               id="admin-indicators-title"
-              className="mt-1 font-sans text-heading-1 font-bold leading-tight tracking-[-0.025em] text-[#073f31]"
+              className="mt-1 font-sans text-heading-1 font-bold leading-tight tracking-[-0.025em] text-erp-navigation"
             >
               Buenos días{firstName ? `, ${firstName}` : ""}
             </h1>
@@ -49,7 +49,7 @@ export function InstitutionalDashboardWelcome({
             ) : null}
           </div>
         </div>
-        <aside className="rounded-surface border border-white/70 bg-[#fffdf7]/90 px-5 py-4 text-[#073f31] shadow-lg backdrop-blur-sm">
+        <aside className="rounded-surface border border-surface-card/70 bg-surface-card/90 px-5 py-4 text-erp-navigation shadow-lg backdrop-blur-sm">
           <p className="font-sans text-heading-3 font-semibold leading-snug tracking-[-0.01em]">
             Una comunidad organizada construye más oportunidades.
           </p>

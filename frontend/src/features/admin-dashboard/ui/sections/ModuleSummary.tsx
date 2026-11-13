@@ -61,7 +61,7 @@ function ModuleRow({ module, allowed }: { module: ModuleItem; allowed: boolean }
     </>
   );
   return allowed ? (
-    <Link to={module.path} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0 hover:bg-erp-surface-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus">
+    <Link to={module.path} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0 hover:bg-erp-surface-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus">
       {content}
     </Link>
   ) : (

@@ -113,7 +113,7 @@ function AttentionRow({ item }: { item: AttentionItem }) {
   return (
     <Link
       to={item.path}
-      className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 transition-colors hover:bg-erp-surface-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-erp-focus"
+      className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 transition-colors hover:bg-erp-surface-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       <IconTile icon={IconComponent} tone={item.tone} size="sm" />
       <div className="min-w-0 flex-1">

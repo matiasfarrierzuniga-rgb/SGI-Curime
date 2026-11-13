@@ -41,7 +41,7 @@ export function DashboardCard({
           ) : null}
         </div>
         {count ? (
-          <span className="rounded-full bg-status-danger px-2 py-0.5 text-caption font-bold text-white">
+          <span className="rounded-full bg-status-danger px-2 py-0.5 text-caption font-bold text-text-inverse">
             {displayCount(count)}
           </span>
         ) : null}
