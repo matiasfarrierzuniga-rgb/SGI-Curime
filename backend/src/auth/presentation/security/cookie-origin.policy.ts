@@ -1,14 +1,14 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { Request } from 'express';
-import { getFrontendOrigin } from '../../application/config/frontend-origin.config';
+import { getFrontendOrigins } from '../../application/config/frontend-origin.config';
 
 export function assertCookieRequestOrigin(request: Request): void {
-  const expectedOrigin = getFrontendOrigin();
+  const allowedOrigins = getFrontendOrigins();
   const origin = request.get('origin');
   const referer = request.get('referer');
   const suppliedOrigin = origin ?? originFromReferer(referer);
 
-  if (suppliedOrigin !== expectedOrigin) {
+  if (!suppliedOrigin || !allowedOrigins.includes(suppliedOrigin)) {
     throw new ForbiddenException('Forbidden');
   }
 }

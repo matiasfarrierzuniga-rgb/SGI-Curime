@@ -14,6 +14,7 @@ import { UnlockUserUseCase } from './application/use-cases/unlock-user.use-case'
 import { UpdateUserUseCase } from './application/use-cases/update-user.use-case';
 import { ResolveBoardPrivilegeReviewUseCase } from './application/use-cases/resolve-board-privilege-review.use-case';
 import { RegisterAdministratorUseCase } from './application/use-cases/register-administrator.use-case';
+import { CreatePersonUseCase } from './application/use-cases/create-person.use-case';
 import { LinkAccountPersonUseCase } from './application/use-cases/link-account-person.use-case';
 import { ListPersonLinkCandidatesUseCase } from './application/use-cases/list-person-link-candidates.use-case';
 import { OptionalJwtAuthGuard } from '../../auth/presentation/guards/optional-jwt-auth.guard';
@@ -23,6 +24,7 @@ import { AuditServiceAdapter } from './infrastructure/audit/audit-service.adapte
 import { PrismaUsersRepository } from './infrastructure/prisma-users.repository';
 import { UsersController } from './presentation/controllers/users.controller';
 import { IdentityAccountLinksController } from './presentation/controllers/identity-account-links.controller';
+import { IdentityPersonsController } from './presentation/controllers/identity-persons.controller';
 import { RegistrationController } from './presentation/controllers/registration.controller';
 
 @Module({
@@ -33,7 +35,12 @@ import { RegistrationController } from './presentation/controllers/registration.
     IdentityModule,
     CommunityAccountsModule,
   ],
-  controllers: [UsersController, RegistrationController, IdentityAccountLinksController],
+  controllers: [
+    UsersController,
+    RegistrationController,
+    IdentityAccountLinksController,
+    IdentityPersonsController,
+  ],
   providers: [
     PrismaUsersRepository,
     { provide: USERS_REPOSITORY, useExisting: PrismaUsersRepository },
@@ -48,6 +55,7 @@ import { RegistrationController } from './presentation/controllers/registration.
     DeactivateUserUseCase,
     UnlockUserUseCase,
     RegisterAdministratorUseCase,
+    CreatePersonUseCase,
     LinkAccountPersonUseCase,
     ListPersonLinkCandidatesUseCase,
     OptionalJwtAuthGuard,

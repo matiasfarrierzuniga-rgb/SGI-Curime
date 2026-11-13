@@ -95,3 +95,28 @@ export interface AccountPersonLinkInput {
   evidenceReference: string
   reason: string
 }
+
+export interface CreatePersonInput {
+  identificationType: 'NATIONAL' | 'DIMEX'
+  identification: string
+  firstName: string
+  firstSurname: string
+  secondSurname?: string
+  phoneCountryCode?: string
+  phoneNationalNumber?: string
+  address?: string
+  reason: string
+}
+
+export interface CreatePersonResult {
+  personId: number
+  created: boolean
+  person: {
+    id: number
+    firstName: string | null
+    firstSurname: string | null
+    secondSurname: string | null
+    identification: string | null
+    identificationType: 'NATIONAL' | 'DIMEX' | null
+  }
+}

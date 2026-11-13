@@ -16,7 +16,7 @@ vi.mock('@/shared/ui/date-picker/DatePicker', () => ({
   </>,
 }))
 
-const resources = [{ id: 1, name: 'Salón comunal', description: 'Espacio para actividades comunitarias', location: 'Curime', capacity: 50, status: 'ACTIVE' as const, pricingType: 'FREE' as const, price: null, currency: 'CRC' }]
+const resources = [{ id: 1, name: 'Salón Comunal', description: 'Espacio para actividades comunitarias', location: 'Curime', capacity: 50, status: 'ACTIVE' as const, pricingType: 'FREE' as const, price: null, currency: 'CRC' }]
 
 function selectReservationDateRange() {
   fireEvent.change(document.getElementById('reservation-start-date')!, { target: { value: '2030-01-01' } })
@@ -27,6 +27,12 @@ function reservationTimeInput(id: 'reservation-start-time' | 'reservation-end-ti
   const input = document.getElementById(id)
   if (!(input instanceof HTMLInputElement) || input.type !== 'time') throw new Error(`Expected time input #${id}`)
   return input
+}
+
+function submitRequestForm() {
+  const form = document.querySelector('form')
+  if (!form) throw new Error('Expected reservation request form')
+  fireEvent.submit(form)
 }
 
 describe('ReservationRequestPage', () => {
@@ -45,7 +51,10 @@ describe('ReservationRequestPage', () => {
     selectReservationDateRange()
     fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '10:00' } })
     fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '12:00' } })
+    fireEvent.change(screen.getByLabelText(/Actividad/), { target: { value: 'DANCES' } })
+    fireEvent.change(screen.getByLabelText(/Categoría de solicitante/), { target: { value: 'GROUPS_COMMITTEES' } })
     fireEvent.change(screen.getByLabelText(/Motivo/), { target: { value: 'Reunión vecinal' } })
+    expect(screen.getByText(/Tarifa de la solicitud:.*90/)).toBeInTheDocument()
   }
 
   it('renders P06 steps and blocks review before availability is checked', () => {
@@ -54,7 +63,40 @@ describe('ReservationRequestPage', () => {
     expect(screen.getAllByRole('listitem').map(step => step.textContent)).toEqual(['1Elegir espacio', '2Fecha y horario', '3Revisar y enviar'])
     expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeDisabled()
     fireEvent.change(screen.getByLabelText(/Espacio/), { target: { value: '1' } })
-    expect(screen.getByText('Está reservando: Salón comunal')).toBeInTheDocument()
+    expect(screen.getByText('Está reservando: Salón Comunal')).toBeInTheDocument()
+  })
+
+  it('blocks activities without a defined tariff even when the space is available', async () => {
+    refetch.mockResolvedValue({ data: { available: true } })
+    render(<ReservationRequestPage />); fill()
+    fireEvent.change(screen.getByLabelText(/Actividad/), { target: { value: 'SPORTS' } })
+    fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
+    expect(await screen.findByText(/No hay tarifa definida para esta combinación/)).toBeInTheDocument()
+    expect(await screen.findByText(/Disponible en este horario/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeDisabled()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  it.each(['0', '-1', '1.5'])('blocks invalid estimated attendees: %s', async attendees => {
+    render(<ReservationRequestPage />); fill()
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/Cantidad de personas/), { target: { value: attendees } })
+    })
+    submitRequestForm()
+    expect(await screen.findByText('Indique una cantidad válida de personas.')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '3. Revise su solicitud' })).not.toBeInTheDocument()
+  })
+
+  it('accepts a positive integer estimated attendees value', async () => {
+    refetch.mockResolvedValue({ data: { available: true } })
+    render(<ReservationRequestPage />); fill()
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/Cantidad de personas/), { target: { value: '25' } })
+    })
+    fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
+    expect(await screen.findByText(/Disponible en este horario/)).toBeInTheDocument()
+    submitRequestForm()
+    expect(await screen.findByRole('heading', { name: '3. Revise su solicitud' })).toBeInTheDocument()
   })
 
   it('does not consult invalid times and presents distinct checking failures', async () => {
@@ -99,8 +141,12 @@ describe('ReservationRequestPage', () => {
     expect(mutateAsync).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Volver a editar' }))
     expect(screen.getByLabelText(/Motivo/)).toHaveValue('Reunión vecinal')
+    expect(screen.getByLabelText(/Actividad/)).toHaveValue('DANCES')
+    expect(screen.getByLabelText(/Categoría de solicitante/)).toHaveValue('GROUPS_COMMITTEES')
     fireEvent.click(screen.getByRole('button', { name: 'Revisar solicitud' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Enviar solicitud' }))
+    const sendButton = await screen.findByRole('button', { name: 'Enviar solicitud' })
+    expect(sendButton).toBeEnabled()
+    fireEvent.click(sendButton)
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1))
     expect(screen.getByRole('button', { name: /Enviando solicitud/ })).toBeDisabled()
     fireEvent.click(screen.getByRole('button', { name: /Enviando solicitud/ }))
@@ -120,7 +166,9 @@ describe('ReservationRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
     await screen.findByText(/Disponible en este horario/)
     fireEvent.click(screen.getByRole('button', { name: 'Revisar solicitud' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Enviar solicitud' }))
+    const sendButton = await screen.findByRole('button', { name: 'Enviar solicitud' })
+    expect(sendButton).toBeEnabled()
+    fireEvent.click(sendButton)
     expect(await screen.findByRole('button', { name: 'Revisar solicitud' })).toBeInTheDocument()
     expect(screen.getByLabelText(/Espacio/)).toHaveValue('1')
     expect(document.getElementById('reservation-start-date')).toHaveValue('2030-01-01')
@@ -128,6 +176,8 @@ describe('ReservationRequestPage', () => {
     expect(reservationTimeInput('reservation-start-time')).toHaveValue('10:00')
     expect(reservationTimeInput('reservation-end-time')).toHaveValue('12:00')
     expect(screen.getByLabelText(/Motivo/)).toHaveValue('Reunión vecinal')
+    expect(screen.getByLabelText(/Actividad/)).toHaveValue('DANCES')
+    expect(screen.getByLabelText(/Categoría de solicitante/)).toHaveValue('GROUPS_COMMITTEES')
     expect(toast.error).toHaveBeenCalled()
   })
 })

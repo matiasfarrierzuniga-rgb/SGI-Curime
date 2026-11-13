@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { toast } from 'sonner'
 import { useAuth } from '@/features/auth'
@@ -157,7 +157,7 @@ describe('ReservationAdminPage', () => {
     fireEvent.click(confirmApproval)
     fireEvent.click(confirmApproval)
     expect(mutations.approve.mutateAsync).toHaveBeenCalledTimes(1)
-    resolve()
+    await act(async () => { resolve() })
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Reserva aprobada correctamente.'))
   })
 
