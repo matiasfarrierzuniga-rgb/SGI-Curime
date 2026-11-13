@@ -6,6 +6,12 @@ export const phoneNationalMaxLength = (countryCode: string) => countryCode === '
 export const digitsOnly = (value: string, maxLength: number) =>
   value.replace(/\D/g, '').slice(0, maxLength)
 
+export const normalizeIdentification = (type: IdentificationType, value: string) =>
+  digitsOnly(value, identificationMaxLength(type))
+
+export const normalizePhoneCountryCode = (value: string) => value.trim().replace(/\s+/g, '')
+export const normalizePhoneNationalNumber = (value: string) => value.replace(/\D/g, '')
+
 export function identificationError(type: IdentificationType, value: string) {
   if (type === 'NATIONAL' && !/^[1-9][0-9]{8}$/.test(value))
     return 'Cédula nacional: debe contener exactamente 9 dígitos y no iniciar en 0.'
@@ -23,6 +29,16 @@ export function phoneError(countryCode: string, nationalNumber: string) {
   if (countryCode.slice(1).length + nationalNumber.length > 15)
     return 'El teléfono internacional no puede superar 15 dígitos.'
   return ''
+}
+
+export function phonePairError(countryCode: string, nationalNumber: string) {
+  const normalizedCountryCode = normalizePhoneCountryCode(countryCode)
+  const normalizedNationalNumber = normalizePhoneNationalNumber(nationalNumber)
+
+  if (!normalizedCountryCode && !normalizedNationalNumber) return ''
+  if (!normalizedCountryCode || !normalizedNationalNumber)
+    return 'Ingrese código de país y número telefónico juntos.'
+  return phoneError(normalizedCountryCode, normalizedNationalNumber)
 }
 
 export const emailError = (value: string) =>

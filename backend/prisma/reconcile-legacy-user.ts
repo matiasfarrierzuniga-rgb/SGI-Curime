@@ -18,6 +18,7 @@ import {
   type ManualReconciliationInput,
   type ManualReconciliationPlan,
 } from '../src/identity-reconciliation/manual-legacy-user-reconciliation';
+import { getPostgresConnectionConfig } from '../src/prisma/postgres-connection';
 
 const ADVISORY_LOCK_ID = 915202605;
 
@@ -47,7 +48,7 @@ async function main(): Promise<void> {
     console.log('REAL_WRITE_REQUESTED=YES');
   }
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: requiredDatabaseUrl() }),
+    adapter: new PrismaPg(getPostgresConnectionConfig(requiredDatabaseUrl())),
   });
 
   try {

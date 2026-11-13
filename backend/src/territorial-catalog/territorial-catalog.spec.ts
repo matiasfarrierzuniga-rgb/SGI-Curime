@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -14,6 +14,10 @@ import {
 } from './territorial-catalog.generator';
 import { TerritorialCatalogController } from './territorial-catalog.controller';
 import { TerritorialCatalogModule } from './territorial-catalog.module';
+import {
+  DEFAULT_TERRITORIAL_CATALOG_MANIFEST_PATH,
+  DEFAULT_TERRITORIAL_CATALOG_PATH,
+} from './territorial-catalog.paths';
 import { TerritorialCatalogService } from './territorial-catalog.service';
 
 const hash = (value: Buffer) =>
@@ -223,16 +227,59 @@ describe('territorial catalog', () => {
       delete process.env.TERRITORIAL_CATALOG_MANIFEST_PATH;
     else process.env.TERRITORIAL_CATALOG_MANIFEST_PATH = previousManifestPath;
   });
-  it('returns catalog unavailable when no approved artifact is configured', () => {
+  it('returns catalog unavailable when the configured artifacts are missing', () => {
     const previousPath = process.env.TERRITORIAL_CATALOG_PATH;
     const previousManifestPath = process.env.TERRITORIAL_CATALOG_MANIFEST_PATH;
-    delete process.env.TERRITORIAL_CATALOG_PATH;
-    delete process.env.TERRITORIAL_CATALOG_MANIFEST_PATH;
+    process.env.TERRITORIAL_CATALOG_PATH = join(
+      tmpdir(),
+      'missing-catalog.json',
+    );
+    process.env.TERRITORIAL_CATALOG_MANIFEST_PATH = join(
+      tmpdir(),
+      'missing-manifest.json',
+    );
     const service = new TerritorialCatalogService();
     expect(() => service.provinces()).toThrow(ServiceUnavailableException);
     if (previousPath !== undefined) process.env.TERRITORIAL_CATALOG_PATH = previousPath;
     if (previousManifestPath !== undefined)
       process.env.TERRITORIAL_CATALOG_MANIFEST_PATH = previousManifestPath;
+  });
+  it('loads packaged artifacts and serves every read-only hierarchy endpoint', () => {
+    expect(existsSync(DEFAULT_TERRITORIAL_CATALOG_PATH)).toBe(true);
+    expect(existsSync(DEFAULT_TERRITORIAL_CATALOG_MANIFEST_PATH)).toBe(true);
+    const previousPath = process.env.TERRITORIAL_CATALOG_PATH;
+    const previousManifestPath = process.env.TERRITORIAL_CATALOG_MANIFEST_PATH;
+    delete process.env.TERRITORIAL_CATALOG_PATH;
+    delete process.env.TERRITORIAL_CATALOG_MANIFEST_PATH;
+    try {
+      const controller = new TerritorialCatalogController(
+        new TerritorialCatalogService(),
+      );
+      const provinces = controller.provinces();
+      const province = provinces.items[0];
+      const cantons = controller.cantons({ provinceCode: province.code });
+      const canton = cantons.items[0];
+      const districts = controller.districts({
+        provinceCode: province.code,
+        cantonCode: canton.code,
+      });
+      const district = districts.items[0];
+      const localities = controller.localities({
+        provinceCode: province.code,
+        cantonCode: canton.code,
+        districtCode: district.code,
+      });
+      expect(provinces.items.length).toBeGreaterThan(0);
+      expect(cantons.items.length).toBeGreaterThan(0);
+      expect(districts.items.length).toBeGreaterThan(0);
+      expect(localities.items.length).toBeGreaterThan(0);
+    } finally {
+      if (previousPath === undefined) delete process.env.TERRITORIAL_CATALOG_PATH;
+      else process.env.TERRITORIAL_CATALOG_PATH = previousPath;
+      if (previousManifestPath === undefined)
+        delete process.env.TERRITORIAL_CATALOG_MANIFEST_PATH;
+      else process.env.TERRITORIAL_CATALOG_MANIFEST_PATH = previousManifestPath;
+    }
   });
   it('resolves service from TerritorialCatalogModule without constructor dependencies', async () => {
     const module = await Test.createTestingModule({

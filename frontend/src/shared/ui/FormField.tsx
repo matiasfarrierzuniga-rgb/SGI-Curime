@@ -16,6 +16,8 @@ type FormFieldProps = Omit<ComponentProps<"div">, "children" | "id"> & {
   description?: ReactNode
   error?: ReactNode
   required?: boolean
+  optional?: boolean
+  reserveMessageSpace?: boolean
   children: ReactElement<ControlProps>
 }
 
@@ -26,12 +28,14 @@ function FormField({
   description,
   error,
   required = false,
+  optional = false,
+  reserveMessageSpace = false,
   children,
   ...props
 }: FormFieldProps) {
   const descriptionId = description ? `${id}-description` : undefined
   const errorId = error ? `${id}-error` : undefined
-  const describedBy = [children.props["aria-describedby"], descriptionId, errorId].filter(Boolean).join(" ") || undefined
+  const describedBy = [children.props["aria-describedby"], reserveMessageSpace && error ? undefined : descriptionId, errorId].filter(Boolean).join(" ") || undefined
   const control = cloneElement(children, {
     id,
     required: required || children.props.required,
@@ -46,10 +50,15 @@ function FormField({
         {label}
         {required && <span className="ml-1 text-destructive" aria-hidden="true">*</span>}
         {required && <span className="sr-only"> (requerido)</span>}
+        {optional && !required && <span className="ml-1 font-normal text-muted-foreground">(opcional)</span>}
       </label>
       {control}
-      {description && <p id={descriptionId} data-slot="form-field-description" className="text-body-small text-muted-foreground">{description}</p>}
-      {error && <p id={errorId} data-slot="form-field-error" className="text-body-small font-medium text-destructive" role="alert">{error}</p>}
+      {reserveMessageSpace ? <div className="min-h-5">
+        {error ? <p id={errorId} data-slot="form-field-error" className="text-body-small font-medium text-destructive" role="alert">{error}</p> : description ? <p id={descriptionId} data-slot="form-field-description" className="text-body-small text-muted-foreground">{description}</p> : null}
+      </div> : <>
+        {description && <p id={descriptionId} data-slot="form-field-description" className="text-body-small text-muted-foreground">{description}</p>}
+        {error && <p id={errorId} data-slot="form-field-error" className="text-body-small font-medium text-destructive" role="alert">{error}</p>}
+      </>}
     </div>
   )
 }

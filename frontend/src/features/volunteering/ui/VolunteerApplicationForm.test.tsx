@@ -27,6 +27,19 @@ describe('VolunteerApplicationForm', () => {
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ fullName: 'Ana Pérez', email: 'ana@example.test', phoneCountryCode: undefined, phoneNationalNumber: undefined, motivation: undefined }))
   })
 
+  it('submits normalized Costa Rican phone values', async () => {
+    mutateAsync.mockResolvedValue({ received: true })
+    render(<VolunteerApplicationForm opportunityId={4} />)
+    fireEvent.change(screen.getByLabelText(/Nombre completo/), { target: { value: 'Ana Pérez' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /Teléfono/ }), { target: { value: '88888888' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar postulación' }))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      phoneCountryCode: '+506',
+      phoneNationalNumber: '88888888',
+    })))
+  })
+
   it('shows the pending-review confirmation after success', () => {
     vi.mocked(useSubmitVolunteerApplication).mockReturnValue({ isPending: false, isSuccess: true, mutateAsync } as never)
     render(<VolunteerApplicationForm opportunityId={4} />)

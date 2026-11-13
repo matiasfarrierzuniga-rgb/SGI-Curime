@@ -9,6 +9,10 @@ import type {
   TerritorialCatalog,
   TerritorialCatalogManifest,
 } from './territorial-catalog.types';
+import {
+  territorialCatalogManifestPath,
+  territorialCatalogPath,
+} from './territorial-catalog.paths';
 
 type Selection = {
   catalogVersion: string;
@@ -27,9 +31,8 @@ const unavailable = () =>
 export class TerritorialCatalogService {
   private readonly catalog?: TerritorialCatalog;
   constructor() {
-    const path = process.env.TERRITORIAL_CATALOG_PATH;
-    const manifestPath = process.env.TERRITORIAL_CATALOG_MANIFEST_PATH;
-    if (!path || !manifestPath) return;
+    const path = territorialCatalogPath();
+    const manifestPath = territorialCatalogManifestPath();
     try {
       const artifact = readFileSync(path, 'utf8');
       const candidate = JSON.parse(artifact) as TerritorialCatalog;

@@ -29,7 +29,7 @@ export function PublicFooter() {
             <p className="mt-3 border-t border-text-inverse/15 pt-3 text-body-small text-text-inverse/70">{site.location}</p>
           </div>
           <nav aria-label="Contacto" className="lg:border-l lg:border-text-inverse/15 lg:pl-6">
-            <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-brand-accent">Contacto</h3>
+            <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-text-inverse">Contacto</h3>
             <ul className="mt-2 space-y-1 text-body-small">
               <li>
                 <a aria-label="Enviar correo a ADI Curime" className={`${footerLinkClassName} gap-2 break-words text-text-inverse`} href={`mailto:${site.email}`}>
@@ -58,7 +58,7 @@ export function PublicFooter() {
             </ul>
           </nav>
           <nav aria-label="Enlaces rápidos" className="lg:border-l lg:border-text-inverse/15 lg:pl-6">
-            <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-brand-accent">Enlaces rápidos</h3>
+            <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-text-inverse">Enlaces rápidos</h3>
             <ul className="mt-2 grid grid-cols-2 gap-x-5 gap-y-1 text-body-small lg:grid-cols-3">
               {site.nav.filter((item) => item.to !== '/').map((item) => (
                 <li key={item.to} className="min-w-0">
@@ -70,7 +70,7 @@ export function PublicFooter() {
             </ul>
           </nav>
           <nav aria-label="Acceso al sistema" className="lg:border-l lg:border-text-inverse/15 lg:pl-6">
-            <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-brand-accent">Sistema</h3>
+            <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-text-inverse">Sistema</h3>
             <ul className="mt-3 space-y-2 text-body-small">
               <li>
                 <Link className="inline-flex min-h-11 items-center gap-2 rounded-control bg-interaction-primary-default px-4 font-semibold text-white shadow-sm transition-colors hover:bg-interaction-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-text-inverse" to={!isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'}>

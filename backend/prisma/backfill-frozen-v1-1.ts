@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { Client } from 'pg';
+import { getPostgresConnectionConfig } from '../src/prisma/postgres-connection';
 
 const APPLY_GATE = 'I_UNDERSTAND_THIS_APPLIES_EVIDENCE_ONLY_BACKFILLS';
 const ADVISORY_LOCK = 915202611;
@@ -228,7 +229,9 @@ async function main(): Promise<void> {
     argument('--report') ?? required('FROZEN_V1_1_BACKFILL_REPORT_PATH'),
   );
   if (applying()) assertApplyProtection();
-  const client = new Client({ connectionString: required('DATABASE_URL') });
+  const client = new Client(
+    getPostgresConnectionConfig(required('DATABASE_URL')),
+  );
   await client.connect();
   try {
     const before = await inventory(client);

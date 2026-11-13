@@ -13,11 +13,11 @@ export function AccessLayout() {
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-48 -left-40 hidden size-80 rounded-full border border-brand-ivory/25 lg:block" />
           <div aria-hidden="true" className="pointer-events-none absolute bottom-10 right-8 hidden size-28 rounded-full border-[18px] border-brand-maize/20 lg:block" />
 
-          <Link to="/" aria-label="CURIME, inicio" className="relative z-10 inline-flex w-fit items-center gap-3 rounded-md no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-maize">
-            <span aria-hidden="true" className="grid size-10 place-items-center rounded-full border border-brand-maize/70 font-heading text-lg text-brand-maize">C</span>
+          <Link to="/" aria-label="CURIME, inicio" className="relative z-10 inline-flex w-fit items-center gap-3 rounded-md no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-ivory">
+            <span aria-hidden="true" className="grid size-10 place-items-center rounded-full border border-brand-maize/70 font-heading text-lg text-brand-ivory">C</span>
             <span>
               <strong className="block font-heading text-xl font-normal leading-none tracking-[0.04em] text-brand-ivory">CURIME</strong>
-              <small className="mt-1 hidden max-w-[20rem] text-[0.62rem] font-bold uppercase leading-relaxed tracking-[0.13em] text-brand-maize sm:block">Asociación de Desarrollo Integral</small>
+              <small className="mt-1 hidden max-w-[20rem] text-[0.62rem] font-bold uppercase leading-relaxed tracking-[0.13em] text-brand-ivory sm:block">Asociación de Desarrollo Integral</small>
             </span>
           </Link>
 
@@ -26,7 +26,7 @@ export function AccessLayout() {
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-brand-ivory/80">Accedé a los servicios digitales de la Asociación desde un espacio claro, seguro y cercano.</p>
           </div>
 
-          <p className="relative z-10 mt-3 text-xs font-bold uppercase tracking-[0.16em] text-brand-maize lg:mt-auto">Nicoya · Guanacaste</p>
+          <p className="relative z-10 mt-3 text-xs font-bold uppercase tracking-[0.16em] text-brand-ivory lg:mt-auto">Nicoya · Guanacaste</p>
         </aside>
 
         <div className="flex min-w-0 flex-col bg-card-white px-5 py-6 sm:px-8 sm:py-7 lg:px-12 lg:py-8">
@@ -34,7 +34,7 @@ export function AccessLayout() {
             <Outlet />
           </div>
           <footer className="mx-auto mt-4 w-full max-w-[33rem] border-t border-border-subtle pt-3 text-center">
-            <Link to="/" className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-bold text-brand-green no-underline hover:bg-brand-ivory focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red">
+            <Link to="/" className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-bold text-brand-green no-underline hover:bg-brand-ivory focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green">
               <ArrowLeft className="size-4" aria-hidden="true" /> Volver al sitio
             </Link>
           </footer>

@@ -205,6 +205,10 @@ En Docker, `DATABASE_URL` apunta al hostname de servicio `postgres`, no a `local
 
 Cuando se ejecuta backend fuera de Docker, la URL debe apuntar a la instancia PostgreSQL accesible desde el host.
 
+Para Supabase/Render, usa el Session Pooler en `:5432`; no reemplaces las
+URLs locales de `backend/.env`. El adaptador Prisma verifica la CA oficial de
+Supabase cuando detecta un hostname `*.pooler.supabase.com` o `*.supabase.co`.
+
 ### Frontend no alcanza el backend
 
 Verifica `VITE_API_URL` y que el backend esté escuchando en el puerto esperado.

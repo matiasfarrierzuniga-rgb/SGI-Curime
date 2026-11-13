@@ -8,6 +8,7 @@ import {
 } from '../generated/prisma/client';
 import { ensureInitialRoles } from './seed-roles';
 import { SYSTEM_ADMIN_ROLE } from '../src/auth/domain/policies/canonical-role-catalog';
+import { getPostgresConnectionConfig } from '../src/prisma/postgres-connection';
 import {
   applyCanonicalRbacPlan,
   inspectCanonicalRbac,
@@ -86,7 +87,7 @@ async function main(): Promise<void> {
   const adminPassword = requiredEnvironmentVariable('ADMIN_PASSWORD');
 
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    adapter: new PrismaPg(getPostgresConnectionConfig(connectionString)),
   });
 
   try {

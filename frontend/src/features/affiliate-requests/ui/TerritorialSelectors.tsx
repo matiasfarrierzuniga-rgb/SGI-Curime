@@ -34,7 +34,7 @@ export function TerritorialSelectors({ form }: Props) {
     <TerritorialField id="provinceCode" label="Provincia" disabled={provinces.isLoading || unavailable} value={provinceCode} onChange={(value) => choose('provinceCode', value)} items={provinces.data?.items} loading={provinces.isFetching} />
     <TerritorialField id="cantonCode" label="Cantón" disabled={!provinceCode || cantons.isLoading || unavailable} value={cantonCode} onChange={(value) => choose('cantonCode', value)} items={cantons.data?.items} loading={cantons.isFetching} />
     <TerritorialField id="districtCode" label="Distrito" disabled={!cantonCode || districts.isLoading || unavailable} value={districtCode} onChange={(value) => choose('districtCode', value)} items={districts.data?.items} loading={districts.isFetching} />
-    <FormField id="localityKey" label="Localidad" description={pending ? <span className="inline-flex items-center gap-1"><LoaderCircle aria-hidden="true" className="size-3 animate-spin motion-reduce:animate-none" />Actualizando opciones…</span> : undefined}>
+      <FormField id="localityKey" label="Localidad" description={pending ? <span className="inline-flex items-center gap-1"><LoaderCircle aria-hidden="true" className="size-3 animate-spin motion-reduce:animate-none" />Actualizando opciones…</span> : undefined} reserveMessageSpace>
       <Select className="h-12" value={form.watch('localityKey')} disabled={!districtCode || localities.isLoading || unavailable} onChange={(event) => choose('localityKey', event.target.value)}>
         <option value="">Seleccione una localidad</option>
         {localities.data?.items.map((item) => <option key={item.localityKey} value={item.localityKey}>{item.name} — {item.category}</option>)}
@@ -44,5 +44,5 @@ export function TerritorialSelectors({ form }: Props) {
 }
 
 function TerritorialField({ id, label, disabled, value, onChange, items, loading }: { id: 'provinceCode' | 'cantonCode' | 'districtCode'; label: string; disabled: boolean; value: string; onChange: (value: string) => void; items?: { code: string; name: string }[]; loading: boolean }) {
-  return <FormField id={id} label={label} description={loading ? 'Cargando opciones…' : undefined}><Select className="h-12" value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)}><option value="">Seleccione {label.toLowerCase()}</option>{items?.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}</Select></FormField>
+  return <FormField id={id} label={label} description={loading ? 'Cargando opciones…' : undefined} reserveMessageSpace><Select className="h-12" value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)}><option value="">Seleccione {label.toLowerCase()}</option>{items?.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}</Select></FormField>
 }

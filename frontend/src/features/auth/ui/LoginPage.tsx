@@ -46,25 +46,25 @@ export function LoginPage() {
       <StatusMessage error={error} />
       <form className="mt-8 grid gap-5" onSubmit={submit}>
         <label className="grid gap-2 text-sm font-bold text-brand-brown" htmlFor="login-email">Correo electrónico
-          <Input id="login-email" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus:border-brand-red focus:bg-card-white focus:outline-none" type="email" inputMode="email" autoComplete="username" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} />
+          <Input id="login-email" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus-visible:border-brand-green focus-visible:bg-card-white focus-visible:ring-3 focus-visible:ring-brand-green/50 aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-destructive/20" type="email" inputMode="email" autoComplete="username" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} />
         </label>
         <div className="grid gap-2">
           <div className="flex items-center justify-between gap-3">
             <label className="text-sm font-bold text-brand-brown" htmlFor="login-password">Contraseña</label>
-            <Link className="rounded-sm text-sm font-bold text-brand-red underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red" to="/forgot-password">¿Olvidó su contraseña?</Link>
+            <Link className="rounded-sm text-sm font-bold text-brand-red underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green" to="/forgot-password">¿Olvidó su contraseña?</Link>
           </div>
           <div className="relative">
-            <Input id="login-password" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 pr-12 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus:border-brand-red focus:bg-card-white focus:outline-none" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
-            <Button type="button" variant="ghost" size="icon" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)} className="absolute right-1 top-1 size-10 rounded-md border-0 bg-transparent p-0 text-brand-brown transition-colors hover:bg-brand-maize/15 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-red">
+            <Input id="login-password" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 pr-12 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus-visible:border-brand-green focus-visible:bg-card-white focus-visible:ring-3 focus-visible:ring-brand-green/50 aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-destructive/20" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
+            <Button type="button" variant="ghost" size="icon" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)} className="absolute right-1 top-1 size-10 rounded-md border-0 bg-transparent p-0 text-brand-brown transition-colors hover:bg-brand-maize/15 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-green">
               {showPassword ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
             </Button>
           </div>
         </div>
-        <Button type="submit" className="min-h-12 w-full rounded-lg border border-brand-red bg-linear-to-r from-brand-red to-brand-maize px-5 py-3 font-bold text-brand-ivory shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red disabled:cursor-not-allowed disabled:opacity-55" disabled={loading}>{loading ? 'Ingresando…' : 'Iniciar sesión'}</Button>
+        <Button type="submit" className="min-h-12 w-full rounded-lg border border-transparent bg-interaction-primary-default px-5 py-3 font-bold text-primary-foreground shadow-sm hover:bg-interaction-primary-hover active:bg-interaction-primary-active focus-visible:!outline-3 focus-visible:!outline-solid focus-visible:!outline-brand-green focus-visible:!outline-offset-2 disabled:cursor-not-allowed disabled:opacity-55" disabled={loading}>{loading ? 'Ingresando…' : 'Iniciar sesión'}</Button>
       </form>
       <div className="mt-8 border-t border-border-subtle pt-6 text-center">
         <p className="text-sm text-foreground-muted">¿Todavía no tiene una cuenta?</p>
-        <Link className="mt-2 inline-flex min-h-11 items-center rounded-sm font-bold text-brand-green underline-offset-4 hover:text-brand-red hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red" to="/register">Crear cuenta comunitaria</Link>
+        <Link className="mt-2 inline-flex min-h-11 items-center rounded-sm font-bold text-brand-green underline-offset-4 hover:text-brand-red hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green" to="/register">Crear cuenta comunitaria</Link>
       </div>
     </main>
   )

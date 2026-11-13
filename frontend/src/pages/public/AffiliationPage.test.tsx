@@ -42,8 +42,7 @@ async function chooseTerritory(label: string, value: string) {
 }
 
 function finishApplication() {
-  fireEvent.change(screen.getByLabelText(/Fecha de nacimiento/), { target: { value: '01/01/1990' } })
-  fireEvent.blur(screen.getByLabelText(/Fecha de nacimiento/))
+  fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: '01/01/1990' } })
   fireEvent.change(screen.getByLabelText(/Por qué desea afiliarse/), { target: { value: ' Participar en la comunidad ' } })
 }
 
@@ -79,6 +78,28 @@ describe('AffiliationPage public flow', () => {
     expect(screen.queryByText(/Necesita una cuenta/)).not.toBeInTheDocument()
   })
 
+  it('does not reveal empty-field errors on blur, but validates the step on Continue', async () => {
+    renderPage()
+    fireEvent.blur(screen.getByLabelText(/Nombre\(s\)/))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect((await screen.findAllByRole('alert')).length).toBeGreaterThan(0)
+  })
+
+  it('keeps identity controls structurally aligned and reserves feedback space', () => {
+    renderPage()
+    const firstName = screen.getByLabelText(/Nombre\(s\)/)
+    const firstSurname = screen.getByLabelText(/Primer apellido/)
+    const secondSurname = screen.getByLabelText(/Segundo apellido/)
+
+    expect(firstName).toHaveClass('h-12')
+    expect(firstSurname).toHaveClass('h-12')
+    expect(secondSurname).toHaveClass('h-12')
+    expect(firstName.parentElement?.parentElement).toHaveClass('md:grid-cols-3')
+    expect(screen.getByText('(opcional)')).toBeVisible()
+  })
+
   it('preserves values across steps and validates before sending', async () => {
     renderPage()
     await reachApplication()
@@ -91,6 +112,53 @@ describe('AffiliationPage public flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
     expect(await screen.findByRole('heading', { name: 'Datos de identidad' })).toBeVisible()
     expect(screen.getByLabelText(/Nombre\(s\)/)).toHaveValue('Ana')
+  })
+
+  it('does not reveal future-step errors on first entry, then shows them after submit', async () => {
+    renderPage()
+    await reachApplication()
+
+    expect(screen.queryByText('Este campo es obligatorio.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Explique brevemente por qué desea afiliarse.')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
+
+    expect(await screen.findByText('Este campo es obligatorio.')).toBeVisible()
+    expect(screen.getByText('Explique brevemente por qué desea afiliarse.')).toBeVisible()
+  })
+
+  it('preserves legitimate application errors after navigating back and forward', async () => {
+    renderPage()
+    await reachApplication()
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
+    expect(await screen.findByText('Este campo es obligatorio.')).toBeVisible()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
+    expect(await screen.findByRole('heading', { name: 'Información de contacto' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+
+    expect(await screen.findByText('Este campo es obligatorio.')).toBeVisible()
+    expect(screen.getByText('Explique brevemente por qué desea afiliarse.')).toBeVisible()
+  })
+
+  it('uses one accessible birth-date picker with manual entry and calendar selection', async () => {
+    renderPage()
+    await reachApplication()
+
+    const input = screen.getByLabelText('Fecha de nacimiento')
+    expect(input).toHaveAttribute('placeholder', 'DD/MM/AAAA')
+    expect(screen.queryByRole('dialog', { name: 'Calendario' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir calendario' }))
+    expect(await screen.findByRole('dialog', { name: 'Calendario' })).toBeVisible()
+    fireEvent.change(screen.getByLabelText('Año del calendario'), { target: { value: '1990' } })
+    fireEvent.change(screen.getByLabelText('Mes del calendario'), { target: { value: '1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Seleccionar 01/01/1990' }))
+    expect(screen.queryByRole('dialog', { name: 'Calendario' })).not.toBeInTheDocument()
+    expect(input).toHaveValue('01/01/1990')
+
+    fireEvent.change(input, { target: { value: '29/02/2024' } })
+    expect(input).toHaveValue('29/02/2024')
   })
 
   it('sends visitor identity and optional contact values in the supported payload', async () => {

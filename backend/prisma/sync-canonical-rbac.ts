@@ -5,13 +5,14 @@ import {
   applyCanonicalRbacPlan,
   inspectCanonicalRbac,
 } from './canonical-rbac-sync';
+import { getPostgresConnectionConfig } from '../src/prisma/postgres-connection';
 
 async function main(): Promise<void> {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error('DATABASE_URL is required.');
 
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    adapter: new PrismaPg(getPostgresConnectionConfig(connectionString)),
   });
   try {
     const roles = await prisma.role.findMany({

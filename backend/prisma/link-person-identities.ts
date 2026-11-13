@@ -10,6 +10,7 @@ import {
   type IdentityLinkSource,
   type IdentityLinkPreflight,
 } from '../src/identity-reconciliation/identity-link-migration';
+import { getPostgresConnectionConfig } from '../src/prisma/postgres-connection';
 
 const ADVISORY_LOCK_ID = 915202605;
 
@@ -62,9 +63,9 @@ async function main(): Promise<void> {
   assertWriteProtection();
   const reportPath = requiredReportPath();
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({
-      connectionString: requiredEnvironmentVariable('DATABASE_URL'),
-    }),
+    adapter: new PrismaPg(
+      getPostgresConnectionConfig(requiredEnvironmentVariable('DATABASE_URL')),
+    ),
   });
 
   try {
