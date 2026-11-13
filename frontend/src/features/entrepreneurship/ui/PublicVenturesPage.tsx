@@ -43,7 +43,7 @@ export function PublicVenturesPage() {
 
   return (
     <>
-      <PublicPageHeader breadcrumb="Emprendimientos" eyebrow="Directorio comunitario" title="Emprendimientos" intro="Conozca los emprendimientos locales publicados por la Asociación." image={{ src: '/images/public/home/community-curime-wide.webp', mobileSrc: '/images/public/home/community-curime-mobile.webp', alt: 'Espacio comunitario de Curime.' }} />
+       <PublicPageHeader breadcrumb="Emprendimientos" eyebrow="Directorio comunitario" title="Emprendimientos" titleClassName="max-w-none whitespace-nowrap break-normal hyphens-none [overflow-wrap:normal] text-[clamp(2rem,10vw,4.5rem)] lg:text-[clamp(2.5rem,4vw,4.5rem)]" intro="Conozca los emprendimientos locales publicados por la Asociación." image={{ src: '/images/public/home/community-curime-wide.webp', mobileSrc: '/images/public/home/community-curime-mobile.webp', alt: 'Espacio comunitario de Curime.' }} />
       <PublicPageContent className="bg-surface-page">
 
         <form className="flex max-w-2xl flex-col gap-3 sm:flex-row" onSubmit={submitSearch} role="search">

@@ -11,6 +11,7 @@ type CategoryIconTone =
   | "inventory"
   | "events"
   | "donations"
+  | "entrepreneurship"
 
 const tones: Record<CategoryIconTone, string> = {
   institutional: "bg-status-success-surface text-status-success",
@@ -20,6 +21,7 @@ const tones: Record<CategoryIconTone, string> = {
   inventory: "bg-status-warning-surface text-status-warning",
   events: "bg-status-warning-surface text-status-warning",
   donations: "bg-status-danger-surface text-status-danger",
+  entrepreneurship: "bg-[#FCE7F3] text-[#C026D3]",
 }
 
 function CategoryIcon({
