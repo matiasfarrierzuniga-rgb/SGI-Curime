@@ -4,8 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  EventStatus,
   FinancialChargeStatus,
   Prisma,
+  PublicationStatus,
   ReservableResourceStatus,
   ReservationStatus,
   ResourcePricingType,
@@ -23,7 +25,7 @@ function createDto(overrides = {}) {
     endAt,
     purpose: 'Actividad comunitaria',
     activity: 'DANCES',
-    applicantCategory: 'GROUPS_COMMITTEES',
+    applicantCategory: 'PRIVATE',
     ...overrides,
   };
 }
@@ -122,6 +124,9 @@ describe('ReservationsService', () => {
     event: {
       findUnique: jest.fn(),
     },
+    user: {
+      findUnique: jest.fn(),
+    },
     financialCharge: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -175,7 +180,15 @@ describe('ReservationsService', () => {
       createdAt: startAt,
       updatedAt: startAt,
     });
-    prisma.event.findUnique.mockResolvedValue({ id: 2 });
+    prisma.event.findUnique.mockResolvedValue({
+      id: 2,
+      publicationStatus: PublicationStatus.PUBLISHED,
+      status: EventStatus.SCHEDULED,
+    });
+    prisma.user.findUnique.mockResolvedValue({
+      personId: null,
+      person: null,
+    });
     prisma.financialCharge.findUnique.mockResolvedValue(null);
     prisma.financialCharge.update.mockResolvedValue({ id: 1 });
     prisma.financialCharge.create.mockResolvedValue({
@@ -342,6 +355,146 @@ describe('ReservationsService', () => {
   it('rejects an activity/category combination without a tariff', async () => {
     await expect(service.create(createDto({ activity: 'SPORTS' }), 7)).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.reservation.create).not.toHaveBeenCalled();
+  });
+
+  describe('applicant category eligibility', () => {
+    it('creates a private request for an authenticated requester without affiliation', async () => {
+      prisma.user.findUnique.mockResolvedValue({ personId: null, person: null });
+
+      await service.create(createDto({ applicantCategory: 'PRIVATE' }), 7);
+
+      expect(prisma.reservation.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            requesterUserId: 7,
+            applicantCategory: 'PRIVATE',
+            status: ReservationStatus.PENDING,
+          }),
+        }),
+      );
+      expect(prisma.reservation.create.mock.calls[0][0].data.tariffAmount).toBe(
+        90000,
+      );
+    });
+
+    it('creates a member request when the requester has an active affiliation', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        personId: 12,
+        person: { affiliate: { status: 'ACTIVE' } },
+      });
+
+      await service.create(createDto({ applicantCategory: 'MEMBERS' }), 7);
+
+      expect(prisma.reservation.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            applicantCategory: 'MEMBERS',
+            requesterUserId: 7,
+          }),
+        }),
+      );
+    });
+
+    it('rejects a member request when the requester has no linked identity', async () => {
+      prisma.user.findUnique.mockResolvedValue({ personId: null, person: null });
+
+      await expect(
+        service.create(createDto({ applicantCategory: 'MEMBERS' }), 7),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.reservation.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a member request when the affiliation is inactive', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        personId: 12,
+        person: { affiliate: { status: 'INACTIVE' } },
+      });
+
+      await expect(
+        service.create(createDto({ applicantCategory: 'MEMBERS' }), 7),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.reservation.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a group and committee request even with an active affiliation', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        personId: 12,
+        person: { affiliate: { status: 'ACTIVE' } },
+      });
+
+      await expect(
+        service.create(createDto({ applicantCategory: 'GROUPS_COMMITTEES' }), 7),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.reservation.create).not.toHaveBeenCalled();
+    });
+
+    it('never applies a preferential tariff for a rejected category', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        personId: 12,
+        person: { affiliate: { status: 'ACTIVE' } },
+      });
+
+      await expect(
+        service.create(
+          createDto({ applicantCategory: 'GROUPS_COMMITTEES', activity: 'BINGO' }),
+          7,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.reservation.create).not.toHaveBeenCalled();
+      expect(prisma.financialCharge.create).not.toHaveBeenCalled();
+    });
+
+    it('resolves the affiliation from the authenticated requester identity', async () => {
+      await service.create(createDto({ applicantCategory: 'PRIVATE' }), 42);
+
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: 42 },
+        select: {
+          personId: true,
+          person: { select: { affiliate: { select: { status: true } } } },
+        },
+      });
+    });
+  });
+
+  describe('linked event eligibility', () => {
+    it('accepts a published and scheduled event', async () => {
+      prisma.event.findUnique.mockResolvedValue({
+        id: 2,
+        publicationStatus: PublicationStatus.PUBLISHED,
+        status: EventStatus.SCHEDULED,
+      });
+
+      await service.create(createDto({ eventId: 2 }), 7);
+
+      expect(prisma.reservation.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ eventId: 2 }),
+        }),
+      );
+    });
+
+    it.each([
+      ['draft', PublicationStatus.DRAFT, EventStatus.SCHEDULED],
+      ['internal', PublicationStatus.INTERNAL, EventStatus.SCHEDULED],
+      ['archived', PublicationStatus.ARCHIVED, EventStatus.SCHEDULED],
+      ['cancelled', PublicationStatus.PUBLISHED, EventStatus.CANCELLED],
+      ['completed', PublicationStatus.PUBLISHED, EventStatus.COMPLETED],
+    ])(
+      'rejects a %s event',
+      async (_label, publicationStatus, status) => {
+        prisma.event.findUnique.mockResolvedValue({
+          id: 2,
+          publicationStatus,
+          status,
+        });
+
+        await expect(
+          service.create(createDto({ eventId: 2 }), 7),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        expect(prisma.reservation.create).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it('rejects an unknown linked event', async () => {

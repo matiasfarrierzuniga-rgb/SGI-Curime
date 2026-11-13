@@ -1,7 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   Prisma,
+  EventStatus,
   FinancialChargeStatus,
+  PublicationStatus,
   ReservableResourceStatus,
   ReservationStatus,
   ResourcePricingType,
@@ -12,6 +14,11 @@ import { QueryReservationAvailabilityDto } from './dto/query-reservation-availab
 import { PublicReservationOccupancyDto, PublicReservableResourceDto, QueryPublicReservationOccupancyDto } from './dto/public-reservations.dto';
 import { QueryReservationsDto } from './dto/query-reservations.dto';
 import { assertReservationTransition } from './reservation-transition.policy';
+import {
+  APPLICANT_CATEGORY_REJECTION_MESSAGES,
+  evaluateApplicantCategory,
+  type RequesterAffiliation,
+} from './reservation-applicant-category.policy';
 import { InboxNotificationService } from '../modules/notifications/application/inbox-notification.service';
 import { getReservationTariff } from './reservation-tariffs';
 
@@ -172,7 +179,20 @@ export class ReservationsService {
   async create(dto: CreateReservationDto, requesterUserId: number) {
     return this.withSerializableTransaction(async (tx) => {
       this.assertTimeRange(dto.startAt, dto.endAt);
-      const tariffAmount = getReservationTariff(dto.activity, dto.applicantCategory);
+      const affiliation = await this.resolveRequesterAffiliation(
+        tx,
+        requesterUserId,
+      );
+      const category = evaluateApplicantCategory(
+        dto.applicantCategory,
+        affiliation,
+      );
+      if (!category.allowed) {
+        throw new BadRequestException(
+          APPLICANT_CATEGORY_REJECTION_MESSAGES[category.reason],
+        );
+      }
+      const tariffAmount = getReservationTariff(dto.activity, category.category);
       if (tariffAmount === null) throw new BadRequestException("No hay una tarifa definida para esta actividad y categoría.");
       await this.requireActiveResource(tx, dto.resourceId);
       if (dto.eventId) await this.requireEvent(tx, dto.eventId);
@@ -194,7 +214,7 @@ export class ReservationsService {
           endAt: dto.endAt,
           purpose: dto.purpose,
           activity: dto.activity,
-          applicantCategory: dto.applicantCategory,
+          applicantCategory: category.category,
           tariffAmount,
           estimatedAttendees: dto.estimatedAttendees,
           notes: dto.notes,
@@ -205,6 +225,23 @@ export class ReservationsService {
       await this.inboxNotifications?.notifyReservationSubmitted(tx, created.id);
       return created;
     });
+  }
+
+  private async resolveRequesterAffiliation(
+    tx: ReservationTransaction,
+    requesterUserId: number,
+  ): Promise<RequesterAffiliation> {
+    const requester = await tx.user.findUnique({
+      where: { id: requesterUserId },
+      select: {
+        personId: true,
+        person: { select: { affiliate: { select: { status: true } } } },
+      },
+    });
+    return {
+      hasPerson: Boolean(requester?.personId),
+      affiliateStatus: requester?.person?.affiliate?.status ?? null,
+    };
   }
 
   async findAll(query: QueryReservationsDto) {
@@ -455,9 +492,20 @@ export class ReservationsService {
   private async requireEvent(tx: ReservationTransaction, id: number) {
     const event = await tx.event.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, publicationStatus: true, status: true },
     });
     if (!event) throw new NotFoundException('Event not found');
+    // Events carry no owner relation, so ownership cannot be asserted. The
+    // only verifiable rules are the published/scheduled states, so a request
+    // may only reference an event that is public and still scheduled.
+    if (
+      event.publicationStatus !== PublicationStatus.PUBLISHED ||
+      event.status !== EventStatus.SCHEDULED
+    ) {
+      throw new BadRequestException(
+        'El evento indicado no admite solicitudes de reserva.',
+      );
+    }
   }
 
   private findBlockingReservation(

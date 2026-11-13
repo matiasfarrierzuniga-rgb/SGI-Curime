@@ -19,6 +19,7 @@ import { DateRangePicker } from '@/shared/ui/date-picker/DatePicker'
 import { useCreateReservation, useReservableResources, useReservationAvailability } from '../hooks/useReservations'
 import type { ReservableResource } from '../model/reservations.types'
 import { formatReservationTariff, getReservationTariff, reservationActivities, reservationApplicantCategories } from '../model/reservationTariffs'
+import { APPLICANT_CATEGORY_UNAVAILABLE_NOTICE, isApplicantCategoryAvailable } from '../model/reservationApplicantCategoryAvailability'
 
 type Values = { resourceId: string; startAt: string; endAt: string; activity: string; applicantCategory: string; purpose: string; estimatedAttendees: string; notes: string }
 type Confirmation = { resourceName: string; startAt: string; endAt: string }
@@ -44,6 +45,10 @@ const schema = z.object({
   estimatedAttendees: z.string(),
   notes: z.string().max(5000, 'Las notas no pueden superar 5000 caracteres.'),
 }).superRefine((value, ctx) => {
+  if (value.applicantCategory && !isApplicantCategoryAvailable(value.applicantCategory)) {
+    ctx.addIssue({ code: 'custom', path: ['applicantCategory'], message: `${APPLICANT_CATEGORY_UNAVAILABLE_NOTICE}.` })
+    return
+  }
   const start = toUtc(value.startAt); const end = toUtc(value.endAt)
   if (!start || !end) return
   if (end <= start) ctx.addIssue({ code: 'custom', path: ['endAt'], message: 'La hora de finalización debe ser posterior a la de inicio.' })
@@ -65,6 +70,7 @@ export function ReservationRequestPage() {
   const reviewedValues = useRef<Values | null>(null)
   const form = useForm<Values>({ defaultValues: blank, resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange', shouldFocusError: true })
   const values = form.watch()
+  const unavailableApplicantCategories = reservationApplicantCategories.filter(category => !isApplicantCategoryAvailable(category.value))
   const reservableSpaces = resources.data?.filter(resource => approvedReservableSpaceNames.has(resource.name)) ?? []
   const selectedResource = reservableSpaces.find(resource => resource.id === Number(values.resourceId))
   const selectedTariff = getReservationTariff(values.activity, values.applicantCategory)
@@ -139,7 +145,7 @@ export function ReservationRequestPage() {
                </div>
             </FormSection>
             <FormSection className="gap-5 rounded-surface border border-border bg-subtle/50 p-4 sm:p-5" title="Datos de la solicitud" description="Indique la actividad, su categoría y el uso previsto.">
-              <div className="grid gap-5 sm:grid-cols-2"><FormField id="reservation-activity" label="Actividad" error={form.formState.errors.activity?.message} required><Select {...form.register("activity")}><option value="">Seleccione una actividad</option>{reservationActivities.map(activity => <option key={activity.value} value={activity.value}>{activity.label}</option>)}</Select></FormField><FormField id="reservation-applicant-category" label="Categoría de solicitante" error={form.formState.errors.applicantCategory?.message} required><Select {...form.register("applicantCategory")}><option value="">Seleccione una categoría</option>{reservationApplicantCategories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</Select></FormField></div>{values.activity && values.applicantCategory ? <p className={selectedTariff === null ? "text-sm text-destructive" : "text-sm font-semibold text-foreground"} role={selectedTariff === null ? "alert" : "status"}>{selectedTariff === null ? "No hay tarifa definida para esta combinación; no se puede enviar la solicitud." : "Tarifa de la solicitud: " + formatReservationTariff(selectedTariff)}</p> : null}<FormField id="reservation-purpose" label="Motivo" error={form.formState.errors.purpose?.message} required><Textarea maxLength={1000} {...form.register('purpose')} /></FormField>
+              <div className="grid gap-5 sm:grid-cols-2"><FormField id="reservation-activity" label="Actividad" error={form.formState.errors.activity?.message} required><Select {...form.register("activity")}><option value="">Seleccione una actividad</option>{reservationActivities.map(activity => <option key={activity.value} value={activity.value}>{activity.label}</option>)}</Select></FormField><FormField id="reservation-applicant-category" label="Categoría de solicitante" error={form.formState.errors.applicantCategory?.message} required><Select {...form.register("applicantCategory")}><option value="">Seleccione una categoría</option>{reservationApplicantCategories.map(category => <option key={category.value} value={category.value} disabled={!isApplicantCategoryAvailable(category.value)}>{category.label}{isApplicantCategoryAvailable(category.value) ? '' : ' (proximamente)'}</option>)}</Select></FormField></div>{unavailableApplicantCategories.length > 0 ? <p className="text-body-small text-text-secondary">{unavailableApplicantCategories.map(category => `«${category.label}»: ${APPLICANT_CATEGORY_UNAVAILABLE_NOTICE}.`).join(' ')}</p> : null}{values.activity && values.applicantCategory ? <p className={selectedTariff === null ? "text-sm text-destructive" : "text-sm font-semibold text-foreground"} role={selectedTariff === null ? "alert" : "status"}>{selectedTariff === null ? "No hay tarifa definida para esta combinación; no se puede enviar la solicitud." : "Tarifa de la solicitud: " + formatReservationTariff(selectedTariff)}</p> : null}<FormField id="reservation-purpose" label="Motivo" error={form.formState.errors.purpose?.message} required><Textarea maxLength={1000} {...form.register('purpose')} /></FormField>
               <div className="grid gap-5 sm:grid-cols-2">
                 <FormField id="reservation-attendees" label="Cantidad de personas (opcional)" error={form.formState.errors.estimatedAttendees?.message}><Input type="number" min="1" inputMode="numeric" {...form.register('estimatedAttendees')} /></FormField>
                 <FormField id="reservation-notes" label="Notas adicionales (opcional)" error={form.formState.errors.notes?.message}><Textarea className="min-h-24" maxLength={5000} {...form.register('notes')} /></FormField>

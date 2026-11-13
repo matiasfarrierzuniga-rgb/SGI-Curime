@@ -66,6 +66,7 @@ export class ReservationsController {
   }
 
   @Post()
+  @UseGuards(ThrottlerGuard)
   create(
     @Body() dto: CreateReservationDto,
     @Req() req: AuthenticatedRequest,
