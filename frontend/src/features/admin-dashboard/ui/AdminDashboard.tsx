@@ -81,6 +81,9 @@ const quickActions: readonly QuickAction[] = [
   },
 ];
 
+const dashboardContentGrid =
+  "grid min-w-0 gap-3 @min-[700px]:grid-cols-2 @min-[880px]:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,1.15fr)]";
+
 export function AdminDashboard({
   permissionCodes,
   userName,
@@ -178,7 +181,7 @@ function AdminDashboardContent({
         data={data}
         permissionCodes={permissionCodes}
       />
-      <div className="grid min-w-0 gap-3 @min-[700px]:grid-cols-2 @min-[880px]:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,1.15fr)]">
+      <div className={dashboardContentGrid}>
         <AttentionPanel
           data={data}
           permissionCodes={permissionCodes}
@@ -229,7 +232,7 @@ function AdminDashboardContent({
           />
         </div>
       </div>
-      <div className="grid min-w-0 gap-3 min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,1.12fr)] min-[1200px]:items-stretch">
+      <div className={dashboardContentGrid}>
         <ModuleSummary data={data} permissionCodes={permissionCodes} />
         <ProcessStatus />
         <UpcomingActivities
