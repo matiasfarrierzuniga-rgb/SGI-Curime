@@ -15,6 +15,10 @@ vi.mock("@/features/admin-dashboard", () => ({
       <p>Afiliados activos</p>
     </section>
   ),
+  SecretaryDashboard: () => <section><h2>Indicadores de Secretaría</h2></section>,
+  PresidentDashboard: () => <section><h2>Indicadores de Presidencia</h2></section>,
+  TreasuryDashboard: () => <section><h2>Indicadores de Tesorería</h2></section>,
+  OperatorDashboard: () => <section><h2>Indicadores operativos</h2></section>,
   InstitutionalDashboardWelcome: ({ fullName }: { fullName?: string }) => (
     <section>
       <h1>Buenos días{fullName ? `, ${fullName.split(" ")[0]}` : ""}</h1>
@@ -23,6 +27,18 @@ vi.mock("@/features/admin-dashboard", () => ({
   canUseAdministrativeDashboard: (permissionCodes?: readonly string[]) =>
     permissionCodes?.includes("erp.dashboard.read") === true &&
     permissionCodes.includes("adm.affiliates.read"),
+  canUseSecretaryDashboard: (permissionCodes?: readonly string[]) =>
+    permissionCodes?.includes("erp.dashboard.read") === true &&
+    permissionCodes.includes("padron.application.review") &&
+    permissionCodes.includes("governance.assembly.session"),
+  canUsePresidentDashboard: (permissionCodes?: readonly string[]) =>
+    permissionCodes?.includes("erp.dashboard.read") === true &&
+    permissionCodes.includes("padron.application.review") &&
+    permissionCodes.includes("governance.assembly.session"),
+  canUseTreasuryDashboard: (permissionCodes?: readonly string[]) =>
+    permissionCodes?.includes("erp.dashboard.read") === true,
+  canUseOperatorDashboard: (permissionCodes?: readonly string[]) =>
+    permissionCodes?.includes("erp.dashboard.read") === true,
 }));
 vi.mock("@/services/inventoryReportsService", () => ({
   inventoryReportsService: { summary: vi.fn() },
@@ -89,7 +105,7 @@ describe("AppHomePage", () => {
     expect(await screen.findByText("Afiliados activos")).toBeInTheDocument();
   });
 
-  it("keeps Operator on the shared shell and inventory summary without requesting administrative metrics", async () => {
+  it("renders the specialized operational dashboard with inventory data when authorized", async () => {
     auth.user = {
       fullName: "Luis Mora",
       role: "ROLE_INSTITUTIONAL_OPERATOR",
@@ -100,7 +116,7 @@ describe("AppHomePage", () => {
         <AppHomePage />
       </MemoryRouter>,
     );
-    expect(await screen.findByText("Artículos activos")).toBeInTheDocument();
+    expect(await screen.findByText("Indicadores operativos")).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Accesos rápidos" }),
     ).not.toBeInTheDocument();
@@ -154,6 +170,17 @@ describe("AppHomePage", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders the specialized dashboard for Secretariat with its real dashboard capabilities", () => {
+    auth.user = {
+      fullName: "Diego Mora",
+      role: "ROLE_INSTITUTIONAL_SECRETARY",
+      permissionCodes: ["erp.dashboard.read", "padron.application.review", "governance.assembly.session"],
+    };
+    render(<MemoryRouter><AppHomePage /></MemoryRouter>);
+    expect(screen.getByRole("heading", { name: "Indicadores de Secretaría" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Accesos autorizados" })).not.toBeInTheDocument();
+  });
+
   it("shows a clear set of real account actions to community users", () => {
     auth.user = { fullName: "María Solano", role: "Vecino/Afiliado" };
     render(
@@ -196,7 +223,7 @@ describe("AppHomePage", () => {
     expect(inventoryReportsService.summary).not.toHaveBeenCalled();
   });
 
-  it("keeps Treasury on the shared shell without administrative metrics", () => {
+  it("renders the specialized treasury dashboard when financial capabilities are available", () => {
     auth.user = {
       fullName: "Carlos Ruiz",
       role: "ROLE_INSTITUTIONAL_TREASURER",
@@ -212,18 +239,7 @@ describe("AppHomePage", () => {
         <AppHomePage />
       </MemoryRouter>,
     );
-    expect(
-      screen.queryByRole("heading", { name: "Accesos rápidos" }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Cargos y pagos" }),
-    ).toHaveAttribute("href", "/app/financial/charges");
-    expect(
-      screen.getByRole("link", { name: "Movimientos financieros" }),
-    ).toHaveAttribute("href", "/app/financial/movements");
-    expect(screen.queryByText("Ingresos")).not.toBeInTheDocument();
-    expect(screen.queryByText("Egresos")).not.toBeInTheDocument();
-    expect(screen.queryByText("Balance")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Indicadores de Tesorería" })).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Afiliación" }),
     ).not.toBeInTheDocument();

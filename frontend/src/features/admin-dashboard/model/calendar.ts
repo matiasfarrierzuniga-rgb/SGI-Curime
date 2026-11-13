@@ -15,6 +15,8 @@ export type CalendarActivity = {
   title: string;
   detail: string;
   path: string;
+  sourcePublicId?: string;
+  sourceId?: number;
 };
 
 export function calendarActivities(
@@ -33,6 +35,7 @@ export function calendarActivities(
       title: event.title,
       detail: event.location ?? "Sin lugar indicado",
       path: `/eventos/${event.publicId}`,
+      sourcePublicId: event.publicId,
     }));
   if (includeReservations)
     activities.push(
@@ -49,6 +52,7 @@ export function calendarActivities(
           title: reservation.resource.name,
           detail: reservation.resource.location ?? "Reserva institucional",
           path: "/app/reservations",
+          sourceId: reservation.id,
         })),
     );
   if (includeAssemblies)
@@ -62,6 +66,7 @@ export function calendarActivities(
           title: assembly.title,
           detail: assembly.place || "Sin lugar indicado",
           path: `/app/admin/assemblies/${assembly.id}`,
+          sourceId: assembly.id,
         })),
     );
   return activities;

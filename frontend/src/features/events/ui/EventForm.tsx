@@ -24,8 +24,8 @@ function errorsFor(form: FormState) {
   return { title: !form.title.trim() ? 'Ingrese un título.' : form.title.length > 200 ? 'El título no puede superar 200 caracteres.' : '', summary: !form.summary.trim() ? 'Ingrese un resumen.' : form.summary.length > 500 ? 'El resumen no puede superar 500 caracteres.' : '', description: form.description.length > 5000 ? 'La descripción no puede superar 5000 caracteres.' : '', startAt: !form.startAt ? 'Indique fecha y hora de inicio.' : '', endAt: form.endAt && form.endAt <= form.startAt ? 'La fecha final debe ser posterior a la inicial.' : '', location: form.location.length > 200 ? 'El lugar no puede superar 200 caracteres.' : '' }
 }
 
-export function EventForm({ event, onClose, creationLabel = 'Crear evento' }: { event?: AdminEvent; onClose: () => void; creationLabel?: string }) {
-  const [form, setForm] = useState(() => initialForm(event))
+export function EventForm({ event, duplicateFrom, onClose, creationLabel = 'Crear evento' }: { event?: AdminEvent; duplicateFrom?: AdminEvent; onClose: () => void; creationLabel?: string }) {
+  const [form, setForm] = useState(() => initialForm(event ?? duplicateFrom))
   const [error, setError] = useState('')
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({})
   const [submitted, setSubmitted] = useState(false)

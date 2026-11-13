@@ -1,24 +1,34 @@
 import { useMemo, useState } from "react";
+import { Popover } from "@base-ui/react/popover";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
   CalendarCheck,
   CalendarDays,
+  Copy,
+  Eye,
+  Ban,
   ChevronLeft,
   ChevronRight,
   CircleDot,
   Clock3,
   MapPin,
+  MoreVertical,
+  Pencil,
   UsersRound,
 } from "lucide-react";
 import type { Assembly } from "@/features/assemblies";
-import type { PublicEvent } from "@/features/events";
+import { EventForm, useAdminEvents, useEventMutations, type AdminEvent, type PublicEvent } from "@/features/events";
 import type { AdminReservation } from "@/features/reservations";
 import { Button } from "@/shared/ui/button";
+import { hasCapability } from "@/shared/security/access";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { StatusBadge } from "@/shared/ui/StatusBadge";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
+import { getErrorMessage } from "@/shared/lib/errors";
 import { calendarKey, calendarMonthDays, formatCalendarDate } from "@/shared/lib/calendar";
 import { calendarActivities, formatCalendarDay, groupActivitiesByDay } from "../../model/calendar";
 import type { CalendarActivity, CalendarCategory } from "../../model/calendar";
@@ -32,6 +42,8 @@ export function InstitutionalCalendar({
   includeReservations,
   includeAssemblies,
   agendaPath,
+  permissionCodes,
+  enableManagementActions = false,
   sources,
 }: {
   month: Date;
@@ -42,6 +54,8 @@ export function InstitutionalCalendar({
   includeReservations: boolean;
   includeAssemblies: boolean;
   agendaPath: string;
+  permissionCodes?: readonly string[];
+  enableManagementActions?: boolean;
   sources: CalendarSources;
 }) {
   const activities = useMemo(
@@ -55,6 +69,13 @@ export function InstitutionalCalendar({
       ),
     [assemblies, events, includeAssemblies, includeReservations, reservations],
   );
+  const canReadAdminEvents = enableManagementActions && (
+    hasCapability(permissionCodes, "events.proposal.create")
+      || hasCapability(permissionCodes, "events.proposal.review")
+      || hasCapability(permissionCodes, "events.proposal.approve")
+      || hasCapability(permissionCodes, "events.publish")
+  );
+  const adminEvents = useAdminEvents(canReadAdminEvents);
   const activitiesByDay = useMemo(
     () => groupActivitiesByDay(activities, month),
     [activities, month],
@@ -179,6 +200,10 @@ export function InstitutionalCalendar({
         day={selectedDay}
         activities={activities}
         agendaPath={agendaPath}
+        permissionCodes={permissionCodes}
+        enableManagementActions={enableManagementActions}
+        adminEvents={adminEvents.data}
+        adminEventsPending={adminEvents.isPending}
         onClose={() => setSelectedDay(null)}
         onSelectDay={setSelectedDay}
       />
@@ -339,15 +364,28 @@ function DashboardCalendarDialog({
   day,
   activities,
   agendaPath,
+  permissionCodes,
+  enableManagementActions,
+  adminEvents,
+  adminEventsPending,
   onClose,
   onSelectDay,
 }: {
   day: string | null;
   activities: readonly CalendarActivity[];
   agendaPath: string;
+  permissionCodes?: readonly string[];
+  enableManagementActions: boolean;
+  adminEvents?: AdminEvent[];
+  adminEventsPending: boolean;
   onClose: () => void;
   onSelectDay: (day: string) => void;
 }) {
+  const [editingEvent, setEditingEvent] = useState<AdminEvent | null>(null);
+  const [duplicatingEvent, setDuplicatingEvent] = useState<AdminEvent | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<AdminEvent | null>(null);
+  const [cancelError, setCancelError] = useState("");
+  const cancelMutation = useEventMutations().update;
   const selectedActivities = activities
     .filter((activity) => calendarKey(activity.startAt) === day)
     .sort((a, b) => a.startAt.localeCompare(b.startAt));
@@ -383,7 +421,7 @@ function DashboardCalendarDialog({
               <CalendarDays className="size-6" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <DialogDescription className="font-heading text-heading-3 font-bold capitalize text-[#07503F] text-balance">
+              <DialogDescription className="font-heading text-body font-bold capitalize text-[#07503F] text-balance">
                 {day ? formatCalendarDay(day) : "Calendario institucional"}
               </DialogDescription>
               <p className="mt-1 text-body-small text-[#243C34]/75">
@@ -391,7 +429,16 @@ function DashboardCalendarDialog({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {enableManagementActions && hasCapability(permissionCodes, "events.proposal.create") ? (
+              <Link
+                to="/app/events"
+                className="inline-flex min-h-10 items-center rounded-control bg-[#07503F] px-4 text-body-small font-bold text-white transition-colors hover:bg-[#07503F]/90 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-focus"
+              >
+                Nueva actividad
+              </Link>
+            ) : null}
+            <div className="flex items-center gap-1">
             <Button
               type="button"
               variant="ghost"
@@ -410,6 +457,7 @@ function DashboardCalendarDialog({
             >
               <ChevronRight aria-hidden="true" />
             </Button>
+            </div>
           </div>
         </div>
         <div
@@ -435,10 +483,17 @@ function DashboardCalendarDialog({
           {selectedActivities.length ? (
             <ol className="grid gap-2.5">
               {selectedActivities.map((activity) => (
-                <AgendaActivity
-                  key={`${activity.category}-${activity.startAt}-${activity.title}`}
-                  activity={activity}
-                />
+                 <AgendaActivity
+                   key={`${activity.category}-${activity.startAt}-${activity.title}`}
+                   activity={activity}
+                   permissionCodes={permissionCodes}
+                   enableManagementActions={enableManagementActions}
+                   adminEvents={adminEvents}
+                   adminEventsPending={adminEventsPending}
+                   onEditEvent={setEditingEvent}
+                   onDuplicateEvent={setDuplicatingEvent}
+                   onCancelEvent={(event) => { setCancelError(""); setCancelTarget(event); }}
+                 />
               ))}
             </ol>
           ) : (
@@ -465,11 +520,14 @@ function DashboardCalendarDialog({
           </Link>
         </div>
       </DialogContent>
+      {editingEvent ? <EventForm event={editingEvent} onClose={() => setEditingEvent(null)} /> : null}
+      {duplicatingEvent ? <EventForm duplicateFrom={duplicatingEvent} creationLabel="Duplicar evento" onClose={() => setDuplicatingEvent(null)} /> : null}
+      {cancelTarget ? <ConfirmDialog title="Cancelar evento" message={`Confirme la cancelación de “${cancelTarget.title}”. Esta acción cambiará su estado a cancelado.`} confirmLabel="Cancelar evento" danger busy={cancelMutation.isPending} error={cancelError} onClose={() => { if (!cancelMutation.isPending) setCancelTarget(null); }} onConfirm={() => { setCancelError(""); void cancelMutation.mutateAsync({ id: cancelTarget.id, payload: { title: cancelTarget.title, summary: cancelTarget.summary, description: cancelTarget.description ?? undefined, startAt: cancelTarget.startAt, endAt: cancelTarget.endAt ?? undefined, location: cancelTarget.location ?? undefined, status: "CANCELLED" } }).then(() => setCancelTarget(null)).catch((error) => setCancelError(getErrorMessage(error, "No fue posible cancelar el evento."))); }} /> : null}
     </Dialog>
   );
 }
 
-function AgendaActivity({ activity }: { activity: CalendarActivity }) {
+function AgendaActivity({ activity, permissionCodes, enableManagementActions, adminEvents, adminEventsPending, onEditEvent, onDuplicateEvent, onCancelEvent }: { activity: CalendarActivity; permissionCodes?: readonly string[]; enableManagementActions: boolean; adminEvents?: AdminEvent[]; adminEventsPending: boolean; onEditEvent: (event: AdminEvent) => void; onDuplicateEvent: (event: AdminEvent) => void; onCancelEvent: (event: AdminEvent) => void }) {
   const category = calendarCategoryStyles[activity.category];
   const IconComponent =
     activity.category === "assemblies"
@@ -478,20 +536,20 @@ function AgendaActivity({ activity }: { activity: CalendarActivity }) {
         ? CalendarCheck
         : CircleDot;
    return (
-    <li className="relative overflow-hidden rounded-control border border-[#DEE7DF] bg-white p-4 shadow-sm before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[#07503F]">
+     <li className="relative overflow-visible rounded-control border border-[#DEE7DF] bg-white p-4 shadow-sm before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[#07503F]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <span className="grid size-10 shrink-0 place-items-center rounded-control bg-[#E8F1EB] text-[#07503F]">
           <IconComponent className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-body-small font-bold text-[#243C34] text-pretty">
+           <p className="text-body font-bold leading-snug text-[#243C34] text-pretty">
             {activity.title}
           </p>
-          <p className="mt-1 text-caption text-[#243C34]/75">
+           <p className="mt-1 text-body-small text-[#243C34]/75">
             {category.label} institucional programado.
           </p>
         </div>
-        <div className="grid gap-1.5 text-caption text-[#243C34]/75 sm:w-56">
+         <div className="grid gap-1.5 text-body-small text-[#243C34]/75 sm:w-56">
           <time
             className="flex items-center gap-2 font-medium text-[#243C34]"
             dateTime={activity.startAt}
@@ -513,13 +571,57 @@ function AgendaActivity({ activity }: { activity: CalendarActivity }) {
             {activity.detail}
           </p>
         </div>
-        <Link
-          className="shrink-0 text-caption font-bold text-[#07503F] underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-          to={activity.path}
-        >
-          Ver detalle
-        </Link>
+         <div className="flex shrink-0 flex-wrap items-center gap-3 sm:ml-auto sm:justify-end">
+           <StatusBadge variant="info">Programado</StatusBadge>
+           <ActivityMenu activity={activity} permissionCodes={permissionCodes} enabled={enableManagementActions} adminEvents={adminEvents} adminEventsPending={adminEventsPending} onEditEvent={onEditEvent} onDuplicateEvent={onDuplicateEvent} onCancelEvent={onCancelEvent} />
+         </div>
       </div>
     </li>
   );
+}
+
+function ActivityMenu({ activity, permissionCodes, enabled, adminEvents, adminEventsPending, onEditEvent, onDuplicateEvent, onCancelEvent }: { activity: CalendarActivity; permissionCodes?: readonly string[]; enabled: boolean; adminEvents?: AdminEvent[]; adminEventsPending: boolean; onEditEvent: (event: AdminEvent) => void; onDuplicateEvent: (event: AdminEvent) => void; onCancelEvent: (event: AdminEvent) => void }) {
+  const [open, setOpen] = useState(false);
+  const adminEvent = activity.sourcePublicId ? adminEvents?.find((event) => event.publicId === activity.sourcePublicId) : undefined;
+  const canManageEvents = enabled && activity.category === "events" && (
+    hasCapability(permissionCodes, "events.proposal.create")
+      || hasCapability(permissionCodes, "events.proposal.review")
+      || hasCapability(permissionCodes, "events.proposal.approve")
+      || hasCapability(permissionCodes, "events.publish")
+      || hasCapability(permissionCodes, "pub.events.manage")
+  );
+  const canManageAssemblies = enabled && activity.category === "assemblies" && (
+    hasCapability(permissionCodes, "governance.assembly.create")
+      || hasCapability(permissionCodes, "governance.assembly.session")
+      || hasCapability(permissionCodes, "adm.assemblies.manage")
+  );
+  const showManagementActions = canManageEvents || canManageAssemblies;
+  const eventFlowReady = canManageEvents && Boolean(adminEvent);
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger className="grid size-9 shrink-0 place-items-center rounded-control border border-[#DEE7DF] text-[#07503F] transition-colors hover:bg-[#E8F1EB] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus" aria-label={`Acciones de ${activity.title}`}>
+        <MoreVertical className="size-4" aria-hidden="true" />
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner side="bottom" align="end" sideOffset={6} className="z-50">
+          <Popover.Popup aria-label={`Acciones de ${activity.title}`} className="w-52 rounded-control border border-[#DEE7DF] bg-white p-1.5 shadow-[0_8px_24px_rgba(36,60,52,0.14)] outline-none">
+            <Link className="flex items-center gap-2 rounded-control px-3 py-2 text-left text-body-small font-semibold text-[#243C34] hover:bg-[#E8F1EB] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus" to={activity.path} onClick={() => setOpen(false)}><Eye className="size-4 shrink-0 text-[#07503F]" aria-hidden="true" />Ver detalle</Link>
+            {showManagementActions ? <>
+              {eventFlowReady ? <ActionMenuLink icon={Pencil} label="Editar" onClick={() => { setOpen(false); onEditEvent(adminEvent!); }} /> : <PendingMenuAction icon={Pencil} label="Editar" tone="default" pending={adminEventsPending ? "Cargando datos administrativos" : "Funcionalidad pendiente"} />}
+              {eventFlowReady ? <ActionMenuLink icon={Copy} label="Duplicar" onClick={() => { setOpen(false); onDuplicateEvent(adminEvent!); }} /> : <PendingMenuAction icon={Copy} label="Duplicar" tone="default" pending="Funcionalidad pendiente" />}
+              {eventFlowReady ? <ActionMenuLink icon={Ban} label="Cancelar" tone="danger" onClick={() => { setOpen(false); onCancelEvent(adminEvent!); }} /> : <PendingMenuAction icon={Ban} label="Cancelar" tone="danger" pending={adminEventsPending ? "Cargando datos administrativos" : "Funcionalidad pendiente"} />}
+            </> : null}
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function ActionMenuLink({ icon: Icon, label, tone = "default", onClick }: { icon: typeof Pencil; label: string; tone?: "default" | "danger"; onClick: () => void }) {
+  return <button type="button" onClick={onClick} className={`flex w-full items-center gap-2 rounded-control px-3 py-2 text-left text-body-small font-semibold hover:bg-[#E8F1EB] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus ${tone === "danger" ? "text-status-danger" : "text-[#243C34]"}`}><Icon className="size-4 shrink-0" aria-hidden="true" /><span>{label}</span></button>;
+}
+
+function PendingMenuAction({ icon: Icon, label, tone, pending }: { icon: typeof Pencil; label: string; tone: "default" | "danger"; pending: string }) {
+  return <button type="button" disabled aria-disabled="true" title={`${label}: ${pending}`} className={`flex w-full items-center gap-2 rounded-control px-3 py-2 text-left text-body-small font-semibold opacity-55 ${tone === "danger" ? "text-status-danger" : "text-[#243C34]"}`}><Icon className="size-4 shrink-0" aria-hidden="true" /><span>{label}</span><span className="ml-auto text-caption font-medium">{pending}</span></button>;
 }

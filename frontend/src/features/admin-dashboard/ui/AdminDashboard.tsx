@@ -209,6 +209,7 @@ function AdminDashboardContent({
                 ? "/app/events"
                 : "/eventos"
             }
+            permissionCodes={permissionCodes}
             sources={{
               events: {
                 enabled: true,
