@@ -41,21 +41,21 @@ export function LoginPage() {
   return (
     <main className="w-full">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-red">Acceso a su cuenta</p>
-      <h1 className="mt-2 font-heading text-heading-1 font-normal text-brand-brown">Iniciar sesión</h1>
+      <h1 className="mt-2 font-heading text-heading-1 font-normal text-text-primary">Iniciar sesión</h1>
       <p className="mt-3 text-base leading-relaxed text-foreground-muted">Ingresa tus credenciales para continuar.</p>
       <StatusMessage error={error} />
       <form className="mt-8 grid gap-5" onSubmit={submit}>
-        <label className="grid gap-2 text-sm font-bold text-brand-brown" htmlFor="login-email">Correo electrónico
-          <Input id="login-email" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus-visible:border-brand-green focus-visible:bg-card-white focus-visible:ring-3 focus-visible:ring-brand-green/50 aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-destructive/20" type="email" inputMode="email" autoComplete="username" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} />
+        <label className="grid gap-2 text-sm font-bold text-text-primary" htmlFor="login-email">Correo electrónico
+          <Input id="login-email" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 font-normal text-text-primary transition-colors placeholder:text-foreground-subtle hover:border-border focus-visible:border-brand-green focus-visible:bg-surface-card focus-visible:ring-3 focus-visible:ring-brand-green/50 aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-destructive/20" type="email" inputMode="email" autoComplete="username" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} />
         </label>
         <div className="grid gap-2">
           <div className="flex items-center justify-between gap-3">
-            <label className="text-sm font-bold text-brand-brown" htmlFor="login-password">Contraseña</label>
+            <label className="text-sm font-bold text-text-primary" htmlFor="login-password">Contraseña</label>
             <Link className="rounded-sm text-sm font-bold text-brand-red underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green" to="/forgot-password">¿Olvidó su contraseña?</Link>
           </div>
           <div className="relative">
-            <Input id="login-password" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 pr-12 font-normal text-brand-brown transition-colors placeholder:text-foreground-subtle hover:border-border focus-visible:border-brand-green focus-visible:bg-card-white focus-visible:ring-3 focus-visible:ring-brand-green/50 aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-destructive/20" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
-            <Button type="button" variant="ghost" size="icon" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)} className="absolute right-1 top-1 size-10 rounded-md border-0 bg-transparent p-0 text-brand-brown transition-colors hover:bg-brand-maize/15 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-green">
+            <Input id="login-password" className="min-h-12 rounded-lg border border-transparent bg-surface-muted px-3.5 py-2.5 pr-12 font-normal text-text-primary transition-colors placeholder:text-foreground-subtle hover:border-border focus-visible:border-brand-green focus-visible:bg-surface-card focus-visible:ring-3 focus-visible:ring-brand-green/50 aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-destructive/20" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
+            <Button type="button" variant="ghost" size="icon" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)} className="absolute right-1 top-1 size-10 rounded-md border-0 bg-transparent p-0 text-text-primary transition-colors hover:bg-brand-maize/15 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-green">
               {showPassword ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
             </Button>
           </div>

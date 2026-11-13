@@ -65,10 +65,10 @@ export function PublicDonationRequestPage() {
   return <>
     <PublicPageHeader title="Donaciones" intro="Comparta su intención de aportar a la comunidad. La ADI revisará su solicitud y se pondrá en contacto con usted." breadcrumb="Donaciones" />
     <PublicPageContent className="max-w-4xl" spacing="spacious">
-      {confirmation ? <section role="status" className="rounded-surface border border-brand-sage bg-card-white p-6 shadow-surface"><h2 className="font-heading text-heading-2 text-brand-ink">Solicitud recibida</h2><p className="mt-3 text-foreground-muted">Su solicitud quedó pendiente de revisión. Esto no confirma una donación ni un pago.</p><p className="mt-3 break-all text-sm text-foreground-muted">Referencia: {confirmation}</p><Button className="mt-5" type="button" onClick={() => setConfirmation(null)}>Enviar otra solicitud</Button></section> :
+      {confirmation ? <section role="status" className="rounded-surface border border-border bg-surface-card p-6 shadow-surface"><h2 className="font-heading text-heading-2 text-text-primary">Solicitud recibida</h2><p className="mt-3 text-foreground-muted">Su solicitud quedó pendiente de revisión. Esto no confirma una donación ni un pago.</p><p className="mt-3 break-all text-sm text-foreground-muted">Referencia: {confirmation}</p><Button className="mt-5" type="button" onClick={() => setConfirmation(null)}>Enviar otra solicitud</Button></section> :
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(15rem,0.8fr)]">
-        <form onSubmit={form.handleSubmit(submit)} className="space-y-6 rounded-surface border border-brand-sage/70 bg-card-white p-5 shadow-surface sm:p-8">
-          <div><h2 className="font-heading text-heading-2 text-brand-ink">Cuéntenos cómo desea ayudar</h2><p className="mt-2 text-sm text-foreground-muted">Los campos con * son obligatorios. No solicitamos cédula ni documentos.</p></div>
+        <form onSubmit={form.handleSubmit(submit)} className="space-y-6 rounded-surface border border-border/70 bg-surface-card p-5 shadow-surface sm:p-8">
+          <div><h2 className="font-heading text-heading-2 text-text-primary">Cuéntenos cómo desea ayudar</h2><p className="mt-2 text-sm text-foreground-muted">Los campos con * son obligatorios. No solicitamos cédula ni documentos.</p></div>
           <FormField id="donor-name" label="Nombre" required error={form.formState.errors.donorName?.message}><Input autoComplete="name" maxLength={160} {...form.register('donorName')} /></FormField>
           <div className="grid gap-4 sm:grid-cols-2"><FormField id="donor-email" label="Correo electrónico" error={form.formState.errors.email?.message}><Input type="email" autoComplete="email" maxLength={254} {...form.register('email')} /></FormField><FormField id="donor-phone" label="Teléfono" error={form.formState.errors.phone?.message}><Input type="tel" autoComplete="tel" maxLength={32} {...form.register('phone')} /></FormField></div>
           <p className="-mt-4 text-sm text-foreground-muted">Indique al menos uno de los dos contactos.</p>
@@ -79,7 +79,7 @@ export function PublicDonationRequestPage() {
           {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Enviando solicitud…' : 'Enviar solicitud'}</Button>
         </form>
-        <aside className="space-y-4 text-sm text-foreground-muted"><div className="rounded-surface bg-brand-ivory p-5"><h2 className="font-heading text-heading-3 text-brand-ink">Antes de continuar</h2><p className="mt-3">Este formulario registra una intención de donar. No procesa pagos ni confirma recepción de bienes.</p><p className="mt-3">Si elige SINPE o transferencia, la ADI deberá coordinar el canal autorizado con usted. No envíe dinero a números o cuentas no verificados.</p></div></aside>
+        <aside className="space-y-4 text-sm text-foreground-muted"><div className="rounded-surface bg-surface-page p-5"><h2 className="font-heading text-heading-3 text-text-primary">Antes de continuar</h2><p className="mt-3">Este formulario registra una intención de donar. No procesa pagos ni confirma recepción de bienes.</p><p className="mt-3">Si elige SINPE o transferencia, la ADI deberá coordinar el canal autorizado con usted. No envíe dinero a números o cuentas no verificados.</p></div></aside>
       </div>}
     </PublicPageContent>
   </>

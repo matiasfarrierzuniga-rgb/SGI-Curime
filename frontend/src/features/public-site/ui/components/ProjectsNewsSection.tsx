@@ -3,7 +3,7 @@ import { news } from '@/content/publicSiteContent'
 
 export function ProjectsNewsSection() {
   return (
-    <section aria-labelledby="news-title" className="bg-brand-ivory py-20 md:py-24 xl:py-32">
+    <section aria-labelledby="news-title" className="bg-surface-page py-20 md:py-24 xl:py-32">
       <div className="public-container">
         <header className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-primary">
@@ -11,7 +11,7 @@ export function ProjectsNewsSection() {
           </p>
           <h2
             id="news-title"
-            className="mt-3 font-heading text-heading-1 font-bold text-brand-ink"
+            className="mt-3 font-heading text-heading-1 font-bold text-text-primary"
           >
             Avanzamos juntos
           </h2>
@@ -27,18 +27,18 @@ export function ProjectsNewsSection() {
                 <span className="absolute right-[18%] top-[16%] aspect-square w-16 rounded-full bg-brand-accent" />
                 <span className="absolute -bottom-[30%] -left-[25%] aspect-[1.8] w-[130%] -rotate-[7deg] rounded-[50%_50%_0_0] bg-brand-primary" />
                 <span className="absolute -bottom-[36%] -right-[20%] aspect-[1.8] w-[120%] -rotate-[7deg] rounded-[50%_50%_0_0] bg-brand-soft/80" />
-                <span className="absolute left-3 top-3 rounded-full bg-brand-accent px-3 py-1 text-xs font-bold text-brand-ink">
+                <span className="absolute left-3 top-3 rounded-full bg-brand-accent px-3 py-1 text-xs font-bold text-text-primary">
                   {item.category}
                 </span>
               </div>
               <div className="flex flex-1 flex-col gap-2 p-6">
                 <p className="text-sm font-bold tracking-wide text-brand-primary">{item.date}</p>
-                <h3 className="font-heading text-heading-3 font-semibold text-brand-ink">
+                <h3 className="font-heading text-heading-3 font-semibold text-text-primary">
                   <Link to={`/noticias/${item.slug}`} className="group-hover:text-brand-primary">
                     {item.title}
                   </Link>
                 </h3>
-                <p className="flex-1 text-sm leading-relaxed text-brand-ink/70">{item.excerpt}</p>
+                <p className="flex-1 text-sm leading-relaxed text-text-primary/70">{item.excerpt}</p>
                 <Link
                   to={`/noticias/${item.slug}`}
                   className="mt-2 text-sm font-bold text-brand-primary hover:underline"
@@ -52,7 +52,7 @@ export function ProjectsNewsSection() {
         <div className="mt-10 text-center">
           <Link
             to="/noticias"
-            className="inline-flex min-h-12 items-center justify-center rounded-md border-2 border-brand-deep px-6 py-3 text-center font-bold text-brand-deep transition-colors hover:bg-brand-deep hover:text-brand-ivory"
+            className="inline-flex min-h-12 items-center justify-center rounded-md border-2 border-brand-deep px-6 py-3 text-center font-bold text-brand-deep transition-colors hover:bg-brand-deep hover:text-white"
           >
             Ver todas las noticias
           </Link>

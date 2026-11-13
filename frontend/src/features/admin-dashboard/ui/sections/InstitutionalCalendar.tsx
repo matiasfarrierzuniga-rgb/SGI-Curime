@@ -140,7 +140,7 @@ export function InstitutionalCalendar({
                 />
               ) : null}
               <div
-                className="mt-4 grid grid-cols-7 border-b border-brand-sage/70 pb-2.5 text-center text-caption font-bold text-brand-primary"
+                className="mt-4 grid grid-cols-7 border-b border-border/70 pb-2.5 text-center text-caption font-bold text-brand-primary"
                 aria-hidden="true"
               >
                 {["L", "M", "X", "J", "V", "S", "D"].map((day) => (

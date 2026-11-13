@@ -93,7 +93,7 @@ export function InstitutionalProfilePage() {
     {profile.isPending ? <LoadingState label="Cargando perfil institucional..." /> : null}
     {profile.isError ? <ErrorState title="No fue posible cargar el perfil institucional" message={getErrorMessage(profile.error)} action={<Button type="button" variant="outline" onClick={() => void profile.refetch()}>Reintentar</Button>} /> : null}
     {profile.data ? <Card className="overflow-hidden border-border-default bg-surface-card shadow-elevation-1">
-      <CardHeader className="border-b border-border-subtle bg-brand-ivory/45">
+      <CardHeader className="border-b border-border-subtle bg-surface-page/45">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 gap-3 sm:gap-4">
             <SectionIcon icon={isEditing ? Pencil : Building2} />

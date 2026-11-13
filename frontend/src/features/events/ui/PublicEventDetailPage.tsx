@@ -37,7 +37,7 @@ export function PublicEventDetailPage() {
                <div className="flex gap-3"><CalendarDays className="mt-0.5 size-5 shrink-0 text-[#07503F]" aria-hidden="true" /><div><dt className="font-semibold text-[#243C34]">Fecha y hora</dt><dd className="mt-1">{formatDate(eventQuery.data.startAt)}{eventQuery.data.endAt ? ` - ${formatDate(eventQuery.data.endAt)}` : ''}</dd></div></div>
                {eventQuery.data.location ? <div className="flex gap-3"><MapPin className="mt-0.5 size-5 shrink-0 text-[#07503F]" aria-hidden="true" /><div><dt className="font-semibold text-[#243C34]">Lugar</dt><dd className="mt-1">{eventQuery.data.location}</dd></div></div> : null}
             </dl>
-            {presentation.isPast && eventQuery.data.status === 'SCHEDULED' ? <p className="mt-5 rounded-control border border-brand-sage/80 bg-surface-muted px-4 py-3 text-body-small leading-relaxed text-foreground-muted">La fecha programada ya transcurrió. El estado institucional recibido permanece como “Programado”.</p> : null}
+            {presentation.isPast && eventQuery.data.status === 'SCHEDULED' ? <p className="mt-5 rounded-control border border-border/80 bg-surface-muted px-4 py-3 text-body-small leading-relaxed text-foreground-muted">La fecha programada ya transcurrió. El estado institucional recibido permanece como “Programado”.</p> : null}
              {eventQuery.data.description ? <div className="mt-8 whitespace-pre-line leading-relaxed text-[#243C34]/80">{eventQuery.data.description}</div> : null}
           </article>
         })() : null}

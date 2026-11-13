@@ -142,7 +142,7 @@ export function AppHomePage() {
             <div>
               <h2
                 id="summary-title"
-                className="text-xl font-bold text-brand-ink"
+                className="text-xl font-bold text-text-primary"
               >
                 Resumen de inventario
               </h2>
@@ -211,7 +211,7 @@ export function AppHomePage() {
             <CardContent className="p-5">
               <h2
                 id="authorized-destinations-title"
-                className="text-xl font-bold text-brand-ink"
+                className="text-xl font-bold text-text-primary"
               >
                 Accesos autorizados
               </h2>
@@ -246,7 +246,7 @@ export function AppHomePage() {
           <section aria-labelledby="community-actions-title">
             <h2
               id="community-actions-title"
-              className="text-xl font-bold text-brand-ink"
+              className="text-xl font-bold text-text-primary"
             >
               ¿Qué desea hacer?
             </h2>
@@ -260,7 +260,7 @@ export function AppHomePage() {
           <section aria-labelledby="community-links-title">
             <h2
               id="community-links-title"
-              className="text-xl font-bold text-brand-ink"
+              className="text-xl font-bold text-text-primary"
             >
               También puede consultar
             </h2>

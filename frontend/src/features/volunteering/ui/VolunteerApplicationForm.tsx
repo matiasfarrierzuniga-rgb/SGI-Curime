@@ -49,11 +49,11 @@ export function VolunteerApplicationForm({ opportunityId }: { opportunityId: num
     catch (error) { setRequestError(getErrorMessage(error, 'No fue posible enviar su postulación. Inténtelo de nuevo.')) }
   }
 
-  if (mutation.isSuccess) return <div role="status" className="mt-8 rounded-control border border-success bg-success/10 p-5 text-body text-brand-ink">Tu postulación fue recibida correctamente y queda pendiente de revisión por la asociación.</div>
+  if (mutation.isSuccess) return <div role="status" className="mt-8 rounded-control border border-success bg-success/10 p-5 text-body text-text-primary">Tu postulación fue recibida correctamente y queda pendiente de revisión por la asociación.</div>
 
   return <section aria-labelledby="application-title" className="mt-9 border-t border-border pt-8">
-    <h2 id="application-title" className="text-heading-2 font-semibold text-brand-ink">Postularme como voluntario</h2>
-    <p className="mt-2 text-body text-brand-ink/75">Necesitamos su nombre y al menos un medio de contacto. La postulación queda pendiente de revisión.</p>
+    <h2 id="application-title" className="text-heading-2 font-semibold text-text-primary">Postularme como voluntario</h2>
+    <p className="mt-2 text-body text-text-primary/75">Necesitamos su nombre y al menos un medio de contacto. La postulación queda pendiente de revisión.</p>
     <form noValidate onSubmit={submit} className="mt-6 grid gap-5">
       <FormField id="volunteer-full-name" label="Nombre completo" required error={submitted ? errors.fullName : ''}><Input id="volunteer-full-name" autoComplete="name" maxLength={200} value={form.fullName} onChange={event => change('fullName', event.target.value)} /></FormField>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -63,7 +63,7 @@ export function VolunteerApplicationForm({ opportunityId }: { opportunityId: num
       {submitted && errors.contact ? <p role="alert" className="text-body-small font-medium text-destructive">{errors.contact}</p> : null}
       <FormField id="volunteer-motivation" label="Mensaje o motivación"><Textarea id="volunteer-motivation" maxLength={2000} value={form.motivation} onChange={event => change('motivation', event.target.value)} /></FormField>
       {requestError ? <p role="alert" className="text-body-small font-medium text-destructive">{requestError}</p> : null}
-      <button type="submit" disabled={mutation.isPending} className="min-h-11 w-fit rounded-control bg-brand-deep px-6 font-semibold text-brand-ivory hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60">{mutation.isPending ? 'Enviando postulación…' : 'Enviar postulación'}</button>
+      <button type="submit" disabled={mutation.isPending} className="min-h-11 w-fit rounded-control bg-brand-deep px-6 font-semibold text-white hover:bg-brand-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60">{mutation.isPending ? 'Enviando postulación…' : 'Enviar postulación'}</button>
     </form>
   </section>
 }
