@@ -213,7 +213,7 @@ function AdminDashboardContent({
     );
 
   return (
-    <section className="space-y-4">
+    <section className="@container space-y-4">
       <InstitutionalDashboardWelcome
         fullName={userName}
         generatedAt={metadata.generatedAt}
@@ -222,7 +222,7 @@ function AdminDashboardContent({
         data={data}
         permissionCodes={permissionCodes}
       />
-      <div className="grid min-w-0 gap-3 min-[1200px]:grid-cols-[minmax(0,1.32fr)_minmax(0,1fr)] min-[1200px]:items-stretch">
+      <div className="grid min-w-0 gap-3 @min-[700px]:grid-cols-2 @min-[880px]:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,1.15fr)]">
         <AttentionPanel
           data={data}
           permissionCodes={permissionCodes}
@@ -232,40 +232,42 @@ function AdminDashboardContent({
             hasCapability(permissionCodes, action.capability),
           )}
         />
+        <div className="grid min-w-0 [&>section]:min-w-0 @min-[700px]:col-span-2 @min-[880px]:col-span-1">
+          <InstitutionalCalendar
+            month={calendarMonth}
+            onMonthChange={setCalendarMonth}
+            events={events.data}
+            reservations={reservationCalendar.data?.data}
+            assemblies={assembliesCalendar.data}
+            includeReservations={canReadReservations}
+            includeAssemblies={canReadAssemblies}
+            agendaPath={
+              hasCapability(permissionCodes, "events.proposal.create") ||
+              hasCapability(permissionCodes, "events.proposal.review") ||
+              hasCapability(permissionCodes, "events.proposal.approve") ||
+              hasCapability(permissionCodes, "events.publish") ||
+              hasCapability(permissionCodes, "pub.events.manage")
+                ? "/app/events"
+                : "/eventos"
+            }
+            isPending={
+              events.isPending ||
+              (canReadReservations && reservationCalendar.isPending) ||
+              (canReadAssemblies && assembliesCalendar.isPending)
+            }
+            isError={
+              events.isError ||
+              (canReadReservations && reservationCalendar.isError) ||
+              (canReadAssemblies && assembliesCalendar.isError)
+            }
+            onRetry={() => {
+              void events.refetch();
+              if (canReadReservations) void reservationCalendar.refetch();
+              if (canReadAssemblies) void assembliesCalendar.refetch();
+            }}
+          />
+        </div>
       </div>
-      <InstitutionalCalendar
-        month={calendarMonth}
-        onMonthChange={setCalendarMonth}
-        events={events.data}
-        reservations={reservationCalendar.data?.data}
-        assemblies={assembliesCalendar.data}
-        includeReservations={canReadReservations}
-        includeAssemblies={canReadAssemblies}
-        agendaPath={
-          hasCapability(permissionCodes, "events.proposal.create") ||
-          hasCapability(permissionCodes, "events.proposal.review") ||
-          hasCapability(permissionCodes, "events.proposal.approve") ||
-          hasCapability(permissionCodes, "events.publish") ||
-          hasCapability(permissionCodes, "pub.events.manage")
-            ? "/app/events"
-            : "/eventos"
-        }
-        isPending={
-          events.isPending ||
-          (canReadReservations && reservationCalendar.isPending) ||
-          (canReadAssemblies && assembliesCalendar.isPending)
-        }
-        isError={
-          events.isError ||
-          (canReadReservations && reservationCalendar.isError) ||
-          (canReadAssemblies && assembliesCalendar.isError)
-        }
-        onRetry={() => {
-          void events.refetch();
-          if (canReadReservations) void reservationCalendar.refetch();
-          if (canReadAssemblies) void assembliesCalendar.refetch();
-        }}
-      />
       <div className="grid min-w-0 gap-3 min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,1.12fr)] min-[1200px]:items-stretch">
         <ModuleSummary data={data} permissionCodes={permissionCodes} />
         <ProcessStatus />
