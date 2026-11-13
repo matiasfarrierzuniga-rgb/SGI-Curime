@@ -35,6 +35,14 @@ function submitRequestForm() {
   fireEvent.submit(form)
 }
 
+function forceUnavailableApplicantCategory() {
+  const select = screen.getByLabelText(/Categoría de solicitante/) as HTMLSelectElement
+  const option = Array.from(select.options).find(item => item.value === 'GROUPS_COMMITTEES')
+  if (!option) throw new Error('Expected groups and committees option')
+  option.selected = true
+  fireEvent.change(select)
+}
+
 describe('ReservationRequestPage', () => {
   const mutateAsync = vi.fn()
   const refetch = vi.fn()
@@ -52,7 +60,7 @@ describe('ReservationRequestPage', () => {
     fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '10:00' } })
     fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '12:00' } })
     fireEvent.change(screen.getByLabelText(/Actividad/), { target: { value: 'DANCES' } })
-    fireEvent.change(screen.getByLabelText(/Categoría de solicitante/), { target: { value: 'GROUPS_COMMITTEES' } })
+    fireEvent.change(screen.getByLabelText(/Categoría de solicitante/), { target: { value: 'PRIVATE' } })
     fireEvent.change(screen.getByLabelText(/Motivo/), { target: { value: 'Reunión vecinal' } })
     expect(screen.getByText(/Tarifa de la solicitud:.*90/)).toBeInTheDocument()
   }
@@ -142,7 +150,7 @@ describe('ReservationRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Volver a editar' }))
     expect(screen.getByLabelText(/Motivo/)).toHaveValue('Reunión vecinal')
     expect(screen.getByLabelText(/Actividad/)).toHaveValue('DANCES')
-    expect(screen.getByLabelText(/Categoría de solicitante/)).toHaveValue('GROUPS_COMMITTEES')
+    expect(screen.getByLabelText(/Categoría de solicitante/)).toHaveValue('PRIVATE')
     fireEvent.click(screen.getByRole('button', { name: 'Revisar solicitud' }))
     const sendButton = await screen.findByRole('button', { name: 'Enviar solicitud' })
     expect(sendButton).toBeEnabled()
@@ -177,7 +185,56 @@ describe('ReservationRequestPage', () => {
     expect(reservationTimeInput('reservation-end-time')).toHaveValue('12:00')
     expect(screen.getByLabelText(/Motivo/)).toHaveValue('Reunión vecinal')
     expect(screen.getByLabelText(/Actividad/)).toHaveValue('DANCES')
-    expect(screen.getByLabelText(/Categoría de solicitante/)).toHaveValue('GROUPS_COMMITTEES')
+    expect(screen.getByLabelText(/Categoría de solicitante/)).toHaveValue('PRIVATE')
     expect(toast.error).toHaveBeenCalled()
+  })
+
+  it('keeps the groups and committees category visible but disabled with a short notice', () => {
+    render(<ReservationRequestPage />)
+    const select = screen.getByLabelText(/Categoría de solicitante/)
+    const option = Array.from((select as HTMLSelectElement).options).find(item => item.value === 'GROUPS_COMMITTEES')
+    expect(option).toBeDefined()
+    expect(option).toBeDisabled()
+    expect(option?.textContent).toContain('Grupos y comités')
+    expect(screen.getByText(/Esta categoría estará disponible próximamente/)).toBeInTheDocument()
+  })
+
+  it('keeps the private and member categories selectable with their published tariffs', async () => {
+    render(<ReservationRequestPage />)
+    const select = screen.getByLabelText(/Categoría de solicitante/) as HTMLSelectElement
+    const memberOption = Array.from(select.options).find(item => item.value === 'MEMBERS')
+    const privateOption = Array.from(select.options).find(item => item.value === 'PRIVATE')
+    expect(memberOption).toBeEnabled()
+    expect(privateOption).toBeEnabled()
+
+    fireEvent.change(screen.getByLabelText(/Espacio/), { target: { value: '1' } })
+    selectReservationDateRange()
+    fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '10:00' } })
+    fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '12:00' } })
+    fireEvent.change(screen.getByLabelText(/Actividad/), { target: { value: 'BINGO' } })
+    fireEvent.change(select, { target: { value: 'MEMBERS' } })
+    expect(screen.getByText(/Tarifa de la solicitud:.*35/)).toBeInTheDocument()
+    fireEvent.change(select, { target: { value: 'PRIVATE' } })
+    expect(screen.getByText(/Tarifa de la solicitud:.*50/)).toBeInTheDocument()
+  })
+
+  it('does not allow sending a request with the unavailable category', async () => {
+    refetch.mockResolvedValue({ data: { available: true } })
+    render(<ReservationRequestPage />)
+    fireEvent.change(screen.getByLabelText(/Espacio/), { target: { value: '1' } })
+    selectReservationDateRange()
+    fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '10:00' } })
+    fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '12:00' } })
+    fireEvent.change(screen.getByLabelText(/Actividad/), { target: { value: 'DANCES' } })
+    fireEvent.change(screen.getByLabelText(/Motivo/), { target: { value: 'Reunión vecinal' } })
+    forceUnavailableApplicantCategory()
+
+    fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
+    await screen.findByText(/Disponible en este horario/)
+    submitRequestForm()
+
+    expect(await screen.findByText(/Esta categoría estará disponible próximamente/)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '3. Revise su solicitud' })).not.toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
   })
 })

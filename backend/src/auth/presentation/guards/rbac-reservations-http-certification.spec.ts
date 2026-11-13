@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
+import { ThrottlerModule } from '@nestjs/throttler';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import { FinancialController } from '../../../financial/financial.controller';
@@ -94,6 +95,9 @@ describe('Reservations RBAC V2 HTTP certification', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
+      // Mirrors the production wiring: the throttler module is registered
+      // globally by the public request rate limit module.
+      imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 1000 }])],
       controllers: [
         ReservationsController,
         ReservableResourcesController,
