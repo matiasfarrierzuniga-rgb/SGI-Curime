@@ -81,7 +81,7 @@ describe('Affiliate detail and edit', () => {
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
 
     expect(screen.getByLabelText('Nombre completo')).toHaveValue('Ana Pérez')
-    expect(screen.getByLabelText('Identificación')).toHaveValue('123456789')
+    expect(screen.getByLabelText('Número de identificación')).toHaveValue('123456789')
     fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Nueva' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
@@ -130,22 +130,11 @@ describe('Affiliate detail and edit', () => {
     expect(affiliatesService.update).not.toHaveBeenCalled()
   })
 
-  it('blocks a phone country code without a national number before updating', () => {
-    renderWithClient(<EditAffiliateModal affiliate={affiliate} onClose={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText('Número telefónico'), { target: { value: '' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
-
-    expect(screen.getByRole('alert')).toHaveTextContent('Ingrese código de país y número telefónico juntos.')
-    expect(affiliatesService.update).not.toHaveBeenCalled()
-  })
-
   it('allows both optional phone values to be empty', async () => {
     vi.mocked(affiliatesService.update).mockResolvedValue(affiliate)
     renderWithClient(<EditAffiliateModal affiliate={affiliate} onClose={vi.fn()} />)
 
-    fireEvent.change(screen.getByLabelText('Código país'), { target: { value: '' } })
-    fireEvent.change(screen.getByLabelText('Número telefónico'), { target: { value: '' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /Teléfono/ }), { target: { value: '' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     await waitFor(() => expect(affiliatesService.update).toHaveBeenCalledOnce())

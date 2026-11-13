@@ -31,7 +31,10 @@ COPY --from=production-dependencies /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/certs/supabase-prod-ca-2021.crt ./certs/supabase-prod-ca-2021.crt
+COPY --from=build /app/data/territorial ./data/territorial
 ENV NODE_EXTRA_CA_CERTS=/app/certs/supabase-prod-ca-2021.crt
+ENV TERRITORIAL_CATALOG_PATH=/app/data/territorial/catalog.inec-2024.json
+ENV TERRITORIAL_CATALOG_MANIFEST_PATH=/app/data/territorial/manifest.inec-2024.json
 USER node
 
 EXPOSE 3000

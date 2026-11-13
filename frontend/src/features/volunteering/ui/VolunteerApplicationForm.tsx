@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { emailError, normalizeEmail, normalizePhoneCountryCode, normalizePhoneNationalNumber, phonePairError } from '@/shared/lib/formValidation'
 import { FormField } from '@/shared/ui/FormField'
 import { Input } from '@/shared/ui/input'
 import { Textarea } from '@/shared/ui/textarea'
@@ -12,13 +13,14 @@ const emptyForm: Form = { fullName: '', email: '', phoneCountryCode: '', phoneNa
 
 function errorsFor(form: Form) {
   const email = form.email.trim()
-  const code = form.phoneCountryCode.trim()
-  const number = form.phoneNationalNumber.trim()
-  const phoneValid = Boolean(code && number && /^\+[1-9]\d{0,3}$/.test(code) && /^\d+$/.test(number) && (code !== '+506' || number.length === 8) && code.length - 1 + number.length <= 15)
+  const code = normalizePhoneCountryCode(form.phoneCountryCode)
+  const number = normalizePhoneNationalNumber(form.phoneNationalNumber)
+  const phone = phonePairError(code, number)
+  const phoneValid = Boolean(code && number && !phone)
   return {
     fullName: !form.fullName.trim() ? 'Ingrese su nombre completo.' : '',
-    email: email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'Ingrese un correo válido.' : '',
-    phone: (code || number) && !phoneValid ? 'Ingrese un teléfono válido.' : '',
+    email: email && emailError(email) ? 'Ingrese un correo válido.' : '',
+    phone,
     contact: !email && !phoneValid ? 'Indique al menos un correo electrónico o teléfono.' : '',
   }
 }
@@ -38,9 +40,9 @@ export function VolunteerApplicationForm({ opportunityId }: { opportunityId: num
     setRequestError('')
     const input: VolunteerApplicationInput = {
       fullName: form.fullName.trim(),
-      email: form.email.trim().toLowerCase() || undefined,
-      phoneCountryCode: form.phoneCountryCode || undefined,
-      phoneNationalNumber: form.phoneNationalNumber || undefined,
+      email: form.email ? normalizeEmail(form.email) : undefined,
+      phoneCountryCode: normalizePhoneCountryCode(form.phoneCountryCode) || undefined,
+      phoneNationalNumber: normalizePhoneNationalNumber(form.phoneNationalNumber) || undefined,
       motivation: form.motivation.trim() || undefined,
     }
     try { await mutation.mutateAsync(input) }

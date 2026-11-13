@@ -15,6 +15,7 @@ type DatePickerProps = {
   max?: string
   disabled?: boolean
   required?: boolean
+  'aria-label'?: string
   'aria-describedby'?: string
   'aria-invalid'?: boolean
 }
@@ -126,11 +127,13 @@ export function DatePicker({
   max,
   disabled = false,
   required = false,
+  'aria-label': ariaLabel,
   'aria-describedby': ariaDescribedBy,
   'aria-invalid': ariaInvalid = false,
 }: DatePickerProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const restoreFocusRef = useRef(false)
   const calendarId = useId()
   const [isOpen, setIsOpen] = useState(false)
   const [inputValue, setInputValue] = useState(() => formatValue(value))
@@ -152,6 +155,7 @@ export function DatePicker({
       if (event.key !== 'Escape') return
       event.preventDefault()
       setIsOpen(false)
+      restoreFocusRef.current = true
       requestAnimationFrame(() => inputRef.current?.focus())
     }
 
@@ -164,6 +168,10 @@ export function DatePicker({
   }, [isOpen])
 
   const openCalendar = () => {
+    if (restoreFocusRef.current) {
+      restoreFocusRef.current = false
+      return
+    }
     if (disabled || isOpen) return
     setView(getInitialView(value, min, max))
     setIsOpen(true)
@@ -171,7 +179,10 @@ export function DatePicker({
 
   const closeCalendar = (restoreFocus = false) => {
     setIsOpen(false)
-    if (restoreFocus) requestAnimationFrame(() => inputRef.current?.focus())
+    if (restoreFocus) {
+      restoreFocusRef.current = true
+      requestAnimationFrame(() => inputRef.current?.focus())
+    }
   }
 
   const selectDate = (date: CalendarDate) => {
@@ -207,7 +218,7 @@ export function DatePicker({
   const availableYears = getAvailableYears(min, max, selectedDate)
   const firstDayOffset = (new Date(view.year, view.month - 1, 1).getDay() + 6) % 7
   const daysInMonth = new Date(view.year, view.month, 0).getDate()
-  const days = Array.from({ length: firstDayOffset + daysInMonth }, (_, index) => {
+  const days = Array.from({ length: Math.ceil((firstDayOffset + daysInMonth) / 7) * 7 }, (_, index) => {
     if (index < firstDayOffset) return null
     return { year: view.year, month: view.month, day: index - firstDayOffset + 1 }
   })
@@ -225,6 +236,7 @@ export function DatePicker({
           autoComplete="off"
           disabled={disabled}
           required={required}
+          aria-label={ariaLabel}
           aria-describedby={ariaDescribedBy}
           aria-invalid={ariaInvalid || inputInvalid}
           aria-haspopup="dialog"
@@ -244,7 +256,7 @@ export function DatePicker({
             if (inputInvalid) setInputValue(formatValue(value))
           }}
         />
-        <CalendarDays aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground" />
+        <button type="button" aria-label="Abrir calendario" disabled={disabled} aria-haspopup="dialog" aria-expanded={isOpen} aria-controls={isOpen ? calendarId : undefined} onClick={openCalendar} className="absolute top-1/2 right-1 grid size-10 -translate-y-1/2 place-items-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"><CalendarDays aria-hidden="true" className="size-4" /></button>
       </div>
 
       {isOpen ? (
@@ -252,15 +264,15 @@ export function DatePicker({
           id={calendarId}
           role="dialog"
           aria-label="Calendario"
-          className="absolute top-full right-0 z-30 mt-2 w-[min(20rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] rounded-surface border border-border-default bg-surface p-3 shadow-lg"
+          className="absolute top-full right-0 z-30 mt-2 w-[min(20rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] rounded-surface border border-border-subtle bg-surface p-4 shadow-elevation-2"
         >
           <div className="mb-3 grid grid-cols-[2.5rem_minmax(0,1fr)_5.5rem_2.5rem] items-center gap-1">
-            <button type="button" aria-label="Mes anterior" className="grid size-10 place-items-center rounded-control text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => setView(current => moveMonth(current, -1))}>
+            <button type="button" aria-label="Mes anterior" className="grid size-10 place-items-center rounded-control text-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => setView(current => moveMonth(current, -1))}>
               <ChevronLeft aria-hidden="true" className="size-4" />
             </button>
             <select
               aria-label="Mes del calendario"
-              className="h-10 min-w-0 rounded-control border border-border-default bg-surface px-2 text-sm font-semibold text-foreground outline-none hover:border-primary/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-10 min-w-0 rounded-control border border-transparent bg-surface-muted px-2 text-sm font-bold text-foreground-institutional outline-none transition-colors hover:bg-primary/10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               value={view.month}
               onChange={event => setView(current => ({ ...current, month: Number(event.target.value) }))}
             >
@@ -268,40 +280,46 @@ export function DatePicker({
             </select>
             <select
               aria-label="Año del calendario"
-              className="h-10 min-w-0 rounded-control border border-border-default bg-surface px-2 text-sm font-semibold text-foreground outline-none hover:border-primary/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-10 min-w-0 rounded-control border border-transparent bg-surface-muted px-2 text-sm font-semibold text-foreground-secondary outline-none transition-colors hover:bg-primary/10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               value={view.year}
               onChange={event => setView(current => ({ ...current, year: Number(event.target.value) }))}
             >
               {availableYears.map(year => <option key={year} value={year}>{year}</option>)}
             </select>
-            <button type="button" aria-label="Mes siguiente" className="grid size-10 place-items-center rounded-control text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => setView(current => moveMonth(current, 1))}>
+            <button type="button" aria-label="Mes siguiente" className="grid size-10 place-items-center rounded-control text-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => setView(current => moveMonth(current, 1))}>
               <ChevronRight aria-hidden="true" className="size-4" />
             </button>
           </div>
           <div className="grid grid-cols-7 gap-y-1 text-center text-xs font-semibold text-muted-foreground" aria-hidden="true">
             {weekDays.map(day => <span key={day} className="grid size-9 place-items-center md:size-10">{day}</span>)}
           </div>
-          <div className="grid grid-cols-7 gap-y-1" role="grid" aria-label={`${monthNames[view.month - 1]} ${view.year}`}>
-            {days.map((date, index) => {
-              if (!date) return <span key={`empty-${index}`} className="size-9 md:size-10" aria-hidden="true" />
-              const isoValue = toIsoDate(date)
-              const isDisabled = !isWithinLimits(isoValue, min, max)
-              const isSelected = isSameDate(selectedDate, date)
-              const isToday = isSameDate(currentDate, date)
-              return (
-                <button
-                  key={isoValue}
-                  type="button"
-                  aria-label={`Seleccionar ${toDisplayDate(date)}`}
-                  aria-pressed={isSelected}
-                  disabled={isDisabled}
-                  className={`grid size-9 place-items-center rounded-control text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:size-10 ${isSelected ? 'bg-primary text-primary-foreground hover:bg-primary/90' : isToday ? 'border border-primary text-primary hover:bg-primary/10' : 'text-foreground hover:bg-muted'} disabled:cursor-not-allowed disabled:text-muted-foreground disabled:opacity-45 disabled:hover:bg-transparent`}
-                  onClick={() => selectDate(date)}
-                >
-                  {date.day}
-                </button>
-              )
-            })}
+          <div role="grid" aria-label={`${monthNames[view.month - 1]} ${view.year}`}>
+            {Array.from({ length: days.length / 7 }, (_, weekIndex) => (
+              <div key={`week-${weekIndex}`} role="row" className="grid grid-cols-7 gap-y-1">
+                {days.slice(weekIndex * 7, (weekIndex + 1) * 7).map((date, dayIndex) => {
+                  const cellKey = `cell-${weekIndex}-${dayIndex}`
+                  if (!date) return <span key={cellKey} role="gridcell" aria-hidden="true" className="size-9 md:size-10" />
+                  const isoValue = toIsoDate(date)
+                  const isDisabled = !isWithinLimits(isoValue, min, max)
+                  const isSelected = isSameDate(selectedDate, date)
+                  const isToday = isSameDate(currentDate, date)
+                  return (
+                    <span key={isoValue} role="gridcell" aria-selected={isSelected} className="grid size-9 place-items-center md:size-10">
+                      <button
+                        type="button"
+                        aria-label={`Seleccionar ${toDisplayDate(date)}`}
+                        aria-pressed={isSelected}
+                        disabled={isDisabled}
+                        className={`relative grid size-9 !border-0 place-items-center rounded-control text-sm font-medium transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:size-10 ${isSelected ? 'bg-interaction-primary-default text-primary-foreground hover:bg-interaction-primary-hover active:bg-interaction-primary-active' : isToday ? 'text-primary hover:bg-primary/10 active:bg-primary/15 after:absolute after:bottom-1 after:size-1 after:rounded-full after:bg-primary' : 'text-foreground hover:bg-primary/10 hover:text-primary active:bg-primary/15'} disabled:cursor-not-allowed disabled:text-muted-foreground disabled:opacity-45 disabled:hover:bg-transparent`}
+                        onClick={() => selectDate(date)}
+                      >
+                        {date.day}
+                      </button>
+                    </span>
+                  )
+                })}
+              </div>
+            ))}
           </div>
         </div>
       ) : null}

@@ -11,7 +11,7 @@ export function TransparencySection() {
             <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-md bg-brand-accent text-brand-ink shadow-sm">
               <Eye className="size-5" aria-hidden="true" />
             </span>
-            <p className="public-eyebrow text-brand-accent">Transparencia</p>
+            <p className="public-eyebrow text-text-inverse">Transparencia</p>
           </div>
           <h2 id="transparency-title" className="public-heading mt-5 max-w-[19ch] text-display text-text-inverse">
             Información pública para la comunidad
@@ -22,7 +22,7 @@ export function TransparencySection() {
         </div>
         <Link
           to="/transparencia"
-          className="inline-flex min-h-12 w-full items-center justify-center rounded-control bg-brand-accent px-6 py-3 text-center font-semibold text-brand-ink shadow-sm transition-[background-color,box-shadow] hover:bg-brand-accent/85 hover:shadow-md focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-text-inverse sm:w-auto sm:justify-self-start lg:justify-self-end"
+          className="inline-flex min-h-12 w-full items-center justify-center rounded-control bg-brand-deep px-6 py-3 text-center font-semibold text-brand-ivory shadow-sm transition-[background-color,box-shadow] hover:bg-interaction-primary-hover hover:shadow-md focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-text-inverse sm:w-auto sm:justify-self-start lg:justify-self-end"
         >
           Ir a transparencia
         </Link>

@@ -1,0 +1,11 @@
+{
+  "generatorSchemaVersion": 1,
+  "catalogVersion": "inec-localidades-2024-2024-12-31",
+  "source": {
+    "title": "INEC Localidades 2024",
+    "url": "https://admin.inec.cr/sites/default/files/2025-01/Localidades%202024.zip",
+    "sourceDate": "2024-12-31",
+    "archiveSha256": "dc27c14948e289a1bd0f531e93051609b837ccd9f998cf43ef794e649cb3f9f6"
+  },
+  "artifactSha256": "0aad0cdeefe94fb24090bae61d38f702838665724c4caacc0f3aea8cbfe34c9b"
+}
