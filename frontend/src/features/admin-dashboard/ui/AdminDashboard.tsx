@@ -206,20 +206,25 @@ function AdminDashboardContent({
                 ? "/app/events"
                 : "/eventos"
             }
-            isPending={
-              events.isPending ||
-              (canReadReservations && reservationCalendar.isPending) ||
-              (canReadAssemblies && assembliesCalendar.isPending)
-            }
-            isError={
-              events.isError ||
-              (canReadReservations && reservationCalendar.isError) ||
-              (canReadAssemblies && assembliesCalendar.isError)
-            }
-            onRetry={() => {
-              void events.refetch();
-              if (canReadReservations) void reservationCalendar.refetch();
-              if (canReadAssemblies) void assembliesCalendar.refetch();
+            sources={{
+              events: {
+                enabled: true,
+                isPending: events.isPending,
+                isError: events.isError,
+                onRetry: () => void events.refetch(),
+              },
+              reservations: {
+                enabled: canReadReservations,
+                isPending: reservationCalendar.isPending,
+                isError: reservationCalendar.isError,
+                onRetry: () => void reservationCalendar.refetch(),
+              },
+              assemblies: {
+                enabled: canReadAssemblies,
+                isPending: assembliesCalendar.isPending,
+                isError: assembliesCalendar.isError,
+                onRetry: () => void assembliesCalendar.refetch(),
+              },
             }}
           />
         </div>

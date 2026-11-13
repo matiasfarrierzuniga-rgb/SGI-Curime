@@ -5,6 +5,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
+  CardAction,
 } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { displayCount } from "../model/displayCount";
@@ -40,10 +41,15 @@ export function DashboardCard({
             </CardDescription>
           ) : null}
         </div>
-        {count ? (
-          <span className="rounded-full bg-status-danger px-2 py-0.5 text-caption font-bold text-text-inverse">
-            {displayCount(count)}
-          </span>
+        {count !== undefined ? (
+          <CardAction>
+            <span
+              aria-label={`${displayCount(count)} pendientes`}
+              className="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-status-danger px-2 py-0.5 text-caption font-bold leading-none text-text-inverse"
+            >
+              {displayCount(count)}
+            </span>
+          </CardAction>
         ) : null}
       </CardHeader>
       <CardContent className="mt-3">{children}</CardContent>

@@ -32,9 +32,7 @@ export function InstitutionalCalendar({
   includeReservations,
   includeAssemblies,
   agendaPath,
-  isPending,
-  isError,
-  onRetry,
+  sources,
 }: {
   month: Date;
   onMonthChange: (month: Date) => void;
@@ -44,9 +42,7 @@ export function InstitutionalCalendar({
   includeReservations: boolean;
   includeAssemblies: boolean;
   agendaPath: string;
-  isPending: boolean;
-  isError: boolean;
-  onRetry: () => void;
+  sources: CalendarSources;
 }) {
   const activities = useMemo(
     () =>
@@ -69,6 +65,16 @@ export function InstitutionalCalendar({
     year: "numeric",
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const enabledSources = Object.values(sources).filter(
+    (source) => source.enabled,
+  );
+  const failedSources = calendarSourceKeys.filter(
+    (source) => sources[source].enabled && sources[source].isError,
+  );
+  const allEnabledSourcesFailed =
+    enabledSources.length > 0 && failedSources.length === enabledSources.length;
+  const isInitialLoad =
+    enabledSources.length > 0 && enabledSources.every((source) => source.isPending);
 
   return (
     <section aria-label="Calendario institucional">
@@ -116,15 +122,23 @@ export function InstitutionalCalendar({
               <ChevronRight aria-hidden="true" />
             </Button>
           </div>
-          {isPending ? (
+          {isInitialLoad ? (
             <Skeleton className="mt-5 h-60" />
-          ) : isError ? (
+          ) : allEnabledSourcesFailed ? (
             <InlineRetry
               message="No fue posible cargar actividades institucionales."
-              onRetry={onRetry}
+              onRetry={() => {
+                failedSources.forEach((source) => sources[source].onRetry());
+              }}
             />
           ) : (
             <>
+              {failedSources.length ? (
+                <CalendarSourceWarnings
+                  sources={failedSources}
+                  onRetry={(source) => sources[source].onRetry()}
+                />
+              ) : null}
               <div
                 className="mt-4 grid grid-cols-7 border-b border-erp-accent pb-2.5 text-center text-caption font-bold text-erp-navigation"
                 aria-hidden="true"
@@ -151,6 +165,11 @@ export function InstitutionalCalendar({
                 includeReservations={includeReservations}
                 includeAssemblies={includeAssemblies}
               />
+              {!activitiesByDay.size ? (
+                <p className="mt-3 text-center text-caption text-erp-text-muted" role="status">
+                  No hay actividades institucionales para este mes.
+                </p>
+              ) : null}
             </>
           )}
         </CardContent>
@@ -164,6 +183,48 @@ export function InstitutionalCalendar({
         onSelectDay={setSelectedDay}
       />
     </section>
+  );
+}
+
+type CalendarSource = {
+  enabled: boolean;
+  isPending: boolean;
+  isError: boolean;
+  onRetry: () => void;
+};
+
+type CalendarSources = Record<CalendarCategory, CalendarSource>;
+
+const calendarSourceKeys = ["events", "reservations", "assemblies"] as const;
+
+function CalendarSourceWarnings({
+  sources,
+  onRetry,
+}: {
+  sources: readonly CalendarCategory[];
+  onRetry: (source: CalendarCategory) => void;
+}) {
+  return (
+    <div
+      className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-control border border-status-warning-border bg-status-warning-surface px-3 py-2 text-caption text-status-warning"
+      role="status"
+    >
+      <span>
+        No se pudieron cargar: {sources.map((source) => calendarCategoryStyles[source].label.toLocaleLowerCase("es")).join(", ") }.
+      </span>
+      {sources.map((source) => (
+        <Button
+          key={source}
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="min-h-7 px-1.5 text-caption font-bold text-status-warning underline-offset-2 hover:underline"
+          onClick={() => onRetry(source)}
+        >
+          Reintentar {calendarCategoryStyles[source].label.toLocaleLowerCase("es")}
+        </Button>
+      ))}
+    </div>
   );
 }
 
