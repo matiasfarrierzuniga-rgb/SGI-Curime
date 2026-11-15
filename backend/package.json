@@ -18,6 +18,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
     "db:seed": "prisma db seed --config prisma.config.ts",
+    "db:bootstrap:minimal": "tsx prisma/bootstrap-minimal.ts",
     "db:reconcile-persons": "tsx prisma/reconcile-persons.ts",
     "db:link-person-identities": "tsx prisma/link-person-identities.ts",
     "catalog:generate:inec": "tsx scripts/generate-territorial-catalog.ts",
@@ -43,7 +44,9 @@
     "test:postgres:cleanup": "node ./test/helpers/disposable-postgres-lifecycle.mjs cleanup",
     "test:postgres:down": "node ./test/helpers/disposable-postgres-lifecycle.mjs down",
     "test:postgres:certify": "node ./test/helpers/disposable-postgres-lifecycle.mjs certify",
-    "test:postgres:user-requests": "node ./test/helpers/disposable-postgres-user-requests-certification.mjs"
+    "test:postgres:user-requests": "node ./test/helpers/disposable-postgres-user-requests-certification.mjs",
+    "test:bootstrap:minimal": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config ./test/jest-bootstrap.json --runInBand",
+    "test:postgres:bootstrap:minimal": "node ./test/helpers/disposable-postgres-lifecycle.mjs certify-bootstrap"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

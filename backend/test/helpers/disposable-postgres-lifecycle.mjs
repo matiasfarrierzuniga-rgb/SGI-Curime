@@ -213,6 +213,16 @@ async function smoke() {
   );
   console.log(`disposable-postgres smoke: ${redactTarget(target)} passed`);
 }
+async function minimalBootstrap() {
+  const state = await loadState();
+  verifyOwnership(state);
+  run(
+    process.execPath,
+    [tsxCli, path.join('test', 'helpers', 'minimal-bootstrap-integration.ts')],
+    { env: testEnvironment(state) },
+  );
+  console.log(`minimal-bootstrap certification: ${redactTarget(target)} passed`);
+}
 async function communityIntegration() {
   const state = await loadState();
   const containerId = verifyOwnership(state);
@@ -315,6 +325,16 @@ async function certify() {
     await down();
   }
 }
+async function certifyBootstrap() {
+  await start();
+  try {
+    await health();
+    await migrate();
+    await minimalBootstrap();
+  } finally {
+    await down();
+  }
+}
 
 if (
   ![
@@ -328,6 +348,8 @@ if (
     'certify',
     'community',
     'community-http',
+    'bootstrap',
+    'certify-bootstrap',
   ].includes(command)
 )
   fail('unknown-command');
@@ -344,6 +366,8 @@ try {
     certify,
     community: communityIntegration,
     'community-http': communityHttp,
+    bootstrap: minimalBootstrap,
+    'certify-bootstrap': certifyBootstrap,
   }[command]();
 } finally {
   await releaseLock();
