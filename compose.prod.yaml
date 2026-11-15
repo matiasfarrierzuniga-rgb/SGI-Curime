@@ -86,8 +86,8 @@ services:
       target: migration
     restart: "no"
     environment:
-      DATABASE_URL: ${MIGRATION_DATABASE_URL:?Set MIGRATION_DATABASE_URL}
-      DIRECT_URL: ${MIGRATION_DATABASE_URL:?Set MIGRATION_DATABASE_URL}
+      DATABASE_URL: ${MIGRATION_DATABASE_URL:-}
+      DIRECT_URL: ${MIGRATION_DATABASE_URL:-}
       BOOTSTRAP_TARGET_DATABASE: ${POSTGRES_DB:?Set POSTGRES_DB}
     networks:
       - data
