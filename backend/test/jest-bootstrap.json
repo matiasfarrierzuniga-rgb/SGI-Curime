@@ -6,6 +6,7 @@
   "testMatch": [
     "<rootDir>/prisma/minimal-bootstrap.spec.ts",
     "<rootDir>/prisma/bootstrap-admin-input.spec.ts",
+    "<rootDir>/prisma/bootstrap-target.spec.ts",
     "<rootDir>/prisma/canonical-rbac-sync.spec.ts",
     "<rootDir>/src/seed-roles.spec.ts"
   ],

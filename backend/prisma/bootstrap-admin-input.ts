@@ -11,11 +11,12 @@ const EXPECTED_KEYS = new Set([
 
 export async function readBootstrapAdminFile(
   filePath: string | undefined,
+  input: AsyncIterable<unknown> = process.stdin,
 ): Promise<MinimalBootstrapAdmin> {
   if (!filePath?.trim()) throw new Error('BOOTSTRAP_ADMIN_FILE_REQUIRED');
   let content: string;
   if (filePath === '-') {
-    content = await readStandardInput();
+    content = await readStandardInput(input);
   } else {
     const metadata = await stat(filePath);
     if (!metadata.isFile() || metadata.size > MAX_INPUT_SIZE)
@@ -43,10 +44,11 @@ export async function readBootstrapAdminFile(
   };
 }
 
-async function readStandardInput(): Promise<string> {
-  process.stdin.setEncoding('utf8');
+async function readStandardInput(
+  input: AsyncIterable<unknown>,
+): Promise<string> {
   let content = '';
-  for await (const chunk of process.stdin) {
+  for await (const chunk of input) {
     content += String(chunk);
     if (Buffer.byteLength(content) > MAX_INPUT_SIZE)
       throw new Error('BOOTSTRAP_ADMIN_FILE_INVALID');

@@ -3,6 +3,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
 import { getPostgresConnectionConfig } from '../src/prisma/postgres-connection';
 import { readBootstrapAdminFile } from './bootstrap-admin-input';
+import { validateMinimalBootstrapTarget } from './bootstrap-target';
 import {
   runMinimalBootstrap,
   type MinimalBootstrapClient,
@@ -11,6 +12,7 @@ import {
 async function main(): Promise<void> {
   const connectionString = process.env.DATABASE_URL?.trim();
   if (!connectionString) throw new Error('DATABASE_URL_REQUIRED');
+  validateMinimalBootstrapTarget(connectionString);
   const admin = await readBootstrapAdminFile(process.env.BOOTSTRAP_ADMIN_FILE);
   const prisma = new PrismaClient({
     adapter: new PrismaPg(getPostgresConnectionConfig(connectionString)),

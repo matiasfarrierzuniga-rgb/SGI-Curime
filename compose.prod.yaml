@@ -88,6 +88,8 @@ services:
       context: ./backend
       target: migration
     restart: "no"
+    environment:
+      BOOTSTRAP_TARGET_DATABASE: ${POSTGRES_DB:?Set POSTGRES_DB}
     healthcheck:
       disable: true
 

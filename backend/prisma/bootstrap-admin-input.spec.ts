@@ -1,6 +1,7 @@
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
 import { readBootstrapAdminFile } from './bootstrap-admin-input';
 
 describe('bootstrap administrator input', () => {
@@ -27,6 +28,24 @@ describe('bootstrap administrator input', () => {
       email: 'admin@adicurime.com',
     });
     await expect(readFile(path, 'utf8')).resolves.toBe(content);
+  });
+
+  it('accepts private JSON through stdin without a persisted file', async () => {
+    const input = Readable.from([
+      JSON.stringify({
+        fullName: 'Administración Inicial',
+        identification: '123456789',
+        email: 'admin@adicurime.com',
+        password: 'StrongPassword1',
+      }),
+    ]);
+
+    await expect(readBootstrapAdminFile('-', input)).resolves.toEqual({
+      fullName: 'Administración Inicial',
+      identification: '123456789',
+      email: 'admin@adicurime.com',
+      password: 'StrongPassword1',
+    });
   });
 
   it('rejects missing, malformed and extended input', async () => {

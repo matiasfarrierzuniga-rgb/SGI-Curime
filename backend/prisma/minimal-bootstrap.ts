@@ -126,12 +126,12 @@ export async function runMinimalBootstrap(
             });
           },
           ensureRolePermission: async (roleName, permissionCode) => {
-            const [role, permission] = await Promise.all([
-              tx.role.findUniqueOrThrow({ where: { name: roleName } }),
-              tx.permission.findUniqueOrThrow({
-                where: { code: permissionCode },
-              }),
-            ]);
+            const role = await tx.role.findUniqueOrThrow({
+              where: { name: roleName },
+            });
+            const permission = await tx.permission.findUniqueOrThrow({
+              where: { code: permissionCode },
+            });
             await tx.rolePermission.upsert({
               where: {
                 roleId_permissionId: {

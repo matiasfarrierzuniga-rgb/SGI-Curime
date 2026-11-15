@@ -93,7 +93,8 @@ async function main() {
 
 main()
   .finally(() => prisma.$disconnect())
-  .catch(() => {
+  .catch((error: unknown) => {
     console.error('minimal-bootstrap integration failed');
+    if (error instanceof Error) console.error(error.message);
     process.exitCode = 1;
   });
