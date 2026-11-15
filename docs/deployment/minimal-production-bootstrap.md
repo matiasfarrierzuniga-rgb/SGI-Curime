@@ -55,7 +55,7 @@ comando directamente en host, otro Compose, Supabase o proveedores gestionados.
 Ejemplo de forma operativa, solo para una ventana autorizada:
 
 ```sh
-sudo sh -c 'docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env --profile tools run --rm -T -e BOOTSTRAP_ADMIN_FILE=- -e BOOTSTRAP_EXECUTION_CONTEXT=SGI_CURIME_COMPOSE_PRODUCTION migrate npm run db:bootstrap:minimal < /ruta/privada/bootstrap-admin.json'
+sudo sh -c 'docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env --env-file /etc/sgi-curime/tools.env --profile tools run --rm -T -e BOOTSTRAP_ADMIN_FILE=- -e BOOTSTRAP_EXECUTION_CONTEXT=SGI_CURIME_COMPOSE_PRODUCTION migrate npm run db:bootstrap:minimal < /ruta/privada/bootstrap-admin.json'
 ```
 
 No ejecutar el ejemplo contra Supabase, pruebas compartidas o una base cuyo

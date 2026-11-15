@@ -30,6 +30,7 @@ RUN mkdir -p /app/uploads \
 COPY --from=production-dependencies /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/scripts/check-postgres-runtime.cjs ./scripts/check-postgres-runtime.cjs
 COPY --from=build /app/certs/supabase-prod-ca-2021.crt ./certs/supabase-prod-ca-2021.crt
 COPY --from=build /app/data/territorial ./data/territorial
 ENV NODE_EXTRA_CA_CERTS=/app/certs/supabase-prod-ca-2021.crt

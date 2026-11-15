@@ -23,6 +23,7 @@ services:
     build:
       context: ./backend
     restart: unless-stopped
+    command: ["sh", "-c", "node /app/scripts/check-postgres-runtime.cjs && exec npm run start:prod"]
     environment:
       NODE_ENV: production
       PORT: "3000"
