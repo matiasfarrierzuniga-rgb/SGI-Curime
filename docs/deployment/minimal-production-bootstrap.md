@@ -101,6 +101,10 @@ Pruebas unitarias cubren validación, destino, entrada por stdin, RBAC, identida
 conflictos e idempotencia. La configuración de `compose.prod.yaml` se valida con
 variables sintéticas para confirmar que `migrate` recibe
 `BOOTSTRAP_TARGET_DATABASE`; no se muestran secretos reales.
+La certificación Compose aislada construye imagen `migrate`, aplica las
+migraciones vigentes en PostgreSQL 17 descartable, transmite el JSON por stdin y
+confirma dos ejecuciones (`CREATED`, después `UNCHANGED`) antes de eliminar
+contenedor, redes y volúmenes del proyecto temporal.
 `npm run test:postgres:bootstrap:minimal` crea PostgreSQL temporal en tmpfs,
 aplica migraciones, ejecuta dos veces el bootstrap, verifica ausencia de cambios
 operativos y destruye exclusivamente el contenedor que creó. Requiere las

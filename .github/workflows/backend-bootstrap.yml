@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - main
-      - feat/minimal-production-bootstrap
     paths:
       - "backend/**"
       - ".github/workflows/backend-bootstrap.yml"
@@ -19,13 +18,13 @@ permissions:
 jobs:
   bootstrap:
     name: Bootstrap unit tests and build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
