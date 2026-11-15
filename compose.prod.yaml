@@ -23,11 +23,11 @@ services:
     build:
       context: ./backend
     restart: unless-stopped
+    command: ["sh", "-c", "node /app/scripts/check-postgres-runtime.cjs && exec npm run start:prod"]
     environment:
       NODE_ENV: production
       PORT: "3000"
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
-      DIRECT_URL: ${DIRECT_URL:?Set DIRECT_URL}
       FRONTEND_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN}
       APP_PUBLIC_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
@@ -81,15 +81,20 @@ services:
       retries: 5
 
   migrate:
-    extends:
-      service: backend
     profiles: ["tools"]
     build:
       context: ./backend
       target: migration
     restart: "no"
     environment:
+      DATABASE_URL: ${MIGRATION_DATABASE_URL:-}
+      DIRECT_URL: ${MIGRATION_DATABASE_URL:-}
       BOOTSTRAP_TARGET_DATABASE: ${POSTGRES_DB:?Set POSTGRES_DB}
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       disable: true
 

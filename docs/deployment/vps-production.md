@@ -12,36 +12,9 @@ Esta configuración es independiente de `compose.yaml` y no inicia ni modifica e
 - El contenedor backend arranca con `NODE_ENV=production`. La cookie de refresh es `HttpOnly`, `Secure` y `SameSite=lax`. `FRONTEND_URL` y `APP_PUBLIC_URL` son `https://SITE_DOMAIN`; CORS acepta solo ese origen. Express confía exactamente en el salto de Caddy para IP del cliente y límites de solicitudes; no se debe publicar el puerto del backend ni añadir un proxy adicional sin revisar esa configuración.
 - El frontend se compila con `VITE_API_URL=/api`. Esa variable es visible en el navegador y no debe incluir secretos. La API no usa prefijo propio; Caddy lo elimina al reenviar.
 
-## Variables y secretos
+## Variables y secuencia de despliegue
 
-Copiar `deploy/production.env.example` **fuera del repositorio** a `/etc/sgi-curime/production.env`. Proteger el archivo con propietario de despliegue y modo `0600`. Rellenar `SITE_DOMAIN`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL`, `DIRECT_URL` y `JWT_SECRET`. Las dos URL deben apuntar a `postgres:5432` dentro de la red privada; codificar caracteres reservados de la contraseña en la URL. No copiar secretos locales ni mostrar `docker compose config` sin `--quiet` en registros compartidos.
-
-Generar `JWT_SECRET` con un generador criptográfico, por ejemplo `openssl rand -base64 48`, e introducir el resultado directamente en el archivo privado. No versionarlo ni imprimirlo en el informe de despliegue. Conservarlo entre reinicios: rotarlo invalida sesiones vigentes. Los valores de TTL, bloqueo y rate limit tienen defaults en `compose.prod.yaml`; revisarlos según la operación real.
-
-El servicio de correo actual admite `fake`, `resend` y `gmail-app-password`. Para el primer arranque sin envíos, mantener `EMAIL_PROVIDER=fake` y `EMAIL_SEND_ENABLED=false`; el registro comunitario y la recuperación de acceso que dependen de correo no completarán su entrega real. Antes de abrir el registro público, configurar un remitente y dominio verificados: `EMAIL_PROVIDER=resend`, `EMAIL_FROM`, `EMAIL_SEND_ENABLED=true`, `RESEND_API_KEY` (opcionalmente `EMAIL_FROM_NAME`, `EMAIL_REPLY_TO`, `RESEND_TIMEOUT_MS`). Alternativamente, usar `EMAIL_PROVIDER=gmail-app-password` con `GMAIL_USER` y `GMAIL_APP_PASSWORD`. No poner claves en Compose ni habilitar envíos en el entorno local. Verificar entrega en un entorno de pruebas y con destinatarios autorizados antes de producción.
-
-## Validación y despliegue, solo cuando se autorice
-
-Desde la raíz del repositorio en el VPS, con la configuración privada ya preparada:
-
-```sh
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env config --quiet
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env --profile tools build
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env up -d postgres
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env run --rm migrate npx prisma migrate status --config prisma.config.ts
-```
-
-Revisar el resultado de `migrate status` y las migraciones pendientes antes de continuar. En una instalación con datos previos, tomar respaldo restaurable y probarlo en aislamiento. Aplicar solo migraciones revisadas y aditivas:
-
-```sh
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env run --rm migrate npx prisma migrate deploy --config prisma.config.ts
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env up -d
-docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env ps
-curl -fsS https://SU_DOMINIO/ >/dev/null
-curl -fsS https://SU_DOMINIO/api/health/ready
-```
-
-La migración no se ejecuta automáticamente al arrancar el backend. No usar `migrate reset`, `db push --force-reset` ni comandos que borren volúmenes. Comprobar inicio de sesión, registro, adjuntos y flujos principales con cuentas de prueba autorizadas. Caddy solo podrá obtener el certificado cuando DNS y puertos estén preparados. El endpoint `/api/health/ready` devuelve `{"status":"ok"}` si PostgreSQL responde y un 503 genérico si no.
+El contrato de cuentas, la separación de archivos root:root 0600, el orden de migraciones, la barrera de grants y las decisiones pendientes están en [postgres-privileges.md](postgres-privileges.md). La aplicación no debe arrancar hasta verificar migraciones, bootstrap y grants. La URL migradora se carga solo para las herramientas; el backend recibe únicamente DATABASE_URL limitada. Mantener EMAIL_PROVIDER=resend y EMAIL_SEND_ENABLED=false durante la preparación. Las operaciones de base y el despliegue requieren autorización separada.
 
 ## Respaldo y restauración aislada
 
