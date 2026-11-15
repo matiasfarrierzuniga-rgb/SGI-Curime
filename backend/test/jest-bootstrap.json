@@ -1,0 +1,18 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testTimeout": 30000,
+  "testMatch": [
+    "<rootDir>/prisma/minimal-bootstrap.spec.ts",
+    "<rootDir>/prisma/bootstrap-admin-input.spec.ts",
+    "<rootDir>/prisma/canonical-rbac-sync.spec.ts",
+    "<rootDir>/src/seed-roles.spec.ts"
+  ],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^(\\.{1,2}/.*)\\.js$": "$1"
+  }
+}

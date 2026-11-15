@@ -1,0 +1,89 @@
+# Bootstrap mínimo de producción
+
+Estado: procedimiento versionado; su existencia no autoriza ejecución.
+
+## Alcance
+
+`npm run db:bootstrap:minimal` inicializa únicamente:
+
+- seis roles canónicos;
+- permisos y grants definidos por `canonical-role-grants.ts`;
+- una cuenta inicial `ROLE_SYSTEM_ADMIN`;
+- auditoría segura de la creación inicial.
+
+No crea recursos de reserva, tarifas, inventario, afiliaciones ni otros datos
+operativos. El comando no reemplaza migraciones y debe ejecutarse solamente
+después de `prisma migrate deploy` sobre una instalación nueva aprobada.
+
+El seed general `npm run db:seed` conserva su comportamiento histórico y no se
+debe usar para el bootstrap mínimo de Hostinger.
+
+## Entrada administrativa
+
+La entrada es JSON con contrato exacto:
+
+```json
+{
+  "fullName": "<nombre autorizado>",
+  "identification": "<identificación autorizada>",
+  "email": "<correo autorizado>",
+  "password": "<secreto>"
+}
+```
+
+Guardar temporalmente fuera del repositorio, bajo custodia administrativa, con
+modo `0600`. No incluir el contenido en argumentos, variables persistentes,
+logs, imágenes ni archivos Compose. La vía recomendada para un contenedor de
+herramientas es stdin (`BOOTSTRAP_ADMIN_FILE=-`), de modo que Docker no persista
+el contenido en configuración del contenedor. El archivo debe eliminarse solo
+mediante el procedimiento autorizado después de verificar acceso y custodia.
+
+Ejemplo de forma operativa, solo para una ventana autorizada:
+
+```sh
+sudo sh -c 'docker compose -f compose.prod.yaml --env-file /etc/sgi-curime/production.env --profile tools run --rm -T -e BOOTSTRAP_ADMIN_FILE=- migrate npm run db:bootstrap:minimal < /ruta/privada/bootstrap-admin.json'
+```
+
+No ejecutar el ejemplo contra Supabase, pruebas compartidas o una base cuyo
+destino no haya sido comprobado previamente.
+
+## Seguridad e idempotencia
+
+- La contraseña usa la misma política vigente: 10–128 caracteres, mayúscula,
+  minúscula y número; se almacena con bcrypt, coste 12.
+- Correo se normaliza a minúsculas; identificación nunca se inventa.
+- La cuenta inicial queda sin `Person`, afiliación o nombramiento automático.
+- Segunda ejecución exacta no cambia contraseña, usuario ni auditoría.
+- Coincidencias parciales de correo/identificación, otro administrador, rol
+  inactivo, rol histórico activo o grants inesperados producen fallo cerrado.
+- El comando nunca revoca grants. Reconciliación RBAC es otro procedimiento.
+- Roles, grants, usuario y auditoría se escriben en una transacción serializable.
+- La salida contiene solo estado y conteos; nunca datos personales o secretos.
+
+## Preflight obligatorio
+
+1. Confirmar commit desplegado y árbol limpio.
+2. Confirmar destino exacto de `DATABASE_URL` sin imprimir credenciales.
+3. Confirmar backup estructural recuperable tomado después de migraciones y
+   antes del bootstrap.
+4. Confirmar 41 migraciones exitosas y ninguna incompleta/revertida.
+5. Confirmar autorización para crear la cuenta inicial.
+6. Ejecutar una vez y comprobar login, rol, grants y auditoría.
+
+## Recuperación
+
+Un fallo dentro del bootstrap revierte la transacción completa. No editar
+`_prisma_migrations`, no usar `migrate reset` o `db push --force-reset`, y no
+borrar roles o usuarios manualmente.
+
+Si la ejecución terminó pero debe revertirse antes de uso, restaurar el backup
+estructural pre-bootstrap en entorno identificado. Después de operación real,
+usar únicamente forward-fix revisado o restauración autorizada.
+
+## Certificación
+
+Pruebas unitarias cubren validación, RBAC, identidad, conflictos e idempotencia.
+`npm run test:postgres:bootstrap:minimal` crea PostgreSQL temporal en tmpfs,
+aplica migraciones, ejecuta dos veces el bootstrap, verifica ausencia de cambios
+operativos y destruye exclusivamente el contenedor que creó. Requiere las
+guardas de entorno descartable del proyecto y nunca acepta puerto 5432/5433.
