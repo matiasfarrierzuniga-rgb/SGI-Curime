@@ -46,7 +46,7 @@ Documentos estables disponibles:
 - [`modules/audit.md`](./modules/audit.md): trazabilidad, sanitización y consulta administrativa de Auditoría.
 - [`modules/institutional-board.md`](./modules/institutional-board.md): períodos, nombramientos, historia y límites de Junta Directiva.
 - [`contracts/account-lifecycle-v1.md`](./contracts/account-lifecycle-v1.md): ciclo operativo de cuenta comunitaria, identidad y límites ERP.
-- [`modules/donations.md`](./modules/donations.md): estado real de Donaciones, preparación existente y alcance todavía pendiente.
+- [`modules/donations.md`](./modules/donations.md): registro de donaciones en el ERP, cancelación, reversión financiera y límites; las solicitudes públicas se describen en [`decisions/public-donation-requests-20261108.md`](./decisions/public-donation-requests-20261108.md).
 - [`requirements/adi-dinadeco-source-mapping.md`](./requirements/adi-dinadeco-source-mapping.md): análisis de plantillas privadas ADI/DINADECO y mapeo de requisitos contra el sistema actual, sin implementación ni datos personales.
 
 Cada documento de módulo distingue entre funcionalidad implementada, trabajo en evolución y alcance planificado.
@@ -90,7 +90,7 @@ La documentación vigente debe mostrar diferencias reales entre capas y no decla
 
 La configuración Docker oficial integrada en `main` es `compose.yaml`; un `docker-compose.dev.yml` no forma parte actualmente de la rama canónica.
 
-Donaciones permanece planificado/no implementado aunque su documentación de estado actual ya esté consolidada. Que el área documental esté en verde significa que su situación real está explicada correctamente, no que la funcionalidad exista.
+Donaciones ERP dispone de código y contrato específico para registro, consulta, edición, cancelación y reversión financiera (véase `modules/donations.md` y `backend/src/donations/`). Esto no acredita por sí solo QA integral ni despliegue. Las solicitudes públicas de donación (`DonationRequest`) registran intenciones y NO crean una donación recibida, ingreso contable ni movimiento de inventario; la aceptación, recepción y comprobantes de donaciones en especie siguen fuera del flujo acreditado y requieren un contrato separado.
 
 ## Definition of Done documental
 
@@ -117,7 +117,7 @@ Un área puede considerarse documentada cuando:
 | Financiero | 🟢 Documento estable creado |
 | Afiliados | 🟢 Documento estable creado |
 | Auditoría | 🟢 Documento estable creado |
-| Donaciones | 🟢 Estado real documentado como planificado/no implementado |
+| Donaciones | 🟡 Implementación ERP documentada; QA/despliegue por certificar, solicitudes públicas separadas y recepción en especie pendiente |
 | Docker/desarrollo | 🟢 Guías reproducibles consolidadas |
 | Testing | 🟢 Estrategia y comandos consolidados |
 | Sprint 1 | 🟢 Base existente |
