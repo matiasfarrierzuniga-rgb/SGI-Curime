@@ -345,14 +345,18 @@ Current tokens, responsive rules, WCAG baseline, and existing shared primitives 
 
 ## Alcance para cualquier agente o compañero
 
-### Contexto operativo P0 — DEVELOPMENT ONLY
+### Contexto operativo vigente — producción activa y desarrollo controlado
 
-Objetivo actual: completar desarrollo funcional de SGI-Curime para posterior certificación y puesta en producción. Durante este contexto aprobado no ejecutar suites, lint, builds, auditorías generales de permisos, migraciones, seeds, sincronizaciones RBAC ni cambios PostgreSQL sin autorización específica. No crear ramas, worktrees o infraestructura adicional; no reconstruir módulos recuperados, revertir funcionalidades ni introducir privilegios institucionales nuevos. Esta restricción temporal no elimina los requisitos de VERIFY: solo difiere su ejecución hasta autorización expresa.
+SGI-Curime está publicado en https://adicurime.com mediante VPS, contenedores Docker y PostgreSQL persistente; existen cuentas y datos reales. Esta constatación operativa es un punto de partida, no prueba de que cada módulo esté validado. Antes de cualquier despliegue, confirmar nuevamente versión, salud y configuración efectiva sin exponer secretos.
+
+El desarrollo se realiza en ramas específicas basadas en la referencia vigente de `main`, con Pull Request, revisión y verificación proporcional al cambio. Las ramas de diseño visual pendientes son independientes del trabajo de identidad. No modificar producción por el solo hecho de editar código o aprobar una PR.
+
+En EXPLORE la inspección es de solo lectura. VERIFY debe ejecutarse en un entorno identificado y seguro y conforme a la autorización de la tarea; los controles normales de calidad son requisito previo a integrar cambios. Migraciones, seeds, backfills, resets, sincronizaciones RBAC, restauraciones y pruebas destructivas sobre datos reales requieren autorización expresa, respaldo restaurable verificado y plan de reversión. No ejecutar operaciones de base de datos por defecto.
 
 RBAC V2.3 se interpreta desde decisiones funcionales aprobadas, contratos vigentes y código actual. Las matrices históricas que contradigan esas fuentes son evidencia `SUPERSEDED` o histórica, no autoridad para restaurar grants, endpoints o flujos. La fuente ejecutable de asignaciones es `backend/src/auth/domain/policies/canonical-role-grants.ts`; el cambio OpenSpec sucesor mantiene una matriz de aceptación, no un catálogo adicional.
 
 - Trabaja con **un agente ejecutor por tarea**. No delegues automáticamente en Terra, Atlas, Forge, Pixel, Sentinel ni otros agentes históricos. Los archivos `backend/AGENTS.md` y `frontend/AGENTS.md` son **reglas por directorio**, no otros agentes.
-- No nombres una rama, worktree, commit, permiso o estado de despliegue como vigente sin verificar Git, código y configuración actuales. `PROJECT-STATE.md` es evidencia operativa que puede estar desactualizada: si contradice Git, informa la discrepancia sin corregirla silenciosamente.
+- No nombres una rama, worktree, commit, permiso o estado de despliegue como vigente sin verificar Git, código y configuración actuales. `PROJECT-STATE.md` registra un contexto previo de reconciliación y **no es un estado operativo vigente**; no seguir sus tareas ni su organización histórica de agentes sin nueva confirmación.
 - Respeta `CONTRIBUTING.md`: los cambios compartidos entran por rama dedicada, revisión y Pull Request hacia `main`, no por push directo.
 - Cuando el árbol contiene modificaciones o untracked ajenos, no los sobrescribas, limpies, muevas ni incorpores al cambio. No crees worktrees ni cambies de rama sin autorización explícita. No uses `reset --hard`, `clean`, `stash`, `rebase`, `merge`, `switch`, commit, push o archive sin autorización explícita o contrato activo que nombre esa operación. Puede hacerse análisis de solo lectura aun si el árbol está sucio.
 - Las fases son **EXPLORE** (inspección sin cambios), **PROPOSE** (especificación), **APPLY** (código o documentación solo con autorización expresa), **VERIFY** (evidencia de pruebas) y **ARCHIVE** (cerrar especificaciones). Cada fase requiere autorización independiente; no infieras permiso para una fase posterior. ARCHIVE exige implementación completa, evidencia requerida y solicitud explícita.
@@ -365,16 +369,9 @@ RBAC V2.3 se interpreta desde decisiones funcionales aprobadas, contratos vigent
 
 ## Autoridad y documentación
 
-1. Instrucciones explícitas y alcance aprobado por el responsable del proyecto.
-2. Contratos backend, reglas de dominio y capabilities vigentes.
-3. Este `AGENTS.md` y el `AGENTS.md` local aplicable.
-4. Evidencia actual de código, restricciones de base de datos, pruebas y configuración verificadas en la rama de trabajo; `main` permanece referencia estable de promoción cuando corresponda.
-5. Decisiones arquitectónicas y reglas institucionales expresamente aprobadas.
-6. `frontend/CONVENTIONS.md`, `CONTRIBUTING.md` y documentación técnica vigente, siempre cotejadas con el código.
-7. Skills locales SGI; después, skills externas o del proveedor.
-8. OpenSpec, especificaciones de casos de uso y documentación histórica, con su estado documental explícito.
+La jerarquía de fuentes se define **una sola vez** en «Sources of truth» al inicio de este archivo. Para interpretar esa jerarquía: las decisiones institucionales expresamente aprobadas definen el comportamiento deseado; los contratos vigentes precisan sus reglas; el código, las migraciones y las pruebas demuestran únicamente lo implementado o verificado. Ante contradicción, informar la discrepancia y solicitar decisión, sin inventar reglas ni alterar autorizaciones. Una propuesta OpenSpec no sustituye por sí sola un contrato aprobado.
 
-Una propuesta de OpenSpec no sustituye un contrato implementado ni modifica decisiones institucionales por sí misma. El catálogo de **155 casos de uso V2** corresponde a la especificación documental V2, no a 155 funcionalidades implementadas en V1. Preserva los identificadores CU y no mezcla estados de ambos repositorios.
+El catálogo funcional de **155 casos de uso V2** preserva CU-01…CU-155 y 15 DCU, pero no acredita 155 implementaciones ni QA. La revisión local V0.4 de 16/11/2026 está identificada como **BORRADOR NO APROBADO NI PUBLICADO**; no constituye fuente vigente, no concede grants y no debe cargarse ni promocionarse silenciosamente al repositorio. Sus propuestas para CU-20, CU-21 y CU-22 necesitan ratificación; CU-21 conserva un alcance excepcional/histórico pendiente. Consultar los CU correspondientes a cada cambio y preservar referencias históricas sin atribuirles autoridad operativa.
 
 ## Contrato transversal de identidad y registro comunitario
 
@@ -386,7 +383,8 @@ Para describir el ciclo de vida vigente de cuentas, consulta primero **`docs/con
 - `Person` (identidad física), `User` (acceso), `Affiliate` (afiliación), `Role`/`Permission` (autorización), `Venture` (emprendimiento), `VolunteerApplication` (postulación) y relaciones de negocio tienen responsabilidades diferentes.
 - La cuenta comunitaria no obtiene capacidades de administración del ERP. Las aprobaciones de afiliación, publicación de emprendimientos, representación institucional y permisos privilegiados son procesos independientes.
 - El voluntariado debe permitir participación sin cuenta, según su contrato funcional; una cuenta puede facilitar el seguimiento, no ser requisito.
-- El modelo V1 actual exige `User.identification` y tiene una ruta de reconciliación `Person` con limitaciones: **no inventar identificaciones, no enlazar automáticamente a un `Person`/`Affiliate` por coincidencia de nombres/correo/cédula y no modificar Prisma o migraciones sin cambio aprobado**.
+- El esquema Prisma actual permite `User.identification` opcional y `User.personId` opcional y único. `Person` tiene nombres atómicos (`firstName`, `firstSurname`, `secondSurname`); `User.fullName`, datos personales duplicados y `Person.legacyFullName` permanecen **legacy/transicionales**. Nunca inventar identificaciones ni vincular automáticamente cuentas y personas por coincidencias; no eliminar columnas hasta inventariar consumidores, verificar reconciliación y aprobar migración/rollback.
+- **Decisión de diseño aprobada, implementación pendiente:** la cuenta digital tendrá un `User.displayName` (nombre visible, no identidad legal ni rol ni identificador de autenticación único); `Person` conservará la identidad institucional atómica. El vínculo administrativo `User`–`Person` no modifica nombres, afiliaciones, nombramientos, credenciales ni roles. No declarar `displayName` implementado hasta que esquema, API y frontend lo acrediten.
 - Las solicitudes `UserRequest` históricas, las cuentas actuales, tokens/sesiones válidos, seeds, roles y permisos administrativos deben preservarse. No reutilizar el registro público para crear un usuario administrador.
 
 ## Integridad entre frontend y backend
