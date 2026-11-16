@@ -4,9 +4,9 @@ Aplican además las reglas del `../AGENTS.md` raíz. Un solo agente ejecutor pue
 
 ## Tecnología y límites
 
-### Contexto operativo P0 — DEVELOPMENT ONLY
+### Contexto operativo vigente — cambios seguros sobre sistema desplegado
 
-Objetivo actual: completar desarrollo funcional para certificación posterior. No ejecutar automáticamente suites, lint, builds, auditorías generales RBAC, migraciones, seeds, sincronizaciones, resets ni operaciones PostgreSQL. No crear ramas, worktrees o infraestructura adicional. Mantener los módulos recuperados y no introducir nuevos privilegios, endpoints o grants sin contrato aprobado; VERIFY sigue requiriendo autorización separada.
+SGI-Curime tiene producción activa en VPS, PostgreSQL persistente y cuentas reales. Seguir el contexto y las fases del `../AGENTS.md` raíz: inspección de solo lectura, desarrollo y validación en rama, PR hacia `main`; producción nunca se modifica por una tarea de desarrollo. Pruebas y builds focales en entorno seguro son parte de VERIFY según alcance/autorización. Migraciones, seeds, backfills, resets y operaciones mutativas sobre PostgreSQL real exigen aprobación específica, respaldo restaurable y rollback. No introducir grants, endpoints ni cambios de dominio sin contrato aprobado.
 
 Las decisiones funcionales aprobadas, contratos vigentes y código actual prevalecen sobre matrices RBAC históricas. `canonical-role-grants.ts` es la fuente ejecutable de asignaciones; documentación o OpenSpec histórico contradictorio debe identificarse como histórico, no usarse para revertir comportamiento.
 
@@ -27,7 +27,8 @@ Consulta primero `../docs/contracts/account-lifecycle-v1.md` y contrasta con `co
 - La cuenta verificada NO acredita identidad legal ni autoriza acceso a una `Person`, `Affiliate`, `Venture` o expediente preexistente.
 - La vinculación User–Person posterior es explícita, administrativa y protegida por `system.identity.manage`; no se infiere por coincidencia de datos.
 - Conserva el flujo histórico de UserRequest y el bootstrap de administradores. Define una transición compatible; nunca elimines datos porque ahora el registro público cambia de significado.
-- Antes de implementar determina el impacto en `User.identification` obligatorio, unicidad, `Person.personId`, estados de cuenta, tokens existentes, reenvío y rate limiting. Cualquier alteración del modelo congelado exige OpenSpec/decisión/migración/rollback explícitos.
+- Antes de implementar determina impacto en `User.identification` **opcional**, `User.personId` nullable y único, estados de cuenta, tokens existentes, reenvío y rate limiting. `Person` es raíz canónica, con nombre y apellidos atómicos; `User.fullName` y `Person.legacyFullName` son campos transicionales con consumidores que deben inventariarse. No confundir `Person.id` con `User.personId`. Los cambios de esquema exigen contrato, migración segura y rollback explícitos.
+- Decisión aprobada pendiente de implementación: `User.displayName` representa presentación de la cuenta (no identidad legal ni `username` único), separado de `Person`. Agregarlo no permite vinculación automática, asignación de rol, mutación de nombre institucional ni destrucción de datos legacy. El contrato de registro comunitario vigente sigue siendo de correo solo **hasta que se implemente y apruebe su revisión**.
 - Usa tokens aleatorios almacenados como hash, con expiración, un solo uso y no exposición en logs. Almacena contraseñas solo como hash seguro según la infraestructura del proyecto.
 - Protege registro, reenvío y recuperación frente a abuso y enumeración de cuentas. No emitas sesión válida antes de verificar correo; el rol público no debe incluir capacidades administrativas.
 - Para aprobación de emprendimientos, no concedas `ent.ventures.create`, `ent.ventures.update` o `ent.ventures.publish` a usuarios comunitarios por defecto; la propuesta de registro y la gestión autorizada son procesos distintos.
