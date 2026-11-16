@@ -29,7 +29,7 @@ Las decisiones funcionales aprobadas, contratos vigentes y código actual preval
 
 Consulta primero `../docs/contracts/account-lifecycle-v1.md` y contrasta con `community-accounts.controller.ts`, `community-accounts.service.ts`, DTOs y pruebas. La decisión en `../docs/decisions/community-account-registration.md` es referencia histórica, no fuente operativa autónoma.
 
-- Actual: `POST /community-accounts/register` recibe correo, crea o continúa una cuenta pendiente de verificación, y no requiere aprobación administrativa ordinaria.
+- AS-IS: `POST /community-accounts/register` recibe correo, crea o continúa una cuenta pendiente de verificación sin aprobación ordinaria. Objetivo D03–D08: exigir también `displayName` en registros nuevos después de alinear DTO/servicio/persistencia y ejecutar pruebas; no describirlo como implementado antes.
 - Actual: `validate-token` no consume; `verify-email` establece contraseña, consume token, activa cuenta; `resend-verification` conserva respuesta neutral y límites.
 - Actual: cuenta verificada usa rol comunitario sin grants ERP y accede a `Mi Comunidad`; no emite sesión antes de verificar.
 - La cuenta verificada NO acredita identidad legal ni autoriza acceso a una `Person`, `Affiliate`, `Venture` o expediente preexistente.
