@@ -1,3 +1,7 @@
+www.adicurime.com {
+    redir https://adicurime.com{uri} permanent
+}
+
 {$SITE_DOMAIN} {
     encode zstd gzip
 
