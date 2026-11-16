@@ -31,7 +31,7 @@ Objetivo actual: completar desarrollo funcional para certificación posterior. N
 
 ## Registro comunitario — contrato actual
 
-Consulta primero `../docs/contracts/account-lifecycle-v1.md` y contrasta cualquier cambio con código, endpoints y pruebas. El registro actual usa correo en `/register`; no solicita contraseña ni crea/aprueba `UserRequest` para cuentas comunitarias ordinarias. `POST /community-accounts/register` devuelve respuesta neutral y envía verificación cuando corresponde.
+Consulta primero `../docs/contracts/account-lifecycle-v1.md` y contrasta cualquier cambio con código, endpoints y pruebas. El registro AS-IS usa correo en `/register`; D03–D08 añade `displayName` obligatorio al contrato objetivo (aún no verificado como implementado). La contraseña se establece en verificación; no se crea ni aprueba `UserRequest` para cuentas comunitarias ordinarias. `POST /community-accounts/register` devuelve respuesta neutral y envía verificación cuando corresponde.
 
 - La pantalla de verificación valida el enlace con `validate-token`, permite establecer y confirmar contraseña, y activa mediante `verify-email`; nunca crea sesión desde frontend.
 - Tras iniciar sesión, la cuenta accede a `Mi Comunidad`, no al ERP. Capacidades server-side y guards backend prevalecen; evitar destellos de contenido protegido.
