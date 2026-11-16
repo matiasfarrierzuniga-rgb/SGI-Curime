@@ -7,7 +7,9 @@ Este es el contrato operativo único para describir registro comunitario, verifi
 
 ## 1. Registro comunitario ordinario
 
-El registro público solicita únicamente correo electrónico en `/register` y llama a `POST /community-accounts/register`. La respuesta pública es neutral (`202`), para no revelar si el correo ya existe. Este flujo **no crea ni aprueba un `UserRequest`** y no requiere revisión administrativa.
+**Contrato objetivo aprobado D03–D08 (implementación pendiente de verificar):** el registro público solicita correo electrónico y `displayName` obligatorio para nuevas cuentas en `/register`, y llama a `POST /community-accounts/register`. `User.displayName` es un nombre visible autogestionable, distinto del nombre legal de `Person`. Antes de desplegar, alinear DTO, servicio, persistencia, formulario y pruebas con la respuesta neutral y los controles antiabuso.
+
+**Evidencia AS-IS:** el flujo documentado y probado anteriormente solicita únicamente correo. Hasta verificar la adaptación y sus pruebas, `displayName` no se declara implementado. La respuesta pública es neutral (`202`), para no revelar si el correo ya existe. Este flujo **no crea ni aprueba un `UserRequest`** y no requiere revisión administrativa.
 
 La cuenta elegible se crea sin contraseña autenticable, con estado `PENDING_EMAIL_VERIFICATION`, correo normalizado, token aleatorio almacenado como hash, vencimiento y uso único. La cuenta recibe `ROLE_COMMUNITY_USER`, sin grants ERP. La entrega de correo no debe exponer el token en logs.
 
@@ -53,7 +55,8 @@ La corrección de correo y la re-verificación administrativa están protegidas 
 
 | Proceso | Código principal | Pruebas/evidencia | Estado |
 | --- | --- | --- | --- |
-| Registro por correo | `CommunityRegistrationPage`, `community-accounts.controller.ts`, `CommunityAccountsService.register` | pruebas de registro y respuestas neutrales | IMPLEMENTED / TESTED |
+| Registro por correo AS-IS (sin `displayName`) | `CommunityRegistrationPage`, `community-accounts.controller.ts`, `CommunityAccountsService.register` | pruebas de registro y respuestas neutrales previas al refinamiento | IMPLEMENTED / TESTED (AS-IS) |
+| `displayName` obligatorio en nuevas cuentas (D03–D08) | Frontend, DTO, servicio y persistencia por alinear | Pruebas nuevas no ejecutadas | APPROVED FUNCTIONAL / NOT_VERIFIED IMPLEMENTATION |
 | Validación y activación | `CommunityEmailVerificationPage`, `validate-token`, `verify-email` | pruebas de token, contraseña, estados y navegación | IMPLEMENTED / TESTED |
 | Reenvío | `resend-verification` y servicio comunitario | pruebas focalizadas de feedback y límites | IMPLEMENTED / TESTED |
 | Mi Comunidad y aislamiento ERP | auth, rutas comunitarias y capability policy | pruebas focalizadas; no equivale a despliegue | IMPLEMENTED / TESTED |
