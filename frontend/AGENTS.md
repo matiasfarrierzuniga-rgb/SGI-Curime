@@ -4,9 +4,9 @@ Aplican además las reglas de `../AGENTS.md` y `CONVENTIONS.md`. Este archivo no
 
 ## Arquitectura
 
-### Contexto operativo P0 — DEVELOPMENT ONLY
+### Contexto operativo vigente — desarrollo con producción activa
 
-Objetivo actual: completar desarrollo funcional para certificación posterior. No ejecutar automáticamente suites, lint, builds, auditorías generales RBAC ni cambios que creen infraestructura, worktrees o rutas/grants nuevos. Preservar flujos recuperados y diferir VERIFY hasta autorización expresa. Las decisiones funcionales aprobadas, contratos vigentes y código actual prevalecen sobre matrices históricas que contradigan RBAC V2.3.
+SGI-Curime ya está publicado y tiene usuarios reales. Desarrollar solo en la rama asignada, verificar contratos y permisos efectivos, ejecutar validación proporcional en un entorno seguro cuando la fase VERIFY esté autorizada y promover a `main` mediante PR revisada. No modificar producción, datos, grants o rutas por iniciativa de una tarea visual; mantener trabajos visuales de otras ramas fuera del alcance de consolidación de identidad. Las matrices RBAC históricas no restauran permisos.
 
 - React 19, TypeScript, Vite 8, React Router 7, Axios, TanStack Query y Tailwind 4. Trabaja dentro de `src/app`, `src/features/<domain>` y `src/shared`, respetando dependencias y APIs públicas de `src/features/*/index.ts`.
 - `src/pages`, `src/services`, `src/types`, `src/components` y `src/content` raíz son zonas legacy: no agregar código nuevo salvo excepción documentada.
@@ -30,6 +30,8 @@ Consulta primero `../docs/contracts/account-lifecycle-v1.md` y contrasta cualqui
 - Reenvío usa `resend-verification`, con límites, respuestas neutrales y estados seguro/inválido/caducado/usado; el navegador no valida criptográficamente tokens.
 - Vincular una cuenta con una `Person` es operación administrativa posterior, explícita y protegida por `system.identity.manage`; nunca vincular automáticamente por nombre, correo o identificación.
 - Registro, verificación y vinculación no crean afiliación, nombramiento ni permisos ERP. Afiliación, voluntariado, emprendimiento y gobierno siguen procesos separados; voluntariado público no exige cuenta.
+- Decisión aprobada **no implementada**: `User.displayName` será el nombre visible en bienvenida, navegación, perfil y bitácora, sin sustituir nombres institucionales de `Person`. La identidad oficial se construye a partir de `Person.firstName`, `firstSurname` y `secondSurname` cuando esté acreditada; no utilizar `User.fullName` como nuevo contrato ni inferir vínculo de identidad. En cuentas existentes sin nombre visible, usar un fallback seguro (nunca imprimir `null`) hasta completar migración y perfil.
+- Para el cambio de registro, consultar CU-20, CU-22 y CU-27 de la revisión V0.4 solo como **propuestas no ratificadas**, junto al contrato operativo, backend y pruebas. El formulario real continúa pidiendo correo únicamente hasta que se integre el nuevo contrato.
 
 ## Validación
 
