@@ -54,13 +54,13 @@ describe('portal público', () => {
     const { rerender } = render(<MemoryRouter><Breadcrumbs current="Nombre institucional muy extenso de Curime" variant="hero" /></MemoryRouter>)
 
     const hero = screen.getByRole('navigation', { name: 'Ruta de navegación' })
-    expect(hero).toHaveClass('py-4')
+    expect(hero).toHaveClass('py-4', 'md:py-5')
     expect(within(hero).getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '/')
     expect(within(hero).getByText('Nombre institucional muy extenso de Curime')).toHaveAttribute('aria-current', 'page')
     expect(hero.querySelector('svg')).toBeInTheDocument()
 
     rerender(<MemoryRouter><Breadcrumbs current="Contacto" variant="simple" /></MemoryRouter>)
-    expect(screen.getByRole('navigation', { name: 'Ruta de navegación' })).toHaveClass('py-4', 'md:py-6')
+    expect(screen.getByRole('navigation', { name: 'Ruta de navegación' })).toHaveClass('py-3', 'md:py-4')
   })
 
   it('integra un único breadcrumb hero antes del contenido comunitario', () => {
@@ -306,7 +306,7 @@ describe('portal público', () => {
     expect(communityAccess.getByRole('link', { name: /emprendimientos/i })).toHaveAttribute('href', '/ventures')
     expect(screen.getByRole('link', { name: /ver todo/i })).toHaveAttribute('href', '/noticias')
     expect(screen.getByRole('heading', { name: /lo más reciente/i })).toBeInTheDocument()
-    expect(communityAccess.getByRole('link', { name: /reservas/i })).toHaveAttribute('href', '/servicios')
+    expect(communityAccess.getByRole('link', { name: /reservas/i })).toHaveAttribute('href', '/servicios/reservas')
   })
 
   it('separa acceso público e inicio de sesión', () => {

@@ -22,7 +22,31 @@ import { getErrorMessage } from '@/shared/lib/errors'
 import { useAuth } from '@/features/auth'
 import { hasCapability } from '@/shared/security/access'
 
-const categoryColors = ['#087c52', '#00a47d', '#8ad3b1', '#f0c882', '#be8c4a', '#5b8f82', '#bbadcf']
+const categoryColors = [
+  '#087E77', '#3266A8', '#D38C28', '#8556B0', '#CB6057',
+  '#4893C1', '#6B9B38', '#A64F79', '#446A60', '#E0AE55', '#677B9C',
+] as const
+
+const byCategoryName = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
+
+function categoryColor(name: string, taken: Set<number>): string {
+  let hash = 0
+  for (let position = 0; position < name.length; position += 1) {
+    hash = (hash * 31 + name.charCodeAt(position)) % 1_000_003
+  }
+  const preferred = hash % categoryColors.length
+  // Prefer the hashed slot, then probe deterministically so up to eleven categories stay distinct.
+  for (let step = 0; step < categoryColors.length; step += 1) {
+    const slot = (preferred + step) % categoryColors.length
+    if (!taken.has(slot)) {
+      taken.add(slot)
+      return categoryColors[slot]
+    }
+  }
+  // More categories than colors: repeat the hashed color instead of failing.
+  return categoryColors[preferred]
+}
+
 const DAY_MS = 86_400_000
 const PAGE_SIZE = 100
 
@@ -136,8 +160,13 @@ export function InventoryDashboardPage() {
     if (!data.items) return []
     const counts = new Map<string, number>()
     data.items.forEach(item => counts.set(item.category.name, (counts.get(item.category.name) ?? 0) + 1))
-    return [...counts].map(([name, value], index) => ({ name, value, color: categoryColors[index % categoryColors.length] }))
-      .sort((a, b) => b.value - a.value)
+    // Colors are allocated by category name, so data order and quantities cannot reshuffle them.
+    const taken = new Set<number>()
+    const colors = new Map<string, string>()
+    ;[...counts.keys()].sort(byCategoryName).forEach(name => colors.set(name, categoryColor(name, taken)))
+    return [...counts]
+      .map(([name, value]) => ({ name, value, color: colors.get(name) ?? categoryColors[0] }))
+      .sort((a, b) => b.value - a.value || byCategoryName(a.name, b.name))
   }, [data.items])
 
   const filteredItems = useMemo(() => {

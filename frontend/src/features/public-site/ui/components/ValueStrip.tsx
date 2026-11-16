@@ -1,4 +1,5 @@
-import { Eye, LayoutDashboard, Landmark, UsersRound } from 'lucide-react'
+import { Eye, Landmark, LayoutDashboard, UsersRound } from 'lucide-react'
+import { CategoryIcon } from '@/shared/ui/CategoryIcon'
 
 const items = [
   { icon: LayoutDashboard, title: 'Gestión centralizada', text: 'Trámites y información de la Asociación en un solo lugar.' },
@@ -14,9 +15,7 @@ export function ValueStrip() {
         <div className="grid grid-cols-1 gap-0 border-y border-brand-deep/15 bg-white/45 px-2 py-3 md:grid-cols-2 md:px-4 md:py-4 lg:grid-cols-4 lg:px-0">
           {items.map(({ icon: Icon, title, text }) => (
             <div key={title} className="flex flex-col items-center gap-3 border-b border-brand-deep/10 px-5 py-7 text-center last:border-b-0 md:px-7 md:even:border-l md:[&:nth-child(3)]:border-b-0 lg:border-b-0 lg:border-l lg:first:border-l-0">
-              <span className="grid size-12 place-items-center rounded-full bg-surface-page text-brand-primary">
-                <Icon className="size-5" aria-hidden="true" />
-              </span>
+              <CategoryIcon icon={Icon} tone="institutional" />
               <h3 className="font-heading text-heading-3 font-semibold text-text-primary">{title}</h3>
               <p className="text-sm leading-relaxed text-text-primary/70">{text}</p>
             </div>

@@ -2,6 +2,16 @@
 
 Esta configuración es independiente de `compose.yaml` y no inicia ni modifica el entorno local. La aplicación se publica en un único origen HTTPS: el navegador usa `/api`, Caddy quita ese prefijo antes de enviar la solicitud a NestJS y sirve el frontend para el resto de las rutas.
 
+## Bitácora de preparación del VPS
+
+Estado registrado el 15 de noviembre de 2026. Esta bitácora conserva evidencia operativa reportada por el responsable; no sustituye las validaciones de despliegue posteriores.
+
+- **Etapa 1 — completada:** Ubuntu fue actualizado y reiniciado controladamente. Kernel operativo: `7.0.0-43-generic`.
+- **Etapa 2B — implementada:** UFW está activo, con entrada denegada y salida permitida. El responsable verificó reglas IPv4 e IPv6 para `22/tcp`, `80/tcp`, `443/tcp` y `443/udp`.
+- **SSH:** una nueva conexión por llave Ed25519 vía IPv4 fue comprobada después de activar UFW. La comprobación equivalente por IPv6 sigue pendiente desde una red compatible.
+- **Endurecimiento SSH:** pendiente. No se modificaron autenticación por contraseña, acceso root ni la configuración de SSH durante Etapas 1 y 2.
+- **Etapa 3 — Docker Engine y Compose:** en preparación; Docker aún no está instalado.
+
 ## Topología y requisitos
 
 - VPS Linux con Docker Engine y el plugin Compose, DNS de un dominio real apuntando al VPS, y puertos TCP 80/443 (más UDP 443 si se desea HTTP/3) disponibles. No usar `example.invalid` para solicitar certificados.

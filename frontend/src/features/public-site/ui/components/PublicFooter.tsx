@@ -3,6 +3,7 @@ import { ArrowRight, LogOut, Mail } from 'lucide-react'
 import { useAuth } from '@/features/auth'
 import { site } from '@/content/publicSiteContent'
 import { Button } from '@/shared/ui/button'
+import { SocialIcon } from '@/shared/ui/SocialIcon'
 
 export function PublicFooter() {
   const { isAuthenticated, user, logout } = useAuth()
@@ -39,19 +40,13 @@ export function PublicFooter() {
               </li>
               <li>
                 <a aria-label="Abrir Instagram de ADI Curime" className={`${footerLinkClassName} gap-2`} href={site.socialLinks.instagram.url} target="_blank" rel="noopener noreferrer">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 shrink-0 fill-none stroke-current stroke-2">
-                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                    <circle cx="12" cy="12" r="4" />
-                    <circle cx="17.5" cy="6.5" r="1" className="fill-current stroke-none" />
-                  </svg>
+                  <SocialIcon platform="instagram" className="size-4" />
                   Instagram: {site.socialLinks.instagram.label}
                 </a>
               </li>
               <li>
                 <a aria-label="Abrir Facebook de ADI Curime" className={`${footerLinkClassName} gap-2`} href={site.socialLinks.facebook.url} target="_blank" rel="noopener noreferrer">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 shrink-0 fill-current">
-                    <path d="M24 12.1C24 5.4 18.6 0 12 0S0 5.4 0 12.1c0 6 4.4 11 10.1 11.9v-8.4H7.1v-3.4h3V9.5c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9v2.2h3.3l-.5 3.4h-2.8V24C19.6 23.1 24 18.1 24 12.1Z" />
-                  </svg>
+                  <SocialIcon platform="facebook" className="size-4" />
                   Facebook: {site.socialLinks.facebook.label}
                 </a>
               </li>

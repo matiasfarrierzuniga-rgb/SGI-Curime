@@ -94,7 +94,7 @@ export function PublicHeader() {
                   }} className={`${linkClass} public-nav-trigger w-full justify-between gap-2 text-left data-[active=true]:font-semibold data-[active=true]:text-primary lg:w-auto`}>
                     {label}<ChevronDown className={`size-4 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </button>
-                  <ul id={panelId} hidden={!expanded} className="mt-1 space-y-0.5 rounded-control border border-border bg-brand-ivory p-1.5 shadow-surface lg:absolute lg:left-0 lg:top-full lg:z-10 lg:mt-2 lg:min-w-48">
+                  <ul id={panelId} hidden={!expanded} className="mt-1 space-y-0.5 rounded-control border border-border bg-surface-card p-1.5 shadow-surface lg:absolute lg:left-0 lg:top-full lg:z-10 lg:mt-2 lg:min-w-48">
                     {destinations.map((destination) => {
                       const item = site.nav.find((entry) => entry.label === destination)!
                       return <li key={destination}><NavLink to={item.to} onClick={close} className={`${linkClass} ${linkHoverClass}`}>{destination}</NavLink></li>

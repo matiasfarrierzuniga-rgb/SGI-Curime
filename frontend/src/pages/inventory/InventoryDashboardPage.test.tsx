@@ -6,6 +6,7 @@ import { inventoryReportsService } from '../../services/inventoryReportsService'
 import { inventoryAlertsService } from '../../services/inventoryAlertsService'
 import { inventoryItemsService } from '../../services/inventoryItemsService'
 import { inventoryMovementsService } from '../../services/inventoryMovementsService'
+import type { InventoryItem } from '../../types/inventory'
 
 const auth = vi.hoisted(() => ({
   user: { permissionCodes: ['inv.inventory.read'] as string[] },
@@ -46,6 +47,54 @@ const page = () =>
       <InventoryDashboardPage />
     </MemoryRouter>,
   )
+
+const categoryPalette = [
+  '#087E77', '#3266A8', '#D38C28', '#8556B0', '#CB6057',
+  '#4893C1', '#6B9B38', '#A64F79', '#446A60', '#E0AE55', '#677B9C',
+]
+
+const elevenCategories = [
+  'Papelería', 'Mobiliario', 'Equipo de cómputo', 'Herramientas', 'Limpieza', 'Seguridad',
+  'Textiles', 'Alimentos', 'Medicamentos', 'Repuestos', 'Señalización',
+]
+
+function inventoryItems(quantities: Record<string, number>, reverse = false): InventoryItem[] {
+  const items: InventoryItem[] = []
+  Object.entries(quantities).forEach(([categoryName, total]) => {
+    for (let unit = 0; unit < total; unit += 1) {
+      const id = items.length + 1
+      items.push({
+        id,
+        code: `ART-${id}`,
+        name: `Artículo ${id}`,
+        description: null,
+        currentQuantity: unit + 1,
+        minimumQuantity: 1,
+        unit: 'unidad',
+        location: null,
+        status: 'ACTIVE',
+        condition: 'GOOD',
+        categoryId: 1,
+        category: { id: 1, name: categoryName, isActive: true },
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      })
+    }
+  })
+  return reverse ? items.reverse() : items
+}
+
+function legendColor(categoryName: string): string {
+  const label = screen.getByTitle(categoryName)
+  const swatch = label.closest('li')?.firstElementChild as HTMLElement | null
+  return swatch?.style.backgroundColor ?? ''
+}
+
+function normalizedColor(hex: string): string {
+  const probe = document.createElement('span')
+  probe.style.backgroundColor = hex
+  return probe.style.backgroundColor
+}
 
 describe('InventoryDashboardPage', () => {
   beforeEach(() => {
@@ -118,5 +167,62 @@ describe('InventoryDashboardPage', () => {
     vi.mocked(inventoryReportsService.summary).mockRejectedValueOnce(new Error('x'))
     page()
     expect(await screen.findByRole('alert')).toHaveTextContent('No fue posible cargar esta sección.')
+  })
+
+  it('assigns each of the eleven approved colors to eleven categories', async () => {
+    vi.mocked(inventoryItemsService.list).mockResolvedValue({
+      data: inventoryItems(Object.fromEntries(elevenCategories.map((name, index) => [name, index + 1]))),
+      total: 66,
+      page: 1,
+      limit: 100,
+    })
+    page()
+    await screen.findByTitle('Papelería')
+
+    const colors = elevenCategories.map(legendColor)
+    expect(new Set(colors).size).toBe(11)
+    expect(colors.map(normalizedColor).sort()).toEqual(categoryPalette.map(normalizedColor).sort())
+    expect(screen.getByText('66')).toBeInTheDocument()
+  })
+
+  it('keeps category colors stable when quantities and data order change', async () => {
+    vi.mocked(inventoryItemsService.list).mockResolvedValue({
+      data: inventoryItems(Object.fromEntries(elevenCategories.map((name, index) => [name, index + 1]))),
+      total: 66,
+      page: 1,
+      limit: 100,
+    })
+    const firstRender = page()
+    await screen.findByTitle('Papelería')
+    const before = Object.fromEntries(elevenCategories.map(name => [name, legendColor(name)]))
+    firstRender.unmount()
+
+    vi.mocked(inventoryItemsService.list).mockResolvedValue({
+      data: inventoryItems(Object.fromEntries(elevenCategories.map((name, index) => [name, 20 - index])), true),
+      total: 179,
+      page: 1,
+      limit: 100,
+    })
+    page()
+    await screen.findByTitle('Papelería')
+    const after = Object.fromEntries(elevenCategories.map(name => [name, legendColor(name)]))
+
+    expect(after).toEqual(before)
+  })
+
+  it('keeps colors deterministic when there are more categories than palette entries', async () => {
+    const extraCategories = [...elevenCategories, 'Jardinería', 'Ferretería']
+    vi.mocked(inventoryItemsService.list).mockResolvedValue({
+      data: inventoryItems(Object.fromEntries(extraCategories.map(name => [name, 1]))),
+      total: 13,
+      page: 1,
+      limit: 100,
+    })
+    page()
+    await screen.findByTitle('Jardinería')
+
+    const colors = extraCategories.map(legendColor)
+    expect(colors).toHaveLength(13)
+    colors.forEach(color => expect(categoryPalette.map(normalizedColor)).toContain(color))
   })
 })

@@ -146,6 +146,14 @@ describe('DatePicker', () => {
     expect(screen.getByRole('button', { name: 'Seleccionar 09/09/2026' })).toHaveAttribute('aria-pressed', 'true')
   })
 
+  it('does not render days outside the selected month', () => {
+    render(<DatePicker value="2026-11-12" onChange={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('textbox'))
+
+    expect(screen.queryByRole('button', { name: /Seleccionar (31|32|33|34|35|36)\/11\/2026/ })).not.toBeInTheDocument()
+  })
+
   it('captures a continuous range from one calendar surface', () => {
     const onStartChange = vi.fn()
     const onEndChange = vi.fn()

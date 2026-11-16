@@ -45,7 +45,7 @@ function FormField({
   })
 
   return (
-    <div data-slot="form-field" className={cn("grid gap-1.5", className)} {...props}>
+    <div data-slot="form-field" className={cn("grid min-w-0 gap-1.5", className)} {...props}>
       <label className="text-label font-semibold text-foreground" htmlFor={id}>
         {label}
         {required && <span className="ml-1 text-destructive" aria-hidden="true">*</span>}
@@ -53,11 +53,11 @@ function FormField({
         {optional && !required && <span className="ml-1 font-normal text-muted-foreground">(opcional)</span>}
       </label>
       {control}
-      {reserveMessageSpace ? <div className="min-h-5">
-        {error ? <p id={errorId} data-slot="form-field-error" className="text-body-small font-medium text-destructive" role="alert">{error}</p> : description ? <p id={descriptionId} data-slot="form-field-description" className="text-body-small text-muted-foreground">{description}</p> : null}
+      {reserveMessageSpace ? <div className="min-h-5 min-w-0">
+        {error ? <p id={errorId} data-slot="form-field-error" className="break-words text-body-small font-medium text-destructive" role="alert">{error}</p> : description ? <p id={descriptionId} data-slot="form-field-description" className="text-body-small text-muted-foreground">{description}</p> : null}
       </div> : <>
         {description && <p id={descriptionId} data-slot="form-field-description" className="text-body-small text-muted-foreground">{description}</p>}
-        {error && <p id={errorId} data-slot="form-field-error" className="text-body-small font-medium text-destructive" role="alert">{error}</p>}
+        {error && <p id={errorId} data-slot="form-field-error" className="break-words text-body-small font-medium text-destructive" role="alert">{error}</p>}
       </>}
     </div>
   )

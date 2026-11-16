@@ -159,6 +159,20 @@
   --color-interaction-danger-hover: #922f26;
   --color-interaction-danger-active: #78271f;
 
+  /* Public site iconography — additive category tones. Existing tokens stay unchanged. */
+  --color-public-icon-entrepreneurship: #c026d3;
+  --color-public-icon-entrepreneurship-surface: #fce7f3;
+  --color-public-icon-volunteering: #147d91;
+  --color-public-icon-volunteering-surface: #e4f2f5;
+  --color-public-icon-news: #85a83d;
+  --color-public-icon-news-surface: #eef4df;
+  --color-public-icon-transparency: #b99436;
+  --color-public-icon-transparency-surface: #f6f0df;
+  --color-public-icon-contact: #536358;
+  --color-public-icon-contact-surface: #eef3ef;
+  --color-public-icon-institutional: #07503f;
+  --color-public-icon-institutional-surface: #e8f1eb;
+
   --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
     --font-heading: "DM Serif Display", ui-serif, Georgia, serif;
 
