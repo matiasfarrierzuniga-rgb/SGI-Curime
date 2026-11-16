@@ -1,0 +1,30 @@
+name: Frontend ERP access checks
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-erp-access.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  erp-access:
+    name: Navigation and route access tests
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: ERP navigation and route regression tests
+        run: npm run test -- --run src/app/navigation/erpNavigation.test.ts src/app/navigation/erpRoleMatrix.test.ts src/app/router/AppRoutes.test.tsx
+      - name: Frontend TypeScript and build
+        run: npm run build

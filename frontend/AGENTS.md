@@ -1,5 +1,13 @@
 # Frontend — instrucciones locales para SGI-Curime
 
+## Alineación de acceso ERP y registro D03–D08 (2026-11-16)
+
+- Sidebar, rutas React y backend deben corresponder a capacidades persistidas efectivas. No derivar acceso del nombre del rol, cargo, afiliación o nombramiento.
+- No agregar al sidebar institucional funciones personales sin criterio de elegibilidad. «Mis asambleas» y justificaciones propias son flujos self-service; el backend debe comprobar titularidad y contexto, no solo que exista sesión.
+- Para cada ruta administrativa: visibilidad de sidebar, guard React y guard de API alineados; acceso por URL directa sin permiso debe resultar denegado. No inventar capabilities, grants ni rutas sin contrato aprobado.
+- D03–D08 aprobó `User.displayName` obligatorio en nuevas cuentas; separar contrato objetivo de AS-IS hasta comprobar DTO, persistencia, UI y pruebas. No modificar esquema/migraciones sin autorización adicional.
+- Cambios por PR revisable. Pruebas no ejecutadas se declaran `NOT_EXECUTED`, nunca `PASSED`.
+
 Aplican además las reglas de `../AGENTS.md` y `CONVENTIONS.md`. Este archivo no crea otro agente.
 
 ## Arquitectura
@@ -23,7 +31,7 @@ Objetivo actual: completar desarrollo funcional para certificación posterior. N
 
 ## Registro comunitario — contrato actual
 
-Consulta primero `../docs/contracts/account-lifecycle-v1.md` y contrasta cualquier cambio con código, endpoints y pruebas. El registro actual usa correo en `/register`; no solicita contraseña ni crea/aprueba `UserRequest` para cuentas comunitarias ordinarias. `POST /community-accounts/register` devuelve respuesta neutral y envía verificación cuando corresponde.
+Consulta primero `../docs/contracts/account-lifecycle-v1.md` y contrasta cualquier cambio con código, endpoints y pruebas. El registro AS-IS usa correo en `/register`; D03–D08 añade `displayName` obligatorio al contrato objetivo (aún no verificado como implementado). La contraseña se establece en verificación; no se crea ni aprueba `UserRequest` para cuentas comunitarias ordinarias. `POST /community-accounts/register` devuelve respuesta neutral y envía verificación cuando corresponde.
 
 - La pantalla de verificación valida el enlace con `validate-token`, permite establecer y confirmar contraseña, y activa mediante `verify-email`; nunca crea sesión desde frontend.
 - Tras iniciar sesión, la cuenta accede a `Mi Comunidad`, no al ERP. Capacidades server-side y guards backend prevalecen; evitar destellos de contenido protegido.

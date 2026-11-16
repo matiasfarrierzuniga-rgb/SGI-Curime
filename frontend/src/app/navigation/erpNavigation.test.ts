@@ -18,9 +18,10 @@ describe('getErpNavigation', () => {
     expect(getErpEntryPath([])).toBe('/profile')
   })
 
-  it('sends treasurers with both required read capabilities to the financial summary', () => {
-    expect(getErpEntryPath(['erp.dashboard.read', 'fin.movements.read', 'fin.charges.read'], 'ROLE_INSTITUTIONAL_TREASURER')).toBe('/app/financial')
-    expect(getErpEntryPath(['erp.dashboard.read', 'fin.movements.read', 'fin.charges.read'], 'ROLE_SYSTEM_ADMIN')).toBe('/app/dashboard')
+  it('does not special-case a role name when choosing an ERP entry', () => {
+    expect(getErpEntryPath(['erp.dashboard.read', 'fin.movements.read', 'fin.charges.read'])).toBe('/app/dashboard')
+    expect(getErpEntryPath(['events.proposal.approve'])).toBe('/app/events')
+    expect(getErpEntryPath(['fin.dinadeco.read'])).toBe('/app/financial/dinadeco')
   })
 
   it('organizes ERP destinations into institutional sidebar sections', () => {
@@ -58,20 +59,19 @@ describe('getErpNavigation', () => {
     ])
     expect(navigation.map(section => [section.label, section.items.map(item => item.label)])).toEqual([
       ['Panel principal', ['Inicio']],
-      ['Gobierno institucional', ['Perfil institucional', 'Junta Directiva', 'Asambleas', 'Mis asambleas']],
+      ['Gobierno institucional', ['Perfil institucional', 'Junta Directiva', 'Asambleas']],
        ['Personas y accesos', ['Usuarios y cuentas', 'Afiliados / padrón', 'Solicitudes de afiliación', 'Justificaciones de ausencia']],
       ['Desarrollo comunitario', ['Eventos', 'Emprendimientos', 'Voluntariado']],
       ['Recursos y operaciones', ['Reservas', 'Inventario']],
       ['Finanzas', ['Finanzas', 'Donaciones']],
       ['Seguridad y auditoría', ['Bitácora']],
-      ['Mi espacio', ['Mi perfil', 'Enviar justificación', 'Mis justificaciones']],
+      ['Mi espacio', ['Mi perfil']],
     ])
     expect(navigation.flatMap(section => section.items).flatMap(item => [item.path, ...(item.children?.map(child => child.path) ?? [])])).toEqual(expect.arrayContaining([
       '/app/dashboard',
       '/app/admin/institutional-profile',
       '/app/admin/institutional-board',
       '/app/admin/assemblies',
-      '/app/assemblies/mine',
       '/admin/users',
       '/app/admin/affiliates',
       '/app/admin/requests',
@@ -93,8 +93,6 @@ describe('getErpNavigation', () => {
       '/app/donations',
       '/admin/audit-logs',
       '/app/profile',
-      '/app/affiliate/absence-justifications/new',
-      '/app/affiliate/justifications',
     ]))
     expect(navigation.map(section => section.accent)).toEqual(['lime', 'green', 'cyan', 'blue', 'teal', 'maize', 'terracotta', 'violet'])
   })
@@ -118,6 +116,15 @@ describe('getErpNavigation', () => {
 
   it('does not use role names as authorization input', () => {
     expect(getErpNavigation('Administrador' as unknown as string[]).flatMap(section => section.items).find(item => item.label === 'Asambleas')).toBeUndefined()
+  })
+
+  it('keeps personal self-service links out of the generic ERP sidebar', () => {
+    const paths = getErpNavigation(['erp.dashboard.read', 'usr.profile.read', 'governance.assembly.session'])
+      .flatMap(section => section.items.flatMap(item => [item.path, ...(item.children?.map(child => child.path) ?? [])]))
+    expect(paths).not.toContain('/app/assemblies/mine')
+    expect(paths).not.toContain('/app/affiliate/absence-justifications/new')
+    expect(paths).not.toContain('/app/affiliate/justifications')
+    expect(getErpNavigation([])).toEqual([])
   })
 
   it('shows the ERP profile only with its persisted capability', () => {

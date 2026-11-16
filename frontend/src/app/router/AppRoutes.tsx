@@ -41,7 +41,7 @@ import { NotificationsPage } from '@/features/notifications'
 
 function ErpEntryRedirect() {
   const { user } = useAuth()
-  return <Navigate to={getErpEntryPath(user?.permissionCodes, user?.role)} replace />
+  return <Navigate to={getErpEntryPath(user?.permissionCodes)} replace />
 }
 
 export function AppRoutes() {
@@ -128,7 +128,8 @@ export function AppRoutes() {
             <Route path="/app/admin/assemblies" element={<AssembliesAdminPage />} />
             <Route path="/app/admin/assemblies/:id" element={<AssemblyManagementPage />} />
           </Route>
-          <Route path="/app/assemblies/mine" element={<MineAssembliesPage />} />
+          {/* Personal self-service: own-record eligibility is checked by backend; not an administrative grant. */}
+           <Route path="/app/assemblies/mine" element={<MineAssembliesPage />} />
           <Route element={<RoleRoute capability="adm.justifications.read" />}>
             <Route path="/app/admin/absence-justifications" element={<AbsenceJustificationsPage />} />
           </Route>

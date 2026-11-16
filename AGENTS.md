@@ -1,5 +1,13 @@
 # SGI-Curime Engineering Guide
 
+## Alineación de acceso ERP y registro D03–D08 (2026-11-16)
+
+- Sidebar, rutas React y backend deben corresponder a capacidades persistidas efectivas. No derivar acceso del nombre del rol, cargo, afiliación o nombramiento.
+- No agregar al sidebar institucional funciones personales sin criterio de elegibilidad. «Mis asambleas» y justificaciones propias son flujos self-service; el backend debe comprobar titularidad y contexto, no solo que exista sesión.
+- Para cada ruta administrativa: visibilidad de sidebar, guard React y guard de API alineados; acceso por URL directa sin permiso debe resultar denegado. No inventar capabilities, grants ni rutas sin contrato aprobado.
+- D03–D08 aprobó `User.displayName` obligatorio en nuevas cuentas; separar contrato objetivo de AS-IS hasta comprobar DTO, persistencia, UI y pruebas. No modificar esquema/migraciones sin autorización adicional.
+- Cambios por PR revisable. Pruebas no ejecutadas se declaran `NOT_EXECUTED`, nunca `PASSED`.
+
 ## Purpose
 
 Shared guide for every SGI-Curime agent and collaborator. It applies to backend, frontend, persistence, security, documentation, testing and requirements work.
@@ -380,7 +388,7 @@ Una propuesta de OpenSpec no sustituye un contrato implementado ni modifica deci
 
 Para describir el ciclo de vida vigente de cuentas, consulta primero **`docs/contracts/account-lifecycle-v1.md`** y contrástalo con código y pruebas actuales. Una propuesta histórica de OpenSpec o una decisión supersedida no sustituye el contrato operativo vigente. Antes de tocar `/register`, `UserRequest`, `Person`, `User`, `Role`, `Permission`, `AccountActivationToken`, correo o autenticación, revisa también la decisión histórica referenciada por el contrato. C3-AUTH-01 está implementado en la rama de trabajo; certificación PostgreSQL desechable e integración permanecen pendientes.
 
-- **C3-AUTH-01 implementado:** `POST /community-accounts/register` crea una cuenta comunitaria pendiente de verificación; enlace con token hasheado y vencible permite establecer contraseña en `POST /community-accounts/verify-email`, activar la cuenta y luego iniciar sesión sin aprobación administrativa. El rol inicial no tiene grants ERP.
+- **C3-AUTH-01 implementado en su alcance AS-IS sin `displayName`:** `POST /community-accounts/register` crea una cuenta comunitaria pendiente de verificación; enlace con token hasheado y vencible permite establecer contraseña en `POST /community-accounts/verify-email`, activar la cuenta y luego iniciar sesión sin aprobación administrativa. El rol inicial no tiene grants ERP.
 - **Flujo V1 retirado:** no hay endpoints, UI ni grants `usr.user-requests.read`/`usr.user-requests.review` para aprobar registros comunitarios. Registros `UserRequest` históricos permanecen como datos sin operaciones nuevas.
 - Verificar un correo demuestra control del buzón, **no identidad legal, afiliación a la ADI, cargo en Junta Directiva ni autorización sobre otras personas o recursos**.
 - `Person` (identidad física), `User` (acceso), `Affiliate` (afiliación), `Role`/`Permission` (autorización), `Venture` (emprendimiento), `VolunteerApplication` (postulación) y relaciones de negocio tienen responsabilidades diferentes.
