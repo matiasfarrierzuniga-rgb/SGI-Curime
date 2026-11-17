@@ -113,6 +113,9 @@ model User {
   // Transitional legacy identity snapshots. Person is canonical whenever
   // personId is present; removal requires human-approved reconciliation.
   fullName                    String?
+  // Account-facing name, independent from institutional Person identity.
+  // Nullable only while pre-contract accounts are reconciled by their holders.
+  displayName                 String?
   firstName                   String?
   firstSurname                String?
   secondSurname               String?
@@ -263,6 +266,8 @@ model UserRequest {
   // Additive immutable submission evidence. Generic fields remain legacy
   // aliases until Stage E certification authorizes their removal.
   submittedFullName            String?
+  // Opaque historical evidence; never infer atomic identity parts from it.
+  submittedNameRaw             String?
   submittedIdentification      String?
   submittedIdentificationType  IdentificationType?
   submittedEmail               String?
@@ -337,6 +342,8 @@ model AffiliateRequest {
   // Additive immutable submission evidence. Generic fields remain legacy
   // aliases until Stage E certification authorizes their removal.
   submittedFullName            String?
+  // Opaque historical evidence; never infer atomic identity parts from it.
+  submittedNameRaw             String?
   submittedIdentification      String?
   submittedIdentificationType  IdentificationType?
   submittedBirthDate           DateTime?

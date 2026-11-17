@@ -1,4 +1,5 @@
 export interface CreateCommunityAccount {
+  displayName: string
   email: string
 }
 

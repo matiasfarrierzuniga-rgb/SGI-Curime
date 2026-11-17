@@ -10,7 +10,7 @@ describe('password reset delivery', () => {
     );
     const delivery = {
       email: 'synthetic@example.test',
-      fullName: 'Synthetic',
+      displayName: 'Synthetic',
       token: 'test-token',
       expiresAt: new Date(),
     };
@@ -18,7 +18,7 @@ describe('password reset delivery', () => {
     expect(notifications.send).toHaveBeenCalledWith(
       expect.objectContaining({
         to: delivery.email,
-        recipientName: delivery.fullName,
+        recipientName: delivery.displayName,
         token: delivery.token,
       }),
     );

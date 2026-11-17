@@ -30,10 +30,7 @@ function toAuthAccount(user: AccountRow): AuthAccount {
   return {
     id: user.id,
     email: user.email,
-    fullName:
-      canonicalPersonName(user.person) ??
-      user.fullName ??
-       'Cuenta',
+    displayName: user.displayName ?? canonicalPersonName(user.person) ?? 'Cuenta',
     status: user.status,
     passwordHash: user.passwordHash,
     lockedAt: user.lockedAt,
@@ -59,9 +56,7 @@ function canonicalPersonName(person: AccountRow['person']): string | null {
   return (
     [person.firstName, person.firstSurname, person.secondSurname]
       .filter((part): part is string => Boolean(part?.trim()))
-      .join(' ') ||
-    person.legacyFullName ||
-    null
+      .join(' ') || null
   );
 }
 
@@ -219,6 +214,14 @@ export class PrismaAuthRepository implements AuthRepository {
       where: { id },
       data: { passwordHash, failedLoginAttempts: 0, lockedAt: null },
     });
+  }
+
+  async updateDisplayName(id: number, displayName: string): Promise<boolean> {
+    const updated = await this.db.user.updateMany({
+      where: { id, status: 'ACTIVE' },
+      data: { displayName },
+    });
+    return updated.count === 1;
   }
 
   async withTransaction<T>(

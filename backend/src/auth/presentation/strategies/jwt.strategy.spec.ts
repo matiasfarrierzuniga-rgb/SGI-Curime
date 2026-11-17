@@ -9,7 +9,7 @@ process.env.MAX_LOGIN_ATTEMPTS = '5';
 const account = {
   id: 1,
   email: 'admin@example.com',
-  fullName: 'Admin',
+  displayName: 'Admin',
   status: 'ACTIVE',
   passwordHash: 'hashed',
   lockedAt: null,
@@ -53,7 +53,7 @@ describe('JwtStrategy persisted RBAC mapping', () => {
       }),
     ).resolves.toEqual({
       id: 1,
-      fullName: 'Admin',
+      displayName: 'Admin',
       email: 'admin@example.com',
       status: 'ACTIVE',
       role: 'ROLE_SYSTEM_ADMIN',

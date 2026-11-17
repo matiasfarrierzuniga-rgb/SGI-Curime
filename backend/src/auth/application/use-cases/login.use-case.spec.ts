@@ -5,7 +5,7 @@ import { LoginUseCase } from './login.use-case';
 const account = {
   id: 1,
   email: 'admin@example.com',
-  fullName: 'Admin',
+  displayName: 'Admin',
   status: 'ACTIVE',
   passwordHash: 'hashed-password',
   lockedAt: null,
@@ -214,7 +214,7 @@ describe('LoginUseCase', () => {
       refreshToken: 'raw-refresh-token',
       user: {
         id: 1,
-        fullName: 'Admin',
+        displayName: 'Admin',
         email: 'admin@example.com',
         status: 'ACTIVE',
         role: 'ROLE_SYSTEM_ADMIN',
@@ -227,7 +227,7 @@ describe('LoginUseCase', () => {
   it('creates a standard session for an active community account without ERP access', async () => {
     repository.findCredentialsByEmail.mockResolvedValueOnce({
       ...account,
-      fullName: 'Community User',
+        displayName: 'Community User',
       email: 'community@example.test',
       roleName: 'ROLE_COMMUNITY_USER',
       permissionCodes: [],

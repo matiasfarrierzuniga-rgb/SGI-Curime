@@ -56,7 +56,7 @@ export class RequestPasswordResetUseCase {
 
     const delivery = {
       email: user.email,
-      fullName: user.fullName,
+      displayName: user.displayName,
       token,
       expiresAt,
     };

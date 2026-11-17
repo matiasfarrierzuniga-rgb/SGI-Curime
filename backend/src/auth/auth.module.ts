@@ -5,6 +5,7 @@ import type { StringValue } from 'ms';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ActivateAccountUseCase } from './application/use-cases/activate-account.use-case';
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
+import { UpdateDisplayNameUseCase } from './application/use-cases/update-display-name.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { LogoutUseCase } from './application/use-cases/logout.use-case';
 import { LogoutAllUseCase } from './application/use-cases/logout-all.use-case';
@@ -93,6 +94,7 @@ import { PublicRequestRateLimitModule } from '../common/rate-limit/public-reques
     RequestPasswordResetUseCase,
     ResetPasswordUseCase,
     ChangePasswordUseCase,
+    UpdateDisplayNameUseCase,
     SessionService,
     JwtStrategy,
     JwtAuthGuard,

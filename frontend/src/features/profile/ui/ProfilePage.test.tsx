@@ -5,8 +5,9 @@ import { ToastProvider } from '@/shared/ui/Toast'
 import { ProfilePage } from './ProfilePage'
 
 const changePassword = vi.fn()
+const updateDisplayName = vi.fn()
 const logout = vi.fn()
-vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { fullName: 'Ana', email: 'ana@test.com', role: 'ROLE_SYSTEM_ADMIN', status: 'ACTIVE' }, changePassword, logout }) }))
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { displayName: 'Ana', email: 'ana@test.com', role: 'ROLE_SYSTEM_ADMIN', status: 'ACTIVE' }, changePassword, updateDisplayName, logout }) }))
 
 const renderPage = () => render(<MemoryRouter initialEntries={['/profile']}><ToastProvider><Routes><Route path="/profile" element={<ProfilePage />} /><Route path="/login" element={<p>Iniciar sesión</p>} /></Routes></ToastProvider></MemoryRouter>)
 
