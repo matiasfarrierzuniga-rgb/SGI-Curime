@@ -2,7 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { getErrorMessage } from '@/shared/lib/errors'
-import { displayNameError, normalizeText } from '@/shared/lib/formValidation'
+import { displayNameError as validateDisplayName, normalizeText } from '@/shared/lib/formValidation'
 import { getRoleLabel } from '@/shared/security/roles'
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
@@ -32,7 +32,7 @@ export function ProfilePage() {
   const submitDisplayName = async (event: FormEvent) => {
     event.preventDefault()
     const value = normalizeText(displayName)
-    const validationError = displayNameError(value)
+    const validationError = validateDisplayName(value)
     if (validationError) return setDisplayNameError(validationError)
     setSavingDisplayName(true)
     setDisplayNameError('')

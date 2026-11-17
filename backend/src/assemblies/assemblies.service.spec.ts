@@ -507,7 +507,11 @@ describe('Assembly lifecycle, deletion and attendance', () => {
       convocationsLockedAt: new Date(),
     });
     prisma.assemblyConvocation.findMany.mockResolvedValue([
-      { id: 11, affiliateId: 7 },
+      {
+        id: 11,
+        affiliateId: 7,
+        affiliate: { id: 7, status: 'ACTIVE', person: null },
+      },
     ]);
     await serviceFor(prisma).recordAttendance(
       1,
@@ -573,7 +577,11 @@ describe('Assembly lifecycle, deletion and attendance', () => {
       convocationsLockedAt: new Date(),
     });
     prisma.assemblyConvocation.findMany.mockResolvedValue([
-      { id: 11, affiliateId: 7 },
+      {
+        id: 11,
+        affiliateId: 7,
+        affiliate: { id: 7, status: 'ACTIVE', person: null },
+      },
     ]);
     await serviceFor(prisma).recordAttendance(
       1,

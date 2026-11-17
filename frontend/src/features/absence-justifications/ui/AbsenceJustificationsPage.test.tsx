@@ -83,7 +83,7 @@ describe('AbsenceJustificationsPage', () => {
     query([{ ...item, status: 'REJECTED' as const, affiliate: null, assembly: null, attachmentOriginalName: null, attachmentMimeType: null, attachmentSize: null }])
     render(<AbsenceJustificationsPage />)
     expect(screen.getByText('Rechazada')).toBeInTheDocument()
-    expect(screen.getByText('Persona sin registro')).toBeInTheDocument()
+    expect(screen.getByText('Persona pendiente de reconciliación')).toBeInTheDocument()
     expect(screen.getByText('Asamblea sin registro')).toBeInTheDocument()
     expect(screen.getByText('Revisión cerrada')).toBeInTheDocument()
   })

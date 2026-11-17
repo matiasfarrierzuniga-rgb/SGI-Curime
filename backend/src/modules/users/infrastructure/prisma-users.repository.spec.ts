@@ -221,10 +221,10 @@ describe('PrismaUsersRepository registration methods', () => {
     });
   });
 
-  it('projects linked personal identity from Person instead of User snapshots', async () => {
+  it('keeps account display identity separate from linked Person contact data', async () => {
     db.user.findUnique.mockResolvedValue(
       userRecord({
-        fullName: 'Snapshot antiguo',
+        displayName: 'Cuenta de Ana',
         identification: '000000000',
         person: {
           id: 12,
@@ -244,7 +244,7 @@ describe('PrismaUsersRepository registration methods', () => {
     );
 
     await expect(repository.findById(7)).resolves.toMatchObject({
-      fullName: 'Ana Pérez Mora',
+      displayName: 'Cuenta de Ana',
       identification: '123456789',
       phoneCountryCode: '+506',
       phoneNationalNumber: '88888888',
@@ -443,7 +443,7 @@ function createData() {
 function userRecord(overrides: Record<string, unknown> = {}) {
   return {
     id: 7,
-    fullName: 'Cuenta vinculada',
+    displayName: 'Cuenta vinculada',
     identification: '123456789',
     identificationType: 'NATIONAL',
     email: 'account@example.com',

@@ -53,7 +53,7 @@ describe('ProfilePage', () => {
 
   it('validates a non-empty visible name before saving', () => {
     renderPage()
-    fireEvent.change(screen.getByLabelText('Nombre visible'), { target: { value: '   ' } })
+    fireEvent.change(screen.getByLabelText(/^Nombre visible/), { target: { value: '   ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar nombre' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Ingrese un nombre visible.')
     expect(updateDisplayName).not.toHaveBeenCalled()

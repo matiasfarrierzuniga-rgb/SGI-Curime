@@ -18,7 +18,7 @@ describe('community account registration and activation', () => {
   };
   const tokens = { generate: jest.fn() };
   const delivery = { deliver: jest.fn() };
-  const hasher = { hash: jest.fn() };
+  const hasher = { hash: jest.fn(), compare: jest.fn() };
   let service: CommunityAccountsService;
   const payload = {
     displayName: 'Ana Comunidad',

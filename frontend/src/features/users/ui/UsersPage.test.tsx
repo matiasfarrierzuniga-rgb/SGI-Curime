@@ -74,7 +74,7 @@ const page = () => {
 
 const open = async () => {
   fireEvent.click((await screen.findAllByRole('button', { name: 'Ver detalle' }))[0])
-  await screen.findByRole('dialog', { name: /Cuenta: Ana/ })
+  await screen.findByRole('dialog', { name: /Persona: Ana/ })
 }
 
 describe('UsersPage', () => {
