@@ -53,13 +53,18 @@ const loanSelect = {
 } satisfies Prisma.InventoryLoanSelect;
 
 type SafeLoan = Prisma.InventoryLoanGetPayload<{ select: typeof loanSelect }>;
+type LoanAffiliateProjection = {
+  id: number;
+  identification: string;
+  institutionalName: string | null;
+};
 
 function withOverdue(
   loan: SafeLoan,
   now = new Date(),
 ): Omit<SafeLoan, 'borrowerNameSnapshot' | 'borrowerAffiliate'> & {
   borrowerName: string;
-  affiliate: SafeLoan['borrowerAffiliate'];
+  affiliate: LoanAffiliateProjection | null;
   isOverdue: boolean;
 } {
   const { borrowerNameSnapshot, borrowerAffiliate, ...rest } = loan;

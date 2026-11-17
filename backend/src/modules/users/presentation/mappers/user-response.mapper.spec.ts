@@ -80,7 +80,7 @@ describe('user-response.mapper', () => {
   it('separates canonical Person contact from linked User access email', () => {
     const response = toAdminUserResponse({
       id: '12',
-      displayName: 'Persona Usuaria',
+      institutionalName: 'Persona Usuaria',
       identification: '222222222',
       identificationType: 'NATIONAL',
       contactEmail: 'person@example.com',
@@ -113,7 +113,7 @@ describe('user-response.mapper', () => {
   it('returns person-only rows without account affordances or sensitive fields', () => {
     const response = toAdminUserResponse({
       id: '12',
-      displayName: 'Solo Persona',
+      institutionalName: 'Solo Persona',
       identification: '222222222',
       identificationType: 'NATIONAL',
       contactEmail: 'person@example.com',

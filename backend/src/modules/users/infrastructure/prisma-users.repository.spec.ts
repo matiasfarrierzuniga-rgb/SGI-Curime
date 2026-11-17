@@ -428,7 +428,7 @@ function prismaError(code: string, meta?: Record<string, unknown>) {
 
 function createData() {
   return {
-    fullName: 'Persona Usuaria',
+    displayName: 'Persona Usuaria',
     identificationType: 'NATIONAL' as const,
     identification: '123456789',
     email: 'persona@example.com',

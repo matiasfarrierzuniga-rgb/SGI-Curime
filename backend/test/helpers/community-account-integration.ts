@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash, randomBytes, randomInt } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import type { DockerInspection } from './docker-inspection.type';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -81,18 +81,13 @@ const service = new CommunityAccountsService(
 );
 const suffix = randomBytes(5).toString('hex');
 let sequence = 0;
-const identificationBase = randomInt(100000000, 899999900);
 function payload() {
-  sequence += 1;
-  return {
-    firstName: 'Prueba',
-    firstSurname: 'Sintetica',
-    email: `test-${suffix}-${sequence}@example.test`,
-    identificationType: 'NATIONAL' as const,
-    identification: String(identificationBase + sequence),
-    privacyAcknowledgement: true,
-  };
-}
+    sequence += 1;
+    return {
+      displayName: 'Prueba Sintética',
+      email: `test-${suffix}-${sequence}@example.test`,
+    };
+  }
 async function main() {
   try {
     const [identity] = await prisma.$queryRaw<

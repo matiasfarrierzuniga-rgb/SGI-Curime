@@ -16,7 +16,7 @@ describe('Community account resend verification HTTP', () => {
   const pendingAccount = {
     id: 9,
     email: 'pending@example.test',
-    fullName: 'Synthetic Pending',
+    displayName: 'Synthetic Pending',
     status: 'PENDING_EMAIL_VERIFICATION',
   };
   const prisma = {

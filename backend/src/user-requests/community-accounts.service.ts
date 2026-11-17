@@ -457,7 +457,7 @@ export class CommunityAccountsService {
         async (tx) => {
           const user = await tx.user.findUnique({
             where: { email },
-            select: { id: true, email: true, status: true },
+            select: { id: true, email: true, displayName: true, status: true },
           });
           if (!user || user.status !== 'PENDING_EMAIL_VERIFICATION')
             return null;

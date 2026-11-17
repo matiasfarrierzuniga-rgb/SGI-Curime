@@ -209,12 +209,8 @@ describe('community account HTTP authorization with isolated PostgreSQL', () => 
 
   it('returns the same public result for new data and duplicates, then limits abuse', async () => {
     const body = {
-      firstName: 'Prueba',
-      firstSurname: 'Sintetica',
-      identificationType: 'NATIONAL',
-      identification: '223456789',
+      displayName: 'Prueba Sintética',
       email: `neutral-${suffix}@example.test`,
-      privacyAcknowledgement: true,
     };
     const first = await request(app.getHttpServer() as App)
       .post('/community-accounts/register')
@@ -222,14 +218,14 @@ describe('community account HTTP authorization with isolated PostgreSQL', () => 
       .expect(202);
     const emailDuplicate = await request(app.getHttpServer() as App)
       .post('/community-accounts/register')
-      .send({ ...body, identification: '323456789' })
+      .send(body)
       .expect(202);
-    const idDuplicate = await request(app.getHttpServer() as App)
+    const differentEmail = await request(app.getHttpServer() as App)
       .post('/community-accounts/register')
       .send({ ...body, email: `other-${suffix}@example.test` })
       .expect(202);
     expect(emailDuplicate.body).toEqual(first.body);
-    expect(idDuplicate.body).toEqual(first.body);
+    expect(differentEmail.body).toEqual(first.body);
     await request(app.getHttpServer() as App)
       .post('/community-accounts/register')
       .send(body)
