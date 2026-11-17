@@ -27,7 +27,6 @@ export class UpdateAffiliateDto {
   @MinLength(2)
   @MaxLength(150)
   @Matches(FULL_NAME_PATTERN)
-  fullName?: string;
   @IsOptional()
   @IsEnum(IdentificationType)
   identificationType?: IdentificationType;

@@ -91,7 +91,7 @@ export class RegisterAdministratorUseCase {
       }
 
       return tx.create({
-        fullName: [data.firstName, data.firstSurname, data.secondSurname]
+        displayName: [data.firstName, data.firstSurname, data.secondSurname]
           .filter((part): part is string => Boolean(part))
           .join(' '),
         identificationType: data.identificationType,

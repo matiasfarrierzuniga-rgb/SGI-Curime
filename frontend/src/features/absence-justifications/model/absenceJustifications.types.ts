@@ -10,13 +10,13 @@ export interface AbsenceJustificationAssembly {
 
 export interface AbsenceJustificationAffiliate {
   id: number
-  fullName: string
+  institutionalName: string | null
   identification: string
 }
 
 export interface AbsenceJustificationReviewer {
   id: number
-  fullName: string
+  displayName: string
   email: string
 }
 

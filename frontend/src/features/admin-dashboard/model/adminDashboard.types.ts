@@ -37,7 +37,7 @@ export type AdminDashboardData = Partial<{
 export type AdminDashboardResponse = {
   metadata: {
     generatedAt: string;
-    generatedBy: { id: number; fullName: string } | null;
+    generatedBy: { id: number; displayName: string } | null;
     period: { from: string | null; to: string | null };
     appliedFilters: Record<string, string | number | boolean>;
     dataSource: string | string[];

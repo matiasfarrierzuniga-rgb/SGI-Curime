@@ -34,7 +34,7 @@ export interface UserActions {
 /** GET /users/accounts response. Root id identifies User account; person is optional. */
 export interface User {
   id: string
-  fullName: string | null
+  institutionalName: string | null
   identificationType: 'NATIONAL' | 'DIMEX' | null
   identification: string | null
   phoneCountryCode: string | null
@@ -54,7 +54,7 @@ export interface User {
 /** PATCH /users/:accessId returns an account-root response, not a Person-root User. */
 export interface AccountMutationResponse {
   id: number
-  fullName: string
+  displayName: string
   identification: string
   identificationType: 'NATIONAL' | 'DIMEX' | null
   email: string

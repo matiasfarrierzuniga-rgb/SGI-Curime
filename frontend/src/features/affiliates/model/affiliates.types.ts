@@ -4,7 +4,7 @@ export type AffiliateStatus = 'ACTIVE' | 'INACTIVE'
 
 export interface Affiliate {
   id: number
-  fullName: string
+  institutionalName: string | null
   identification: string
   identificationType: 'NATIONAL' | 'DIMEX' | null
   birthDate: string
@@ -24,7 +24,6 @@ export interface Affiliate {
 }
 
 export interface AffiliateUpdate {
-  fullName?: string
   identificationType?: 'NATIONAL' | 'DIMEX'
   identification?: string
   birthDate?: string

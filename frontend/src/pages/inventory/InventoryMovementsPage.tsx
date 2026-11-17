@@ -135,7 +135,7 @@ export function InventoryMovementsPage() {
                     <DataTableCell>{m.type === 'ADJUSTMENT' ? `${m.quantity >= 0 ? '+' : ''}${m.quantity}` : m.quantity}</DataTableCell>
                     <DataTableCell>{m.reason}</DataTableCell>
                     <DataTableCell>{m.reference || '—'}</DataTableCell>
-                    <DataTableCell>{m.createdBy?.fullName ?? '—'}</DataTableCell>
+                    <DataTableCell>{m.createdBy?.displayName ?? '—'}</DataTableCell>
                   </DataTableRow>
                 ))}
               </DataTableBody>

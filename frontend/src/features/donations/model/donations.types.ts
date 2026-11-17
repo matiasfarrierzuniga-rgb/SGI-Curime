@@ -8,7 +8,7 @@ export type DonationMethod =
 
 export interface DonationActorSummary {
   id: number
-  fullName: string
+  displayName: string
 }
 
 export interface Donation {

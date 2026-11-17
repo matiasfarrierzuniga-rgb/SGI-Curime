@@ -36,7 +36,7 @@ export class InventoryReportsController {
   }
 
   private generatedBy(req: AuthenticatedRequest) {
-    return { id: req.user.id, fullName: req.user.fullName };
+    return { id: req.user.id, displayName: req.user.displayName };
   }
 }
 

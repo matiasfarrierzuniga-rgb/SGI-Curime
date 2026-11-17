@@ -39,7 +39,7 @@ export interface InventoryItem {
 
 export interface InventoryActor {
   id: number
-  fullName: string
+  displayName: string
   email: string
 }
 
@@ -70,7 +70,7 @@ export interface InventoryLoan {
   createdAt: string
   updatedAt: string
   item: { id: number; code: string; name: string; unit: string; category: { id: number; name: string } }
-  affiliate: { id: number; fullName: string; identification: string } | null
+  affiliate: { id: number; institutionalName: string | null; identification: string } | null
   createdBy: InventoryActor | null
   receivedBy: InventoryActor | null
   isOverdue: boolean
@@ -95,7 +95,7 @@ export interface InventoryLoanAlert {
   loanDate: string
   expectedReturnDate: string
   item: { id: number; code: string; name: string; unit: string }
-  affiliate: { id: number; fullName: string } | null
+  affiliate: { id: number; institutionalName: string | null } | null
 }
 
 export interface InventoryAlertSummary {
@@ -156,7 +156,7 @@ export interface InventoryLoansReport {
 
 export interface AffiliateOption {
   id: number
-  fullName: string
+  institutionalName: string | null
   identification: string
 }
 

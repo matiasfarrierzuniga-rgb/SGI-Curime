@@ -3,7 +3,7 @@ import type { IdentificationType } from '@/shared/lib/formValidation'
 
 export type AffiliateRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export interface AffiliateRequest {
-  id: number; fullName: string; identificationType: IdentificationType; identification: string;
+  id: number; submittedNameRaw: string; identificationType: IdentificationType; identification: string;
   birthDate: string; gender: string | null; phoneCountryCode: string | null;
   phoneNationalNumber: string | null; email: string | null; address: string;
   phone: string | null;

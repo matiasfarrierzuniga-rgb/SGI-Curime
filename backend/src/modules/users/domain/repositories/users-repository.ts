@@ -91,7 +91,7 @@ export interface PersonCreateResult {
 }
 
 export interface UserCreateData {
-  fullName: string;
+  displayName: string;
   identification: string;
   identificationType: 'NATIONAL' | 'DIMEX';
   email: string;

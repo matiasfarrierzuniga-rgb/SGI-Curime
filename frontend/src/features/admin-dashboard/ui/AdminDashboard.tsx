@@ -93,7 +93,7 @@ export function AdminDashboard({
   );
 
   if (!canReadAdministrativeMetrics) {
-    return <InstitutionalDashboardWelcome fullName={userName} />;
+    return <InstitutionalDashboardWelcome displayName={userName} />;
   }
 
   return (
@@ -129,14 +129,14 @@ function AdminDashboardContent({
   if (dashboard.isPending)
     return (
       <section aria-busy="true">
-        <InstitutionalDashboardWelcome fullName={userName} />
+        <InstitutionalDashboardWelcome displayName={userName} />
         <DashboardSkeleton />
       </section>
     );
   if (dashboard.isError)
     return (
       <section>
-        <InstitutionalDashboardWelcome fullName={userName} />
+        <InstitutionalDashboardWelcome displayName={userName} />
         <ErrorState
           className="mt-5"
           title="No fue posible cargar los indicadores"
@@ -160,7 +160,7 @@ function AdminDashboardContent({
     return (
       <section>
         <InstitutionalDashboardWelcome
-          fullName={userName}
+          displayName={userName}
           generatedAt={metadata.generatedAt}
         />
         <EmptyState
@@ -174,7 +174,7 @@ function AdminDashboardContent({
   return (
     <section className="@container space-y-4">
       <InstitutionalDashboardWelcome
-        fullName={userName}
+        displayName={userName}
         generatedAt={metadata.generatedAt}
       />
       <KpiRow

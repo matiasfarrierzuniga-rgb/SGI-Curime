@@ -47,8 +47,8 @@ export function AffiliateRequestsTable({ requests, onView }: AffiliateRequestsTa
               <DataTableRow key={request.id}>
                 <DataTableCell>
                   <div className="flex min-w-48 items-center gap-3">
-                    <PersonAvatar name={request.fullName} />
-                    <span className="min-w-0 break-words font-semibold text-text-primary">{request.fullName}</span>
+                    <PersonAvatar name={request.submittedNameRaw} />
+                    <span className="min-w-0 break-words font-semibold text-text-primary">{request.submittedNameRaw}</span>
                   </div>
                 </DataTableCell>
                 <DataTableCell className="tabular-nums text-text-secondary">{request.identification}</DataTableCell>
@@ -57,7 +57,7 @@ export function AffiliateRequestsTable({ requests, onView }: AffiliateRequestsTa
                 </DataTableCell>
                 <DataTableCell className="whitespace-nowrap text-text-secondary">{formatDate(request.createdAt)}</DataTableCell>
                 <DataTableCell><StatusBadge variant={status.variant}>{status.label}</StatusBadge></DataTableCell>
-                <DataTableCell className="text-right"><Button size="sm" variant="outline" type="button" aria-label={`Ver solicitud de ${request.fullName}`} onClick={() => onView(request.id)}>Ver</Button></DataTableCell>
+                <DataTableCell className="text-right"><Button size="sm" variant="outline" type="button" aria-label={`Ver solicitud de ${request.submittedNameRaw}`} onClick={() => onView(request.id)}>Ver</Button></DataTableCell>
               </DataTableRow>
             )
           })}

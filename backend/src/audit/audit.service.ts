@@ -3,6 +3,7 @@ import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditAction } from './audit-actions';
 import { QueryAuditLogsDto } from './dto/query-audit-logs.dto';
+import { formatInstitutionalPersonName } from '../common/identity/person-name';
 
 export interface AuditContext {
   ipAddress?: string;
@@ -27,10 +28,10 @@ export interface BoardPrivilegeReview {
     endsOn: Date | null;
     term: { id: number; startsOn: Date; endsOn: Date; status: string | null };
   } | null;
-  person: { id: number; fullName: string } | null;
+  person: { id: number; institutionalName: string } | null;
   account: {
     id: number;
-    fullName: string;
+    displayName: string;
     email: string;
     status: string;
     role: { id: number; name: string };
@@ -39,7 +40,7 @@ export interface BoardPrivilegeReview {
   resolution: {
     id: number;
     createdAt: Date;
-    actor: { id: number; fullName: string; email: string } | null;
+    actor: { id: number; displayName: string; email: string } | null;
     decision: string | null;
     justification: string | null;
     roleChange: { previousRoleId: number; newRoleId: number } | null;
@@ -114,7 +115,7 @@ export class AuditService {
       this.prisma.auditLog.findMany({
         where,
         include: {
-          user: { select: { id: true, fullName: true, email: true } },
+          user: { select: { id: true, displayName: true, email: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: (query.page - 1) * query.limit,
@@ -127,7 +128,7 @@ export class AuditService {
   async findOne(id: number) {
     const log = await this.prisma.auditLog.findUnique({
       where: { id },
-      include: { user: { select: { id: true, fullName: true, email: true } } },
+      include: { user: { select: { id: true, displayName: true, email: true } } },
     });
     if (!log) throw new NotFoundException('Audit log not found');
     return log;
@@ -160,7 +161,7 @@ export class AuditService {
             createdAt: true,
             details: true,
             entityId: true,
-            user: { select: { id: true, fullName: true, email: true } },
+            user: { select: { id: true, displayName: true, email: true } },
           },
         })
       : [];
@@ -201,7 +202,7 @@ export class AuditService {
         id: true,
         createdAt: true,
         details: true,
-        user: { select: { id: true, fullName: true, email: true } },
+        user: { select: { id: true, displayName: true, email: true } },
       },
     });
     return this.toBoardPrivilegeReview(review, resolution, client);
@@ -250,7 +251,7 @@ export class AuditService {
       id: number;
       createdAt: Date;
       details: Prisma.JsonValue | null;
-      user: { id: number; fullName: string | null; email: string } | null;
+      user: { id: number; displayName: string | null; email: string } | null;
     } | null,
     client: AuditLogClient,
   ): Promise<BoardPrivilegeReview> {
@@ -272,7 +273,7 @@ export class AuditService {
     const person = personId
       ? await client.person.findUnique({
           where: { id: personId },
-          select: { id: true, firstName: true, firstSurname: true, secondSurname: true, legacyFullName: true },
+          select: { id: true, firstName: true, firstSurname: true, secondSurname: true },
         })
       : null;
     const account = personId
@@ -280,7 +281,7 @@ export class AuditService {
           where: { personId },
           select: {
             id: true,
-            fullName: true,
+            displayName: true,
             email: true,
             status: true,
             role: {
@@ -317,16 +318,13 @@ export class AuditService {
       person: person
         ? {
             id: person.id,
-            fullName:
-              [person.firstName, person.firstSurname, person.secondSurname]
-                .filter(Boolean)
-                .join(' ') || person.legacyFullName || `Persona ${person.id}`,
+            institutionalName: formatInstitutionalPersonName(person) ?? `Persona ${person.id}`,
           }
         : null,
       account: account
         ? {
             id: account.id,
-            fullName: account.fullName ?? account.email,
+            displayName: account.displayName ?? account.email,
             email: account.email,
             status: account.status,
             role: { id: account.role.id, name: account.role.name },
@@ -342,7 +340,7 @@ export class AuditService {
             actor: resolution.user
               ? {
                   id: resolution.user.id,
-                  fullName: resolution.user.fullName ?? resolution.user.email,
+                  displayName: resolution.user.displayName ?? resolution.user.email,
                   email: resolution.user.email,
                 }
               : null,

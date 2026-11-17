@@ -42,7 +42,7 @@ export function toAdminUserResponse(person: AdminPersonReadModel) {
   const access = person.access ? toUserResponse(person.access) : null;
   return {
     id: person.id,
-    fullName: person.fullName,
+    institutionalName: person.institutionalName,
     identification: person.identification,
     identificationType: person.identificationType,
     phoneCountryCode: person.phoneCountryCode,

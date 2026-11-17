@@ -28,7 +28,7 @@ interface UserActionsCellProps {
 
 function UserActionsCell({ user, menuOpen, onOpen, onManage, onLinkPerson, onMenuOpenChange }: UserActionsCellProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const name = user.fullName || "persona sin nombre registrado";
+  const name = user.institutionalName || user.access?.email || "persona sin nombre registrado";
   const access = user.access;
   const canView = user.actions.read;
   const canEdit = access !== null && user.actions.update;
@@ -104,8 +104,8 @@ export function UsersTable({ users, onOpen, onManage, onLinkPerson }: UsersTable
           <DataTableRow key={user.id}>
             <DataTableCell className="min-w-48">
               <div className="flex min-w-0 items-center gap-3">
-                <PersonAvatar name={user.fullName} />
-                <span className="min-w-0 truncate font-semibold text-text-primary" title={user.fullName || undefined}>{user.fullName || "Cuenta sin nombre registrado"}</span>
+                <PersonAvatar name={user.institutionalName ?? user.access?.email} />
+                <span className="min-w-0 truncate font-semibold text-text-primary" title={user.institutionalName || undefined}>{user.institutionalName || "Persona sin nombre institucional registrado"}</span>
               </div>
             </DataTableCell>
             <DataTableCell className="hidden w-56 max-w-56 overflow-hidden text-ellipsis whitespace-nowrap text-text-secondary xl:table-cell">{user.person ? user.person.contactEmail || "Persona vinculada sin correo" : "Sin persona vinculada"}</DataTableCell>

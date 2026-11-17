@@ -22,7 +22,7 @@ const emptyTerm = { startsOn: '', endsOn: '', status: '' as GovernanceTermStatus
 const termStatusLabels: Record<GovernanceTermStatus, string> = { PLANNED: 'Planificado', ACTIVE: 'Activo', CLOSED: 'Finalizado', CANCELLED: 'Cancelado' }
 const availableTermStatuses: Record<GovernanceTermStatus, readonly GovernanceTermStatus[]> = { PLANNED: ['PLANNED', 'ACTIVE', 'CANCELLED'], ACTIVE: ['ACTIVE', 'CLOSED', 'CANCELLED'], CLOSED: ['CLOSED'], CANCELLED: ['CANCELLED'] }
 const dateOnly = (value: string | null) => value ? value.slice(0, 10) : 'No especificada'
-const personName = (appointment: BoardAppointment) => [appointment.person.firstName, appointment.person.firstSurname, appointment.person.secondSurname].filter(Boolean).join(' ') || appointment.person.legacyFullName || `Persona ${appointment.personId}`
+const personName = (appointment: BoardAppointment) => [appointment.person.firstName, appointment.person.firstSurname, appointment.person.secondSurname].filter(Boolean).join(' ') || `Persona ${appointment.personId} pendiente de reconciliación`
 const toDate = (value: string) => new Date(`${value}T00:00:00`)
 
 export function InstitutionalBoardPage() {

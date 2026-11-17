@@ -169,7 +169,7 @@ export function AbsenceJustificationsPage() {
                   {items.map((item) => (
                     <DataTableRow key={item.id} className="border-t border-border-default align-top transition-colors hover:bg-surface-muted/60">
                       <DataTableCell className="px-4 py-4">
-                        <div className="font-semibold text-text-primary">{item.affiliate?.fullName ?? 'Persona sin registro'}</div>
+                        <div className="font-semibold text-text-primary">{item.affiliate?.institutionalName ?? 'Persona pendiente de reconciliación'}</div>
                         <div className="text-xs text-text-secondary">{item.affiliate?.identification ?? 'Identificación sin registro'}</div>
                       </DataTableCell>
                       <DataTableCell className="px-4 py-4">

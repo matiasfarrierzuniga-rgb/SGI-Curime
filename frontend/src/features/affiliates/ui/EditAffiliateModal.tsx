@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getErrorMessage } from '@/shared/lib/errors'
-import { emailError, fullNameError, identificationError, identificationMaxLength, normalizeEmail, normalizeIdentification, normalizePhoneCountryCode, normalizePhoneNationalNumber, normalizeText, phonePairError } from '@/shared/lib/formValidation'
+import { emailError, identificationError, identificationMaxLength, normalizeEmail, normalizeIdentification, normalizePhoneCountryCode, normalizePhoneNationalNumber, normalizeText, phonePairError } from '@/shared/lib/formValidation'
 import { ErrorState } from '@/shared/ui/ErrorState'
 import { Modal } from '@/shared/ui/Modal'
 import { toast } from '@/shared/ui/Toast'
@@ -12,7 +12,6 @@ import { useAffiliateMutations } from '../hooks/useAffiliatesQueries'
 import type { Affiliate, AffiliateUpdate } from '../model/affiliates.types'
 
 type AffiliateEditForm = {
-  fullName: string
   identificationType: '' | 'NATIONAL' | 'DIMEX'
   identification: string
   birthDate: string
@@ -30,7 +29,6 @@ type EditAffiliateModalProps = { affiliate: Affiliate; onClose: () => void }
 
 function initialForm(affiliate: Affiliate): AffiliateEditForm {
   return {
-    fullName: affiliate.fullName,
     identificationType: affiliate.identificationType ?? '',
     identification: affiliate.identification,
     birthDate: affiliate.birthDate.slice(0, 10),
@@ -49,7 +47,6 @@ function toPayload(form: AffiliateEditForm): AffiliateUpdate {
   const identification = normalizeText(form.identification)
   const hasIdentificationPair = Boolean(form.identificationType && identification)
   return {
-    fullName: normalizeText(form.fullName),
     identificationType: hasIdentificationPair ? form.identificationType || undefined : undefined,
     identification: hasIdentificationPair ? identification : undefined,
     birthDate: form.birthDate || undefined,
@@ -75,7 +72,6 @@ function validate(form: AffiliateEditForm) {
         : ''
 
   return {
-    fullName: fullNameError(form.fullName),
     identification: identificationMessage,
     email: form.email ? emailError(form.email) : '',
     phone: phonePairError(form.phoneCountryCode, form.phoneNationalNumber),
@@ -128,7 +124,6 @@ export function EditAffiliateModal({ affiliate, onClose }: EditAffiliateModalPro
           <section aria-labelledby="identity-heading" className="space-y-4">
             <div><h3 id="identity-heading" className="text-heading-3 font-semibold text-text-primary">Identificación personal</h3><p className="mt-1 text-body-small text-text-secondary">Datos requeridos para reconocer el expediente.</p></div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-label font-semibold text-text-primary sm:col-span-2">Nombre completo<Input required minLength={2} maxLength={150} autoComplete="name" value={form.fullName} aria-invalid={Boolean(fieldErrors.fullName)} aria-describedby={fieldErrors.fullName ? 'fullName-error' : undefined} onChange={(event) => setForm({ ...form, fullName: event.target.value })} /><FieldError id="fullName-error" message={fieldErrors.fullName} /></label>
               <label className="flex flex-col gap-2 text-label font-semibold text-text-primary">Tipo de identificación<Select value={form.identificationType} onChange={(event) => changeIdentificationType(event.target.value as AffiliateEditForm['identificationType'])}><option value="">Sin especificar</option><option value="NATIONAL">Cédula nacional</option><option value="DIMEX">DIMEX</option></Select></label>
               <label className="flex flex-col gap-2 text-label font-semibold text-text-primary">Número de identificación<Input type="text" inputMode="numeric" autoComplete="off" maxLength={form.identificationType ? identificationMaxLength(form.identificationType) : 50} value={form.identification} aria-invalid={Boolean(fieldErrors.identification)} aria-describedby={fieldErrors.identification ? 'identification-error' : undefined} onChange={(event) => setForm({ ...form, identification: form.identificationType ? normalizeIdentification(form.identificationType, event.target.value) : event.target.value.replace(/\D/g, '').slice(0, 50) })} /><FieldError id="identification-error" message={fieldErrors.identification} /></label>
             </div>

@@ -5,7 +5,7 @@ export type ReservationAvailabilityResponse = { available: boolean }
 
 export type ReservationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'CONFIRMED' | 'COMPLETED'
 export type ReservationFilters = { status?: ReservationStatus; resourceId?: number; from?: string; to?: string; page?: number; limit?: number }
-export type ReservationPerson = { id: number; fullName: string; email: string }
+export type ReservationPerson = { id: number; displayName: string; email: string }
 export type ReservationResourceSummary = { id: number; name: string; location: string | null; pricingType: ResourcePricingType; price: string | null; currency: string }
 export type FinancialCharge = { id: number; amount: string; currency: string; status: 'PENDING' | 'PAID' | 'CANCELLED'; dueAt: string | null }
 export type ReservationEvent = { id: number; title: string; startAt: string; endAt: string | null }

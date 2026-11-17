@@ -11,6 +11,7 @@ import { CreateAssemblyDto, UpdateAssemblyDto } from './dto/assembly.dto';
 import { QueryAssembliesDto } from './dto/query-assemblies.dto';
 import { RecordAttendanceDto } from './dto/record-attendance.dto';
 import { AssemblyCallDto } from './dto/update-assembly-calls.dto';
+import { formatInstitutionalPersonName } from '../common/identity/person-name';
 
 const select = {
   id: true,
@@ -33,7 +34,7 @@ const convocationSelect = {
   legacyRoleId: true,
   legacyRoleNameSnapshot: true,
   convenedAt: true,
-  affiliate: { select: { id: true, fullName: true, status: true } },
+  affiliate: { select: { id: true, status: true, person: { select: { firstName: true, firstSurname: true, secondSurname: true } } } },
 } satisfies Prisma.AssemblyConvocationSelect;
 const callSelect = {
   id: true,
@@ -194,11 +195,14 @@ export class AssembliesService {
       where: { status: 'ACTIVE' },
       select: {
         id: true,
-        fullName: true,
+        person: { select: { firstName: true, firstSurname: true, secondSurname: true } },
       },
-      orderBy: { fullName: 'asc' },
+      orderBy: { createdAt: 'asc' },
     });
-    return affiliates;
+    return affiliates.map(({ person, ...affiliate }) => ({
+      ...affiliate,
+      institutionalName: person ? formatInstitutionalPersonName(person) : null,
+    }));
   }
 
   async detail(id: number) {
@@ -292,7 +296,7 @@ export class AssembliesService {
     const items = await this.prisma.assemblyConvocation.findMany({
       where: { assemblyId },
       select: convocationSelect,
-      orderBy: { affiliate: { fullName: 'asc' } },
+      orderBy: { affiliate: { createdAt: 'asc' } },
     });
     return items.map((item) => this.serializeConvocation(item));
   }
@@ -423,7 +427,7 @@ export class AssembliesService {
       const items = await tx.assemblyConvocation.findMany({
         where: { assemblyId },
         select: convocationSelect,
-        orderBy: { affiliate: { fullName: 'asc' } },
+        orderBy: { affiliate: { createdAt: 'asc' } },
       });
       return items.map((item) => this.serializeConvocation(item));
     });
@@ -684,7 +688,7 @@ export class AssembliesService {
         this.prisma.assemblyConvocation.findMany({
           where: { assemblyId },
           select: convocationSelect,
-          orderBy: { affiliate: { fullName: 'asc' } },
+          orderBy: { affiliate: { createdAt: 'asc' } },
         }),
         this.prisma.assemblyAttendance.findMany({
           where: { legacyAssemblyId: assemblyId },
@@ -760,10 +764,17 @@ export class AssembliesService {
   private serializeConvocation<T extends {
     legacyRoleId: number | null;
     legacyRoleNameSnapshot: string;
+    affiliate: { person: { firstName: string | null; firstSurname: string | null; secondSurname: string | null } | null };
   }>(item: T) {
     const { legacyRoleId, legacyRoleNameSnapshot, ...rest } = item;
     return {
       ...rest,
+      affiliate: {
+        ...rest.affiliate,
+        institutionalName: rest.affiliate.person
+          ? formatInstitutionalPersonName(rest.affiliate.person)
+          : null,
+      },
       roleId: legacyRoleId,
       roleNameSnapshot: legacyRoleNameSnapshot,
     };

@@ -6,13 +6,13 @@ export type TerritorialDeclarationStatus = 'UNVERIFIED_DECLARATION' | 'NOT_DECLA
 
 export interface AffiliateRequestReviewer {
   id: number
-  fullName: string
+  displayName: string
   email: string
 }
 
 export interface AffiliateRequest {
   id: number
-  fullName: string
+  submittedNameRaw: string
   identification: string
   identificationType: IdentificationType | null
   birthDate: string

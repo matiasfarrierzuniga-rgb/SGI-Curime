@@ -37,7 +37,7 @@ const movementSelect = {
   createdBy: {
     select: {
       id: true,
-      fullName: true,
+      displayName: true,
       email: true,
     },
   },

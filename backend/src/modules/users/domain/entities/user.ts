@@ -25,7 +25,7 @@ export interface UserAffiliateContext {
 
 export interface AdminPersonReadModel {
   id: string;
-  fullName: string | null;
+  institutionalName: string | null;
   identification: string | null;
   identificationType: 'NATIONAL' | 'DIMEX' | null;
   contactEmail: string | null;
@@ -40,7 +40,7 @@ export interface AdminPersonReadModel {
 
 export interface User {
   id: number;
-  fullName: string;
+  displayName: string;
   identification: string | null;
   identificationType: 'NATIONAL' | 'DIMEX' | null;
   email: string;

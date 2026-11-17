@@ -34,8 +34,8 @@ export function AffiliatesTable({ affiliates, onOpen }: AffiliatesTableProps) {
             <DataTableRow key={affiliate.id}>
               <DataTableCell>
                 <div className="flex min-w-48 items-center gap-3">
-                  <PersonAvatar name={affiliate.fullName} />
-                  <span className="min-w-0 break-words font-semibold text-text-primary">{affiliate.fullName}</span>
+                  <PersonAvatar name={affiliate.institutionalName ?? undefined} />
+                  <span className="min-w-0 break-words font-semibold text-text-primary">{affiliate.institutionalName ?? 'Persona pendiente de reconciliación'}</span>
                 </div>
               </DataTableCell>
               <DataTableCell className="whitespace-nowrap font-medium tabular-nums">{affiliate.identification}</DataTableCell>

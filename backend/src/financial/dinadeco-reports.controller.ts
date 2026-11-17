@@ -24,7 +24,7 @@ export class DinadecoReportsController {
   ) {
     return this.reports.annual(query.year, {
       id: req.user.id,
-      fullName: req.user.fullName,
+      displayName: req.user.displayName,
     });
   }
 }

@@ -17,6 +17,7 @@ import { AuditContext, AuditService } from '../audit/audit.service';
 import { CreateLoanDto } from './dto/create-loan.dto';
 import { ReturnLoanDto } from './dto/return-loan.dto';
 import { QueryLoansDto } from './dto/query-loans.dto';
+import { formatInstitutionalPersonName } from '../common/identity/person-name';
 
 const loanSelect = {
   id: true,
@@ -41,13 +42,13 @@ const loanSelect = {
     },
   },
   borrowerAffiliate: {
-    select: { id: true, fullName: true, identification: true },
+    select: { id: true, identification: true, person: { select: { firstName: true, firstSurname: true, secondSurname: true } } },
   },
   createdBy: {
-    select: { id: true, fullName: true, email: true },
+    select: { id: true, displayName: true, email: true },
   },
   receivedBy: {
-    select: { id: true, fullName: true, email: true },
+    select: { id: true, displayName: true, email: true },
   },
 } satisfies Prisma.InventoryLoanSelect;
 
@@ -65,7 +66,15 @@ function withOverdue(
   return {
     ...rest,
     borrowerName: borrowerNameSnapshot,
-    affiliate: borrowerAffiliate,
+    affiliate: borrowerAffiliate
+      ? {
+          id: borrowerAffiliate.id,
+          identification: borrowerAffiliate.identification,
+          institutionalName: borrowerAffiliate.person
+            ? formatInstitutionalPersonName(borrowerAffiliate.person)
+            : null,
+        }
+      : null,
     isOverdue:
       loan.status === InventoryLoanStatus.ACTIVE &&
       loan.expectedReturnDate < now,

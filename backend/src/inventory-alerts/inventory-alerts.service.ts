@@ -6,6 +6,7 @@ import {
   Prisma,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { formatInstitutionalPersonName } from '../common/identity/person-name';
 
 const itemAlertSelect = {
   id: true,
@@ -29,7 +30,7 @@ const loanAlertSelect = {
     select: { id: true, code: true, name: true, unit: true },
   },
   borrowerAffiliate: {
-    select: { id: true, fullName: true },
+    select: { id: true, person: { select: { firstName: true, firstSurname: true, secondSurname: true } } },
   },
 } satisfies Prisma.InventoryLoanSelect;
 
@@ -101,7 +102,14 @@ export class InventoryAlertsService {
         ({ borrowerNameSnapshot, borrowerAffiliate, ...loan }) => ({
           ...loan,
           borrowerName: borrowerNameSnapshot,
-          affiliate: borrowerAffiliate,
+          affiliate: borrowerAffiliate
+            ? {
+                id: borrowerAffiliate.id,
+                institutionalName: borrowerAffiliate.person
+                  ? formatInstitutionalPersonName(borrowerAffiliate.person)
+                  : null,
+              }
+            : null,
         }),
       ),
       inactiveItems,

@@ -8,6 +8,7 @@ import { GovernanceTermStatus } from '../../generated/prisma/enums';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditService, type AuditContext } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { formatInstitutionalPersonName } from '../common/identity/person-name';
 import {
   CreateBoardAppointmentDto,
   UpdateBoardAppointmentDto,
@@ -25,7 +26,6 @@ const personProjection = {
   firstName: true,
   firstSurname: true,
   secondSurname: true,
-  legacyFullName: true,
 } as const;
 const candidateProjection = {
   ...personProjection,
@@ -466,7 +466,6 @@ export class InstitutionalBoardService {
           OR: [
             { firstName: { contains: query, mode: 'insensitive' } },
             { firstSurname: { contains: query, mode: 'insensitive' } },
-            { legacyFullName: { contains: query, mode: 'insensitive' } },
             { identification: { contains: query } },
           ],
         },
@@ -477,12 +476,7 @@ export class InstitutionalBoardService {
       .then((rows) =>
         rows.map((person) => ({
           id: person.id,
-          displayName:
-            [person.firstName, person.firstSurname, person.secondSurname]
-              .filter(Boolean)
-              .join(' ') ||
-            person.legacyFullName ||
-            `Persona ${person.id}`,
+          institutionalName: formatInstitutionalPersonName(person),
           identificationType: person.identificationType,
           identificationHint: person.identification
             ? `••••${person.identification.slice(-4)}`

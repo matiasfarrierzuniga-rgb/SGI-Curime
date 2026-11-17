@@ -16,10 +16,10 @@ const select = {
   status: true,
   affiliateId: true,
   affiliate: {
-    select: { id: true, fullName: true, identification: true, status: true },
+    select: { id: true, identification: true, status: true, person: { select: { firstName: true, firstSurname: true, secondSurname: true } } },
   },
   createdById: true,
-  createdBy: { select: { id: true, fullName: true, email: true } },
+  createdBy: { select: { id: true, displayName: true, email: true } },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.AffiliateSanctionSelect;

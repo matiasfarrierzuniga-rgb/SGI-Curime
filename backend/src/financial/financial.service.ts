@@ -71,7 +71,7 @@ const financialMovementSelect = {
 
 const financialMovementDetailSelect = {
   ...financialMovementSelect,
-  recordedBy: { select: { id: true, fullName: true } },
+  recordedBy: { select: { id: true, displayName: true } },
 } satisfies Prisma.FinancialMovementSelect;
 
 type FinancialTransaction = Pick<

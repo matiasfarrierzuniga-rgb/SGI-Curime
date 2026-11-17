@@ -57,8 +57,8 @@ const donationListSelect = {
   legacyReversalMovementId: true,
   createdAt: true,
   updatedAt: true,
-  recordedBy: { select: { id: true, fullName: true } },
-  cancelledBy: { select: { id: true, fullName: true } },
+  recordedBy: { select: { id: true, displayName: true } },
+  cancelledBy: { select: { id: true, displayName: true } },
 } satisfies Prisma.DonationSelect;
 
 const donationDetailSelect = {

@@ -19,7 +19,7 @@ export function FinancialMovementDetailModal({ id, onClose }: { id: number; onCl
       <Detail label="Fuente" value={financialMovementSourceLabel(detail.data.source)} />
       <Detail label="Fecha" value={formatFinancialDate(detail.data.occurredAt)} />
       <Detail label="Referencia" value={detail.data.reference ?? 'Sin referencia'} />
-      <Detail label="Registrado por" value={detail.data.recordedBy?.fullName ?? (detail.data.recordedById ? `Usuario #${detail.data.recordedById}` : 'Sin registro')} />
+      <Detail label="Registrado por" value={detail.data.recordedBy?.displayName ?? (detail.data.recordedById ? `Usuario #${detail.data.recordedById}` : 'Sin registro')} />
       <Detail label="Actualizado" value={formatFinancialDate(detail.data.updatedAt)} />
     </dl></div> : null}
   </Modal>
