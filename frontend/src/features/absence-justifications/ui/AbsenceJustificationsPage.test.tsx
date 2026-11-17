@@ -24,7 +24,7 @@ const item: AbsenceJustification = {
   assemblyId: 7,
   affiliateId: 3,
   assembly: { id: 7, title: 'Asamblea general', date: '2026-09-01T18:00:00.000Z' },
-  affiliate: { id: 3, fullName: 'Ana Pérez', identification: '123456789' },
+  affiliate: { id: 3, institutionalName: 'Ana Pérez', identification: '123456789' },
   reviewedBy: null,
   createdAt: '2026-09-01T00:00:00.000Z',
   updatedAt: '2026-09-01T00:00:00.000Z',

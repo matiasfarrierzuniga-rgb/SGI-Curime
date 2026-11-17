@@ -33,7 +33,7 @@ function communityAccount(): AuthAccount {
   return {
     id: USER_ID,
     email: 'solicitante@example.test',
-    fullName: 'Solicitante Comunitario',
+    displayName: 'Solicitante Comunitario',
     status: 'ACTIVE',
     passwordHash: 'hash',
     lockedAt: null,

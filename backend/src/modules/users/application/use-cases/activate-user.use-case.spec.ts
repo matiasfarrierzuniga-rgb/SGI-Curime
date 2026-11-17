@@ -9,7 +9,7 @@ import { ActivateUserUseCase } from './activate-user.use-case';
 
 const domainUser = {
   id: 2,
-  fullName: 'Persona Usuaria',
+  displayName: 'Persona Usuaria',
   identification: '2-2222',
   email: 'persona@example.com',
   phone: null,

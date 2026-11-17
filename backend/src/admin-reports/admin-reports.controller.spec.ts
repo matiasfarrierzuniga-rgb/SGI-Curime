@@ -17,7 +17,7 @@ describe('AdminReportsController', () => {
   };
   const user = {
     id: 12,
-    fullName: 'Persona Administradora',
+    displayName: 'Persona Administradora',
     email: 'admin@example.com',
     status: 'ACTIVE',
     role: 'Administrador',
@@ -39,7 +39,7 @@ describe('AdminReportsController', () => {
 
     expect(service.attendanceSummary).toHaveBeenCalledWith(
       { assemblyId: 3 },
-      { id: 12, fullName: 'Persona Administradora' },
+      { id: 12, displayName: 'Persona Administradora' },
     );
   });
 
@@ -47,7 +47,7 @@ describe('AdminReportsController', () => {
     void controller.dashboard(request);
 
     expect(service.dashboard).toHaveBeenCalledWith(
-      { id: 12, fullName: 'Persona Administradora' },
+      { id: 12, displayName: 'Persona Administradora' },
       ['erp.dashboard.read'],
     );
   });
@@ -87,7 +87,7 @@ describe('AdminReportsController', () => {
     void controller.dashboard(institutionalRequest);
 
     expect(service.dashboard).toHaveBeenCalledWith(
-      { id: 12, fullName: 'Persona Administradora' },
+      { id: 12, displayName: 'Persona Administradora' },
       ['erp.dashboard.read'],
     );
   });

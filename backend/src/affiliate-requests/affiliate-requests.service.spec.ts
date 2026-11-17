@@ -6,7 +6,7 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
   const request = {
     id: 10,
     personId: 5,
-    fullName: 'Ana Pérez',
+    submittedNameRaw: 'Ana Pérez',
     identification: '123456789',
     identificationType: 'NATIONAL',
     birthDate: new Date('1990-01-01'),
@@ -124,7 +124,7 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           personId: 5,
-          fullName: 'Ana Pérez',
+          submittedNameRaw: 'Ana Pérez',
           identification: dto.identification,
           submittedFullName: 'Ana Pérez',
           submittedIdentification: dto.identification,
@@ -238,8 +238,8 @@ describe('AffiliateRequestsService AFFILIATION-01', () => {
 
   it('projects legacy request snapshots as submitted aliases on reads', async () => {
     await expect(service.findOne(request.id)).resolves.toMatchObject({
-      fullName: request.fullName,
-      submittedFullName: request.fullName,
+      submittedNameRaw: request.submittedNameRaw,
+      submittedFullName: request.submittedNameRaw,
       submittedIdentification: request.identification,
       submittedAffiliationReason: request.affiliationReason,
       territorialDeclarationStatus: 'NOT_DECLARED',

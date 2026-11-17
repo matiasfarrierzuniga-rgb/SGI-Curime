@@ -15,7 +15,7 @@ describe('InventoryReportsController', () => {
   const request = {
     user: {
       id: 7,
-      fullName: 'Persona Gestora',
+      displayName: 'Persona Gestora',
       email: 'gestora@example.com',
       status: 'ACTIVE',
       role: 'Gestor de Inventario',
@@ -37,7 +37,7 @@ describe('InventoryReportsController', () => {
 
     expect(reportsService[method]).toHaveBeenCalledWith(
       ...(dto ? [dto] : []),
-      { id: 7, fullName: 'Persona Gestora' },
+      { id: 7, displayName: 'Persona Gestora' },
     );
     expect(reportsService[method]).not.toHaveBeenCalledWith(
       expect.objectContaining({ email: expect.anything() }),

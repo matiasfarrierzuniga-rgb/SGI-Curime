@@ -76,7 +76,7 @@ function renderRoute(path: string, role: string | null, canAccessErp = role !== 
   if (role !== null) {
     const permissionCodes = permissionCodesOverride ?? permissionCodesFor(role, canAccessErp)
     const user = {
-      id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role, canAccessErp, permissionCodes,
+      id: 1, displayName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role, canAccessErp, permissionCodes,
     }
     vi.spyOn(authService, 'login').mockResolvedValue({ accessToken: 'test-token', user })
     vi.spyOn(authService, 'me').mockResolvedValue(user)
@@ -335,7 +335,7 @@ describe('AppRoutes capability deep links', () => {
   })
 
   it('renders profile inside the ERP shell while preserving the public profile route', async () => {
-    const user = { id: 1, fullName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role: 'ROLE_SYSTEM_ADMIN', canAccessErp: true, permissionCodes: ['erp.dashboard.read', 'usr.profile.read'] }
+    const user = { id: 1, displayName: 'Ana Pérez', email: 'ana@example.test', status: 'ACTIVE', role: 'ROLE_SYSTEM_ADMIN', canAccessErp: true, permissionCodes: ['erp.dashboard.read', 'usr.profile.read'] }
     vi.spyOn(authService, 'login').mockResolvedValue({ accessToken: 'test-token', user })
     vi.spyOn(authService, 'me').mockResolvedValue(user)
     const queryClient = createTestQueryClient()
@@ -617,7 +617,7 @@ function emptyInstitutionalProfile() {
 
 function emptyAdminDashboard() {
   return {
-    metadata: { generatedAt: '2026-11-04T12:00:00.000Z', generatedBy: { id: 1, fullName: 'Ana Pérez' }, period: { from: null, to: null }, appliedFilters: {}, dataSource: [], reportVersion: '1.0' },
+    metadata: { generatedAt: '2026-11-04T12:00:00.000Z', generatedBy: { id: 1, displayName: 'Ana Pérez' }, period: { from: null, to: null }, appliedFilters: {}, dataSource: [], reportVersion: '1.0' },
     data: {},
   }
 }
@@ -625,7 +625,7 @@ function emptyAdminDashboard() {
 function responseForDinadeco() {
   const year = new Date().getFullYear()
   return {
-    metadata: { generatedAt: new Date().toISOString(), generatedBy: { id: 1, fullName: 'Ana Pérez' }, period: { from: `${year}-01-01T00:00:00.000Z`, to: `${year + 1}-01-01T00:00:00.000Z` }, appliedFilters: { year }, dataSource: 'FINANCIAL_MOVEMENT', reportVersion: '1.0' },
+    metadata: { generatedAt: new Date().toISOString(), generatedBy: { id: 1, displayName: 'Ana Pérez' }, period: { from: `${year}-01-01T00:00:00.000Z`, to: `${year + 1}-01-01T00:00:00.000Z` }, appliedFilters: { year }, dataSource: 'FINANCIAL_MOVEMENT', reportVersion: '1.0' },
     data: {
       year, currency: 'CRC', openingBalance: '0.00', income: { total: '0.00', count: 0, bySource: {} }, expenses: { total: '0.00', count: 0, bySource: {} }, netMovement: '0.00', closingBalance: '0.00', movementCount: 0,
       institutionalProfile: { legalName: null, legalIdentification: null, dinadecoRegistrationCode: null, dinadecoRegion: null, organizationType: null, province: null, canton: null, district: null, locality: null, correspondenceAddress: null, phone: null, telefax: null, email: null },

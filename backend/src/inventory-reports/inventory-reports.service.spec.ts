@@ -65,7 +65,7 @@ describe('InventoryReportsService', () => {
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(1)
       .mockResolvedValueOnce(1);
-    const generatedBy = { id: 12, fullName: 'Persona Gestora' };
+    const generatedBy = { id: 12, displayName: 'Persona Gestora' };
     const result = await service.summary(generatedBy);
     expect(result.data).toEqual({
       totalItems: 10,

@@ -4,7 +4,7 @@ import { PrismaAuthRepository } from './prisma-auth.repository';
 const userRow = {
   id: 1,
   email: 'admin@example.com',
-  fullName: 'Admin',
+  displayName: 'Admin',
   status: 'ACTIVE',
   passwordHash: 'hashed',
   lockedAt: null,
@@ -89,7 +89,7 @@ describe('PrismaAuthRepository', () => {
     ).resolves.toEqual({
       id: 1,
       email: 'admin@example.com',
-      fullName: 'Admin',
+      displayName: 'Admin',
       status: 'ACTIVE',
       passwordHash: 'hashed',
       lockedAt: null,
@@ -126,7 +126,7 @@ describe('PrismaAuthRepository', () => {
   it('uses structured Person name as authenticated display identity', async () => {
     db.user.findUnique.mockResolvedValueOnce({
       ...userRow,
-      fullName: 'Snapshot antiguo',
+      displayName: 'Snapshot antiguo',
       person: {
         firstName: 'Ana',
         firstSurname: 'Pérez',
@@ -138,7 +138,7 @@ describe('PrismaAuthRepository', () => {
 
     await expect(
       repository.findCredentialsByEmail('admin@example.com'),
-    ).resolves.toMatchObject({ fullName: 'Ana Pérez Mora' });
+    ).resolves.toMatchObject({ displayName: 'Ana Pérez Mora' });
   });
 
   it('maps a user found by id to the auth account model', async () => {

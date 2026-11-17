@@ -13,7 +13,7 @@ vi.mock('../api/affiliates.api', () => ({
 
 const affiliate = {
   id: 7,
-  fullName: 'Ana Pérez',
+  institutionalName: 'Ana Pérez',
   identification: '123456789',
   identificationType: 'NATIONAL' as const,
   birthDate: '1990-01-01T00:00:00.000Z',
@@ -85,7 +85,7 @@ describe('Affiliate detail and edit', () => {
     fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Nueva' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
-    await waitFor(() => expect(affiliatesService.update).toHaveBeenCalledWith(7, expect.objectContaining({ fullName: 'Ana Nueva' })))
+    await waitFor(() => expect(affiliatesService.update).toHaveBeenCalledWith(7, expect.objectContaining({ institutionalName: 'Ana Nueva' })))
     const payload = vi.mocked(affiliatesService.update).mock.calls[0][1] as Record<string, unknown>
     expect(payload).not.toHaveProperty('id')
     expect(payload).not.toHaveProperty('status')

@@ -16,7 +16,7 @@ import {
 
 const actor: AuthenticatedUser = {
   id: 7,
-  fullName: 'Ana Pérez',
+  displayName: 'Ana Pérez',
   email: 'ana@example.test',
   status: 'ACTIVE',
   role: 'Administrador',

@@ -28,7 +28,7 @@ describe('affiliatesService', () => {
 
   it('updates an affiliate through PATCH', async () => {
     vi.mocked(httpClient.patch).mockResolvedValue({ data: { id: 7 } })
-    const payload = { fullName: 'Ana Pérez' }
+    const payload = { institutionalName: 'Ana Pérez' }
 
     await affiliatesService.update(7, payload)
 

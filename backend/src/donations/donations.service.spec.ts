@@ -68,7 +68,7 @@ describe('DonationsService', () => {
     cancelledAt: null,
     cancellationReason: null,
     legacyReversalMovementId: null,
-    recordedBy: { id: actorId, fullName: 'Tesorero' },
+    recordedBy: { id: actorId, displayName: 'Tesorero' },
     cancelledBy: null,
   };
   const donationDetail = {
@@ -350,7 +350,7 @@ describe('DonationsService', () => {
       cancelledAt: new Date('2026-09-10T10:00:00.000Z'),
       cancellationReason: 'Duplicate record',
       legacyReversalMovementId: 85,
-      cancelledBy: { id: 18, fullName: 'Administrador' },
+      cancelledBy: { id: 18, displayName: 'Administrador' },
     };
     prisma.donation.findUnique.mockResolvedValueOnce(cancelledDetail);
 
@@ -358,7 +358,7 @@ describe('DonationsService', () => {
       id: linkedDonation.id,
       amount: '25000.00',
       status: DonationStatus.CANCELLED,
-      cancelledBy: { id: 18, fullName: 'Administrador' },
+      cancelledBy: { id: 18, displayName: 'Administrador' },
       cancellationReason: 'Duplicate record',
       reversalMovementId: 85,
     });

@@ -6,7 +6,7 @@ import { inventoryReportsService } from "@/services/inventoryReportsService";
 import { ROLE_COMMUNITY_ACCOUNT } from "@/shared/security/roles";
 
 const auth = vi.hoisted(() => ({
-  user: { fullName: "Ana Pérez", role: "Administrador" },
+  user: { displayName: "Ana Pérez", role: "Administrador" },
 }));
 vi.mock("@/features/auth", () => ({ useAuth: () => auth }));
 vi.mock("@/features/admin-dashboard", () => ({
@@ -20,9 +20,9 @@ vi.mock("@/features/admin-dashboard", () => ({
   PresidentDashboard: () => <section><h2>Indicadores de Presidencia</h2></section>,
   TreasuryDashboard: () => <section><h2>Indicadores de Tesorería</h2></section>,
   OperatorDashboard: () => <section><h2>Indicadores operativos</h2></section>,
-  InstitutionalDashboardWelcome: ({ fullName }: { fullName?: string }) => (
+  InstitutionalDashboardWelcome: ({ displayName }: { displayName?: string }) => (
     <section>
-      <h1>Buenos días{fullName ? `, ${fullName.split(" ")[0]}` : ""}</h1>
+      <h1>Buenos días{displayName ? `, ${displayName.split(" ")[0]}` : ""}</h1>
     </section>
   ),
   canUseAdministrativeDashboard: (permissionCodes?: readonly string[]) =>
@@ -64,7 +64,7 @@ describe("AppHomePage", () => {
 
   it("renders administrative metrics only for a dashboard session with the affiliated registry read capability", async () => {
     auth.user = {
-      fullName: "Ana Pérez",
+      displayName: "Ana Pérez",
       role: "Administrador",
       permissionCodes: ["erp.dashboard.read", "adm.affiliates.read"],
     };
@@ -94,7 +94,7 @@ describe("AppHomePage", () => {
 
   it("renders the administrative dashboard for the canonical system administrator", async () => {
     auth.user = {
-      fullName: "Ana Pérez",
+      displayName: "Ana Pérez",
       role: "ROLE_SYSTEM_ADMIN",
       permissionCodes: ["erp.dashboard.read", "adm.affiliates.read"],
     };
@@ -108,7 +108,7 @@ describe("AppHomePage", () => {
 
   it("renders the specialized operational dashboard with inventory data when authorized", async () => {
     auth.user = {
-      fullName: "Luis Mora",
+      displayName: "Luis Mora",
       role: "ROLE_INSTITUTIONAL_OPERATOR",
       permissionCodes: ["erp.dashboard.read", "inv.inventory.read"],
     };
@@ -134,7 +134,7 @@ describe("AppHomePage", () => {
 
   it("keeps Presidency on the shared institutional shell without administrative data", () => {
     auth.user = {
-      fullName: "Sofía Rojas",
+      displayName: "Sofía Rojas",
       role: "ROLE_INSTITUTIONAL_PRESIDENT",
       permissionCodes: ["erp.dashboard.read"],
     };
@@ -154,7 +154,7 @@ describe("AppHomePage", () => {
 
   it("keeps authorized destinations for Secretariat", () => {
     auth.user = {
-      fullName: "Diego Mora",
+      displayName: "Diego Mora",
       role: "ROLE_INSTITUTIONAL_SECRETARY",
       permissionCodes: ["erp.dashboard.read"],
     };
@@ -173,7 +173,7 @@ describe("AppHomePage", () => {
 
   it("renders the specialized dashboard for Secretariat with its real dashboard capabilities", () => {
     auth.user = {
-      fullName: "Diego Mora",
+      displayName: "Diego Mora",
       role: "ROLE_INSTITUTIONAL_SECRETARY",
       permissionCodes: ["erp.dashboard.read", "padron.application.review", "governance.assembly.session"],
     };
@@ -183,7 +183,7 @@ describe("AppHomePage", () => {
   });
 
   it("shows a clear set of real account actions to community users", () => {
-    auth.user = { fullName: "María Solano", role: ROLE_COMMUNITY_ACCOUNT };
+    auth.user = { displayName: "María Solano", role: ROLE_COMMUNITY_ACCOUNT };
     render(
       <MemoryRouter>
         <AppHomePage />
@@ -226,7 +226,7 @@ describe("AppHomePage", () => {
 
   it("renders the specialized treasury dashboard when financial capabilities are available", () => {
     auth.user = {
-      fullName: "Carlos Ruiz",
+      displayName: "Carlos Ruiz",
       role: "ROLE_INSTITUTIONAL_TREASURER",
       permissionCodes: [
         "erp.dashboard.read",

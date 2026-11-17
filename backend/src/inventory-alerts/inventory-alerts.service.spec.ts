@@ -25,7 +25,7 @@ const loan = {
   loanDate: new Date('2026-01-01'),
   expectedReturnDate: new Date('2020-01-01'),
   item: { id: 1, code: 'HER-001', name: 'Martillo', unit: 'unidad' },
-  affiliate: { id: 3, fullName: 'Afiliado' },
+  affiliate: { id: 3, institutionalName: 'Afiliado' },
 };
 
 describe('InventoryAlertsService', () => {

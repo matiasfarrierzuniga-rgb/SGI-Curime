@@ -13,7 +13,7 @@ const currentYear = new Date().getFullYear()
 const response = {
   metadata: {
     generatedAt: '2026-09-15T14:30:00.000Z',
-    generatedBy: { id: 7, fullName: 'Persona Tesorera' },
+    generatedBy: { id: 7, displayName: 'Persona Tesorera' },
     period: { from: '2026-01-01T00:00:00.000Z', to: '2027-01-01T00:00:00.000Z' },
     appliedFilters: { year: 2026 },
     dataSource: 'FINANCIAL_MOVEMENT',

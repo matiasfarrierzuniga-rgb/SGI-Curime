@@ -36,7 +36,7 @@ const loan = {
     category: { id: 1, name: 'Herramientas' },
   },
   borrowerAffiliate: null,
-  createdBy: { id: 2, fullName: 'Operador', email: 'op@example.com' },
+  createdBy: { id: 2, displayName: 'Operador', email: 'op@example.com' },
   receivedBy: null,
 };
 

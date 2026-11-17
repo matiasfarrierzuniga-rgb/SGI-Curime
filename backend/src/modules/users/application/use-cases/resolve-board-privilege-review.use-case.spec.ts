@@ -5,7 +5,7 @@ import { ResolveBoardPrivilegeReviewUseCase } from './resolve-board-privilege-re
 const transactionClient = { marker: 'cp04-transaction' } as Prisma.TransactionClient;
 const account = {
   id: 22,
-  fullName: 'Cuenta revisada',
+  displayName: 'Cuenta revisada',
   email: 'reviewed@example.test',
   status: 'ACTIVE',
   role: { id: 1, name: 'ROLE_SYSTEM_ADMIN' },

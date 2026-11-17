@@ -54,7 +54,7 @@ describe('DinadecoReportsService', () => {
       .mockResolvedValueOnce([]);
     const result = await service.annual(2026, {
       id: 7,
-      fullName: 'Persona Tesorera',
+      displayName: 'Persona Tesorera',
     });
 
     expect(result.data).toEqual({
@@ -85,7 +85,7 @@ describe('DinadecoReportsService', () => {
     expect(result.metadata).toEqual(
       expect.objectContaining({
         generatedAt: expect.any(Date),
-        generatedBy: { id: 7, fullName: 'Persona Tesorera' },
+        generatedBy: { id: 7, displayName: 'Persona Tesorera' },
         period: {
           from: new Date('2026-01-01T00:00:00.000Z'),
           to: new Date('2027-01-01T00:00:00.000Z'),
@@ -136,7 +136,7 @@ describe('DinadecoReportsService', () => {
         },
       ]);
 
-    const result = await service.annual(2026, { id: 7, fullName: 'Tesorería' });
+    const result = await service.annual(2026, { id: 7, displayName: 'Tesorería' });
 
     expect(prisma.financialMovement.groupBy).toHaveBeenNthCalledWith(1, {
       by: ['type'],
@@ -279,7 +279,7 @@ describe('DinadecoReportsService', () => {
       ]);
     const { data } = await service.annual(2026, {
       id: 7,
-      fullName: 'Tesorería ficticia',
+      displayName: 'Tesorería ficticia',
     });
     expect(data.fie.entries.map((row) => row.id)).toEqual([1, 2]);
     expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
@@ -339,7 +339,7 @@ describe('DinadecoReportsService', () => {
         ]);
       const { data } = await service.annual(2026, {
         id: 7,
-        fullName: 'Tesorería ficticia',
+        displayName: 'Tesorería ficticia',
       });
       const isIncome = type === FinancialMovementType.INCOME;
       expect(isIncome ? data.fie.entries : data.fie.exits).toHaveLength(count);
@@ -372,7 +372,7 @@ describe('DinadecoReportsService', () => {
       .mockResolvedValueOnce([]);
     const { data } = await service.annual(2026, {
       id: 7,
-      fullName: 'Tesorería ficticia',
+      displayName: 'Tesorería ficticia',
     });
     expect(data.openingBalance).toBe('999999999999.89');
     expect(data.closingBalance).toBe(data.openingBalance);
@@ -419,7 +419,7 @@ describe('DinadecoReportsService', () => {
 
     const result = await service.annual(2026, {
       id: 7,
-      fullName: 'Persona Tesorera',
+      displayName: 'Persona Tesorera',
     });
 
     expect(result.data.institutionalProfile).toEqual(profile);

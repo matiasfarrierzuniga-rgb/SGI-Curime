@@ -48,7 +48,7 @@ function accountFor(role: CanonicalRoleCode): AuthAccount {
   return {
     id: USER_ID,
     email: `${role.toLowerCase()}@example.test`,
-    fullName: 'Reservation Certification User',
+    displayName: 'Reservation Certification User',
     status: 'ACTIVE',
     passwordHash: 'hash',
     lockedAt: null,

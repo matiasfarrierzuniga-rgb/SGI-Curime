@@ -24,9 +24,9 @@ vi.mock('@/shared/ui/checkbox', () => ({
 }))
 
 const item = { id: 1, title: 'Asamblea general', type: null, date: '2026-09-20T18:00:00.000Z', place: 'Salón comunal', description: 'Informe anual', status: 'SCHEDULED', quorumType: 'PERCENTAGE', quorumValue: 50, convocationsLockedAt: null }
-const person = { id: 3, affiliateId: 7, roleNameSnapshot: 'Fiscal', affiliate: { id: 7, fullName: 'Ana Pérez', status: 'ACTIVE' } }
+const person = { id: 3, affiliateId: 7, roleNameSnapshot: 'Fiscal', affiliate: { id: 7, institutionalName: 'Ana Pérez', status: 'ACTIVE' } }
 const detail = { ...item, calls: [], convocations: [person], quorum: { available: true, convokedCount: 1, presentCount: 0, quorumType: 'PERCENTAGE', quorumValue: 50, requiredCount: 1, quorumReached: false }, attendance: { present: 0, absent: 0, justified: 0, unrecorded: 1, data: [{ ...person, attendance: null }] } }
-const eligibleAffiliates = [{ id: 1, fullName: 'Andrea Solano Méndez' }, { id: 2, fullName: 'José Olivier Pérez Picado' }] satisfies EligibleAffiliate[]
+const eligibleAffiliates = [{ id: 1, institutionalName: 'Andrea Solano Méndez' }, { id: 2, institutionalName: 'José Olivier Pérez Picado' }] satisfies EligibleAffiliate[]
 const legacyAssemblyDetail = {
   id: 1,
   title: 'Asamblea histórica',
@@ -81,7 +81,7 @@ describe('AssembliesAdminPage', () => {
 
   it('renders Assembly 1 scheduled detail with real eligible-affiliates response shape without an ErrorBoundary fallback', () => {
     hooks.useAssembly.mockReturnValue({ isPending: false, data: detail })
-    hooks.useEligibleAffiliates.mockReturnValue({ data: [{ id: 7, fullName: 'Ana Pérez' }] })
+    hooks.useEligibleAffiliates.mockReturnValue({ data: [{ id: 7, institutionalName: 'Ana Pérez' }] })
     render(<MemoryRouter initialEntries={['/app/admin/assemblies/1']}><Routes><Route path="/app/admin/assemblies/:id" element={<AssemblyManagementPage />} /></Routes></MemoryRouter>)
     expect(screen.getByRole('heading', { name: 'Asamblea general' })).toBeInTheDocument()
     expect(screen.getByLabelText('Buscar persona')).toBeInTheDocument()
@@ -203,7 +203,7 @@ describe('AssembliesAdminPage', () => {
     await waitFor(() => expect(toast.notify).toHaveBeenCalledWith('Personas convocadas guardadas correctamente.', 'success'))
     expect(screen.getByRole('button', { name: 'Iniciar asamblea' })).toBeDisabled()
 
-    hooks.useAssembly.mockReturnValue({ isPending: false, data: { ...detail, convocations: [...detail.convocations, { ...person, id: 4, affiliateId: 1, affiliate: { id: 1, fullName: 'Andrea Solano Méndez', status: 'ACTIVE' } }] } })
+    hooks.useAssembly.mockReturnValue({ isPending: false, data: { ...detail, convocations: [...detail.convocations, { ...person, id: 4, affiliateId: 1, affiliate: { id: 1, institutionalName: 'Andrea Solano Méndez', status: 'ACTIVE' } }] } })
     rerender(<MemoryRouter><AssembliesAdminPage assemblyId={1} /></MemoryRouter>)
     const start = await screen.findByRole('button', { name: 'Iniciar asamblea' })
     expect(start).toBeEnabled()

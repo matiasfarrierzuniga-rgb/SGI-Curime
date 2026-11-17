@@ -27,11 +27,11 @@ describe('DinadecoReportsController', () => {
   it('passes the validated year and minimal authenticated identity', () => {
     controller.annual(
       { year: 2026 },
-      { user: { id: 7, fullName: 'Persona Tesorera' } } as never,
+      { user: { id: 7, displayName: 'Persona Tesorera' } } as never,
     );
     expect(reports.annual).toHaveBeenCalledWith(2026, {
       id: 7,
-      fullName: 'Persona Tesorera',
+      displayName: 'Persona Tesorera',
     });
   });
 });

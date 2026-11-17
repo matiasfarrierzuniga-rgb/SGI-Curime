@@ -15,7 +15,7 @@ describe('FinancialMovementsPage', () => {
     vi.mocked(useAuth).mockReturnValue({ user: { permissionCodes: ['fin.movements.read', 'fin.movements.create'] } } as never)
     vi.mocked(useFinancialMovementsList).mockReturnValue({ isPending: false, isError: false, data: { data: [movement], total: 1, page: 1, limit: 20 } } as never)
     vi.mocked(useFinancialMovementSummary).mockReturnValue({ isPending: false, isError: false, data: { currency: 'CRC', totalIncome: '1500.00', totalExpenses: '0.00', balance: '1500.00' } } as never)
-    vi.mocked(useFinancialMovementDetail).mockReturnValue({ isPending: false, isError: false, data: { ...movement, recordedBy: { id: 7, fullName: 'Ana Pérez' } } } as never)
+    vi.mocked(useFinancialMovementDetail).mockReturnValue({ isPending: false, isError: false, data: { ...movement, recordedBy: { id: 7, displayName: 'Ana Pérez' } } } as never)
   })
 
   it('renders movement list, summary, supported filters, and detail action', () => {

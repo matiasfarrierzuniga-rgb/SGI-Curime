@@ -22,7 +22,7 @@ function account(overrides: Partial<AuthAccount> = {}): AuthAccount {
   return {
     id: 7,
     email: 'certification@example.test',
-    fullName: 'Certification User',
+    displayName: 'Certification User',
     status: 'ACTIVE',
     passwordHash: 'hash',
     lockedAt: null,
@@ -225,7 +225,7 @@ describe('RBAC V2 HTTP guard certification', () => {
 
     await dashboardRequest(await bearer()).expect(200);
     expect(reports.dashboard).toHaveBeenCalledWith(
-      { id: 7, fullName: 'Certification User' },
+      { id: 7, displayName: 'Certification User' },
       ['erp.dashboard.read'],
     );
   });

@@ -10,7 +10,7 @@ vi.mock('@/features/auth', () => ({ useAuth: vi.fn() }))
 vi.mock('../hooks/useReservations', () => ({ useReservableResources: vi.fn(), useReservationDetail: vi.fn(), useReservationMutations: vi.fn(), useReservationsList: vi.fn() }))
 
 const reservation = {
-  id: 1, resourceId: 7, resource: { id: 7, name: 'Salón comunal', location: 'Curime' }, requesterUserId: 8, requester: { id: 8, fullName: 'Ana Pérez', email: 'ana@example.com' }, eventId: null, event: null,
+  id: 1, resourceId: 7, resource: { id: 7, name: 'Salón comunal', location: 'Curime' }, requesterUserId: 8, requester: { id: 8, displayName: 'Ana Pérez', email: 'ana@example.com' }, eventId: null, event: null,
   startAt: '2030-01-01T16:00:00.000Z', endAt: '2030-01-01T18:00:00.000Z', purpose: 'Reunión vecinal', estimatedAttendees: 20, notes: 'Notas', status: 'PENDING', approvedAt: null, approvedById: null, approvedBy: null, rejectionReason: null, cancelledAt: null, createdAt: '2030-01-01T10:00:00.000Z', updatedAt: '2030-01-01T10:00:00.000Z',
 } as const
 const mutations = { approve: { isPending: false, mutateAsync: vi.fn() }, reject: { isPending: false, mutateAsync: vi.fn() }, cancel: { isPending: false, mutateAsync: vi.fn() } }

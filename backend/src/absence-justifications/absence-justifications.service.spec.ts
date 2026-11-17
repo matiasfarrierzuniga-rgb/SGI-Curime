@@ -27,7 +27,7 @@ function setup(
       findFirst: jest.fn().mockResolvedValue({ id: 7 }),
       findUnique: jest.fn().mockResolvedValue({
         id: 7,
-        fullName: 'Afiliada',
+        institutionalName: 'Afiliada',
         identification: '1',
       }),
     },

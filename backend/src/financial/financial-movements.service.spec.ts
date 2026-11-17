@@ -56,7 +56,7 @@ describe('FinancialService movements', () => {
     prisma.financialMovement.findMany.mockResolvedValue([movement()]);
     prisma.financialMovement.count.mockResolvedValue(1);
     prisma.financialMovement.findUnique.mockResolvedValue(
-      movement({ recordedBy: { id: 17, fullName: 'Persona Tesorera' } }),
+      movement({ recordedBy: { id: 17, displayName: 'Persona Tesorera' } }),
     );
     prisma.financialMovement.groupBy.mockResolvedValue([]);
     prisma.$transaction.mockImplementation((operations: Promise<unknown>[]) =>
@@ -198,14 +198,14 @@ describe('FinancialService movements', () => {
     expect(prisma.financialMovement.findUnique).toHaveBeenCalledWith({
       where: { id: 10 },
       select: expect.objectContaining({
-        recordedBy: { select: { id: true, fullName: true } },
+        recordedBy: { select: { id: true, displayName: true } },
       }),
     });
     expect(result).toEqual(
       expect.objectContaining({
         id: 10,
         amount: '25000.00',
-        recordedBy: { id: 17, fullName: 'Persona Tesorera' },
+        recordedBy: { id: 17, displayName: 'Persona Tesorera' },
       }),
     );
   });
