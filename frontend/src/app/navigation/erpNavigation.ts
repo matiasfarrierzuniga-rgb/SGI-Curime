@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  ArrowLeftRight, Building2, CalendarCheck2, CalendarClock, CalendarDays, ChevronRight, CircleUserRound,
-  ClipboardList, ContactRound, FilePenLine, Files, HandHeart, HeartHandshake, House, Package,
+  ArrowLeftRight, Building2, CalendarClock, CalendarDays, ChevronRight, CircleUserRound,
+  ClipboardList, ContactRound, Files, HandHeart, HeartHandshake, House, Package,
    Presentation, ScrollText, Store, Tags, UserRoundCog, UsersRound, Wallet,
 } from 'lucide-react'
 import { hasCapability, type AccessCapability } from '@/shared/security/access'
@@ -18,7 +18,6 @@ const navigation: readonly ErpNavigationSection[] = [
       { label: 'Perfil institucional', path: '/app/admin/institutional-profile', capability: 'adm.institutional-profile.read', icon: Building2 },
       { label: 'Junta Directiva', path: '/app/admin/institutional-board', capability: 'adm.institutional-board.read', icon: UsersRound },
       { label: 'Asambleas', path: '/app/admin/assemblies', anyOfCapabilities: ['governance.assembly.session', 'adm.assemblies.read'], icon: Presentation },
-      { label: 'Mis asambleas', path: '/app/assemblies/mine', icon: CalendarCheck2 },
     ],
   },
   {
@@ -44,7 +43,7 @@ const navigation: readonly ErpNavigationSection[] = [
   },
   { label: 'Finanzas', accent: 'maize', items: [{ label: 'Finanzas', path: '/app/financial/dashboard', icon: Wallet, children: [{ label: 'Dashboard financiero', path: '/app/financial/dashboard', anyOfCapabilities: ['fin.movements.read', 'fin.charges.read'], icon: Wallet }, { label: 'Resumen', path: '/app/financial', allOfCapabilities: ['fin.movements.read', 'fin.charges.read'], icon: Wallet }, { label: 'Cargos y pagos', path: '/app/financial/charges', capability: 'fin.charges.read', icon: Wallet }, { label: 'Movimientos financieros', path: '/app/financial/movements', capability: 'fin.movements.read', icon: ArrowLeftRight }, { label: 'DINADECO', path: '/app/financial/dinadeco', capability: 'fin.dinadeco.read', icon: ScrollText }] }, { label: 'Donaciones', path: '/app/donations', capability: 'don.donations.read', icon: HeartHandshake }, { label: 'Solicitudes de donación', path: '/app/donation-requests', capability: 'don.requests.read', icon: HandHeart }] },
   { label: 'Seguridad y auditoría', accent: 'terracotta', items: [{ label: 'Bitácora', path: '/admin/audit-logs', capability: 'aud.logs.read', icon: ScrollText }] },
-  { label: 'Mi espacio', accent: 'violet', items: [{ label: 'Mi perfil', path: '/app/profile', capability: 'usr.profile.read', icon: CircleUserRound }, { label: 'Enviar justificación', path: '/app/affiliate/absence-justifications/new', icon: FilePenLine }, { label: 'Mis justificaciones', path: '/app/affiliate/justifications', icon: Files }] },
+  { label: 'Mi espacio', accent: 'violet', items: [{ label: 'Mi perfil', path: '/app/profile', capability: 'usr.profile.read', icon: CircleUserRound }] },
 ]
 
 function isVisible(item: ErpNavigationItem, permissionCodes: readonly string[] | null | undefined) {
@@ -65,19 +64,16 @@ export function getErpNavigation(permissionCodes: readonly string[] | null | und
   })
 }
 
-export function getErpEntryPath(permissionCodes: readonly string[] | null | undefined, roleName?: string): string {
-  // Entry selection is presentation only; RoleRoute still authorizes every destination by capability.
-  if (
-    roleName === 'ROLE_INSTITUTIONAL_TREASURER'
-    && hasCapability(permissionCodes, 'fin.movements.read')
-    && hasCapability(permissionCodes, 'fin.charges.read')
-  ) return '/app/financial'
+export function getErpEntryPath(permissionCodes: readonly string[] | null | undefined): string {
+  // Entry selection depends on effective capabilities, never the role name.
   if (hasCapability(permissionCodes, 'erp.dashboard.read')) return '/app/dashboard'
+  if (hasCapability(permissionCodes, 'fin.movements.read') && hasCapability(permissionCodes, 'fin.charges.read')) return '/app/financial'
   if (hasCapability(permissionCodes, 'fin.charges.read')) return '/app/financial/dashboard'
+  if (hasCapability(permissionCodes, 'fin.movements.read')) return '/app/financial/movements'
   if (hasCapability(permissionCodes, 'inv.inventory.read')) return '/inventory'
   for (const section of getErpNavigation(permissionCodes)) for (const item of section.items) {
-    if (item.capability && item.path) return item.path
-    const child = item.children?.find((candidate) => candidate.capability && candidate.path)
+    if (item.path && (item.capability || item.anyOfCapabilities || item.allOfCapabilities)) return item.path
+    const child = item.children?.find((candidate) => candidate.path && (candidate.capability || candidate.anyOfCapabilities || candidate.allOfCapabilities))
     if (child?.path) return child.path
   }
   return '/profile'

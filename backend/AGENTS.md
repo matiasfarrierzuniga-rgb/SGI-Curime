@@ -1,5 +1,13 @@
 # Backend — instrucciones locales para SGI-Curime
 
+## Alineación de acceso ERP y registro D03–D08 (2026-11-16)
+
+- Sidebar, rutas React y backend deben corresponder a capacidades persistidas efectivas. No derivar acceso del nombre del rol, cargo, afiliación o nombramiento.
+- No agregar al sidebar institucional funciones personales sin criterio de elegibilidad. «Mis asambleas» y justificaciones propias son flujos self-service; el backend debe comprobar titularidad y contexto, no solo que exista sesión.
+- Para cada ruta administrativa: visibilidad de sidebar, guard React y guard de API alineados; acceso por URL directa sin permiso debe resultar denegado. No inventar capabilities, grants ni rutas sin contrato aprobado.
+- D03–D08 aprobó `User.displayName` obligatorio en nuevas cuentas; separar contrato objetivo de AS-IS hasta comprobar DTO, persistencia, UI y pruebas. No modificar esquema/migraciones sin autorización adicional.
+- Cambios por PR revisable. Pruebas no ejecutadas se declaran `NOT_EXECUTED`, nunca `PASSED`.
+
 Aplican además las reglas del `../AGENTS.md` raíz. Un solo agente ejecutor puede trabajar aquí; este archivo no configura un subagente.
 
 ## Tecnología y límites
@@ -21,7 +29,7 @@ Las decisiones funcionales aprobadas, contratos vigentes y código actual preval
 
 Consulta primero `../docs/contracts/account-lifecycle-v1.md` y contrasta con `community-accounts.controller.ts`, `community-accounts.service.ts`, DTOs y pruebas. La decisión en `../docs/decisions/community-account-registration.md` es referencia histórica, no fuente operativa autónoma.
 
-- Actual: `POST /community-accounts/register` recibe correo, crea o continúa una cuenta pendiente de verificación, y no requiere aprobación administrativa ordinaria.
+- AS-IS: `POST /community-accounts/register` recibe correo, crea o continúa una cuenta pendiente de verificación sin aprobación ordinaria. Objetivo D03–D08: exigir también `displayName` en registros nuevos después de alinear DTO/servicio/persistencia y ejecutar pruebas; no describirlo como implementado antes.
 - Actual: `validate-token` no consume; `verify-email` establece contraseña, consume token, activa cuenta; `resend-verification` conserva respuesta neutral y límites.
 - Actual: cuenta verificada usa rol comunitario sin grants ERP y accede a `Mi Comunidad`; no emite sesión antes de verificar.
 - La cuenta verificada NO acredita identidad legal ni autoriza acceso a una `Person`, `Affiliate`, `Venture` o expediente preexistente.

@@ -141,6 +141,16 @@ afterEach(() => {
 })
 
 describe('AppRoutes capability deep links', () => {
+  it.each([
+    '/app/admin/institutional-board',
+    '/app/admin/ventures',
+    '/app/financial/dinadeco',
+    '/admin/audit-logs',
+  ])('denies a direct administrative URL without its required capability: %s', async (path) => {
+    renderRoute(path, 'ROLE_INSTITUTIONAL_OPERATOR', true, ['erp.dashboard.read'])
+    expect(await screen.findByRole('heading', { name: 'Acceso no autorizado' })).toBeInTheDocument()
+  })
+
   it('renders the public volunteering directory without a session', async () => {
     renderRoute('/voluntariado', null)
     expect(await screen.findByRole('heading', { name: 'Voluntariado' })).toBeInTheDocument()
