@@ -44,27 +44,27 @@ export const services = [
   {
     key: "affiliation",
     title: "Afiliación",
-    text: "Gestiones de afiliación comunitaria.",
+    text: "Envíe sus datos de identidad, contacto y residencia. La Asociación revisará la solicitud; enviarla no aprueba la afiliación.",
   },
   {
     key: "reservations",
     title: "Reservas",
-    text: "Solicitud y seguimiento de espacios comunitarios.",
+    text: "Indique espacio, fecha, horario y motivo. Consultar disponibilidad no confirma la reserva.",
   },
   {
     key: "volunteering",
     title: "Voluntariado",
-    text: "Conozca oportunidades de voluntariado y participe en actividades comunitarias organizadas por la Asociación.",
+    text: "Revise las oportunidades publicadas y envíe su postulación. No requiere crear una cuenta y queda pendiente de revisión.",
   },
   {
     key: "entrepreneurship",
     title: "Emprendimientos",
-    text: "Apoyo y visibilidad para iniciativas locales.",
+    text: "Consulte los emprendimientos publicados y sus detalles en el directorio, sin iniciar sesión.",
   },
   {
     key: "donations",
     title: "Donaciones",
-    text: "Envíe una solicitud para coordinar un aporte de dinero o bienes. Ningún pago se procesa en el portal.",
+    text: "Indique su intención de donar dinero o bienes. La Asociación revisará la solicitud; el portal no procesa pagos ni confirma recepción.",
   },
 ] as const;
 

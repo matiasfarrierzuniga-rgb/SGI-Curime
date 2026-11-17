@@ -11,7 +11,7 @@ export function ProjectsNewsSection() {
           </p>
           <h2
             id="news-title"
-            className="mt-3 font-heading text-heading-1 font-bold text-text-primary"
+            className="mt-3 font-heading text-heading-2 font-bold text-text-primary"
           >
             Avanzamos juntos
           </h2>

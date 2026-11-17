@@ -23,7 +23,7 @@ function renderHeader(path = '/') {
 }
 
 function renderFooter() {
-  return render(<MemoryRouter><PublicFooter /></MemoryRouter>)
+  return render(<MemoryRouter><PublicFooter /><Location /></MemoryRouter>)
 }
 
 beforeEach(() => {
@@ -37,10 +37,13 @@ describe('PublicHeader authentication states', () => {
     renderHeader()
 
     const toggle = screen.getByRole('button', { name: 'Abrir menú de navegación' })
+    expect(toggle).toHaveAttribute('type', 'button')
+    toggle.focus()
     fireEvent.click(toggle)
 
     expect(screen.getByRole('navigation', { name: 'Navegación pública' })).toContainElement(screen.getByRole('list'))
-    expect(within(screen.getByRole('navigation', { name: 'Navegación pública' })).getAllByRole('listitem')).toHaveLength(5)
+    expect(within(screen.getByRole('navigation', { name: 'Navegación pública' })).getAllByRole('listitem')).toHaveLength(6)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
     fireEvent.keyDown(document, { key: 'Escape' })
 
@@ -87,30 +90,35 @@ describe('PublicHeader authentication states', () => {
 })
 
 describe('PublicHeader navigation groups', () => {
-  it('renders five main entries without duplicate desktop links', () => {
+  it('renders six main entries with direct Services and Transparency links', () => {
     renderHeader()
     const nav = screen.getByRole('navigation', { name: 'Navegación pública' })
-    expect(within(nav).getAllByRole('listitem')).toHaveLength(5)
+    expect(within(nav).getAllByRole('listitem')).toHaveLength(6)
     expect(within(nav).getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '/')
     expect(within(nav).getByRole('link', { name: 'Nosotros' })).toHaveAttribute('href', '/nosotros')
+    expect(within(nav).getByRole('link', { name: 'Servicios' })).toHaveAttribute('href', '/servicios')
+    expect(within(nav).getByRole('link', { name: 'Transparencia' })).toHaveAttribute('href', '/transparencia')
     expect(within(nav).getByRole('link', { name: 'Contacto' })).toHaveAttribute('href', '/contacto')
     expect(within(nav).getByRole('button', { name: 'Comunidad' })).toHaveAttribute('aria-expanded', 'false')
-    expect(within(nav).getByRole('button', { name: 'Servicios' })).toHaveAttribute('aria-expanded', 'false')
+    expect(within(nav).queryByRole('button', { name: 'Servicios' })).not.toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: 'Servicios' }).querySelector('svg')).toBeNull()
+    expect(Array.from(nav.querySelectorAll(':scope > ul > li')).map((item) => item.firstElementChild?.textContent?.trim())).toEqual([
+      'Inicio', 'Nosotros', 'Comunidad', 'Servicios', 'Transparencia', 'Contacto',
+    ])
     for (const route of ['/', '/nosotros', '/comunidad', '/ventures', '/voluntariado', '/noticias', '/eventos', '/servicios', '/transparencia', '/contacto']) {
       expect(nav.querySelectorAll(`a[href="${route}"]`)).toHaveLength(1)
     }
   })
 
-  it.each([
-    ['Comunidad', ['Comunidad', 'Emprendimientos', 'Voluntariado', 'Noticias', 'Eventos']],
-    ['Servicios', ['Servicios', 'Transparencia']],
-  ] as const)('opens and closes %s with all its destinations', (group, destinations) => {
+  it('opens and closes Comunidad with all its destinations', () => {
     renderHeader()
-    const button = screen.getByRole('button', { name: group })
+    const button = screen.getByRole('button', { name: 'Comunidad' })
     fireEvent.click(button)
     expect(button).toHaveAttribute('aria-expanded', 'true')
     expect(button).toHaveAttribute('aria-controls')
-    for (const destination of destinations) expect(screen.getByRole('link', { name: destination })).toBeInTheDocument()
+    for (const destination of ['Comunidad', 'Emprendimientos', 'Voluntariado', 'Noticias', 'Eventos']) {
+      expect(screen.getByRole('link', { name: destination })).toBeInTheDocument()
+    }
     fireEvent.click(button)
     expect(button).toHaveAttribute('aria-expanded', 'false')
   })
@@ -123,7 +131,6 @@ describe('PublicHeader navigation groups', () => {
     renderHeader()
     fireEvent.click(screen.getByRole('button', { name: 'Abrir menú de navegación' }))
     if (['Comunidad', 'Emprendimientos', 'Voluntariado', 'Noticias', 'Eventos'].includes(label)) fireEvent.click(screen.getByRole('button', { name: 'Comunidad' }))
-    if (['Servicios', 'Transparencia'].includes(label)) fireEvent.click(screen.getByRole('button', { name: 'Servicios' }))
     fireEvent.click(screen.getByRole('link', { name: label }))
     expect(screen.getByTestId('location')).toHaveTextContent(route)
     expect(screen.getByRole('button', { name: 'Abrir menú de navegación' })).toHaveAttribute('aria-expanded', 'false')
@@ -140,7 +147,7 @@ describe('PublicHeader navigation groups', () => {
 
   it('closes a dropdown after a pointer click outside the header', () => {
     renderHeader()
-    const button = screen.getByRole('button', { name: 'Servicios' })
+    const button = screen.getByRole('button', { name: 'Comunidad' })
     fireEvent.click(button)
     fireEvent.pointerDown(document.body)
     expect(button).toHaveAttribute('aria-expanded', 'false')
@@ -166,59 +173,72 @@ describe('PublicHeader navigation groups', () => {
     expect(screen.getByRole('link', { name: 'Noticias' })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('expands and collapses groups inside the mobile menu', () => {
+  it.each([
+    ['/servicios', 'Servicios'],
+    ['/servicios/reservas', 'Servicios'],
+    ['/transparencia', 'Transparencia'],
+  ])('marks %s active in the primary navigation', (path, label) => {
+    renderHeader(path)
+    expect(within(screen.getByRole('navigation', { name: 'Navegación pública' })).getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('keeps direct links and the Comunidad group inside the mobile menu', () => {
     renderHeader()
     const toggle = screen.getByRole('button', { name: 'Abrir menú de navegación' })
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Comunidad' }))
     expect(screen.getByRole('link', { name: 'Eventos' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Servicios' }))
-    expect(screen.getByRole('link', { name: 'Transparencia' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Comunidad' })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('link', { name: 'Servicios' })).toHaveAttribute('href', '/servicios')
+    expect(screen.getByRole('link', { name: 'Transparencia' })).toHaveAttribute('href', '/transparencia')
+    expect(screen.queryByRole('button', { name: 'Servicios' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('link', { name: 'Transparencia' }))
     expect(screen.getByRole('button', { name: 'Abrir menú de navegación' })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByTestId('location')).toHaveTextContent('/transparencia')
   })
 })
 
-describe('PublicFooter authentication states', () => {
-  it('uses each central public destination once, including volunteering', () => {
+describe('PublicFooter public links', () => {
+  it('uses each central public destination once and preserves contact links', () => {
     renderFooter()
 
     expect(site.nav.find((item) => item.label === 'Voluntariado')).toEqual({ label: 'Voluntariado', to: '/voluntariado' })
     const footer = screen.getByRole('contentinfo')
-    expect(within(footer).getByRole('link', { name: 'Voluntariado' })).toHaveAttribute('href', '/voluntariado')
-    expect(footer.querySelectorAll('a[href="/voluntariado"]')).toHaveLength(1)
-    expect(within(footer).getAllByRole('link')).toHaveLength(site.nav.length + 4)
+    for (const item of site.nav.filter((entry) => entry.to !== '/')) {
+      expect(footer.querySelectorAll(`a[href="${item.to}"]`)).toHaveLength(1)
+    }
+    expect(within(footer).getByRole('link', { name: 'Enviar correo a ADI Curime' })).toHaveAttribute('href', `mailto:${site.email}`)
+    expect(within(footer).getByRole('link', { name: 'Abrir Instagram de ADI Curime' })).toHaveAttribute('href', site.socialLinks.instagram.url)
+    expect(within(footer).getByRole('link', { name: 'Abrir Facebook de ADI Curime' })).toHaveAttribute('href', site.socialLinks.facebook.url)
+    expect(within(footer).getAllByRole('link')).toHaveLength(site.nav.length + 2)
+    fireEvent.click(within(footer).getByRole('link', { name: 'Voluntariado' }))
+    expect(screen.getByTestId('location')).toHaveTextContent('/voluntariado')
   })
 
-  it('shows login and account registration to guests', () => {
-    renderFooter()
+  it('omits Sistema and authentication actions for guests and authenticated visitors', () => {
+    const { unmount } = renderFooter()
+    const guestFooter = within(screen.getByRole('contentinfo'))
+    expect(guestFooter.queryByRole('navigation', { name: 'Acceso al sistema' })).not.toBeInTheDocument()
+    expect(guestFooter.queryByRole('heading', { name: 'Sistema' })).not.toBeInTheDocument()
+    expect(guestFooter.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
+    expect(guestFooter.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
+    unmount()
 
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
-    expect(screen.getByRole('link', { name: 'Solicitar una cuenta' })).toHaveAttribute('href', '/register')
-    expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
-  })
-
-  it('shows a high-contrast logout and services to a general account', () => {
     auth.isAuthenticated = true
     auth.user = { canAccessErp: false }
     renderFooter()
-
-    expect(screen.getByRole('link', { name: 'Ver servicios' })).toHaveAttribute('href', '/servicios')
-    expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
-    const logout = screen.getByRole('button', { name: 'Cerrar sesión' })
-    expect(logout).toHaveClass('!text-text-inverse/80', 'hover:!bg-brand-ivory/10')
-    fireEvent.click(logout)
-    expect(auth.logout).toHaveBeenCalledOnce()
+    const authenticatedFooter = within(screen.getByRole('contentinfo'))
+    expect(authenticatedFooter.getByRole('link', { name: 'Servicios' })).toHaveAttribute('href', '/servicios')
+    expect(authenticatedFooter.queryByRole('link', { name: 'Ver servicios' })).not.toBeInTheDocument()
+    expect(authenticatedFooter.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
+    expect(authenticatedFooter.queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
   })
 
-  it('shows panel access to an ERP user', () => {
-    auth.isAuthenticated = true
-    auth.user = { canAccessErp: true }
-    renderFooter()
-
-    expect(screen.getByRole('link', { name: 'Ir al panel' })).toHaveAttribute('href', '/app')
-    expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument()
+  it('keeps the existing login action in the navbar', () => {
+    render(<MemoryRouter><PublicHeader /><PublicFooter /></MemoryRouter>)
+    const header = within(screen.getByRole('banner'))
+    const footer = within(screen.getByRole('contentinfo'))
+    expect(header.getAllByRole('button', { name: 'Iniciar sesión' }).some((button) => button.getAttribute('href') === '/login')).toBe(true)
+    expect(footer.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
   })
 })

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 export function HeroSection() {
   return (
     <section aria-labelledby="hero-title" className="relative isolate overflow-hidden border-b border-border/70 bg-surface-muted py-0">
-      <div className="relative z-10 grid min-w-0 gap-0 px-4 sm:px-5 md:px-6 lg:grid-cols-2 lg:px-0 lg:items-stretch">
+      <div className="relative z-10 grid min-w-0 gap-0 px-4 sm:px-5 md:px-6 lg:min-h-[min(38rem,calc(100dvh-var(--size-header-desktop)))] lg:grid-cols-2 lg:px-0 lg:items-stretch">
         <div className="relative z-10 flex min-w-0 flex-col justify-center px-1 py-12 sm:py-16 lg:py-20 lg:pl-[max(2rem,calc((100vw-var(--container-max))/2+2rem))] lg:pr-12 xl:pl-[max(3rem,calc((100vw-var(--container-max))/2+3rem))] xl:pr-20">
           <p className="public-eyebrow text-brand-primary">
             CURIME · NICOYA · GUANACASTE
