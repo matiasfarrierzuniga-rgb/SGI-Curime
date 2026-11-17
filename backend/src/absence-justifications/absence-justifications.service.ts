@@ -383,8 +383,15 @@ export class AbsenceJustificationsService {
         where: { id: item.legacyAffiliateId },
         select: {
           id: true,
-          person: { select: { firstName: true, firstSurname: true, secondSurname: true } },
-          person: { select: { user: { select: { id: true } } } },
+          identification: true,
+          person: {
+            select: {
+              firstName: true,
+              firstSurname: true,
+              secondSurname: true,
+              user: { select: { id: true } },
+            },
+          },
         },
       }),
     ]);
@@ -565,7 +572,15 @@ export class AbsenceJustificationsService {
             date: assembly.legacyDate,
           }
         : null,
-      affiliate,
+      affiliate: affiliate
+        ? {
+            id: affiliate.id,
+            identification: affiliate.identification,
+            institutionalName: affiliate.person
+              ? formatInstitutionalPersonName(affiliate.person)
+              : null,
+          }
+        : null,
     };
   }
 }

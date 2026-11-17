@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { digitsOnly, emailError, identificationError, identificationMaxLength, normalizeEmail, normalizeIdentification, normalizePhoneCountryCode, normalizePhoneNationalNumber, personContactErrors, phoneError, phoneNationalMaxLength, phonePairError, structuredNameError } from './formValidation'
+import { digitsOnly, displayNameError, emailError, identificationError, identificationMaxLength, normalizeEmail, normalizeIdentification, normalizePhoneCountryCode, normalizePhoneNationalNumber, personContactErrors, phoneError, phoneNationalMaxLength, phonePairError, structuredNameError } from './formValidation'
 
 describe('form validation helpers', () => {
   it('validates required and optional structured names', () => {
@@ -38,5 +38,12 @@ describe('form validation helpers', () => {
     expect(phoneNationalMaxLength('+506')).toBe(8)
     expect(normalizeEmail(' USER@EXAMPLE.COM ')).toBe('user@example.com')
     expect(personContactErrors({ fullName: '123', email: 'bad', phoneCountryCode: '+506', phoneNationalNumber: '12' })).toEqual(expect.objectContaining({ fullName: expect.any(String), email: expect.any(String), phoneNationalNumber: expect.any(String) }))
+  })
+  it('validates the account display name independently from legal names', () => {
+    expect(displayNameError('')).toBe('Ingrese un nombre visible.')
+    expect(displayNameError('   ')).toBe('Ingrese un nombre visible.')
+    expect(displayNameError('Ana 123')).toBe('')
+    expect(displayNameError('a'.repeat(100))).toBe('')
+    expect(displayNameError('a'.repeat(101))).toContain('100')
   })
 })

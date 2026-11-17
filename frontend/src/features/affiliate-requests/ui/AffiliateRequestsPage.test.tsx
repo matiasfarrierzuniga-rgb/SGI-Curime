@@ -60,7 +60,7 @@ describe('AffiliateRequestDetail approval', () => {
         rejectionReason: 'Información incompleta',
         reviewedAt: '2026-01-15T12:00:00.000Z',
         reviewedById: 3,
-        reviewedBy: { id: 3, submittedNameRaw: 'Luis Mora', email: 'luis@example.com' },
+        reviewedBy: { id: 3, displayName: 'Luis Mora', email: 'luis@example.com' },
       },
       isPending: false,
       isError: false,

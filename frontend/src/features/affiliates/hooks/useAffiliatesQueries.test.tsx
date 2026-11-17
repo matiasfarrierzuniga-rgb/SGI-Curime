@@ -47,7 +47,7 @@ describe('affiliate query foundation', () => {
   })
 
   it.each([
-    ['update', (mutations: ReturnType<typeof useAffiliateMutations>) => mutations.update.mutateAsync({ id: 7, payload: { institutionalName: 'Ana' } }), 'update'],
+    ['update', (mutations: ReturnType<typeof useAffiliateMutations>) => mutations.update.mutateAsync({ id: 7, payload: { identification: '123456789' } }), 'update'],
     ['activate', (mutations: ReturnType<typeof useAffiliateMutations>) => mutations.activate.mutateAsync(7), 'activate'],
     ['deactivate', (mutations: ReturnType<typeof useAffiliateMutations>) => mutations.deactivate.mutateAsync(7), 'deactivate'],
   ])('invalidates list and detail after %s', async (_name, runMutation, method) => {

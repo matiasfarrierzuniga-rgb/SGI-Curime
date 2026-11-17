@@ -15,6 +15,7 @@ describe('CommunityRegistrationPage', () => {
   it('requires a visible name and a valid email address', () => {
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+    expect(screen.getByText('Ingrese un nombre visible.')).toBeInTheDocument()
     expect(screen.getByText('Correo electrónico inválido.')).toBeInTheDocument()
     expect(screen.getByLabelText(/Nombre visible/)).toBeRequired()
     expect(screen.queryByLabelText(/identificación/i)).not.toBeInTheDocument()

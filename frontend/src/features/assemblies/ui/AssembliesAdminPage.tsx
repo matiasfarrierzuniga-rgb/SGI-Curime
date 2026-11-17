@@ -58,7 +58,10 @@ export function AssembliesAdminPage({ assemblyId }: { assemblyId?: number } = {}
 
   const people = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('es')
-    return (eligible.data ?? []).filter((person) => person.institutionalName ?? `Persona ${person.id} pendiente de reconciliación`.toLocaleLowerCase('es').includes(term))
+    return (eligible.data ?? []).filter((person) => {
+      const label = person.institutionalName ?? `Persona ${person.id} pendiente de reconciliación`
+      return label.toLocaleLowerCase('es').includes(term)
+    })
   }, [eligible.data, search])
   const selectionChanged = selectedPeople.length !== persistedPeople.length || selectedPeople.some((id) => !persistedPeople.includes(id))
   const duplicateCallNumber = new Set(calls.map((call) => call.callNumber)).size !== calls.length

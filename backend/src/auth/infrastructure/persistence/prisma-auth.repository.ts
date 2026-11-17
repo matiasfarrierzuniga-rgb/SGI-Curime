@@ -30,7 +30,11 @@ function toAuthAccount(user: AccountRow): AuthAccount {
   return {
     id: user.id,
     email: user.email,
-    displayName: user.displayName ?? canonicalPersonName(user.person) ?? 'Cuenta',
+    // `displayName` is the name chosen by the account holder. Historical
+    // accounts may only have the legacy account-level snapshot; it is read
+    // here as a transitional fallback and is never persisted or inferred from
+    // the Person institutional identity. Holders set their own displayName.
+    displayName: user.displayName ?? legacyAccountName(user.fullName) ?? 'Cuenta',
     status: user.status,
     passwordHash: user.passwordHash,
     lockedAt: user.lockedAt,
@@ -51,13 +55,9 @@ function toAuthAccount(user: AccountRow): AuthAccount {
   };
 }
 
-function canonicalPersonName(person: AccountRow['person']): string | null {
-  if (!person) return null;
-  return (
-    [person.firstName, person.firstSurname, person.secondSurname]
-      .filter((part): part is string => Boolean(part?.trim()))
-      .join(' ') || null
-  );
+function legacyAccountName(fullName: string | null): string | null {
+  const normalized = fullName?.trim();
+  return normalized ? normalized : null;
 }
 
 @Injectable()

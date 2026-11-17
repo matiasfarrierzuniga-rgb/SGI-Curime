@@ -1,7 +1,7 @@
 import { MailCheck } from 'lucide-react'
 import { useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { emailError, fullNameError, normalizeEmail, normalizeText } from '@/shared/lib/formValidation'
+import { displayNameError, emailError, normalizeEmail, normalizeText } from '@/shared/lib/formValidation'
 import { useToast } from '@/shared/ui/Toast'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -34,7 +34,7 @@ export function CommunityRegistrationPage() {
 
   function validate() {
     const next: FormErrors = {
-      displayName: fullNameError(form.displayName),
+      displayName: displayNameError(form.displayName),
       email: emailError(form.email),
     }
     setErrors(next)
