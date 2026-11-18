@@ -185,7 +185,7 @@ describe('AppRoutes capability deep links', () => {
 
     expect(await screen.findAllByRole('button', { name: 'Ir al panel' })).not.toHaveLength(0)
     screen.getAllByRole('button', { name: 'Ir al panel' }).forEach((button) => expect(button).toHaveAttribute('href', '/app'))
-    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(3)
     expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
   })
 
@@ -196,7 +196,7 @@ describe('AppRoutes capability deep links', () => {
     expect(screen.getAllByRole('button', { name: 'Ver servicios' })).not.toHaveLength(0)
     expect(screen.queryByRole('button', { name: 'Ir al panel' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(3)
   })
 
   it('logs out a general account from the mobile public menu', async () => {

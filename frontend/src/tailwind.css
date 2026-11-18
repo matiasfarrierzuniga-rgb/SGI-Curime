@@ -172,7 +172,7 @@
   --text-4xl: 2.25rem;
   --text-5xl: 3rem;
   --text-6xl: 3.75rem;
-  --text-display: clamp(2.5rem, 1.8rem + 3vw, 4.25rem);
+  --text-display: clamp(2.75rem, 5vw, 5rem);
   --text-display--line-height: 1.05;
   --text-heading-1: clamp(2rem, 3vw, 2.75rem);
   --text-heading-1--line-height: 1.15;
@@ -267,8 +267,8 @@
   --size-control-compact: 2.75rem;
   --size-control: 2.75rem;
   --size-control-lg: 3rem;
-  --size-header-mobile: 4.25rem;
-  --size-header-desktop: 4.75rem;
+  --size-header-mobile: 4.5rem;
+  --size-header-desktop: 5.75rem;
 
   --z-nav: 10;
   --z-modal: 20;
@@ -409,7 +409,7 @@
   }
 
   .public-eyebrow {
-    font-size: var(--text-caption);
+    font-size: var(--text-xs);
     font-weight: 700;
     line-height: var(--text-caption--line-height);
     letter-spacing: 0.18em;
@@ -418,9 +418,9 @@
 
   .public-heading {
     font-family: var(--font-heading);
-    font-size: var(--text-heading-2);
+    font-size: var(--text-heading-1);
     font-weight: 400;
-    line-height: var(--text-heading-2--line-height);
+    line-height: var(--text-heading-1--line-height);
     overflow-wrap: anywhere;
     text-wrap: balance;
   }

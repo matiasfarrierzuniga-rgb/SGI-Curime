@@ -198,47 +198,45 @@ describe('PublicHeader navigation groups', () => {
   })
 })
 
-describe('PublicFooter public links', () => {
-  it('uses each central public destination once and preserves contact links', () => {
+describe('PublicFooter authentication states', () => {
+  it('uses each central public destination once, including volunteering', () => {
     renderFooter()
 
     expect(site.nav.find((item) => item.label === 'Voluntariado')).toEqual({ label: 'Voluntariado', to: '/voluntariado' })
     const footer = screen.getByRole('contentinfo')
-    for (const item of site.nav.filter((entry) => entry.to !== '/')) {
-      expect(footer.querySelectorAll(`a[href="${item.to}"]`)).toHaveLength(1)
-    }
+    expect(within(footer).getByRole('link', { name: 'Voluntariado' })).toHaveAttribute('href', '/voluntariado')
+    expect(footer.querySelectorAll('a[href="/voluntariado"]')).toHaveLength(1)
     expect(within(footer).getByRole('link', { name: 'Enviar correo a ADI Curime' })).toHaveAttribute('href', `mailto:${site.email}`)
     expect(within(footer).getByRole('link', { name: 'Abrir Instagram de ADI Curime' })).toHaveAttribute('href', site.socialLinks.instagram.url)
     expect(within(footer).getByRole('link', { name: 'Abrir Facebook de ADI Curime' })).toHaveAttribute('href', site.socialLinks.facebook.url)
-    expect(within(footer).getAllByRole('link')).toHaveLength(site.nav.length + 2)
+    expect(within(footer).getAllByRole('link')).toHaveLength(site.nav.length + 4)
     fireEvent.click(within(footer).getByRole('link', { name: 'Voluntariado' }))
     expect(screen.getByTestId('location')).toHaveTextContent('/voluntariado')
   })
 
-  it('omits Sistema and authentication actions for guests and authenticated visitors', () => {
-    const { unmount } = renderFooter()
-    const guestFooter = within(screen.getByRole('contentinfo'))
-    expect(guestFooter.queryByRole('navigation', { name: 'Acceso al sistema' })).not.toBeInTheDocument()
-    expect(guestFooter.queryByRole('heading', { name: 'Sistema' })).not.toBeInTheDocument()
-    expect(guestFooter.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
-    expect(guestFooter.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
-    unmount()
+  it('shows login and account registration to guests', () => {
+    renderFooter()
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: 'Solicitar una cuenta' })).toHaveAttribute('href', '/register')
+    expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
+  })
 
+  it('shows a high-contrast logout and services to a general account', () => {
     auth.isAuthenticated = true
     auth.user = { canAccessErp: false }
     renderFooter()
-    const authenticatedFooter = within(screen.getByRole('contentinfo'))
-    expect(authenticatedFooter.getByRole('link', { name: 'Servicios' })).toHaveAttribute('href', '/servicios')
-    expect(authenticatedFooter.queryByRole('link', { name: 'Ver servicios' })).not.toBeInTheDocument()
-    expect(authenticatedFooter.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
-    expect(authenticatedFooter.queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ver servicios' })).toHaveAttribute('href', '/servicios')
+    const logout = screen.getByRole('button', { name: 'Cerrar sesión' })
+    expect(logout).toHaveClass('!text-text-inverse/80', 'hover:!bg-brand-ivory/10')
+    fireEvent.click(logout)
+    expect(auth.logout).toHaveBeenCalledOnce()
   })
 
-  it('keeps the existing login action in the navbar', () => {
-    render(<MemoryRouter><PublicHeader /><PublicFooter /></MemoryRouter>)
-    const header = within(screen.getByRole('banner'))
-    const footer = within(screen.getByRole('contentinfo'))
-    expect(header.getAllByRole('button', { name: 'Iniciar sesión' }).some((button) => button.getAttribute('href') === '/login')).toBe(true)
-    expect(footer.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
+  it('shows panel access to an ERP user', () => {
+    auth.isAuthenticated = true
+    auth.user = { canAccessErp: true }
+    renderFooter()
+    expect(screen.getByRole('link', { name: 'Ir al panel' })).toHaveAttribute('href', '/app')
+    expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument()
   })
 })

@@ -388,8 +388,8 @@ describe('portal público', () => {
     const orientation = getRequiredElement(mainElement, '#services-help-title').closest('section')!
     expect(orientation.textContent).toMatch(/cree una cuenta o inicie sesión para continuar/)
     expect(orientation.querySelector('a[href="/contacto"]')).toHaveTextContent('Contactar a la Asociación')
-    expect(orientation.querySelector('a[href="/register"]')).toBeNull()
-    expect(orientation.querySelector('a[href="/login"]')).toBeNull()
+    expect(orientation.querySelector('a[href="/register"]')).toHaveTextContent('Crear una cuenta')
+    expect(orientation.querySelector('a[href="/login"]')).toHaveTextContent('Iniciar sesión')
     expect(serviceGrid.querySelectorAll(':scope > article')).toHaveLength(5)
 
     for (const title of ['Afiliación', 'Reservas', 'Voluntariado', 'Emprendimientos', 'Donaciones']) {
@@ -448,7 +448,7 @@ describe('portal público', () => {
 
     expect(container.querySelector<HTMLAnchorElement>('a[href="/app"]')).not.toBeNull()
     expect(screen.getAllByRole('button', { name: 'Ir al panel' }).some((button) => button.getAttribute('href') === '/app')).toBe(true)
-    expect(within(screen.getByRole('contentinfo')).queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Ir al panel' })).toHaveAttribute('href', '/app')
     authState.isAuthenticated = false
   })
 
@@ -535,8 +535,8 @@ describe('portal público', () => {
     expect(navigation.getByRole('link', { name: 'Transparencia' })).toHaveAttribute('href', '/transparencia')
     expect(navigation.queryByRole('button', { name: 'Servicios' })).not.toBeInTheDocument()
     const footer = within(screen.getByRole('contentinfo'))
-    expect(footer.queryByRole('heading', { name: 'Sistema' })).not.toBeInTheDocument()
-    expect(footer.queryByRole('navigation', { name: 'Acceso al sistema' })).not.toBeInTheDocument()
+    expect(footer.getByRole('heading', { name: 'Sistema' })).toBeInTheDocument()
+    expect(footer.getByRole('navigation', { name: 'Acceso al sistema' })).toBeInTheDocument()
   })
 
   it('ofrece iniciar sesión a visitantes', () => {
@@ -544,7 +544,7 @@ describe('portal público', () => {
     const actions = within(screen.getAllByRole('banner')[0]).getAllByRole('button', { name: 'Iniciar sesión' })
     expect(actions).not.toHaveLength(0)
     actions.forEach((action) => expect(action).toHaveAttribute('href', '/login'))
-    expect(within(screen.getByRole('contentinfo')).queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
   })
 
   it('muestra los canales oficiales con enlaces accesibles y seguros', () => {
