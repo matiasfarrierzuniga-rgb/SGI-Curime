@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, CalendarPlus, UsersRound } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import { CategoryIcon } from '@/shared/ui/CategoryIcon'
+import { publicCategories } from '@/shared/ui/publicCategories'
 
 const portalLinks = [
-  { icon: UsersRound, title: 'Afiliación', text: 'Solicite su afiliación a la Asociación de Desarrollo Integral de Curime.', to: '/afiliacion' },
-  { icon: CalendarPlus, title: 'Reservas', text: 'Solicite el uso de un espacio comunitario.', to: '/servicios/reservas' },
+  { ...publicCategories.affiliation, title: 'Afiliación', text: 'Solicite su afiliación a la Asociación de Desarrollo Integral de Curime.', to: '/afiliacion' },
+  { ...publicCategories.reservations, title: 'Reservas', text: 'Solicite el uso de un espacio comunitario.', to: '/servicios/reservas' },
 ] as const
 
 export function ServicesSection() {
@@ -25,14 +27,12 @@ export function ServicesSection() {
           </p>
         </header>
         <div className="grid gap-4 md:grid-cols-2 md:gap-5">
-          {portalLinks.map(({ icon: Icon, title, text, to }) => (
+          {portalLinks.map(({ icon: Icon, tone, title, text, to }) => (
             <article
               key={title}
               className="group flex min-h-64 flex-col items-start rounded-surface border border-border/80 bg-surface-card p-6 text-left shadow-sm transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-brand-primary hover:bg-surface-page hover:shadow-md focus-within:border-brand-primary focus-within:shadow-md motion-reduce:transform-none md:p-7"
             >
-              <span className="grid size-12 place-items-center rounded-control border border-brand-accent/45 bg-brand-accent/15 text-brand-deep transition-colors duration-200 group-hover:bg-brand-accent/25 group-focus-within:bg-brand-accent/25">
-                <Icon className="size-5" aria-hidden="true" />
-              </span>
+              <CategoryIcon icon={Icon} tone={tone} size="lg" />
               <h3 className="mt-5 font-heading text-heading-2 font-normal text-text-primary">{title}</h3>
               <p className="mt-3 max-w-[34ch] flex-1 text-pretty text-body-small leading-relaxed text-text-primary/75">{text}</p>
               <Link

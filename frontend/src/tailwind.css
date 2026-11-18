@@ -152,6 +152,19 @@
   --color-status-info: #1f5f8b;
   --color-status-info-surface: #e8f3f9;
   --color-status-neutral: #536358;
+  /* Public site iconography — additive category tones. Existing tokens stay unchanged. */
+  --color-public-icon-institutional: #07503f;
+  --color-public-icon-institutional-surface: #e8f1eb;
+  --color-public-icon-entrepreneurship: #c026d3;
+  --color-public-icon-entrepreneurship-surface: #fce7f3;
+  --color-public-icon-volunteering: #147d91;
+  --color-public-icon-volunteering-surface: #e4f2f5;
+  --color-public-icon-news: #85a83d;
+  --color-public-icon-news-surface: #eef4df;
+  --color-public-icon-transparency: #b99436;
+  --color-public-icon-transparency-surface: #f6f0df;
+  --color-public-icon-contact: #536358;
+  --color-public-icon-contact-surface: #eef3ef;
   --color-interaction-primary-default: #07503f;
   --color-interaction-primary-hover: #064735;
   --color-interaction-primary-active: #043b2c;

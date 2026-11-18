@@ -11,7 +11,7 @@ import { StatusMessage } from '@/shared/ui/StatusMessage'
 import { Button } from '@/shared/ui/button'
 import { Textarea } from '@/shared/ui/textarea'
 import { useAffiliateRequestDetail, useAffiliateRequestMutations } from '../hooks/useAffiliateRequestsQueries'
-import type { AffiliateRequestStatus } from '../model/affiliateRequests.types'
+import type { AffiliateRequestStatus, IdentificationType } from '../model/affiliateRequests.types'
 
 const statusPresentation: Record<AffiliateRequestStatus, { label: string; variant: 'warning' | 'success' | 'danger' }> = {
   PENDING: { label: 'Pendiente', variant: 'warning' },
@@ -21,6 +21,12 @@ const statusPresentation: Record<AffiliateRequestStatus, { label: string; varian
 
 function valueOrFallback(value: string | null | undefined) {
   return value?.trim() || 'No especificado'
+}
+
+function formatIdentificationType(value: IdentificationType | null | undefined) {
+  if (value === 'NATIONAL') return 'Cédula nacional'
+  if (value === 'DIMEX') return 'DIMEX'
+  return 'No especificado'
 }
 
 function formatBirthDate(value: string) {
@@ -183,7 +189,7 @@ export function AffiliateRequestDetail({ requestId, canApprove, onClose }: { req
               <StatusBadge variant={statusPresentation[request.status].variant}>{statusPresentation[request.status].label}</StatusBadge>
             </div>
             <StatusMessage error={actionError} success={success} />
-             <section aria-labelledby="identity-heading"><h3 id="identity-heading" className="text-heading-3 font-semibold text-text-primary">Identidad</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Identificación" value={request.identification} /><DetailField label="Tipo de identificación" value={request.identificationType} /><DetailField label="Fecha de nacimiento" value={formatBirthDate(request.birthDate)} /><DetailField label="Género" value={request.gender} /></dl></section>
+              <section aria-labelledby="identity-heading"><h3 id="identity-heading" className="text-heading-3 font-semibold text-text-primary">Identidad</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Identificación" value={request.identification} /><DetailField label="Tipo de identificación" value={formatIdentificationType(request.identificationType)} /><DetailField label="Fecha de nacimiento" value={formatBirthDate(request.birthDate)} /><DetailField label="Género" value={request.gender} /></dl></section>
               <section aria-labelledby="contact-heading"><h3 id="contact-heading" className="text-heading-3 font-semibold text-text-primary">Contacto</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Correo electrónico" value={request.email} /><DetailField label="Teléfono" value={formatPhone(request.phoneCountryCode, request.phoneNationalNumber, request.phone)} /><DetailField label="Dirección" value={request.address} /></dl></section>
               <section aria-labelledby="territory-heading"><h3 id="territory-heading" className="text-heading-3 font-semibold text-text-primary">Referencia territorial declarada</h3><p className="mt-1 text-body-small text-text-secondary">{request.territorialDeclarationStatus === 'UNVERIFIED_DECLARATION' ? 'Información declarada por la persona solicitante. No verifica residencia ni define elegibilidad.' : 'La solicitud histórica no incluye evidencia territorial completa.'}</p>{request.territorialDeclarationStatus === 'UNVERIFIED_DECLARATION' ? <dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Código de provincia" value={request.submittedProvinceCode} /><DetailField label="Código de cantón" value={request.submittedCantonCode} /><DetailField label="Código de distrito" value={request.submittedDistrictCode} /><DetailField label="Comunidad o localidad" value={request.submittedCommunity} /><DetailField label="Categoría de localidad" value={request.submittedLocalityCategory} /><DetailField label="Versión del catálogo" value={request.submittedTerritorialVersion} /></dl> : null}</section>
              <section aria-labelledby="employment-heading"><h3 id="employment-heading" className="text-heading-3 font-semibold text-text-primary">Información laboral</h3><dl className="mt-3 grid gap-4 sm:grid-cols-2"><DetailField label="Ocupación" value={request.occupation} /><DetailField label="Lugar de trabajo" value={request.workplace} /></dl></section>

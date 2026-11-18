@@ -3,10 +3,15 @@ import { ArrowRight, LogOut, Mail } from 'lucide-react'
 import { useAuth } from '@/features/auth'
 import { site } from '@/content/publicSiteContent'
 import { Button } from '@/shared/ui/button'
+import { SocialIcon } from '@/shared/ui/SocialIcon'
 
 export function PublicFooter() {
   const { isAuthenticated, user, logout } = useAuth()
   const footerLinkClassName = 'inline-flex min-h-11 max-w-full items-center rounded-sm text-text-inverse/80 transition-colors hover:text-brand-accent hover:underline hover:decoration-brand-accent hover:underline-offset-4 focus-visible:text-brand-accent focus-visible:underline focus-visible:decoration-brand-accent focus-visible:underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-text-inverse'
+  const accessTo = !isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'
+  const accessLabel = !isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'
+  const handleLogout = () => { void logout() }
+
   return (
     <footer className="bg-brand-ink font-sans text-text-inverse">
         <div className="mx-auto grid w-full max-w-[75rem] gap-x-8 gap-y-7 px-4 py-7 min-[375px]:px-5 md:grid-cols-2 md:gap-x-10 md:gap-y-8 md:px-6 md:py-8 lg:grid-cols-[1.2fr_1fr_1.35fr_0.85fr] lg:gap-x-8 lg:px-8 lg:py-10 xl:gap-x-12">
@@ -39,25 +44,19 @@ export function PublicFooter() {
               </li>
               <li>
                 <a aria-label="Abrir Instagram de ADI Curime" className={`${footerLinkClassName} gap-2`} href={site.socialLinks.instagram.url} target="_blank" rel="noopener noreferrer">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 shrink-0 fill-none stroke-current stroke-2">
-                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                    <circle cx="12" cy="12" r="4" />
-                    <circle cx="17.5" cy="6.5" r="1" className="fill-current stroke-none" />
-                  </svg>
+                  <SocialIcon platform="instagram" className="size-4" />
                   Instagram: {site.socialLinks.instagram.label}
                 </a>
               </li>
               <li>
                 <a aria-label="Abrir Facebook de ADI Curime" className={`${footerLinkClassName} gap-2`} href={site.socialLinks.facebook.url} target="_blank" rel="noopener noreferrer">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 shrink-0 fill-current">
-                    <path d="M24 12.1C24 5.4 18.6 0 12 0S0 5.4 0 12.1c0 6 4.4 11 10.1 11.9v-8.4H7.1v-3.4h3V9.5c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9v2.2h3.3l-.5 3.4h-2.8V24C19.6 23.1 24 18.1 24 12.1Z" />
-                  </svg>
+                  <SocialIcon platform="facebook" className="size-4" />
                   Facebook: {site.socialLinks.facebook.label}
                 </a>
               </li>
             </ul>
           </nav>
-          <nav aria-label="Enlaces rápidos" className="lg:border-l lg:border-text-inverse/15 lg:pl-6">
+          <nav aria-label="Enlaces rápidos" className="md:col-span-2 lg:col-span-1 lg:border-l lg:border-text-inverse/15 lg:pl-6">
             <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-text-inverse">Enlaces rápidos</h3>
             <ul className="mt-2 grid grid-cols-2 gap-x-5 gap-y-1 text-body-small lg:grid-cols-3">
               {site.nav.filter((item) => item.to !== '/').map((item) => (
@@ -73,24 +72,20 @@ export function PublicFooter() {
             <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-text-inverse">Sistema</h3>
             <ul className="mt-3 space-y-2 text-body-small">
               <li>
-                <Link className="inline-flex min-h-11 items-center gap-2 rounded-control bg-interaction-primary-default px-4 font-semibold text-white shadow-sm transition-colors hover:bg-interaction-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-text-inverse" to={!isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'}>
-                  {!isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'}
+                <Link className="inline-flex min-h-11 items-center gap-2 rounded-control bg-interaction-primary-default px-4 font-semibold text-white shadow-sm transition-colors hover:bg-interaction-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-text-inverse" to={accessTo}>
+                  {accessLabel}
                   <ArrowRight aria-hidden="true" className="size-3.5" />
                 </Link>
               </li>
               {isAuthenticated ? (
                 <li>
-                  <Button variant="ghost" size="sm" type="button" className="min-h-11 !bg-transparent px-2 !text-text-inverse/80 hover:!bg-brand-ivory/10 hover:!text-brand-accent active:!bg-brand-ivory/15 disabled:!bg-transparent disabled:!text-text-inverse/50 focus-visible:border-text-inverse focus-visible:ring-text-inverse/40" onClick={() => void logout()}>
+                  <Button variant="ghost" size="sm" type="button" className="min-h-11 !bg-transparent px-2 !text-text-inverse/80 hover:!bg-brand-ivory/10 hover:!text-brand-accent active:!bg-brand-ivory/15 disabled:!bg-transparent disabled:!text-text-inverse/50 focus-visible:border-text-inverse focus-visible:ring-text-inverse/40" onClick={handleLogout}>
                     <LogOut aria-hidden="true" className="size-3.5" />
                     Cerrar sesión
                   </Button>
                 </li>
               ) : (
-                <li>
-                  <Link className={footerLinkClassName} to="/register">
-                    Solicitar una cuenta
-                  </Link>
-                </li>
+                <li><Link className={footerLinkClassName} to="/register">Solicitar una cuenta</Link></li>
               )}
             </ul>
           </nav>

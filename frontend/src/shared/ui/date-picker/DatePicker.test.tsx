@@ -154,4 +154,10 @@ describe('DatePicker', () => {
     fireEvent.click(screen.getByRole('gridcell', { name: 'Seleccionar 12/09/2026' }))
     expect(onEndChange).toHaveBeenCalledWith('2026-09-12')
   })
+
+  it('can render the range calendar inline without covering subsequent form controls', () => {
+    render(<DateRangePicker startValue="" endValue="" calendarPlacement="inline" onStartChange={vi.fn()} onEndChange={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: /Desde y Hasta/ }))
+    expect(screen.getByRole('dialog', { name: 'Seleccionar rango de fechas' })).toHaveClass('relative')
+  })
 })

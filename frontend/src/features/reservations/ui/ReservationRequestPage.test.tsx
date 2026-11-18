@@ -65,21 +65,91 @@ describe('ReservationRequestPage', () => {
     expect(screen.getByText(/Tarifa de la solicitud:.*90/)).toBeInTheDocument()
   }
 
+  function fillAvailabilitySchedule() {
+    fireEvent.change(screen.getByLabelText(/Espacio/), { target: { value: '1' } })
+    selectReservationDateRange()
+    fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '10:00' } })
+    fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '12:00' } })
+  }
+
   it('renders P06 steps and blocks review before availability is checked', () => {
     render(<ReservationRequestPage />)
-    expect(screen.getByRole('list', { name: 'Progreso de la solicitud' })).toBeInTheDocument()
-    expect(screen.getAllByRole('listitem').map(step => step.textContent)).toEqual(['1Elegir espacio', '2Fecha y horario', '3Revisar y enviar'])
-    expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeDisabled()
+    const progress = screen.getByRole('list', { name: 'Progreso de la solicitud' })
+    expect(progress).toHaveClass('grid', 'min-w-0', 'sm:grid-cols-3')
+    const steps = Array.from(progress.querySelectorAll('li'))
+    expect(steps.map(step => step.textContent)).toEqual(['1Elegir espacio', '2Fecha y horario', '3Revisar y enviar'])
+    expect(progress.querySelector('li[aria-current="step"]')).toHaveTextContent('Elegir espacio')
+    expect(steps).toHaveLength(3)
+    expect(Array.from(document.querySelectorAll('[data-slot="form-section"]'))).toHaveLength(3)
+    for (const section of document.querySelectorAll('[data-slot="form-section"]')) expect(section).toHaveClass('min-w-0')
+    const datePickerWrapper = document.getElementById('reservation-start-date')?.parentElement
+    expect(datePickerWrapper).toHaveClass('min-w-0', 'rounded-surface', 'border', 'bg-brand-ivory/40')
+    const reviewButton = screen.getByRole('button', { name: 'Revisar solicitud' })
+    expect(reviewButton).toHaveClass('w-full', 'sm:w-auto')
+    expect(reviewButton).toBeDisabled()
     fireEvent.change(screen.getByLabelText(/Espacio/), { target: { value: '1' } })
     expect(screen.getByText('Está reservando: Salón Comunal')).toBeInTheDocument()
+  })
+
+  it('guides an incomplete date range without showing a premature end-date error', () => {
+    render(<ReservationRequestPage />)
+
+    fireEvent.change(document.getElementById('reservation-start-date')!, { target: { value: '2030-01-01' } })
+
+    expect(screen.getByText('Seleccione la fecha final para habilitar la hora de finalización.')).toBeInTheDocument()
+    expect(screen.getByText('Disponible después de seleccionar la fecha final.')).toBeInTheDocument()
+    expect(reservationTimeInput('reservation-end-time')).toBeDisabled()
+    expect(screen.queryByText('Indique la fecha y hora de finalización.')).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Horas de la actividad' })).toBeInTheDocument()
+  })
+
+  it('accepts the same day for the start and end dates before enabling both time fields', () => {
+    render(<ReservationRequestPage />)
+
+    selectReservationDateRange()
+
+    expect(reservationTimeInput('reservation-start-time')).toBeEnabled()
+    expect(reservationTimeInput('reservation-end-time')).toBeEnabled()
+    expect(screen.getByText('Indique cuándo finaliza la actividad.')).toBeInTheDocument()
+    expect(screen.queryByText('Indique la fecha y hora de finalización.')).not.toBeInTheDocument()
+  })
+
+  it('reserves feedback space for every paired field in the schedule and request details', () => {
+    render(<ReservationRequestPage />)
+
+    for (const label of [/Hora de inicio/, /Hora de finalización/, /Actividad/, /Categoría de solicitante/, /Cantidad de personas/, /Notas adicionales/]) {
+      expect(screen.getByLabelText(label).closest('[data-slot="form-field"]')?.querySelector('.min-h-5')).toBeInTheDocument()
+    }
+  })
+
+  it('announces availability loading and prevents repeat checks until the server responds', async () => {
+    let resolveAvailability!: (result: { data: { available: boolean } }) => void
+    refetch.mockReturnValue(new Promise(resolve => { resolveAvailability = resolve }))
+    render(<ReservationRequestPage />)
+    fillAvailabilitySchedule()
+
+    fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
+
+    const loadingMessage = await screen.findByText('Consultando disponibilidad…')
+    const status = loadingMessage.closest('[role="status"]')
+    expect(status).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByRole('button', { name: /consultando disponibilidad/i })).toBeDisabled()
+    expect(refetch).toHaveBeenCalledTimes(1)
+
+    await act(async () => resolveAvailability({ data: { available: true } }))
+
+    expect(await screen.findByText(/Disponible en este horario/)).toBeInTheDocument()
+    expect(status).not.toHaveAttribute('aria-busy')
   })
 
   it('blocks activities without a defined tariff even when the space is available', async () => {
     refetch.mockResolvedValue({ data: { available: true } })
     render(<ReservationRequestPage />); fill()
-    fireEvent.change(screen.getByLabelText(/Actividad/), { target: { value: 'SPORTS' } })
+    fireEvent.change(screen.getByLabelText(/Actividad/), { target: { value: 'TEA_BASKET' } })
+    forceUnavailableApplicantCategory()
     fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
     expect(await screen.findByText(/No hay tarifa definida para esta combinación/)).toBeInTheDocument()
+    expect(screen.getAllByText(/No hay tarifa definida para esta combinación/)).toHaveLength(1)
     expect(await screen.findByText(/Disponible en este horario/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeDisabled()
     expect(mutateAsync).not.toHaveBeenCalled()
@@ -115,6 +185,7 @@ describe('ReservationRequestPage', () => {
     fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '10:30' } })
     fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
     expect(await screen.findByText(/al menos una hora/i)).toBeInTheDocument()
+    expect(screen.getByText('Revise las fechas y horas indicadas antes de consultar disponibilidad.')).toBeInTheDocument()
     expect(refetch).not.toHaveBeenCalled()
 
     refetch.mockRejectedValue(new Error('network failure'))
@@ -131,13 +202,13 @@ describe('ReservationRequestPage', () => {
     expect(await screen.findByText(/Disponible en este horario/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeEnabled()
     await act(async () => {
-      fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '11:00' } })
+      fireEvent.change(document.getElementById('reservation-end-date')!, { target: { value: '2030-01-02' } })
     })
     expect(screen.getByText('Aún no ha consultado la disponibilidad.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeDisabled()
   })
 
-  it('requires explicit review, preserves values on return to edit, and submits only once', async () => {
+  it('shows the pending-review confirmation only after the request succeeds', async () => {
     let resolve!: () => void
     refetch.mockResolvedValue({ data: { available: true } })
     mutateAsync.mockReturnValue(new Promise<void>(done => { resolve = done }))
@@ -160,9 +231,13 @@ describe('ReservationRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Enviando solicitud/ }))
     expect(mutateAsync).toHaveBeenCalledTimes(1)
     await act(async () => resolve())
-    expect(await screen.findByRole('heading', { name: 'Solicitud recibida' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Solicitud enviada correctamente' })).toBeInTheDocument()
     expect(screen.getByText('Su solicitud está pendiente de revisión por la Asociación.')).toBeInTheDocument()
-    expect(screen.getByText('Pendiente de revisión')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Pendiente de revisión')
+    expect(screen.getByText('Espacio')).toBeInTheDocument()
+    expect(screen.getByText('Fecha y horario', { selector: 'dt' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Solicitar otra reserva' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Volver a servicios' })).toHaveAttribute('href', '/servicios')
     expect(mutateAsync.mock.calls[0][0]).toMatchObject({ resourceId: 1, startAt: '2030-01-01T16:00:00.000Z', endAt: '2030-01-01T18:00:00.000Z' })
     expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty('requesterUserId')
     expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty('status')
@@ -216,6 +291,18 @@ describe('ReservationRequestPage', () => {
     expect(screen.getByText(/Tarifa de la solicitud:.*35/)).toBeInTheDocument()
     fireEvent.change(select, { target: { value: 'PRIVATE' } })
     expect(screen.getByText(/Tarifa de la solicitud:.*50/)).toBeInTheDocument()
+  })
+
+  it.each([
+    ['SPORTS', 'MEMBERS', /Tarifa de la solicitud:.*10\s?000/],
+    ['SPORTS', 'PRIVATE', /Tarifa de la solicitud:.*15\s?000/],
+    ['TALKS', 'MEMBERS', /^Tarifa de la solicitud: Gratis$/],
+    ['BINGO', 'PRIVATE', /Tarifa de la solicitud:.*50\s?000/],
+  ])('shows the agreed demo tariff for %s and %s', (activity, category, expectedTariff) => {
+    render(<ReservationRequestPage />)
+    fireEvent.change(screen.getByLabelText(/Actividad/), { target: { value: activity } })
+    fireEvent.change(screen.getByLabelText(/Categoría de solicitante/), { target: { value: category } })
+    expect(screen.getByText(expectedTariff)).toBeInTheDocument()
   })
 
   it('does not allow sending a request with the unavailable category', async () => {

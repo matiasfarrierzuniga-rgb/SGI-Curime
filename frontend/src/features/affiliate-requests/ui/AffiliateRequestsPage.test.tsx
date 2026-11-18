@@ -23,6 +23,23 @@ describe('AffiliateRequestDetail approval', () => {
     expect(screen.queryByLabelText('Rol funcional')).not.toBeInTheDocument()
   })
 
+  it.each([
+    ['NATIONAL', 'Cédula nacional'],
+    ['DIMEX', 'DIMEX'],
+    [null, 'No especificado'],
+  ] as const)('presents identification type %s as %s', (identificationType, label) => {
+    vi.mocked(useAffiliateRequestDetail).mockReturnValue({
+      data: { ...request, identificationType },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as never)
+
+    render(<AffiliateRequestDetail requestId={7} canApprove onClose={vi.fn()} />)
+
+    expect(screen.getByText('Tipo de identificación').nextElementSibling).toHaveTextContent(label)
+  })
+
   it('approves once with request id', async () => {
     approve.mutateAsync.mockResolvedValue({})
     render(<AffiliateRequestDetail requestId={7} canApprove onClose={vi.fn()} />)

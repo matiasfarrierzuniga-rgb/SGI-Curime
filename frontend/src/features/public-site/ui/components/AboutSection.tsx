@@ -3,7 +3,7 @@ import { site } from '@/content/publicSiteContent'
 
 export function AboutSection() {
   return (
-    <section aria-labelledby="about-title" className="relative overflow-hidden border-y border-border/70 bg-surface-card py-12 md:py-16 xl:py-20">
+    <section aria-labelledby="about-title" className="public-section relative overflow-hidden border-y border-border/70 bg-surface-card">
       <div className="public-container relative grid gap-8 md:gap-10 lg:grid-cols-[minmax(13rem,4fr)_minmax(0,8fr)] lg:gap-20 xl:gap-28">
         <div className="max-w-md">
           <p className="public-eyebrow text-brand-primary">

@@ -5,12 +5,11 @@ import { useAuth } from '@/features/auth'
 import { site } from '@/content/publicSiteContent'
 import { Button } from '@/shared/ui/button'
 
-type Group = 'Comunidad' | 'Servicios'
+type Group = 'Comunidad'
 const groups: Record<Group, readonly string[]> = {
   Comunidad: ['Comunidad', 'Emprendimientos', 'Voluntariado', 'Noticias', 'Eventos'],
-  Servicios: ['Servicios', 'Transparencia'],
 }
-const mainItems = ['Inicio', 'Nosotros', 'Comunidad', 'Servicios', 'Contacto'] as const
+const mainItems = ['Inicio', 'Nosotros', 'Comunidad', 'Servicios', 'Transparencia', 'Contacto'] as const
 const linkClass = 'flex min-h-11 items-center rounded-control px-3 text-navigation font-medium text-brand-deep transition-colors hover:text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:font-semibold aria-[current=page]:text-primary'
 const linkHoverClass = 'hover:bg-primary/10'
 
@@ -71,7 +70,7 @@ export function PublicHeader() {
         <nav id={id} aria-label="Navegación pública" className={`${open ? 'flex' : 'hidden'} col-span-2 mt-2 w-full flex-col items-stretch rounded-surface border border-border bg-surface-muted p-2 shadow-surface lg:col-auto lg:mt-0 lg:flex lg:w-auto lg:flex-row lg:justify-self-center lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none`}>
           <ul className="flex flex-col gap-0.5 lg:flex-row lg:items-center lg:gap-1 2xl:gap-2">
             {mainItems.map((label) => {
-              if (label !== 'Comunidad' && label !== 'Servicios') {
+              if (label !== 'Comunidad') {
                 const item = site.nav.find((entry) => entry.label === label)!
                 return <li key={label}><NavLink to={item.to} end={item.to === '/'} onClick={close} className={`${linkClass} ${linkHoverClass}`}>{label}</NavLink></li>
               }

@@ -1,5 +1,5 @@
 import { RESERVATION_ACTIVITIES, RESERVATION_APPLICANT_CATEGORIES, getReservationTariff as getBackendReservationTariff } from '../../../../../backend/src/reservations/reservation-tariffs'
-import { getReservationTariff, reservationActivities, reservationApplicantCategories } from './reservationTariffs'
+import { formatReservationTariff, getReservationTariff, reservationActivities, reservationApplicantCategories } from './reservationTariffs'
 
 describe('reservation tariff presentation contract', () => {
   it('keeps labels and displayed tariff amounts aligned with the backend authority', () => {
@@ -11,5 +11,10 @@ describe('reservation tariff presentation contract', () => {
         expect(getReservationTariff(activity, category)).toBe(getBackendReservationTariff(activity, category))
       }
     }
+  })
+
+  it('formats a zero-cost tariff as Gratis', () => {
+    expect(getReservationTariff('TALKS', 'MEMBERS')).toBe(0)
+    expect(formatReservationTariff(0)).toBe('Gratis')
   })
 })

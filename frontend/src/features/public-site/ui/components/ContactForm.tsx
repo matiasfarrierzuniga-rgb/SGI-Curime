@@ -75,19 +75,19 @@ export function ContactForm() {
   })
 
   return (
-    <section aria-labelledby="contact-form-title" className="mx-auto w-full max-w-4xl">
+    <section aria-labelledby="contact-form-title" className="mx-auto w-full min-w-0 max-w-4xl">
       <p className="public-eyebrow text-brand-primary">Prepare su consulta</p>
-      <h2 id="contact-form-title" className="mt-3 font-heading text-heading-2 text-text-primary">Preparar una consulta</h2>
-      <p className="mt-3 text-pretty text-body-small leading-relaxed text-foreground-muted">Este formulario ayuda a revisar los datos, pero no envía mensajes automáticamente. Contacte a la Asociación mediante el correo oficial.</p>
-      <form className="mt-6 grid gap-5" onSubmit={submit} noValidate>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <FormField id="firstName" label="Nombre" required error={errors.firstName}><Input minLength={2} maxLength={80} autoComplete="given-name" {...fieldProps('firstName')} /></FormField>
-          <FormField id="lastNames" label="Apellidos" required error={errors.lastNames}><Input minLength={2} maxLength={120} autoComplete="family-name" {...fieldProps('lastNames')} /></FormField>
+      <h2 id="contact-form-title" className="mt-3 font-heading text-heading-2 text-text-primary text-balance">Preparar una consulta</h2>
+      <p className="mt-3 min-w-0 text-pretty text-body-small leading-relaxed text-foreground-muted">Este formulario ayuda a revisar los datos, pero no envía mensajes automáticamente. Contacte a la Asociación mediante el correo oficial.</p>
+      <form className="mt-6 grid min-w-0 gap-5" onSubmit={submit} noValidate>
+        <div className="grid min-w-0 gap-5 sm:grid-cols-2">
+          <FormField className="min-w-0" id="firstName" label="Nombre" required error={errors.firstName}><Input minLength={2} maxLength={80} autoComplete="given-name" {...fieldProps('firstName')} /></FormField>
+          <FormField className="min-w-0" id="lastNames" label="Apellidos" required error={errors.lastNames}><Input minLength={2} maxLength={120} autoComplete="family-name" {...fieldProps('lastNames')} /></FormField>
         </div>
-        <FormField id="email" label="Correo electrónico" required error={errors.email}><Input type="email" inputMode="email" maxLength={254} autoComplete="email" {...fieldProps('email')} /></FormField>
-        <FormField id="subject" label="Asunto" required error={errors.subject}><Input minLength={3} maxLength={150} {...fieldProps('subject')} /></FormField>
-        <FormField id="message" label="Mensaje" required error={errors.message}><Textarea className="min-h-36 resize-y" minLength={10} maxLength={2000} {...fieldProps('message')} /></FormField>
-        {notice && <p className="rounded-control border border-brand-accent/60 bg-surface-page p-3 text-body-small leading-relaxed text-brand-deep" role="status">{notice}</p>}
+        <FormField className="min-w-0" id="email" label="Correo electrónico" required error={errors.email}><Input type="email" inputMode="email" maxLength={254} autoComplete="email" {...fieldProps('email')} /></FormField>
+        <FormField className="min-w-0" id="subject" label="Asunto" required error={errors.subject}><Input minLength={3} maxLength={150} {...fieldProps('subject')} /></FormField>
+        <FormField className="min-w-0" id="message" label="Mensaje" required error={errors.message}><Textarea className="min-h-36 resize-y" minLength={10} maxLength={2000} {...fieldProps('message')} /></FormField>
+        {notice && <p className="min-w-0 break-words rounded-control border border-brand-accent/60 bg-surface-page p-3 text-pretty text-body-small leading-relaxed text-brand-deep" role="status">{notice}</p>}
         <Button className="w-full sm:w-auto sm:justify-self-start" size="lg" type="submit">Revisar consulta</Button>
       </form>
     </section>
