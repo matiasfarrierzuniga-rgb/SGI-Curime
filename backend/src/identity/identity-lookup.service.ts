@@ -15,6 +15,7 @@ export type IdentityLookupResult =
       identificationType: 'NATIONAL' | 'DIMEX';
       sourceIdentificationType: string;
       nombreCompleto: string;
+      suggestedNames: { firstName: string; firstSurname: string; secondSurname: string };
     }
   | {
       found: false;
@@ -84,6 +85,7 @@ export class IdentityLookupService {
         identificationType,
         sourceIdentificationType,
         nombreCompleto: fullName,
+        suggestedNames: this.suggestStructuredNames(fullName),
       };
     } catch {
       return {
@@ -103,6 +105,24 @@ export class IdentityLookupService {
         'La identificación debe ser una cédula nacional de 9 dígitos que no inicie en 0 o un DIMEX de 12 dígitos.',
       );
     }
+  }
+
+  private suggestStructuredNames(fullName: string) {
+    const parts = fullName.split(/\s+/);
+    let firstName = fullName;
+    let firstSurname = '';
+    let secondSurname = '';
+
+    if (parts.length >= 3) {
+      secondSurname = parts.pop() ?? '';
+      firstSurname = parts.pop() ?? '';
+      firstName = parts.join(' ');
+    } else if (parts.length === 2) {
+      firstSurname = parts.pop() ?? '';
+      firstName = parts[0];
+    }
+
+    return { firstName, firstSurname, secondSurname };
   }
 
   private notFound(normalizedIdentification: string): IdentityLookupResult {
