@@ -154,13 +154,13 @@ export function CommunityPage() {
         <div className="bg-surface-page">
           <div className="public-container"><Breadcrumbs current="Comunidad" variant="hero" /></div>
         </div>
-        <div className="overflow-hidden bg-brand-deep text-white">
+        <div className="overflow-hidden bg-background-subtle text-foreground-primary">
           <div className="public-container grid gap-7 py-8 sm:py-10 lg:min-h-[34rem] lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:items-stretch lg:gap-10 lg:py-0">
             <div className="flex min-w-0 flex-col items-start justify-center lg:py-12">
-              <p className="public-eyebrow text-brand-accent">Vida comunitaria</p>
-              <h1 id="community-title" className="public-heading mt-4 max-w-xl text-heading-1 text-white">Un espacio para encontrarnos</h1>
-              <p className="mt-5 max-w-xl text-pretty text-body-large leading-relaxed text-white/80">Conozca los espacios, actividades e iniciativas que fortalecen la participación y el encuentro en Curime.</p>
-              <Link to="/contacto" className="mt-7 inline-flex min-h-12 items-center justify-center rounded-control bg-brand-accent px-6 py-3 font-bold text-brand-deep transition-colors hover:bg-brand-soft focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-brand-accent">Contáctenos</Link>
+              <p className="public-eyebrow text-brand-brown">Vida comunitaria</p>
+              <h1 id="community-title" className="public-heading mt-4 max-w-xl text-heading-1 text-foreground-primary">Un espacio para encontrarnos</h1>
+              <p className="mt-5 max-w-xl text-pretty text-body-large leading-relaxed text-foreground-secondary">Conozca los espacios, actividades e iniciativas que fortalecen la participación y el encuentro en Curime.</p>
+              <Link to="/contacto" className="mt-7 inline-flex min-h-12 items-center justify-center rounded-control bg-brand-green px-6 py-3 font-bold text-white transition-colors hover:bg-interaction-primary-hover focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus">Contáctenos</Link>
             </div>
             <figure className="relative min-w-0 overflow-hidden rounded-surface bg-surface-muted aspect-[16/10] lg:my-8 lg:aspect-auto">
               <picture className="block size-full"><source media="(max-width: 767px)" srcSet="/images/public/home/community-curime-mobile.webp" type="image/webp" /><source srcSet="/images/public/home/community-curime-wide.webp" type="image/webp" /><img src="/images/public/home/community-curime-fallback.jpg" alt="Imagen referencial de un espacio comunitario; su carácter institucional no está confirmado." width="1500" height="1000" className="size-full object-cover object-[50%_42%]" /></picture>
