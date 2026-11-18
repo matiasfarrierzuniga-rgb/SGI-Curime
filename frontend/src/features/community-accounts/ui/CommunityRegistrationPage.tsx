@@ -97,8 +97,9 @@ export function CommunityRegistrationPage() {
         <p className="mt-2 max-w-xl text-body leading-relaxed text-text-secondary">Verifique su correo para acceder a Mi Comunidad. Este registro no crea afiliación ni acceso administrativo.</p>
       </header>
       <form className="mt-6 max-w-xl rounded-surface border border-border bg-surface p-5 shadow-sm sm:p-6" noValidate onSubmit={submit} aria-busy={loading}>
-        <Field id="community-display-name" label="Nombre visible" error={errors.displayName}>
-          <Input id="community-display-name" className={inputClass} required type="text" autoComplete="name" maxLength={100} value={form.displayName} aria-invalid={Boolean(errors.displayName)} aria-describedby={errors.displayName ? 'community-display-name-error' : undefined} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} />
+        <Field id="community-display-name" label="Nombre para mostrar" error={errors.displayName}>
+          <Input id="community-display-name" className={inputClass} required type="text" autoComplete="name" maxLength={100} value={form.displayName} aria-invalid={Boolean(errors.displayName)} aria-describedby={errors.displayName ? 'community-display-name-help community-display-name-error' : 'community-display-name-help'} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} />
+          <p id="community-display-name-help" className="text-body-small leading-relaxed text-text-secondary">Es el nombre que aparecerá en su cuenta. Puede cambiarlo después.</p>
         </Field>
         <Field id="community-email" label="Correo electrónico" error={errors.email}>
           <Input id="community-email" className={inputClass} required type="email" inputMode="email" autoComplete="email" maxLength={254} value={form.email} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'community-email-error' : undefined} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
