@@ -37,27 +37,27 @@ export function CommunityHomePage() {
           </p>
         </header>
 
-        <section aria-labelledby="community-reservations-heading" className="overflow-hidden rounded-overlay bg-brand-green text-white shadow-surface">
+        <section aria-labelledby="community-reservations-heading" className="overflow-hidden rounded-overlay border border-border-default bg-background-subtle shadow-surface">
           <div className="grid gap-7 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-12 lg:p-10">
             <div className="max-w-2xl space-y-5">
-              <span className="inline-flex size-14 items-center justify-center rounded-surface bg-white/10 text-brand-ivory" aria-hidden="true">
+              <span className="inline-flex size-14 items-center justify-center rounded-surface bg-white/75 text-brand-green" aria-hidden="true">
                 <CalendarCheck className="size-7" strokeWidth={1.8} />
               </span>
               <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-widest text-brand-ivory">
+                <p className="text-xs font-semibold uppercase tracking-widest text-brand-brown">
                   Servicio destacado
                 </p>
-                <h2 id="community-reservations-heading" className="max-w-xl font-heading text-heading-2 text-white">
+                <h2 id="community-reservations-heading" className="max-w-xl font-heading text-heading-2 text-foreground-primary">
                   Reservá un espacio para tu actividad
                 </h2>
-                <p className="max-w-xl text-body-small text-white/90">
+                <p className="max-w-xl text-body-small text-foreground-secondary">
                   Realizá tu solicitud de reserva de manera sencilla desde nuestro sistema.
                 </p>
               </div>
             </div>
             <Link
               to="/servicios/reservas"
-              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-control bg-white px-5 py-3 text-sm font-semibold text-brand-green shadow-sm transition-colors hover:bg-brand-ivory focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-white"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-control bg-brand-green px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-interaction-primary-hover focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus"
             >
               Solicitar una reserva
               <ArrowRight className="size-5 shrink-0" aria-hidden="true" />
