@@ -15,7 +15,6 @@ import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { formatInstitutionalPersonName } from '../common/identity/person-name';
-import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 import {
   CreateJustificationDto,
   QueryJustificationsDto,
@@ -404,10 +403,9 @@ export class AbsenceJustificationsService {
       );
     }
 
-    const { legacyAssemblyId, legacyAffiliateId, reviewedBy, ...rest } = item as T & { reviewedBy?: { displayName?: string | null; fullName?: string | null } | null };
+    const { legacyAssemblyId, legacyAffiliateId, ...rest } = item;
     return {
       ...rest,
-      ...(reviewedBy !== undefined ? { reviewedBy: reviewedBy ? accountDisplayNameProjection(reviewedBy) : null } : {}),
       assemblyId: legacyAssemblyId,
       affiliateId: legacyAffiliateId,
       assembly,
