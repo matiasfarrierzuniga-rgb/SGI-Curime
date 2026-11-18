@@ -1,6 +1,6 @@
 export interface AuthenticatedUser {
   id: number;
-  fullName: string;
+  displayName: string;
   email: string;
   status: string;
   role: string;

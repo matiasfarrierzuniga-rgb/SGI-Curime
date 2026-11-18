@@ -4,7 +4,7 @@ import { PrismaAuthRepository } from './prisma-auth.repository';
 const userRow = {
   id: 1,
   email: 'admin@example.com',
-  fullName: 'Admin',
+  displayName: 'Admin',
   status: 'ACTIVE',
   passwordHash: 'hashed',
   lockedAt: null,
@@ -89,7 +89,7 @@ describe('PrismaAuthRepository', () => {
     ).resolves.toEqual({
       id: 1,
       email: 'admin@example.com',
-      fullName: 'Admin',
+      displayName: 'Admin',
       status: 'ACTIVE',
       passwordHash: 'hashed',
       lockedAt: null,
@@ -123,10 +123,11 @@ describe('PrismaAuthRepository', () => {
     ).resolves.toBeNull();
   });
 
-  it('uses structured Person name as authenticated display identity', async () => {
+  it('keeps the display name chosen by the holder instead of inferring Person data', async () => {
     db.user.findUnique.mockResolvedValueOnce({
       ...userRow,
-      fullName: 'Snapshot antiguo',
+      displayName: 'Ana Comunidad',
+      fullName: 'Ana Pérez Mora',
       person: {
         firstName: 'Ana',
         firstSurname: 'Pérez',
@@ -138,7 +139,39 @@ describe('PrismaAuthRepository', () => {
 
     await expect(
       repository.findCredentialsByEmail('admin@example.com'),
-    ).resolves.toMatchObject({ fullName: 'Ana Pérez Mora' });
+    ).resolves.toMatchObject({ displayName: 'Ana Comunidad' });
+  });
+
+  it('falls back to the legacy account snapshot for historical accounts without displayName', async () => {
+    db.user.findUnique.mockResolvedValueOnce({
+      ...userRow,
+      displayName: null,
+      fullName: 'Admin histórico',
+      person: {
+        firstName: 'Ana',
+        firstSurname: 'Pérez',
+        secondSurname: 'Mora',
+        legacyFullName: null,
+        affiliate: null,
+      },
+    });
+
+    await expect(
+      repository.findCredentialsByEmail('admin@example.com'),
+    ).resolves.toMatchObject({ displayName: 'Admin histórico' });
+  });
+
+  it('keeps a safe placeholder when the historical account has no account name', async () => {
+    db.user.findUnique.mockResolvedValueOnce({
+      ...userRow,
+      displayName: null,
+      fullName: null,
+      person: null,
+    });
+
+    await expect(
+      repository.findCredentialsByEmail('admin@example.com'),
+    ).resolves.toMatchObject({ displayName: 'Cuenta' });
   });
 
   it('maps a user found by id to the auth account model', async () => {

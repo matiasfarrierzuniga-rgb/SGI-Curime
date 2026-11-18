@@ -21,7 +21,7 @@ const movement = {
   itemId: 1,
   createdAt: new Date(),
   item: { id: 1, code: 'HER-001', name: 'Martillo', unit: 'unidad' },
-  createdBy: { id: 2, fullName: 'Operador', email: 'op@example.com' },
+  createdBy: { id: 2, displayName: 'Operador', email: 'op@example.com' },
 };
 
 describe('InventoryMovementsService', () => {

@@ -18,7 +18,7 @@ const movement = {
   itemId: 1,
   createdAt: '2026-01-01T00:00:00.000Z',
   item: itemRef,
-  createdBy: { id: 1, fullName: 'Ana Pérez', email: 'ana@test.com' },
+  createdBy: { id: 1, displayName: 'Ana Pérez', email: 'ana@test.com' },
 } as const
 
 const page = () => render(<InventoryMovementsPage />)

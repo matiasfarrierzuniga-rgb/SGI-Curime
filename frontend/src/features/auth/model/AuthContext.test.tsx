@@ -8,8 +8,8 @@ import { authService } from '../api/auth.api'
 
 vi.mock('../api/auth.api', () => ({ authService: { me: vi.fn(), login: vi.fn(), logout: vi.fn(), refresh: vi.fn(), changePassword: vi.fn() } }))
 
-const user = { id: 1, fullName: 'Ana', email: 'ana@curime.cr', role: 'Usuario', status: 'ACTIVE' } as any
-const userB = { id: 2, fullName: 'Bea', email: 'bea@curime.cr', role: 'Usuario', status: 'ACTIVE' } as any
+const user = { id: 1, displayName: 'Ana', email: 'ana@curime.cr', role: 'Usuario', status: 'ACTIVE' } as any
+const userB = { id: 2, displayName: 'Bea', email: 'bea@curime.cr', role: 'Usuario', status: 'ACTIVE' } as any
 const unauthorized = { isAxiosError: true, response: { status: 401 } }
 
 function Probe() {
@@ -17,7 +17,7 @@ function Probe() {
   return <>
     <span>{auth.isLoading ? 'loading' : 'ready'}</span>
     <span>phase:{auth.phase}</span>
-    <span>{auth.user?.fullName ?? 'anonymous'}</span>
+    <span>{auth.user?.displayName ?? 'anonymous'}</span>
     <button onClick={() => void auth.login({ email: 'ana@curime.cr', password: 'not-inspected' }).catch(() => undefined)}>login</button>
     <button onClick={() => void auth.logout()}>logout</button>
     <button onClick={() => void auth.changePassword({ currentPassword: 'Old1234567', newPassword: 'New1234567', newPasswordConfirmation: 'New1234567' }).catch(() => undefined)}>change-password</button>

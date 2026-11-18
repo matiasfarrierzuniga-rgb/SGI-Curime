@@ -48,7 +48,7 @@ export type FinancialMovement = {
   updatedAt: string
 }
 export type FinancialMovementDetail = FinancialMovement & {
-  recordedBy: { id: number; fullName: string } | null
+  recordedBy: { id: number; displayName: string } | null
 }
 export type CreateFinancialMovementInput = {
   type: FinancialMovementType
@@ -123,7 +123,7 @@ export type DinadecoInstitutionalProfile = {
 export type DinadecoAnnualReport = {
   metadata: {
     generatedAt: string
-    generatedBy: { id: number; fullName: string } | null
+    generatedBy: { id: number; displayName: string } | null
     period: { from: string; to: string }
     appliedFilters: { year: number }
     dataSource: 'FINANCIAL_MOVEMENT'

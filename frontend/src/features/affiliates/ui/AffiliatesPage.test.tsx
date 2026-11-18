@@ -13,7 +13,7 @@ vi.mock('../api/affiliates.api', () => ({
 
 const affiliate = {
   id: 7,
-  fullName: 'Ana Pérez',
+  institutionalName: 'Ana Pérez',
   identification: '1-2345-6789',
   identificationType: 'NATIONAL' as const,
   birthDate: '1990-01-01T00:00:00.000Z',

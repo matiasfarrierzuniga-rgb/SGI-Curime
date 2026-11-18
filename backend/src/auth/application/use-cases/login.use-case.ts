@@ -161,7 +161,7 @@ export class LoginUseCase {
 function toAuthenticatedUser(account: AuthAccount): AuthenticatedUser {
   return {
     id: account.id,
-    fullName: account.fullName,
+    displayName: account.displayName,
     email: account.email,
     status: account.status,
     role: account.roleName,

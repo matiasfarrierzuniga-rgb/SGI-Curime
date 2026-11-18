@@ -39,6 +39,7 @@ describe('AuthController error boundary', () => {
       >(),
     };
     const changePasswordUseCase = { execute: jest.fn() };
+    const updateDisplayNameUseCase = { execute: jest.fn() };
 
     return {
       controller: new AuthController(
@@ -50,6 +51,7 @@ describe('AuthController error boundary', () => {
         requestPasswordResetUseCase as never,
         resetPasswordUseCase as never,
         changePasswordUseCase as never,
+        updateDisplayNameUseCase as never,
       ),
       loginUseCase,
       activateAccountUseCase,
@@ -100,7 +102,7 @@ describe('AuthController error boundary', () => {
       refreshToken: 'refresh-token',
       user: {
         id: 1,
-        fullName: 'Admin',
+        displayName: 'Admin',
         email: 'admin@example.com',
         status: 'ACTIVE',
         role: 'Administrador',
@@ -117,7 +119,7 @@ describe('AuthController error boundary', () => {
 
     expect(result.user).toEqual({
       id: 1,
-      fullName: 'Admin',
+      displayName: 'Admin',
       email: 'admin@example.com',
       status: 'ACTIVE',
       role: 'Administrador',
@@ -138,7 +140,7 @@ describe('AuthController error boundary', () => {
       controller.me({
         user: {
           id: 1,
-          fullName: 'Admin',
+          displayName: 'Admin',
           email: 'admin@example.com',
           status: 'ACTIVE',
           role: 'Administrador',
@@ -148,7 +150,7 @@ describe('AuthController error boundary', () => {
       } as never),
     ).toEqual({
       id: 1,
-      fullName: 'Admin',
+      displayName: 'Admin',
       email: 'admin@example.com',
       status: 'ACTIVE',
       role: 'Administrador',

@@ -14,6 +14,7 @@ import { JustificationStatus, Prisma } from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { formatInstitutionalPersonName } from '../common/identity/person-name';
 import {
   CreateJustificationDto,
   QueryJustificationsDto,
@@ -49,7 +50,7 @@ const select = {
   attachmentSize: true,
   legacyAssemblyId: true,
   legacyAffiliateId: true,
-  reviewedBy: { select: { id: true, fullName: true, email: true } },
+  reviewedBy: { select: { id: true, displayName: true, fullName: true, email: true } },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.AbsenceJustificationSelect;
@@ -382,8 +383,15 @@ export class AbsenceJustificationsService {
         where: { id: item.legacyAffiliateId },
         select: {
           id: true,
-          fullName: true,
-          person: { select: { user: { select: { id: true } } } },
+          identification: true,
+          person: {
+            select: {
+              firstName: true,
+              firstSurname: true,
+              secondSurname: true,
+              user: { select: { id: true } },
+            },
+          },
         },
       }),
     ]);
@@ -401,7 +409,15 @@ export class AbsenceJustificationsService {
       assemblyId: legacyAssemblyId,
       affiliateId: legacyAffiliateId,
       assembly,
-      affiliate,
+      affiliate: affiliate
+        ? {
+            id: affiliate.id,
+            identification: affiliate.identification,
+            institutionalName: affiliate.person
+              ? formatInstitutionalPersonName(affiliate.person)
+              : null,
+          }
+        : null,
     };
   }
 
@@ -541,7 +557,7 @@ export class AbsenceJustificationsService {
       }),
       this.prisma.affiliate.findUnique({
         where: { id: item.legacyAffiliateId },
-        select: { id: true, fullName: true, identification: true },
+        select: { id: true, identification: true, person: { select: { firstName: true, firstSurname: true, secondSurname: true } } },
       }),
     ]);
     const { legacyAssemblyId, legacyAffiliateId, ...rest } = item;
@@ -556,7 +572,15 @@ export class AbsenceJustificationsService {
             date: assembly.legacyDate,
           }
         : null,
-      affiliate,
+      affiliate: affiliate
+        ? {
+            id: affiliate.id,
+            identification: affiliate.identification,
+            institutionalName: affiliate.person
+              ? formatInstitutionalPersonName(affiliate.person)
+              : null,
+          }
+        : null,
     };
   }
 }

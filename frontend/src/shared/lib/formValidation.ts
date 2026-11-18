@@ -49,6 +49,16 @@ export const fullNameError = (value: string) =>
     ? ''
     : 'Ingrese un nombre válido usando letras, espacios, apóstrofes o guiones.'
 
+export const DISPLAY_NAME_MAX_LENGTH = 100
+
+export const displayNameError = (value: string) => {
+  const normalized = value.trim()
+  if (!normalized) return 'Ingrese un nombre visible.'
+  if (normalized.length > DISPLAY_NAME_MAX_LENGTH)
+    return `El nombre visible no puede superar los ${DISPLAY_NAME_MAX_LENGTH} caracteres.`
+  return ''
+}
+
 export const structuredNameError = (value: string, required = true) => {
   if (!value.trim()) return required ? 'Este campo es obligatorio.' : ''
   return fullNameError(value)

@@ -30,10 +30,11 @@ function toAuthAccount(user: AccountRow): AuthAccount {
   return {
     id: user.id,
     email: user.email,
-    fullName:
-      canonicalPersonName(user.person) ??
-      user.fullName ??
-       'Cuenta',
+    // `displayName` is the name chosen by the account holder. Historical
+    // accounts may only have the legacy account-level snapshot; it is read
+    // here as a transitional fallback and is never persisted or inferred from
+    // the Person institutional identity. Holders set their own displayName.
+    displayName: user.displayName ?? legacyAccountName(user.fullName) ?? 'Cuenta',
     status: user.status,
     passwordHash: user.passwordHash,
     lockedAt: user.lockedAt,
@@ -54,15 +55,9 @@ function toAuthAccount(user: AccountRow): AuthAccount {
   };
 }
 
-function canonicalPersonName(person: AccountRow['person']): string | null {
-  if (!person) return null;
-  return (
-    [person.firstName, person.firstSurname, person.secondSurname]
-      .filter((part): part is string => Boolean(part?.trim()))
-      .join(' ') ||
-    person.legacyFullName ||
-    null
-  );
+function legacyAccountName(fullName: string | null): string | null {
+  const normalized = fullName?.trim();
+  return normalized ? normalized : null;
 }
 
 @Injectable()
@@ -219,6 +214,14 @@ export class PrismaAuthRepository implements AuthRepository {
       where: { id },
       data: { passwordHash, failedLoginAttempts: 0, lockedAt: null },
     });
+  }
+
+  async updateDisplayName(id: number, displayName: string): Promise<boolean> {
+    const updated = await this.db.user.updateMany({
+      where: { id, status: 'ACTIVE' },
+      data: { displayName },
+    });
+    return updated.count === 1;
   }
 
   async withTransaction<T>(

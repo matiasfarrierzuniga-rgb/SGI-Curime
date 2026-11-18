@@ -5,7 +5,7 @@ import { configureAuthSessionAdapter, type SessionInvalidationReason } from '@/s
 import { createAuthSessionCoordinator, type AuthSessionCoordinator } from '@/shared/session/authSessionCoordinator'
 import { clearLegacySession } from '@/shared/session/sessionStorage'
 import { authService } from '../api/auth.api'
-import type { AuthenticatedUser, ChangePasswordPayload, LoginCredentials } from './auth.types'
+import type { AuthenticatedUser, ChangePasswordPayload, LoginCredentials, UpdateDisplayNamePayload } from './auth.types'
 
 export type SessionPhase = 'initializing' | 'authenticated' | 'anonymous' | 'refresh-failed'
 
@@ -17,6 +17,7 @@ interface AuthValue {
   login: (data: LoginCredentials) => Promise<AuthenticatedUser>
   logout: () => Promise<void>
   changePassword: (payload: ChangePasswordPayload) => Promise<{ message?: string }>
+  updateDisplayName: (payload: UpdateDisplayNamePayload) => Promise<void>
 }
 
 const AuthContext = createContext<AuthValue | undefined>(undefined)
@@ -177,7 +178,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result
   }, [isCurrent, resetSession])
 
-  return <AuthContext.Provider value={{ user, isAuthenticated: phase === 'authenticated' && user !== null, isLoading: phase === 'initializing', phase, login, logout, changePassword }}>{children}</AuthContext.Provider>
+  const updateDisplayName = useCallback(async (payload: UpdateDisplayNamePayload) => {
+    const epoch = epochRef.current
+    const result = await authService.updateDisplayName(payload)
+    if (isCurrent(epoch)) setUser(current => current ? { ...current, displayName: result.displayName } : current)
+  }, [isCurrent])
+
+  return <AuthContext.Provider value={{ user, isAuthenticated: phase === 'authenticated' && user !== null, isLoading: phase === 'initializing', phase, login, logout, changePassword, updateDisplayName }}>{children}</AuthContext.Provider>
 }
 
 // oxlint-disable-next-line react/only-export-components -- hook and provider intentionally share their private context

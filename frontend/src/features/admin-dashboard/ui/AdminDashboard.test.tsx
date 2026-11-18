@@ -47,7 +47,7 @@ const data = {
 const response = {
   metadata: {
     generatedAt: "2026-09-14T12:00:00.000Z",
-    generatedBy: { id: 1, fullName: "Admin" },
+    generatedBy: { id: 1, displayName: "Admin" },
     period: { from: null, to: null },
     appliedFilters: {},
     dataSource: ["AFFILIATE"],
@@ -104,7 +104,7 @@ function calendarSources(activityStart: string) {
       resourceId: 1,
       resource: { id: 1, name: "Salón", location: null, pricingType: "FREE", price: null, currency: "CRC" },
       requesterUserId: 1,
-      requester: { id: 1, fullName: "Ana", email: "ana@example.com" },
+      requester: { id: 1, displayName: "Ana", email: "ana@example.com" },
       eventId: null,
       event: null,
       startAt: activityStart,
@@ -291,7 +291,7 @@ describe("AdminDashboard", () => {
                   currency: "CRC",
                 },
                 requesterUserId: 1,
-                requester: { id: 1, fullName: "Ana", email: "ana@example.com" },
+                requester: { id: 1, displayName: "Ana", email: "ana@example.com" },
                 eventId: null,
                 event: null,
                 startAt: activityStart,

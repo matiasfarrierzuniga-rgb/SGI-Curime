@@ -5,7 +5,7 @@ import { UsersController } from './users.controller';
 
 const user = {
   id: '12',
-  fullName: 'Persona Usuaria',
+  displayName: 'Persona Usuaria',
   identification: '1-1111-1111',
   identificationType: 'NATIONAL' as const,
   contactEmail: 'person@example.com',
@@ -14,7 +14,7 @@ const user = {
   address: null,
   access: {
     id: 7,
-    fullName: 'Cuenta de Persona',
+    displayName: 'Cuenta de Persona',
     identification: '1-1111-1111',
     identificationType: 'NATIONAL' as const,
     email: 'account@example.com',

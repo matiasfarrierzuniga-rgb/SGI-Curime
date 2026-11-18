@@ -3,6 +3,8 @@ import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditAction } from './audit-actions';
 import { QueryAuditLogsDto } from './dto/query-audit-logs.dto';
+import { formatInstitutionalPersonName } from '../common/identity/person-name';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 
 export interface AuditContext {
   ipAddress?: string;
@@ -27,10 +29,10 @@ export interface BoardPrivilegeReview {
     endsOn: Date | null;
     term: { id: number; startsOn: Date; endsOn: Date; status: string | null };
   } | null;
-  person: { id: number; fullName: string } | null;
+  person: { id: number; institutionalName: string } | null;
   account: {
     id: number;
-    fullName: string;
+    displayName: string;
     email: string;
     status: string;
     role: { id: number; name: string };
@@ -39,7 +41,7 @@ export interface BoardPrivilegeReview {
   resolution: {
     id: number;
     createdAt: Date;
-    actor: { id: number; fullName: string; email: string } | null;
+    actor: { id: number; displayName: string; email: string } | null;
     decision: string | null;
     justification: string | null;
     roleChange: { previousRoleId: number; newRoleId: number } | null;
@@ -114,7 +116,7 @@ export class AuditService {
       this.prisma.auditLog.findMany({
         where,
         include: {
-          user: { select: { id: true, fullName: true, email: true } },
+          user: { select: { id: true, displayName: true, fullName: true, email: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: (query.page - 1) * query.limit,
@@ -122,15 +124,15 @@ export class AuditService {
       }),
       this.prisma.auditLog.count({ where }),
     ]);
-    return { data, total, page: query.page, limit: query.limit };
+    return { data: data.map((log) => this.serializeAuditLog(log)), total, page: query.page, limit: query.limit };
   }
   async findOne(id: number) {
     const log = await this.prisma.auditLog.findUnique({
       where: { id },
-      include: { user: { select: { id: true, fullName: true, email: true } } },
+      include: { user: { select: { id: true, displayName: true, fullName: true, email: true } } },
     });
     if (!log) throw new NotFoundException('Audit log not found');
-    return log;
+    return this.serializeAuditLog(log);
   }
 
   async findBoardPrivilegeReviews(page = 1, limit = 20) {
@@ -160,7 +162,7 @@ export class AuditService {
             createdAt: true,
             details: true,
             entityId: true,
-            user: { select: { id: true, fullName: true, email: true } },
+            user: { select: { id: true, displayName: true, fullName: true, email: true } },
           },
         })
       : [];
@@ -201,7 +203,7 @@ export class AuditService {
         id: true,
         createdAt: true,
         details: true,
-        user: { select: { id: true, fullName: true, email: true } },
+        user: { select: { id: true, displayName: true, fullName: true, email: true } },
       },
     });
     return this.toBoardPrivilegeReview(review, resolution, client);
@@ -250,7 +252,7 @@ export class AuditService {
       id: number;
       createdAt: Date;
       details: Prisma.JsonValue | null;
-      user: { id: number; fullName: string | null; email: string } | null;
+      user: { id: number; displayName: string | null; fullName: string | null; email: string } | null;
     } | null,
     client: AuditLogClient,
   ): Promise<BoardPrivilegeReview> {
@@ -272,7 +274,7 @@ export class AuditService {
     const person = personId
       ? await client.person.findUnique({
           where: { id: personId },
-          select: { id: true, firstName: true, firstSurname: true, secondSurname: true, legacyFullName: true },
+          select: { id: true, firstName: true, firstSurname: true, secondSurname: true },
         })
       : null;
     const account = personId
@@ -280,6 +282,7 @@ export class AuditService {
           where: { personId },
           select: {
             id: true,
+            displayName: true,
             fullName: true,
             email: true,
             status: true,
@@ -317,16 +320,13 @@ export class AuditService {
       person: person
         ? {
             id: person.id,
-            fullName:
-              [person.firstName, person.firstSurname, person.secondSurname]
-                .filter(Boolean)
-                .join(' ') || person.legacyFullName || `Persona ${person.id}`,
+            institutionalName: formatInstitutionalPersonName(person) ?? `Persona ${person.id}`,
           }
         : null,
       account: account
         ? {
             id: account.id,
-            fullName: account.fullName ?? account.email,
+            displayName: accountDisplayNameProjection(account).displayName,
             email: account.email,
             status: account.status,
             role: { id: account.role.id, name: account.role.name },
@@ -342,7 +342,7 @@ export class AuditService {
             actor: resolution.user
               ? {
                   id: resolution.user.id,
-                  fullName: resolution.user.fullName ?? resolution.user.email,
+                  displayName: accountDisplayNameProjection(resolution.user).displayName,
                   email: resolution.user.email,
                 }
               : null,
@@ -365,6 +365,13 @@ export class AuditService {
                 : null,
           }
         : null,
+    };
+  }
+
+  private serializeAuditLog<T extends { user?: { displayName?: string | null; fullName?: string | null } | null }>(log: T) {
+    return {
+      ...log,
+      ...(log.user !== undefined ? { user: log.user ? accountDisplayNameProjection(log.user) : null } : {}),
     };
   }
 

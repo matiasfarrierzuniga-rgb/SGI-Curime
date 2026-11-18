@@ -49,16 +49,16 @@ function PresidentDashboardContent({ permissionCodes, userName }: PresidentDashb
   const [calendarMonth, setCalendarMonth] = useState(() => currentCostaRicaMonth());
 
   if (dashboard.isPending) {
-    return <section aria-busy="true"><PresidentWelcome fullName={userName} /><DashboardSkeleton /></section>;
+    return <section aria-busy="true"><PresidentWelcome displayName={userName} /><DashboardSkeleton /></section>;
   }
   if (dashboard.isError) {
-    return <section><PresidentWelcome fullName={userName} /><ErrorState className="mt-5" title="No fue posible cargar los indicadores" message="Intente nuevamente para consultar el estado institucional actual." action={<Button variant="outline" size="sm" onClick={() => void dashboard.refetch()}><RefreshCw aria-hidden="true" />Reintentar</Button>} /></section>;
+    return <section><PresidentWelcome displayName={userName} /><ErrorState className="mt-5" title="No fue posible cargar los indicadores" message="Intente nuevamente para consultar el estado institucional actual." action={<Button variant="outline" size="sm" onClick={() => void dashboard.refetch()}><RefreshCw aria-hidden="true" />Reintentar</Button>} /></section>;
   }
 
   const { data, metadata } = dashboard.data;
   return (
     <section className="@container space-y-4">
-      <PresidentWelcome fullName={userName} generatedAt={metadata.generatedAt} />
+      <PresidentWelcome displayName={userName} generatedAt={metadata.generatedAt} />
       <PresidentIndicators data={data} />
       <div className="grid min-w-0 gap-3 @min-[700px]:grid-cols-2 @min-[880px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)]">
         <AttentionPanel data={data} permissionCodes={permissionCodes} />
@@ -75,8 +75,8 @@ function PresidentDashboardContent({ permissionCodes, userName }: PresidentDashb
   );
 }
 
-function PresidentWelcome({ fullName, generatedAt }: { fullName?: string; generatedAt?: string }) {
-  const firstName = fullName?.trim().split(/\s+/)[0];
+function PresidentWelcome({ displayName, generatedAt }: { displayName?: string; generatedAt?: string }) {
+  const firstName = displayName?.trim().split(/\s+/)[0];
   return <header className="border-y border-erp-border bg-erp-surface-subtle px-5 py-6 sm:px-7 md:px-10 md:py-7 xl:-mx-6 xl:-mt-9"><div className="flex min-w-0 items-start gap-3 sm:gap-4"><span className="grid size-12 shrink-0 place-items-center rounded-full bg-status-success-surface text-status-success"><FileCheck2 className="size-6" aria-hidden="true" /></span><div className="min-w-0"><p className="text-caption font-bold uppercase tracking-[0.16em] text-status-success">Presidencia</p><h1 className="mt-1 font-sans text-heading-1 font-bold leading-tight tracking-[-0.025em] text-erp-navigation">Buenos días{firstName ? `, ${firstName}` : ""}</h1><p className="mt-1 text-body text-erp-text">Aquí tiene el resumen de seguimiento institucional de la ADI Curime.</p>{generatedAt ? <time className="mt-3 block text-body-small text-erp-text-muted" dateTime={generatedAt}>Actualizado {new Intl.DateTimeFormat("es-CR", { dateStyle: "long", timeZone: "America/Costa_Rica" }).format(new Date(generatedAt))}</time> : null}</div></div></header>;
 }
 

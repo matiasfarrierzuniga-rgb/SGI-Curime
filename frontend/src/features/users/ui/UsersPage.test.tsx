@@ -39,7 +39,7 @@ vi.mock('@/features/roles', () => ({
 const personWithAccountAndAffiliation = {
   id: '101',
   personId: '101',
-  fullName: 'Ana Pérez',
+  institutionalName: 'Ana Pérez',
   person: { id: '101', contactEmail: 'ana.contacto@test.com' },
   identification: '1',
   identificationType: 'NATIONAL',
@@ -55,9 +55,9 @@ const personWithAccountAndAffiliation = {
   actions: { read: true, update: false, changeRole: false, manageLifecycle: false, unlock: false },
 } as const
 
-const personWithAccount = { ...personWithAccountAndAffiliation, id: '102', personId: '102', fullName: 'Bruno Cuenta', person: { id: '102', contactEmail: null }, access: { ...personWithAccountAndAffiliation.access, id: 8, email: 'bruno.cuenta@test.com', personId: '102', role: { ...personWithAccountAndAffiliation.access.role, name: 'ROLE_COMMUNITY_USER', label: 'Usuario comunitario' } }, affiliate: null, affiliateId: null } as const
-const personWithAffiliation = { ...personWithAccountAndAffiliation, id: '103', personId: '103', fullName: 'Carla Afiliada', person: { id: '103', contactEmail: 'carla.contacto@test.com' }, access: null, affiliate: { id: '45', status: 'INACTIVE', legacyRoleId: 1 }, affiliateId: '45' } as const
-const personOnly = { ...personWithAccountAndAffiliation, id: '104', personId: '104', fullName: 'Diego Persona', person: { id: '104', contactEmail: null }, access: null, affiliate: null, affiliateId: null } as const
+const personWithAccount = { ...personWithAccountAndAffiliation, id: '102', personId: '102', institutionalName: 'Bruno Cuenta', person: { id: '102', contactEmail: null }, access: { ...personWithAccountAndAffiliation.access, id: 8, email: 'bruno.cuenta@test.com', personId: '102', role: { ...personWithAccountAndAffiliation.access.role, name: 'ROLE_COMMUNITY_USER', label: 'Usuario comunitario' } }, affiliate: null, affiliateId: null } as const
+const personWithAffiliation = { ...personWithAccountAndAffiliation, id: '103', personId: '103', institutionalName: 'Carla Afiliada', person: { id: '103', contactEmail: 'carla.contacto@test.com' }, access: null, affiliate: { id: '45', status: 'INACTIVE', legacyRoleId: 1 }, affiliateId: '45' } as const
+const personOnly = { ...personWithAccountAndAffiliation, id: '104', personId: '104', institutionalName: 'Diego Persona', person: { id: '104', contactEmail: null }, access: null, affiliate: null, affiliateId: null } as const
 
 const page = () => {
   const queryClient = new QueryClient({
@@ -74,7 +74,7 @@ const page = () => {
 
 const open = async () => {
   fireEvent.click((await screen.findAllByRole('button', { name: 'Ver detalle' }))[0])
-  await screen.findByRole('dialog', { name: /Cuenta: Ana/ })
+  await screen.findByRole('dialog', { name: /Persona: Ana/ })
 }
 
 describe('UsersPage', () => {
@@ -177,8 +177,8 @@ describe('UsersPage', () => {
   })
 
   it('renders account lifecycle badges with distinct semantic tokens', async () => {
-    const inactive = { ...personWithAccount, id: '105', fullName: 'Inés Inactiva', access: { ...personWithAccount.access, id: 9, status: 'INACTIVE' } }
-    const pending = { ...personWithAccount, id: '106', fullName: 'Pablo Pendiente', access: { ...personWithAccount.access, id: 10, status: 'PENDING_EMAIL_VERIFICATION' } }
+    const inactive = { ...personWithAccount, id: '105', institutionalName: 'Inés Inactiva', access: { ...personWithAccount.access, id: 9, status: 'INACTIVE' } }
+    const pending = { ...personWithAccount, id: '106', institutionalName: 'Pablo Pendiente', access: { ...personWithAccount.access, id: 10, status: 'PENDING_EMAIL_VERIFICATION' } }
     vi.mocked(usersService.list).mockResolvedValue({ data: [personWithAccountAndAffiliation, inactive, pending] as never, total: 3, page: 1, limit: 10 })
     page()
 
@@ -232,7 +232,7 @@ describe('UsersPage', () => {
     vi.mocked(usersService.list).mockResolvedValue({ data: fixtures as never, total: fixtures.length, page: 1, limit: 10 })
     page()
 
-    await screen.findByText(personWithAccountAndAffiliation.fullName)
+    await screen.findByText(personWithAccountAndAffiliation.institutionalName)
     const rows = screen.getAllByRole('row').slice(1)
     expect(rows).toHaveLength(fixtures.length)
     rows.forEach((row) => {

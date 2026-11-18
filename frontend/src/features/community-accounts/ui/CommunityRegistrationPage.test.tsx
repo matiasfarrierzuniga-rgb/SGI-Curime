@@ -12,20 +12,23 @@ vi.mock('@/shared/ui/resultDialog', () => dialog)
 
 describe('CommunityRegistrationPage', () => {
   beforeEach(() => { vi.clearAllMocks(); dialog.showResultDialog.mockResolvedValue({ isConfirmed: true }) })
-  it('requires only a valid email address', () => {
+  it('requires a visible name and a valid email address', () => {
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+    expect(screen.getByText('Ingrese un nombre visible.')).toBeInTheDocument()
     expect(screen.getByText('Correo electrónico inválido.')).toBeInTheDocument()
-    expect(screen.queryByLabelText(/Nombre/)).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/Nombre para mostrar/)).toBeRequired()
+    expect(screen.getByText('Es el nombre que aparecerá en su cuenta. Puede cambiarlo después.')).toBeInTheDocument()
     expect(screen.queryByLabelText(/identificación/i)).not.toBeInTheDocument()
   })
   it('submits normalized public data and shows the email confirmation', async () => {
     vi.mocked(communityAccountsService.register).mockResolvedValue({ message: 'neutral' })
     render(<MemoryRouter><CommunityRegistrationPage /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText(/Nombre para mostrar/), { target: { value: ' Ana Comunidad ' } })
     fireEvent.change(screen.getByLabelText(/Correo electrónico/), { target: { value: ' ANA@EXAMPLE.TEST ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
     expect(await screen.findByRole('heading', { name: 'Revisá tu correo electrónico' })).toBeInTheDocument()
-    expect(communityAccountsService.register).toHaveBeenCalledWith({ email: 'ana@example.test' })
+    expect(communityAccountsService.register).toHaveBeenCalledWith({ displayName: 'Ana Comunidad', email: 'ana@example.test' })
     expect(vi.mocked(communityAccountsService.register).mock.calls[0][0]).not.toHaveProperty('password')
     expect(dialog.showResultDialog).toHaveBeenCalledWith({
       icon: 'info', title: 'Revisá tu correo',

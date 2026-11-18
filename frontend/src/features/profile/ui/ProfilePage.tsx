@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { displayNameError as validateDisplayName, normalizeText } from '@/shared/lib/formValidation'
 import { getRoleLabel } from '@/shared/security/roles'
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
@@ -17,13 +18,34 @@ type PasswordForm = { currentPassword: string; newPassword: string; newPasswordC
 const emptyPasswordForm: PasswordForm = { currentPassword: '', newPassword: '', newPasswordConfirmation: '' }
 
 export function ProfilePage() {
-  const { user, changePassword } = useAuth()
+  const { user, changePassword, updateDisplayName } = useAuth()
   const navigate = useNavigate()
   const { notify } = useToast()
   const roleLabel = getRoleLabel(user?.role)
   const [form, setForm] = useState<PasswordForm>(emptyPasswordForm)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [displayName, setDisplayName] = useState(user?.displayName ?? '')
+  const [displayNameError, setDisplayNameError] = useState('')
+  const [savingDisplayName, setSavingDisplayName] = useState(false)
+
+  const submitDisplayName = async (event: FormEvent) => {
+    event.preventDefault()
+    const value = normalizeText(displayName)
+    const validationError = validateDisplayName(value)
+    if (validationError) return setDisplayNameError(validationError)
+    setSavingDisplayName(true)
+    setDisplayNameError('')
+    try {
+      await updateDisplayName({ displayName: value })
+      setDisplayName(value)
+      notify('Nombre visible actualizado.', 'success')
+    } catch (reason) {
+      setDisplayNameError(getErrorMessage(reason))
+    } finally {
+      setSavingDisplayName(false)
+    }
+  }
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
@@ -57,7 +79,7 @@ export function ProfilePage() {
         </CardHeader>
         <CardContent className="pt-6 sm:pt-8">
           <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
-            <AccountDetail label="Nombre">{user?.fullName ?? '—'}</AccountDetail>
+            <AccountDetail label="Nombre visible">{user?.displayName ?? '—'}</AccountDetail>
             <AccountDetail label="Correo"><span className="break-all">{user?.email ?? '—'}</span></AccountDetail>
             <AccountDetail label="Rol">{roleLabel}</AccountDetail>
             <AccountDetail label="Estado">
@@ -65,6 +87,11 @@ export function ProfilePage() {
             </AccountDetail>
           </dl>
         </CardContent>
+      </Card>
+
+      <Card className="shadow-elevation-1">
+        <CardHeader className="border-b border-border-subtle"><CardTitle>Nombre visible</CardTitle><CardDescription>Se muestra en su sesión. No modifica la identidad institucional ni su vínculo con una persona.</CardDescription></CardHeader>
+        <CardContent className="pt-6 sm:pt-8"><form className="max-w-xl space-y-4" onSubmit={submitDisplayName}><FormField id="display-name" label="Nombre visible" required error={displayNameError}><Input required autoComplete="name" maxLength={100} value={displayName} onChange={event => setDisplayName(event.target.value)} /></FormField><Button type="submit" loading={savingDisplayName}>Guardar nombre</Button></form></CardContent>
       </Card>
 
       <Card id="cambiar-contrasena" className="shadow-elevation-1">

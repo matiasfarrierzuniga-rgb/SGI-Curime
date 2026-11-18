@@ -19,7 +19,7 @@ export type ReportDataSources = readonly ReportDataSource[];
 
 export interface ReportGeneratedBy {
   id: number;
-  fullName: string;
+  displayName: string;
 }
 
 export interface ReportPeriod {

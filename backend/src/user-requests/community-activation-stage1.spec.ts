@@ -18,9 +18,10 @@ describe('community account registration and activation', () => {
   };
   const tokens = { generate: jest.fn() };
   const delivery = { deliver: jest.fn() };
-  const hasher = { hash: jest.fn() };
+  const hasher = { hash: jest.fn(), compare: jest.fn() };
   let service: CommunityAccountsService;
   const payload = {
+    displayName: 'Ana Comunidad',
     email: 'ana@example.test',
   };
   const validToken = () => ({
@@ -65,7 +66,7 @@ describe('community account registration and activation', () => {
     );
   });
 
-  it('registers only an email without password, Person, or identity fields', async () => {
+  it('registers displayName and email without password, Person, or identity fields', async () => {
     const dto = plainToInstance(CreateCommunityAccountDto, payload);
     expect(await validate(dto)).toHaveLength(0);
     await service.register(dto);
@@ -89,7 +90,7 @@ describe('community account registration and activation', () => {
     const [[createArgument]] = tx.user.create.mock.calls as unknown as Array<[{ data: Record<string, unknown> }]>;
     expect(createArgument.data).not.toHaveProperty('personId');
     expect(createArgument.data).not.toHaveProperty('affiliate');
-    expect(createArgument.data).not.toHaveProperty('fullName');
+    expect(createArgument.data).toMatchObject({ displayName: 'Ana Comunidad' });
     expect(createArgument.data).not.toHaveProperty('identification');
     expect(createArgument.data).not.toHaveProperty('firstName');
     expect(hasher.hash).not.toHaveBeenCalled();
@@ -99,6 +100,7 @@ describe('community account registration and activation', () => {
   it('rejects an invalid email at the DTO boundary', async () => {
     const errors = await validate(
       plainToInstance(CreateCommunityAccountDto, {
+        displayName: 'Ana Comunidad',
         email: 'invalid',
       }),
     );
@@ -107,12 +109,16 @@ describe('community account registration and activation', () => {
     );
   });
 
-  it('normalizes the only accepted registration field', async () => {
+  it('normalizes the accepted registration fields', async () => {
     const dto = plainToInstance(CreateCommunityAccountDto, {
+      displayName: ' Ana Comunidad ',
       email: ' ANA@EXAMPLE.TEST ',
     });
     expect(await validate(dto)).toHaveLength(0);
-    expect(dto).toEqual({ email: 'ana@example.test' });
+    expect(dto).toEqual({
+      displayName: 'Ana Comunidad',
+      email: 'ana@example.test',
+    });
   });
 
   it('acknowledges a duplicate account email without creating another account', async () => {

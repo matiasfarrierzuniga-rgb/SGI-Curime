@@ -27,8 +27,12 @@ function setup(
       findFirst: jest.fn().mockResolvedValue({ id: 7 }),
       findUnique: jest.fn().mockResolvedValue({
         id: 7,
-        fullName: 'Afiliada',
         identification: '1',
+        person: {
+          firstName: 'Afiliada',
+          firstSurname: null,
+          secondSurname: null,
+        },
       }),
     },
     assemblyAttendance: {

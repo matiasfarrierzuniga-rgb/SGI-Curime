@@ -24,7 +24,7 @@ const item: AbsenceJustification = {
   assemblyId: 7,
   affiliateId: 3,
   assembly: { id: 7, title: 'Asamblea general', date: '2026-09-01T18:00:00.000Z' },
-  affiliate: { id: 3, fullName: 'Ana Pérez', identification: '123456789' },
+  affiliate: { id: 3, institutionalName: 'Ana Pérez', identification: '123456789' },
   reviewedBy: null,
   createdAt: '2026-09-01T00:00:00.000Z',
   updatedAt: '2026-09-01T00:00:00.000Z',
@@ -83,7 +83,7 @@ describe('AbsenceJustificationsPage', () => {
     query([{ ...item, status: 'REJECTED' as const, affiliate: null, assembly: null, attachmentOriginalName: null, attachmentMimeType: null, attachmentSize: null }])
     render(<AbsenceJustificationsPage />)
     expect(screen.getByText('Rechazada')).toBeInTheDocument()
-    expect(screen.getByText('Persona sin registro')).toBeInTheDocument()
+    expect(screen.getByText('Persona pendiente de reconciliación')).toBeInTheDocument()
     expect(screen.getByText('Asamblea sin registro')).toBeInTheDocument()
     expect(screen.getByText('Revisión cerrada')).toBeInTheDocument()
   })

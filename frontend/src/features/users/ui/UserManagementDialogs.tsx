@@ -33,7 +33,7 @@ export function UserManagementDialogs({ action, user, roles, busy, error, onClos
 
   if (!action || !user?.access) return null;
 
-  const name = user.fullName || "Persona sin nombre registrado";
+  const name = user.institutionalName || user.access.email;
   const account = user.access.email;
   const closeWhenIdle = (open: boolean) => { if (!open && !busy) onClose(); };
 

@@ -1,0 +1,14 @@
+-- NOT A DEPLOYABLE MIGRATION.
+-- Execute only after an approved reconciliation manifest proves that every
+-- operational User/Affiliate is linked to a complete Person or an approved
+-- quarantine path, and after application consumers no longer query the legacy
+-- columns. Historical request evidence must remain in submittedNameRaw.
+--
+-- Required preconditions:
+-- 1. A reviewed reconciliation export for the target environment.
+-- 2. No ambiguous names awaiting human review.
+-- 3. A tested backup and rollback plan.
+-- 4. A separately approved destructive migration and maintenance window.
+--
+-- The destructive statements are deliberately omitted from this repository
+-- phase: this task has no authorization to delete production data or columns.

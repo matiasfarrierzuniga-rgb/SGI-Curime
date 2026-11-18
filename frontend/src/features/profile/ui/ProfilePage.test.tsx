@@ -5,8 +5,9 @@ import { ToastProvider } from '@/shared/ui/Toast'
 import { ProfilePage } from './ProfilePage'
 
 const changePassword = vi.fn()
+const updateDisplayName = vi.fn()
 const logout = vi.fn()
-vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { fullName: 'Ana', email: 'ana@test.com', role: 'ROLE_SYSTEM_ADMIN', status: 'ACTIVE' }, changePassword, logout }) }))
+vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { displayName: 'Ana', email: 'ana@test.com', role: 'ROLE_SYSTEM_ADMIN', status: 'ACTIVE' }, changePassword, updateDisplayName, logout }) }))
 
 const renderPage = () => render(<MemoryRouter initialEntries={['/profile']}><ToastProvider><Routes><Route path="/profile" element={<ProfilePage />} /><Route path="/login" element={<p>Iniciar sesión</p>} /></Routes></ToastProvider></MemoryRouter>)
 
@@ -48,6 +49,14 @@ describe('ProfilePage', () => {
     expect(await screen.findByText('Actualizada')).toBeInTheDocument()
     expect(logout).not.toHaveBeenCalled()
     expect(await screen.findByText('Iniciar sesión')).toBeInTheDocument()
+  })
+
+  it('validates a non-empty visible name before saving', () => {
+    renderPage()
+    fireEvent.change(screen.getByLabelText(/^Nombre visible/), { target: { value: '   ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar nombre' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Ingrese un nombre visible.')
+    expect(updateDisplayName).not.toHaveBeenCalled()
   })
 
   it('shows a service error', async () => {

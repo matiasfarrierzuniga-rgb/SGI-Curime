@@ -6,7 +6,7 @@ describe('buildReportMetadata', () => {
     const before = Date.now();
 
     const metadata = buildReportMetadata({
-      generatedBy: { id: 7, fullName: 'Persona Administradora' },
+      generatedBy: { id: 7, displayName: 'Persona Administradora' },
       dateFrom,
       filters: { dateFrom, dateTo: undefined, assemblyId: null },
       dataSource: 'ASSEMBLY_CONVOCATION',
@@ -16,7 +16,7 @@ describe('buildReportMetadata', () => {
     expect(metadata.generatedAt.getTime()).toBeLessThanOrEqual(Date.now());
     expect(metadata.generatedBy).toEqual({
       id: 7,
-      fullName: 'Persona Administradora',
+      displayName: 'Persona Administradora',
     });
     expect(metadata.period).toEqual({ from: dateFrom, to: null });
     expect(metadata.appliedFilters).toEqual({ dateFrom });

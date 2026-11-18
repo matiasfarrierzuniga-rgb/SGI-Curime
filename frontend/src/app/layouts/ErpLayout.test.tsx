@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ErpLayout } from './ErpLayout'
 
-const auth = vi.hoisted(() => ({ user: { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'usr.profile.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
+const auth = vi.hoisted(() => ({ user: { displayName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'usr.profile.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] }, logout: vi.fn() }))
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }))
 vi.mock('@/features/notifications', () => ({ NotificationCenter: () => <button type="button" aria-label="Notificaciones">Notificaciones</button> }))
 
@@ -12,7 +12,7 @@ function renderLayout(initialPath = '/app/dashboard') {
 }
 
 describe('ErpLayout', () => {
-  beforeEach(() => { vi.clearAllMocks(); auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'usr.profile.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
+  beforeEach(() => { vi.clearAllMocks(); auth.user = { displayName: 'Ana Pérez', role: 'Administrador', permissionCodes: ['erp.dashboard.read', 'usr.profile.read', 'ent.ventures.read', 'inv.inventory.read', 'fin.charges.read', 'fin.movements.read', 'fin.dinadeco.read'] } })
 
   it('renders desktop navigation, session context, and public-site actions', () => {
     renderLayout()
@@ -74,7 +74,7 @@ describe('ErpLayout', () => {
     ['fin.movements.read', 'Dashboard financiero'],
     ['fin.dinadeco.read', 'DINADECO'],
   ])('routes a collapsed finance group to its authorized %s child', (permissionCode, childLabel) => {
-    auth.user = { fullName: 'Ana Pérez', role: 'Administrador', permissionCodes: [permissionCode] }
+    auth.user = { displayName: 'Ana Pérez', role: 'Administrador', permissionCodes: [permissionCode] }
     renderLayout()
     fireEvent.click(screen.getByRole('link', { name: 'Finanzas' }))
 

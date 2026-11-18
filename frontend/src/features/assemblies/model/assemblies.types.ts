@@ -17,7 +17,7 @@ export interface Convocation {
   id: number
   affiliateId: number
   roleNameSnapshot: string
-  affiliate: { id: number; fullName: string; status: string }
+  affiliate: { id: number; institutionalName: string | null; status: string }
 }
 
 export interface Assembly {
@@ -39,6 +39,6 @@ export interface AttendanceItem extends Convocation { attendance: { id: number; 
 export interface AttendanceSummary { present: number; absent: number; justified: number; unrecorded: number; data: AttendanceItem[]; quorum: QuorumResult }
 export interface AssemblyDetail extends Assembly { convocations: Convocation[]; calls: AssemblyCall[]; quorum: QuorumResult; attendance: AttendanceSummary }
 export interface AssemblyCallPayload { callNumber: number; scheduledAt: string; quorumType: AssemblyQuorumType; quorumValue: number }
-export interface EligibleAffiliate { id: number; fullName: string }
+export interface EligibleAffiliate { id: number; institutionalName: string | null }
 export interface AssemblyPayload { title: string; type?: string; date: string; place: string; description?: string; quorumType: AssemblyQuorumType; quorumValue: number }
 export interface MineAssembly extends Convocation { assembly: Assembly & { attendanceStatus: AttendanceStatus | null; justification: { id: number; status: 'PENDING' | 'APPROVED' | 'REJECTED' } | null } }

@@ -25,7 +25,7 @@ export function UserDetailsModal({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{selected ? `Cuenta: ${selected.fullName || "Sin nombre registrado"}` : "Detalle de cuenta"}</DialogTitle>
+          <DialogTitle>{selected ? `Persona: ${selected.institutionalName ?? "Sin nombre institucional"}` : "Detalle de persona"}</DialogTitle>
           <DialogDescription>Cuenta, identidad vinculada, afiliación y capacidades efectivas se muestran por separado.</DialogDescription>
         </DialogHeader>
         {loading ? <LoadingState label="Cargando detalle de la cuenta…" /> : error ? (

@@ -317,7 +317,7 @@ export class UsersController {
     const response = toUserResponse(account);
     return {
       id: String(response.id),
-      fullName: response.fullName,
+      displayName: response.displayName,
       identification: response.identification,
       identificationType: response.identificationType,
       phoneCountryCode: response.phoneCountryCode,

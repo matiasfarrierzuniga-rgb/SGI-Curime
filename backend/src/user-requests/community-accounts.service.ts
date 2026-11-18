@@ -37,7 +37,7 @@ const COMMUNITY_RECIPIENT_NAME = 'persona de la comunidad';
 type PendingDelivery = {
   userId: number;
   email: string;
-  fullName: string;
+  displayName: string;
   token: string;
   expiresAt: Date;
 };
@@ -154,7 +154,7 @@ export class CommunityAccountsService {
           return {
             userId: id,
             email,
-            fullName: COMMUNITY_RECIPIENT_NAME,
+            displayName: COMMUNITY_RECIPIENT_NAME,
             token: generated.token,
             expiresAt: generated.expiresAt,
           };
@@ -245,7 +245,7 @@ export class CommunityAccountsService {
         return {
           userId: id,
           email: user.email,
-          fullName: COMMUNITY_RECIPIENT_NAME,
+          displayName: COMMUNITY_RECIPIENT_NAME,
           token: generated.token,
           expiresAt: generated.expiresAt,
         };
@@ -282,9 +282,10 @@ export class CommunityAccountsService {
           if (!role || !role.isActive || role.permissions.length > 0) {
             throw new Error('Community account role is not configured.');
           }
-          // `fullName` becomes nullable in the pending human-approved migration.
-          // Do not synthesize identity data for a community email-only account.
+          // Do not synthesize Person or institutional identity data for a
+          // community account.
           const communityUserData = {
+            displayName: dto.displayName,
             email: dto.email,
             passwordHash: null,
             status: 'PENDING_EMAIL_VERIFICATION' as const,
@@ -307,7 +308,7 @@ export class CommunityAccountsService {
           return {
             userId: user.id,
             email: user.email,
-            fullName: COMMUNITY_RECIPIENT_NAME,
+            displayName: dto.displayName,
             token: generated.token,
             expiresAt: generated.expiresAt,
           };
@@ -456,7 +457,7 @@ export class CommunityAccountsService {
         async (tx) => {
           const user = await tx.user.findUnique({
             where: { email },
-            select: { id: true, email: true, status: true },
+            select: { id: true, email: true, displayName: true, status: true },
           });
           if (!user || user.status !== 'PENDING_EMAIL_VERIFICATION')
             return null;
@@ -490,7 +491,7 @@ export class CommunityAccountsService {
           return {
             userId: user.id,
             email: user.email,
-            fullName: COMMUNITY_RECIPIENT_NAME,
+            displayName: user.displayName ?? COMMUNITY_RECIPIENT_NAME,
             token: generated.token,
             expiresAt: generated.expiresAt,
           };

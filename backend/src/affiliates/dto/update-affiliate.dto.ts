@@ -9,25 +9,15 @@ import {
   IsString,
   MaxDate,
   MaxLength,
-  MinLength,
   Matches,
   ValidateIf,
 } from 'class-validator';
 import {
-  FULL_NAME_PATTERN,
   IsIdentificationFor,
   IsPhoneFor,
 } from '../../common/validation/identity-contact.validation';
 import { trim, trimLowercase } from '../../common/validation/normalizers';
 export class UpdateAffiliateDto {
-  @Transform(trim)
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(2)
-  @MaxLength(150)
-  @Matches(FULL_NAME_PATTERN)
-  fullName?: string;
   @IsOptional()
   @IsEnum(IdentificationType)
   identificationType?: IdentificationType;

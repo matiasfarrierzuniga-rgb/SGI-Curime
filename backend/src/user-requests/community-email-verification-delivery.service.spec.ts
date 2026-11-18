@@ -7,7 +7,7 @@ describe('CommunityEmailVerificationDeliveryService', () => {
   const delivery = {
     userId: 7,
     email: 'community@example.test',
-    fullName: 'Persona',
+  displayName: 'Persona',
     token: 'raw-token',
     expiresAt: new Date('2026-10-25T10:00:00.000Z'),
   };
@@ -30,7 +30,7 @@ describe('CommunityEmailVerificationDeliveryService', () => {
       type: NotificationEventType.COMMUNITY_EMAIL_VERIFICATION,
       userId: delivery.userId,
       to: delivery.email,
-      recipientName: delivery.fullName,
+      recipientName: delivery.displayName,
       token: delivery.token,
       expiresAt: delivery.expiresAt,
     });

@@ -16,6 +16,7 @@ import type { Request, Response } from 'express';
 import type { AuthenticatedUser } from '../../domain/entities/auth-user';
 import { ActivateAccountUseCase } from '../../application/use-cases/activate-account.use-case';
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
+import { UpdateDisplayNameUseCase } from '../../application/use-cases/update-display-name.use-case';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { LogoutUseCase } from '../../application/use-cases/logout.use-case';
 import { LogoutAllUseCase } from '../../application/use-cases/logout-all.use-case';
@@ -26,6 +27,7 @@ import { ResetPasswordUseCase } from '../../application/use-cases/reset-password
 import { AuthApplicationError } from '../../application/errors/auth.errors';
 import { ActivateAccountDto } from '../dto/activate-account.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
+import { UpdateDisplayNameDto } from '../dto/update-display-name.dto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { LoginDto } from '../dto/login.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
@@ -51,6 +53,7 @@ export class AuthController {
     private readonly requestPasswordResetUseCase: RequestPasswordResetUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly updateDisplayNameUseCase: UpdateDisplayNameUseCase,
   ) {}
 
   @Post(['auth/login', 'login'])
@@ -205,6 +208,17 @@ export class AuthController {
     );
   }
 
+  @Patch('auth/display-name')
+  @UseGuards(JwtAuthGuard)
+  updateDisplayName(
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: UpdateDisplayNameDto,
+  ) {
+    return this.handle(() =>
+      this.updateDisplayNameUseCase.execute(request.user.id, dto.displayName),
+    );
+  }
+
   @Get('auth/me')
   @UseGuards(JwtAuthGuard)
   me(@Req() request: AuthenticatedRequest): AuthenticatedUser {
@@ -248,7 +262,9 @@ export class AuthController {
 
 function rejectBodyRefreshToken(dto: RefreshTokenDto): void {
   if (dto.refreshToken !== undefined) {
-    throw new BadRequestException('Refresh credentials must be sent by cookie.');
+    throw new BadRequestException(
+      'Refresh credentials must be sent by cookie.',
+    );
   }
 }
 

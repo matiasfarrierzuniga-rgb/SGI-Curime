@@ -1,13 +1,13 @@
 import { CalendarDays, Sun } from "lucide-react";
 
 export function InstitutionalDashboardWelcome({
-  fullName,
+  displayName,
   generatedAt,
 }: {
-  fullName?: string;
+  displayName?: string;
   generatedAt?: string;
 }) {
-  const firstName = fullName?.trim().split(/\s+/)[0];
+  const firstName = displayName?.trim().split(/\s+/)[0];
   const date = generatedAt ? formatDashboardDate(generatedAt) : null;
   return (
     <header className="relative isolate overflow-hidden border-y border-erp-border bg-erp-surface-subtle xl:-mx-6 xl:-mt-9">

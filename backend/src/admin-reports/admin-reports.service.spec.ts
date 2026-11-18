@@ -96,7 +96,7 @@ describe('AdminReportsService attendanceSummary', () => {
     const result = await service.dashboard(
       {
         id: 12,
-        fullName: 'Persona Administradora',
+        displayName: 'Persona Administradora',
       },
       [
         'adm.affiliates.read',
@@ -150,7 +150,7 @@ describe('AdminReportsService attendanceSummary', () => {
     expect(result.metadata).toEqual(
       expect.objectContaining({
         generatedAt: expect.any(Date),
-        generatedBy: { id: 12, fullName: 'Persona Administradora' },
+        generatedBy: { id: 12, displayName: 'Persona Administradora' },
         period: { from: null, to: null },
         appliedFilters: {},
         dataSource: expect.arrayContaining([
@@ -381,7 +381,7 @@ describe('AdminReportsService attendanceSummary', () => {
 
     const result = await service.attendanceSummary(
       { assemblyId: 7, dateFrom, dateTo },
-      { id: 12, fullName: 'Persona Administradora' },
+      { id: 12, displayName: 'Persona Administradora' },
     );
 
     expect(prisma.assembly.findMany).toHaveBeenCalledWith(
@@ -395,7 +395,7 @@ describe('AdminReportsService attendanceSummary', () => {
     expect(result.metadata).toEqual(
       expect.objectContaining({
         generatedAt: expect.any(Date),
-        generatedBy: { id: 12, fullName: 'Persona Administradora' },
+        generatedBy: { id: 12, displayName: 'Persona Administradora' },
         period: { from: dateFrom, to: dateTo },
         appliedFilters: { assemblyId: 7, dateFrom, dateTo },
         dataSource: 'ASSEMBLY_CONVOCATION',

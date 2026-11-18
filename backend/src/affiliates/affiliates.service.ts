@@ -14,9 +14,9 @@ import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueryAffiliatesDto } from './dto/query-affiliates.dto';
 import { UpdateAffiliateDto } from './dto/update-affiliate.dto';
+import { formatInstitutionalPersonName } from '../common/identity/person-name';
 const select = {
   id: true,
-  fullName: true,
   identification: true,
   identificationType: true,
   birthDate: true,
@@ -33,6 +33,7 @@ const select = {
   status: true,
   createdAt: true,
   updatedAt: true,
+  person: { select: { firstName: true, firstSurname: true, secondSurname: true } },
 } satisfies Prisma.AffiliateSelect;
 @Injectable()
 export class AffiliatesService {
@@ -42,14 +43,16 @@ export class AffiliatesService {
   ) {}
   async findAll(q: QueryAffiliatesDto) {
     const where: Prisma.AffiliateWhereInput = {
-      fullName: q.name ? { contains: q.name, mode: 'insensitive' } : undefined,
+      person: q.name
+        ? { is: { OR: [{ firstName: { contains: q.name, mode: 'insensitive' } }, { firstSurname: { contains: q.name, mode: 'insensitive' } }, { secondSurname: { contains: q.name, mode: 'insensitive' } }] } }
+        : undefined,
       identification: q.identification
         ? { contains: q.identification, mode: 'insensitive' }
         : undefined,
       status: q.status,
       OR: q.search
         ? [
-            { fullName: { contains: q.search, mode: 'insensitive' } },
+            { person: { is: { OR: [{ firstName: { contains: q.search, mode: 'insensitive' } }, { firstSurname: { contains: q.search, mode: 'insensitive' } }, { secondSurname: { contains: q.search, mode: 'insensitive' } }] } } },
             { identification: { contains: q.search, mode: 'insensitive' } },
             { email: { contains: q.search, mode: 'insensitive' } },
           ]
@@ -59,13 +62,13 @@ export class AffiliatesService {
       this.prisma.affiliate.findMany({
         where,
         select,
-        orderBy: { fullName: 'asc' },
+        orderBy: { createdAt: 'asc' },
         skip: (q.page - 1) * q.limit,
         take: q.limit,
       }),
       this.prisma.affiliate.count({ where }),
     ]);
-    return { data, total, page: q.page, limit: q.limit };
+    return { data: data.map(toAffiliateResponse), total, page: q.page, limit: q.limit };
   }
   async findOne(id: number) {
     const item = await this.prisma.affiliate.findUnique({
@@ -73,7 +76,7 @@ export class AffiliatesService {
       select,
     });
     if (!item) throw new NotFoundException('Affiliate not found');
-    return item;
+    return toAffiliateResponse(item);
   }
   async update(
     id: number,
@@ -137,7 +140,7 @@ export class AffiliatesService {
       details: { fields: Object.keys(dto) },
       ...context,
     });
-    return item;
+    return toAffiliateResponse(item);
   }
   async setStatus(
     id: number,
@@ -166,7 +169,7 @@ export class AffiliatesService {
       entityId: id,
       ...context,
     });
-    return item;
+    return toAffiliateResponse(item);
   }
 
   async deactivate(id: number, actorId: number, context: AuditContext = {}) {
@@ -196,7 +199,12 @@ export class AffiliatesService {
         },
         tx,
       );
-      return item;
+      return toAffiliateResponse(item);
     });
   }
+}
+
+function toAffiliateResponse<T extends { id: number; person: { firstName: string | null; firstSurname: string | null; secondSurname: string | null } | null }>(affiliate: T) {
+  const { person, ...rest } = affiliate;
+  return { ...rest, institutionalName: person ? formatInstitutionalPersonName(person) : null };
 }

@@ -13,7 +13,7 @@ vi.mock('../api/affiliates.api', () => ({
 
 const affiliate = {
   id: 7,
-  fullName: 'Ana Pérez',
+  institutionalName: 'Ana Pérez',
   identification: '123456789',
   identificationType: 'NATIONAL' as const,
   birthDate: '1990-01-01T00:00:00.000Z',
@@ -80,13 +80,14 @@ describe('Affiliate detail and edit', () => {
     const { queryClient } = renderWithClient(<EditAffiliateModal affiliate={affiliate} onClose={close} />)
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
 
-    expect(screen.getByLabelText('Nombre completo')).toHaveValue('Ana Pérez')
+    expect(screen.queryByLabelText('Nombre completo')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Número de identificación')).toHaveValue('123456789')
-    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Nueva' } })
+    fireEvent.change(screen.getByLabelText('Número de identificación'), { target: { value: '987654321' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
-    await waitFor(() => expect(affiliatesService.update).toHaveBeenCalledWith(7, expect.objectContaining({ fullName: 'Ana Nueva' })))
+    await waitFor(() => expect(affiliatesService.update).toHaveBeenCalledWith(7, expect.objectContaining({ identification: '987654321' })))
     const payload = vi.mocked(affiliatesService.update).mock.calls[0][1] as Record<string, unknown>
+    expect(payload).not.toHaveProperty('institutionalName')
     expect(payload).not.toHaveProperty('id')
     expect(payload).not.toHaveProperty('status')
     expect(payload).not.toHaveProperty('affiliationDate')
@@ -149,7 +150,7 @@ describe('Affiliate detail and edit', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('El teléfono no es válido.')
     expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled()
-    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Corregida' } })
+    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'San José, Curime' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     await waitFor(() => expect(affiliatesService.update).toHaveBeenCalledTimes(2))

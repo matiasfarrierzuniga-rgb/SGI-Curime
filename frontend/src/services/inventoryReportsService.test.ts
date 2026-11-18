@@ -8,7 +8,7 @@ vi.mock('@/shared/api/httpClient', () => ({
 
 const metadata = {
   generatedAt: '2026-09-14T12:00:00.000Z',
-  generatedBy: { id: 7, fullName: 'Persona Gestora' },
+  generatedBy: { id: 7, displayName: 'Persona Gestora' },
   period: { from: null, to: null },
   appliedFilters: {},
   dataSource: 'INVENTORY_ITEM',

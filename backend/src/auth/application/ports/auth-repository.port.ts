@@ -44,5 +44,6 @@ export interface AuthRepository {
     expectedEmail: string,
   ): Promise<boolean>;
   updatePassword(id: number, passwordHash: string): Promise<void>;
+  updateDisplayName(id: number, displayName: string): Promise<boolean>;
   withTransaction<T>(work: (tx: AuthTransaction) => Promise<T>): Promise<T>;
 }

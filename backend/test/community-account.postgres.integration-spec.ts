@@ -215,11 +215,8 @@ describeIntegration('community account PostgreSQL', () => {
 
 function payload() {
   return {
-    fullName: 'Community Test',
+    displayName: 'Community Test',
     email: 'community@example.test',
-    password: 'Password123',
-    passwordConfirmation: 'Password123',
-    privacyAcknowledgement: true,
   };
 }
 

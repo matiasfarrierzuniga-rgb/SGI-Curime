@@ -3,6 +3,8 @@ import { Prisma } from '../../generated/prisma/client';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { formatInstitutionalPersonName } from '../common/identity/person-name';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 import {
   CreateSanctionDto,
   QuerySanctionsDto,
@@ -16,13 +18,49 @@ const select = {
   status: true,
   affiliateId: true,
   affiliate: {
-    select: { id: true, fullName: true, identification: true, status: true },
+    select: { id: true, identification: true, status: true, person: { select: { firstName: true, firstSurname: true, secondSurname: true } } },
   },
   createdById: true,
-  createdBy: { select: { id: true, fullName: true, email: true } },
+  createdBy: { select: { id: true, displayName: true, fullName: true, email: true } },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.AffiliateSanctionSelect;
+
+type SanctionAffiliateSource = {
+  id: number;
+  identification: string;
+  status: string;
+  person: {
+    firstName: string | null;
+    firstSurname: string | null;
+    secondSurname: string | null;
+  } | null;
+};
+
+/**
+ * Presentation-only projection. The institutional name is derived exclusively
+ * from the canonical Person fields; the internal Person object is not exposed.
+ */
+function toSanctionResponse<
+  T extends { affiliate: SanctionAffiliateSource | null; createdBy?: { displayName?: string | null; fullName?: string | null } | null },
+>(sanction: T) {
+  const { affiliate, createdBy, ...rest } = sanction;
+  return {
+    ...rest,
+    ...(createdBy !== undefined ? { createdBy: createdBy ? accountDisplayNameProjection(createdBy) : null } : {}),
+    affiliate: affiliate
+      ? {
+          id: affiliate.id,
+          identification: affiliate.identification,
+          status: affiliate.status,
+          institutionalName: affiliate.person
+            ? formatInstitutionalPersonName(affiliate.person)
+            : null,
+        }
+      : null,
+  };
+}
+
 @Injectable()
 export class SanctionsService {
   constructor(
@@ -52,7 +90,7 @@ export class SanctionsService {
       entityId: item.id,
       ...context,
     });
-    return item;
+    return toSanctionResponse(item);
   }
   async findAll(q: QuerySanctionsDto) {
     const where: Prisma.AffiliateSanctionWhereInput = {
@@ -71,7 +109,12 @@ export class SanctionsService {
       }),
       this.prisma.affiliateSanction.count({ where }),
     ]);
-    return { data, total, page: q.page, limit: q.limit };
+    return {
+      data: data.map(toSanctionResponse),
+      total,
+      page: q.page,
+      limit: q.limit,
+    };
   }
   async findOne(id: number) {
     const item = await this.prisma.affiliateSanction.findUnique({
@@ -79,7 +122,7 @@ export class SanctionsService {
       select,
     });
     if (!item) throw new NotFoundException('Sanction not found');
-    return item;
+    return toSanctionResponse(item);
   }
   async update(
     id: number,
@@ -102,6 +145,6 @@ export class SanctionsService {
       details: { fields: Object.keys(dto) },
       ...context,
     });
-    return item;
+    return toSanctionResponse(item);
   }
 }

@@ -1,5 +1,5 @@
 export interface AuthenticatedUser {
-  id: number; fullName: string; email: string; status: string; role: string
+  id: number; displayName: string; email: string; status: string; role: string
   identification?: string
   identificationType?: 'NATIONAL' | 'DIMEX' | null
   address?: string | null
@@ -17,3 +17,4 @@ export interface LoginCredentials { email: string; password: string }
 export interface LoginResponse { accessToken: string; user: AuthenticatedUser }
 export interface PasswordWithConfirmation { token: string; password: string; passwordConfirmation: string }
 export interface ChangePasswordPayload { currentPassword: string; newPassword: string; newPasswordConfirmation: string }
+export interface UpdateDisplayNamePayload { displayName: string }

@@ -14,7 +14,7 @@ let permissionCodes = ['adm.institutional-board.manage']
 vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes } }) }))
 vi.mock('../hooks/institutionalBoard.queries', () => ({
   useBoardTerms: () => ({ data: [{ id: 1, startsOn: '2026-01-01', endsOn: '2027-12-31', appointments: [{ id: 2, boardTermId: 1, personId: 8, position: 'PRESIDENT', seatNumber: null, startsOn: null, endsOn: null, person: { id: 8, firstName: 'Persona', firstSurname: 'Ficticia', secondSurname: null, legacyFullName: null } }] }], isPending: false, isError: false }),
-  usePersonCandidates: () => ({ data: [{ id: 9, displayName: 'Otra Persona', identificationType: 'NATIONAL', identificationHint: '••••0001' }] }),
+  usePersonCandidates: () => ({ data: [{ id: 9, institutionalName: 'Otra Persona', identificationType: 'NATIONAL', identificationHint: '••••0001' }] }),
   useBoardMutations: () => ({ createTerm: { mutateAsync: createTerm, isPending: false }, updateTerm: { mutateAsync: updateTerm, isPending: false }, createAppointment: { mutateAsync: createAppointment, isPending: false }, updateAppointment: { mutateAsync: updateAppointment, isPending: false }, replaceAppointment: { mutateAsync: replaceAppointment, isPending: false }, revokeAppointment: { mutateAsync: revokeAppointment, isPending: false } }),
 }))
 

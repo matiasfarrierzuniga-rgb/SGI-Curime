@@ -1,6 +1,6 @@
 import { httpClient } from '@/shared/api/httpClient'
 import type { ApiMessage } from '@/shared/api/api.types'
-import type { AuthenticatedUser, ChangePasswordPayload, LoginCredentials, LoginResponse, PasswordWithConfirmation } from '../model/auth.types'
+import type { AuthenticatedUser, ChangePasswordPayload, LoginCredentials, LoginResponse, PasswordWithConfirmation, UpdateDisplayNamePayload } from '../model/auth.types'
 
 export const authService = {
   async login(payload: LoginCredentials) { return (await httpClient.post<LoginResponse>('/login', payload)).data },
@@ -11,4 +11,5 @@ export const authService = {
   async forgotPassword(email: string) { return (await httpClient.post<ApiMessage>('/auth/forgot-password', { email })).data },
   async resetPassword(payload: PasswordWithConfirmation) { return (await httpClient.post<ApiMessage>('/auth/reset-password', payload)).data },
   async changePassword(payload: ChangePasswordPayload) { return (await httpClient.patch<ApiMessage>('/auth/change-password', payload)).data },
+  async updateDisplayName(payload: UpdateDisplayNamePayload) { return (await httpClient.patch<{ displayName: string }>('/auth/display-name', payload)).data },
 }

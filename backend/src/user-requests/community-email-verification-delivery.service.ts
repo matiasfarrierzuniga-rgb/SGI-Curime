@@ -5,7 +5,7 @@ import { NotificationEventType } from '../modules/notifications/domain/notificat
 export type CommunityVerificationDelivery = {
   userId: number;
   email: string;
-  fullName: string;
+  displayName: string;
   token: string;
   expiresAt: Date;
 };
@@ -24,7 +24,7 @@ export class CommunityEmailVerificationDeliveryService {
         type: NotificationEventType.COMMUNITY_EMAIL_VERIFICATION,
         userId: delivery.userId,
         to: delivery.email,
-        recipientName: delivery.fullName,
+        recipientName: delivery.displayName,
         token: delivery.token,
         expiresAt: delivery.expiresAt,
       });

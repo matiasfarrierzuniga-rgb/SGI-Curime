@@ -36,9 +36,12 @@ import {
   type PersonRegistrationConflictCode,
 } from '../domain/errors/person-registration-conflict.error';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error';
+import { formatInstitutionalPersonName } from '../../../common/identity/person-name';
+import { formatAccountDisplayName } from '../../../common/identity/account-display-name';
 
 const userSelect = {
   id: true,
+  displayName: true,
   fullName: true,
   identification: true,
   identificationType: true,
@@ -58,7 +61,6 @@ const userSelect = {
       firstName: true,
       firstSurname: true,
       secondSurname: true,
-      legacyFullName: true,
       identification: true,
       identificationType: true,
       email: true,
@@ -88,7 +90,6 @@ const adminPersonSelect = {
   firstName: true,
   firstSurname: true,
   secondSurname: true,
-  legacyFullName: true,
   identification: true,
   identificationType: true,
   email: true,
@@ -106,12 +107,9 @@ type SafeAdminPerson = Prisma.PersonGetPayload<{
 }>;
 
 function toUser(user: SafeUser): User {
-  const canonicalName = user.person
-    ? formatPersonName(user.person) ?? user.person.legacyFullName
-    : null;
   return {
     id: user.id,
-    fullName: canonicalName ?? user.fullName ?? 'Cuenta',
+    displayName: formatAccountDisplayName(user),
     identification: user.person?.identification ?? user.identification,
     identificationType:
       user.person?.identificationType ?? user.identificationType,
@@ -151,7 +149,7 @@ function toUser(user: SafeUser): User {
 function toAdminPerson(person: SafeAdminPerson): AdminPersonReadModel {
   return {
     id: String(person.id),
-    fullName: person.legacyFullName ?? formatPersonName(person),
+    institutionalName: formatInstitutionalPersonName(person),
     identification: person.identification,
     identificationType: person.identificationType,
     contactEmail: person.email,
@@ -171,14 +169,6 @@ function toAdminPerson(person: SafeAdminPerson): AdminPersonReadModel {
   };
 }
 
-function formatPersonName(
-  person: Pick<SafeAdminPerson, 'firstName' | 'firstSurname' | 'secondSurname'>,
-): string | null {
-  const value = [person.firstName, person.firstSurname, person.secondSurname]
-    .filter((part): part is string => Boolean(part?.trim()))
-    .join(' ');
-  return value || null;
-}
 
 @Injectable()
 export class PrismaUsersRepository implements UsersRepository {
@@ -591,7 +581,6 @@ export class PrismaUsersRepository implements UsersRepository {
     if (query.name) {
       textConditions.push({
         OR: [
-          { legacyFullName: { contains: query.name, mode: 'insensitive' } },
           { firstName: { contains: query.name, mode: 'insensitive' } },
           { firstSurname: { contains: query.name, mode: 'insensitive' } },
           { secondSurname: { contains: query.name, mode: 'insensitive' } },
@@ -648,7 +637,6 @@ export class PrismaUsersRepository implements UsersRepository {
       where: {
         user: { is: null },
         OR: [
-          { legacyFullName: { contains: query, mode: 'insensitive' } },
           { firstName: { contains: query, mode: 'insensitive' } },
           { firstSurname: { contains: query, mode: 'insensitive' } },
           { identification: { contains: query, mode: 'insensitive' } },
@@ -659,7 +647,6 @@ export class PrismaUsersRepository implements UsersRepository {
         firstName: true,
         firstSurname: true,
         secondSurname: true,
-        legacyFullName: true,
         identification: true,
         affiliate: { select: { status: true } },
       },
@@ -668,8 +655,7 @@ export class PrismaUsersRepository implements UsersRepository {
     });
     return people.map((person) => ({
       id: person.id,
-      displayName:
-        person.legacyFullName ?? formatPersonName(person) ?? `Persona ${person.id}`,
+      displayName: formatInstitutionalPersonName(person) ?? `Persona ${person.id}`,
       identificationHint: person.identification
         ? `••••${person.identification.replace(/\D/g, '').slice(-4)}`
         : null,
@@ -747,8 +733,8 @@ export class PrismaUsersRepository implements UsersRepository {
     if (query.name) {
       textConditions.push({
         OR: [
+          { displayName: { contains: query.name, mode: 'insensitive' } },
           { fullName: { contains: query.name, mode: 'insensitive' } },
-          { person: { is: { legacyFullName: { contains: query.name, mode: 'insensitive' } } } },
           { person: { is: { firstName: { contains: query.name, mode: 'insensitive' } } } },
           { person: { is: { firstSurname: { contains: query.name, mode: 'insensitive' } } } },
         ],

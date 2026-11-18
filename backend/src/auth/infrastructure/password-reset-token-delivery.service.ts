@@ -15,7 +15,7 @@ export class PasswordResetTokenDeliveryService implements PasswordResetDeliveryP
       const result = await this.notifications.send({
         type: NotificationEventType.PASSWORD_RESET_REQUESTED,
         to: delivery.email,
-        recipientName: delivery.fullName,
+        recipientName: delivery.displayName,
         token: delivery.token,
       });
       if (!result.accepted) throw new Error('Delivery not accepted');

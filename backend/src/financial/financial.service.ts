@@ -16,6 +16,7 @@ import {
   Prisma,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { CreateFinancialMovementDto } from './dto/create-financial-movement.dto';
@@ -71,7 +72,7 @@ const financialMovementSelect = {
 
 const financialMovementDetailSelect = {
   ...financialMovementSelect,
-  recordedBy: { select: { id: true, fullName: true } },
+  recordedBy: { select: { id: true, displayName: true, fullName: true } },
 } satisfies Prisma.FinancialMovementSelect;
 
 type FinancialTransaction = Pick<
@@ -493,12 +494,14 @@ export class FinancialService {
   }
 
   private serializeMovement<T extends { amount: Prisma.Decimal }>(movement: T) {
-    const { legacySource, legacySourceId, ...rest } = movement as T & {
+    const { legacySource, legacySourceId, recordedBy, ...rest } = movement as T & {
       legacySource?: FinancialMovementSource;
       legacySourceId?: number | null;
+      recordedBy?: { displayName?: string | null; fullName?: string | null } | null;
     };
     return {
       ...rest,
+      ...(recordedBy !== undefined ? { recordedBy: recordedBy ? accountDisplayNameProjection(recordedBy) : null } : {}),
       ...(legacySource !== undefined ? { source: legacySource } : {}),
       ...(legacySourceId !== undefined ? { sourceId: legacySourceId } : {}),
       amount: movement.amount.toFixed(2),

@@ -16,6 +16,7 @@ import { CreateEntryDto } from './dto/create-entry.dto';
 import { CreateExitDto } from './dto/create-exit.dto';
 import { CreateAdjustmentDto } from './dto/create-adjustment.dto';
 import { QueryMovementsDto } from './dto/query-movements.dto';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 
 const movementSelect = {
   id: true,
@@ -37,6 +38,7 @@ const movementSelect = {
   createdBy: {
     select: {
       id: true,
+      displayName: true,
       fullName: true,
       email: true,
     },
@@ -286,8 +288,8 @@ export class InventoryMovementsService {
   }
 
   private serializeMovement<T extends { legacyQuantity: number }>(movement: T) {
-    const { legacyQuantity, ...rest } = movement;
-    return { ...rest, quantity: legacyQuantity };
+    const { legacyQuantity, createdBy, ...rest } = movement as T & { createdBy?: { displayName?: string | null; fullName?: string | null } | null };
+    return { ...rest, ...(createdBy !== undefined ? { createdBy: createdBy ? accountDisplayNameProjection(createdBy) : null } : {}), quantity: legacyQuantity };
   }
 }
 

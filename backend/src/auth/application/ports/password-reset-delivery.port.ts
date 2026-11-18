@@ -4,7 +4,7 @@ export const PASSWORD_RESET_DELIVERY_PORT = Symbol(
 
 export interface PasswordResetDelivery {
   email: string;
-  fullName: string;
+  displayName: string;
   token: string;
   expiresAt: Date;
 }

@@ -10,7 +10,7 @@ import { DeactivateUserUseCase } from './deactivate-user.use-case';
 
 const adminUser = {
   id: 1,
-  fullName: 'Admin',
+  displayName: 'Admin',
   identification: '1-1111',
   email: 'admin@example.com',
   phone: null,

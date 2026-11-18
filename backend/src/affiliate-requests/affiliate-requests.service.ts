@@ -21,6 +21,7 @@ import { TerritorialCatalogService } from '../territorial-catalog/territorial-ca
 const select = {
   id: true,
   fullName: true,
+  submittedNameRaw: true,
   identification: true,
   identificationType: true,
   birthDate: true,
@@ -59,7 +60,7 @@ const select = {
   rejectionReason: true,
   reviewedAt: true,
   reviewedById: true,
-  reviewedBy: { select: { id: true, fullName: true, email: true } },
+  reviewedBy: { select: { id: true, displayName: true, email: true } },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.AffiliateRequestSelect;
@@ -105,6 +106,7 @@ export class AffiliateRequestsService {
           workplace: dto.workplace,
           affiliationReason: dto.affiliationReason,
           submittedFullName: personFullName(dto),
+          submittedNameRaw: personFullName(dto),
           submittedIdentification: dto.identification,
           submittedIdentificationType: dto.identificationType,
           submittedBirthDate: dto.birthDate,
@@ -246,7 +248,7 @@ export class AffiliateRequestsService {
             !person.identification ||
             !person.identificationType ||
             !person.birthDate ||
-            personFullName(person) !== snapshot.fullName ||
+            personFullName(person) !== snapshot.submittedNameRaw ||
             person.identification !== snapshot.identification ||
             person.identificationType !== snapshot.identificationType ||
             person.birthDate.getTime() !== snapshot.birthDate.getTime()
@@ -264,7 +266,9 @@ export class AffiliateRequestsService {
           const affiliate = await tx.affiliate.create({
             data: {
               personId: request.personId,
-              fullName: snapshot.fullName,
+              // Required legacy column during transition; it mirrors the
+              // immutable opaque submission evidence and is never parsed.
+              fullName: snapshot.submittedNameRaw,
               identification: snapshot.identification,
               identificationType: snapshot.identificationType,
               birthDate: snapshot.birthDate,
@@ -515,7 +519,8 @@ function affiliateRequestSnapshot<T extends AffiliateRequestSnapshotSource>(
   request: T,
 ) {
   return {
-    fullName: request.submittedFullName ?? request.fullName,
+    submittedNameRaw:
+      request.submittedNameRaw ?? request.submittedFullName ?? request.fullName,
     identification: request.submittedIdentification ?? request.identification,
     identificationType:
       request.submittedIdentificationType ?? request.identificationType,
@@ -550,6 +555,7 @@ type AffiliateRequestSnapshotSource = {
   workplace: string | null;
   affiliationReason: string;
   submittedFullName?: string | null;
+  submittedNameRaw?: string | null;
   submittedIdentification?: string | null;
   submittedIdentificationType?: IdentificationType | null;
   submittedBirthDate?: Date | null;
@@ -572,6 +578,7 @@ function toAffiliateRequestSnapshotResponse<
   T extends AffiliateRequestSnapshotSource,
 >(request: T) {
   const snapshot = affiliateRequestSnapshot(request);
+  const { fullName: _legacyFullName, ...requestWithoutLegacyName } = request;
   const hasTerritorialDeclaration = Boolean(
     request.submittedProvinceCode ||
       request.submittedCantonCode ||
@@ -579,9 +586,10 @@ function toAffiliateRequestSnapshotResponse<
       request.submittedCommunity,
   );
   return {
-    ...request,
+    ...requestWithoutLegacyName,
     ...snapshot,
-    submittedFullName: request.submittedFullName ?? snapshot.fullName,
+    submittedNameRaw: snapshot.submittedNameRaw,
+    submittedFullName: request.submittedFullName ?? snapshot.submittedNameRaw,
     submittedIdentification:
       request.submittedIdentification ?? snapshot.identification,
     submittedIdentificationType:

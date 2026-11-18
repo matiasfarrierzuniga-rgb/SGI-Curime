@@ -47,7 +47,7 @@ const adminSelect = {
     select: { id: true, amount: true, currency: true, status: true, dueAt: true },
   },
   requesterUserId: true,
-  requester: { select: { id: true, fullName: true, email: true } },
+  requester: { select: { id: true, displayName: true, email: true } },
   eventId: true,
   event: { select: { id: true, title: true, startAt: true, endAt: true } },
   startAt: true,
@@ -61,7 +61,7 @@ const adminSelect = {
   status: true,
   approvedAt: true,
   approvedById: true,
-  approvedBy: { select: { id: true, fullName: true, email: true } },
+  approvedBy: { select: { id: true, displayName: true, email: true } },
   rejectionReason: true,
   cancelledAt: true,
   createdAt: true,
@@ -82,7 +82,7 @@ function makeReservation(overrides: Record<string, unknown> = {}) {
     },
     financialCharge: null,
     requesterUserId: 7,
-    requester: { id: 7, fullName: 'Juan', email: 'juan@test.com' },
+    requester: { id: 7, displayName: 'Juan', email: 'juan@test.com' },
     eventId: null,
     event: null,
     startAt,
@@ -646,7 +646,7 @@ describe('ReservationsService', () => {
 
       expect(item.requester).toEqual({
         id: 7,
-        fullName: 'Juan',
+        displayName: 'Juan',
         email: 'juan@test.com',
       });
       expect(item).not.toHaveProperty('passwordHash');
@@ -675,7 +675,7 @@ describe('ReservationsService', () => {
       expect(result.financialCharge).toBeNull();
       expect(result.requester).toEqual({
         id: 7,
-        fullName: 'Juan',
+        displayName: 'Juan',
         email: 'juan@test.com',
       });
     });

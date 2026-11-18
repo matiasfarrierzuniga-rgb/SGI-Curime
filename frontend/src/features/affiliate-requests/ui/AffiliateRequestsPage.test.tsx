@@ -7,7 +7,7 @@ import { useAffiliateRequestDetail, useAffiliateRequestMutations, useAffiliateRe
 vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { permissionCodes: ['adm.requests.read', 'padron.application.approve'] } }) }))
 vi.mock('../hooks/useAffiliateRequestsQueries', () => ({ useAffiliateRequestDetail: vi.fn(), useAffiliateRequestMutations: vi.fn(), useAffiliateRequestsList: vi.fn() }))
 
-const request = { id: 7, fullName: 'Ana Pérez', identification: '123456789', identificationType: 'NATIONAL', birthDate: '1990-01-01T00:00:00.000Z', gender: null, phoneCountryCode: '+506', phoneNationalNumber: '88888888', phone: null, email: 'ana@example.com', address: 'Curime', occupation: null, workplace: null, affiliationReason: 'Participar', status: 'PENDING', rejectionReason: null, reviewedAt: null, reviewedById: null, reviewedBy: null, createdAt: '2026-01-01', updatedAt: '2026-01-01' } as const
+const request = { id: 7, submittedNameRaw: 'Ana Pérez', identification: '123456789', identificationType: 'NATIONAL', birthDate: '1990-01-01T00:00:00.000Z', gender: null, phoneCountryCode: '+506', phoneNationalNumber: '88888888', phone: null, email: 'ana@example.com', address: 'Curime', occupation: null, workplace: null, affiliationReason: 'Participar', status: 'PENDING', rejectionReason: null, reviewedAt: null, reviewedById: null, reviewedBy: null, createdAt: '2026-01-01', updatedAt: '2026-01-01' } as const
 describe('AffiliateRequestDetail approval', () => {
   const approve = { mutateAsync: vi.fn(), isPending: false }; const reject = { mutateAsync: vi.fn(), isPending: false }
   beforeEach(() => {
@@ -60,7 +60,7 @@ describe('AffiliateRequestDetail approval', () => {
         rejectionReason: 'Información incompleta',
         reviewedAt: '2026-01-15T12:00:00.000Z',
         reviewedById: 3,
-        reviewedBy: { id: 3, fullName: 'Luis Mora', email: 'luis@example.com' },
+        reviewedBy: { id: 3, displayName: 'Luis Mora', email: 'luis@example.com' },
       },
       isPending: false,
       isError: false,

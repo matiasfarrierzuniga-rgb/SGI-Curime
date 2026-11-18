@@ -23,7 +23,7 @@ describe('RequestPasswordResetUseCase', () => {
     repository.findCredentialsByEmail.mockResolvedValue({
       id: 1,
       email: 'user@example.com',
-      fullName: 'User',
+      displayName: 'User',
       status: 'ACTIVE',
     });
     repository.invalidateAndCreateResetToken.mockResolvedValue(true);
@@ -74,7 +74,7 @@ describe('RequestPasswordResetUseCase', () => {
     );
     expect(delivery.deliver).toHaveBeenCalledWith({
       email: 'user@example.com',
-      fullName: 'User',
+      displayName: 'User',
       token: anyToken,
       expiresAt: anyDate,
     });

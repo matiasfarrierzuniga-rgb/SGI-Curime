@@ -134,7 +134,7 @@ export function AppHomePage() {
     };
   }, [shouldLoadInventorySummary]);
 
-  const firstName = user?.fullName?.trim().split(/\s+/)[0];
+  const firstName = user?.displayName?.trim().split(/\s+/)[0];
 
   return (
     <PageContainer
@@ -145,24 +145,24 @@ export function AppHomePage() {
       {canViewAdministrativeMetrics ? (
         <AdminDashboard
           permissionCodes={user?.permissionCodes}
-          userName={user?.fullName}
+          userName={user?.displayName}
         />
       ) : canViewSecretaryDashboard ? (
         <SecretaryDashboard
           permissionCodes={user?.permissionCodes}
-          userName={user?.fullName}
+          userName={user?.displayName}
         />
       ) : canViewPresidentDashboard ? (
         <PresidentDashboard
           permissionCodes={user?.permissionCodes}
-          userName={user?.fullName}
+          userName={user?.displayName}
         />
       ) : canViewTreasuryDashboard ? (
-        <TreasuryDashboard permissionCodes={user?.permissionCodes} userName={user?.fullName} />
+        <TreasuryDashboard permissionCodes={user?.permissionCodes} userName={user?.displayName} />
       ) : canViewOperatorDashboard ? (
         <OperatorDashboard
           permissionCodes={user?.permissionCodes}
-          userName={user?.fullName}
+          userName={user?.displayName}
           canViewInventory={canViewInventory}
           summary={summary}
           loading={loading}
@@ -170,7 +170,7 @@ export function AppHomePage() {
           quickActions={authorizedDestinations}
         />
       ) : canViewDashboard ? (
-        <InstitutionalDashboardWelcome fullName={user?.fullName} />
+        <InstitutionalDashboardWelcome displayName={user?.displayName} />
       ) : (
         <header>
           <h1 className="font-sans text-heading-1 font-bold text-text-primary">

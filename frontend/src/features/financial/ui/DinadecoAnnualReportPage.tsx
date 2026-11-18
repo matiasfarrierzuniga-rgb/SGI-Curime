@@ -85,7 +85,7 @@ function ReportContent({ report, mayEditInstitutionalProfile }: { report: NonNul
           <dl className="grid gap-4 text-sm sm:grid-cols-3">
             <ReportDatum icon={<CalendarDays />} label="Período" value={`${formatPeriodDate(metadata.period.from)} – ${formatPeriodEnd(metadata.period.to)}`} />
             <ReportDatum icon={<FileText />} label="Fecha de generación" value={formatFinancialDate(metadata.generatedAt)} />
-            <ReportDatum icon={<Wallet />} label="Generado por" value={metadata.generatedBy?.fullName ?? 'Usuario no disponible'} />
+            <ReportDatum icon={<Wallet />} label="Generado por" value={metadata.generatedBy?.displayName ?? 'Usuario no disponible'} />
           </dl>
         </CardContent>
       </Card>

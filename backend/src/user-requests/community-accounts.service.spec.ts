@@ -8,7 +8,7 @@ describe('CommunityAccountsService', () => {
   };
   const tokens = { generate: jest.fn() };
   const delivery = { deliver: jest.fn() };
-  const hasher = { hash: jest.fn() };
+  const hasher = { hash: jest.fn(), compare: jest.fn() };
   const audit = { log: jest.fn() };
 
   beforeEach(() => jest.clearAllMocks());

@@ -316,14 +316,14 @@ export function InventoryLoansPage() {
             <div><dt>Artículo</dt><dd>{selected.item.name} ({selected.item.code})</dd></div>
             <div><dt>Cantidad</dt><dd>{selected.quantity}</dd></div>
             <div><dt>Prestatario</dt><dd>{selected.borrowerName}</dd></div>
-            <div><dt>Afiliado</dt><dd>{selected.affiliate ? `${selected.affiliate.fullName} — ${selected.affiliate.identification}` : '—'}</dd></div>
+            <div><dt>Afiliado</dt><dd>{selected.affiliate ? `${selected.affiliate.institutionalName ?? `Afiliación ${selected.affiliate.id} pendiente de reconciliación`} — ${selected.affiliate.identification}` : '—'}</dd></div>
             <div><dt>Fecha de préstamo</dt><dd>{formatDate(selected.loanDate)}</dd></div>
             <div><dt>Devolución esperada</dt><dd>{formatDate(selected.expectedReturnDate)}</dd></div>
             <div><dt>Estado</dt><dd><StatusBadge variant={statusTone(selected)}>{loanStatusLabels[selected.status]}{selected.isOverdue ? ' · Vencido' : ''}</StatusBadge></dd></div>
             {selected.returnedAt && <div><dt>Devuelto el</dt><dd>{formatDate(selected.returnedAt)}</dd></div>}
             <div><dt>Notas</dt><dd>{selected.notes || '—'}</dd></div>
-            <div><dt>Registrado por</dt><dd>{selected.createdBy?.fullName ?? '—'}</dd></div>
-            {selected.receivedBy && <div><dt>Recibido por</dt><dd>{selected.receivedBy.fullName}</dd></div>}
+            <div><dt>Registrado por</dt><dd>{selected.createdBy?.displayName ?? '—'}</dd></div>
+            {selected.receivedBy && <div><dt>Recibido por</dt><dd>{selected.receivedBy.displayName}</dd></div>}
           </dl>
           {mayManageInventory && selected.status === 'ACTIVE' && (
             <div className="actions">

@@ -66,5 +66,5 @@ describe('Institutional profile access (e2e)', () => {
 });
 
 function authAccount(roleName: string): AuthAccount {
-  return { id: 1, email: 'user@curime.test', fullName: `Usuario ${roleName}`, status: 'ACTIVE', passwordHash: null, lockedAt: null, failedLoginAttempts: 0, lastLoginAt: null, roleName, roleId: 1, roleIsActive: true, permissionCodes: ROLE_CAPABILITIES[roleName] ?? [], hasPerson: false, affiliateStatus: null, affiliateRoleId: null, subscriptionExpirationDate: null };
+  return { id: 1, email: 'user@curime.test', displayName: `Usuario ${roleName}`, status: 'ACTIVE', passwordHash: null, lockedAt: null, failedLoginAttempts: 0, lastLoginAt: null, sessionGeneration: 1, roleName, roleId: 1, roleIsActive: true, permissionCodes: ROLE_CAPABILITIES[roleName] ?? [], hasPerson: false, affiliateStatus: null, affiliateRoleId: null, subscriptionExpirationDate: null };
 }

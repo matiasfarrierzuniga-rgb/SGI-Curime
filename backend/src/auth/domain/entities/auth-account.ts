@@ -1,7 +1,7 @@
 export interface AuthAccount {
   id: number;
   email: string;
-  fullName: string;
+  displayName: string;
   status: string;
   passwordHash: string | null;
   lockedAt: Date | null;

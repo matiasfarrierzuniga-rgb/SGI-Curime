@@ -195,7 +195,7 @@ describe('Assembly convocations', () => {
         legacyRoleId: null,
         legacyRoleNameSnapshot: '',
         convenedAt: new Date(),
-        affiliate: { id: 1, fullName: 'Andrea', status: 'ACTIVE' },
+        affiliate: { id: 1, institutionalName: 'Andrea', status: 'ACTIVE' },
       },
       {
         id: 12,
@@ -204,7 +204,7 @@ describe('Assembly convocations', () => {
         legacyRoleId: null,
         legacyRoleNameSnapshot: '',
         convenedAt: new Date(),
-        affiliate: { id: 2, fullName: 'José', status: 'ACTIVE' },
+        affiliate: { id: 2, institutionalName: 'José', status: 'ACTIVE' },
       },
     ];
     prisma.affiliate.findMany.mockResolvedValue([
@@ -322,7 +322,7 @@ describe('Assembly convocations', () => {
         id: 1,
         legacyRoleNameSnapshot: 'Fiscal',
         legacyRoleId: 3,
-        affiliate: { id: 7, fullName: 'Ana' },
+        affiliate: { id: 7, institutionalName: 'Ana' },
       },
     ]);
     const result = await serviceFor(prisma).getConvocations(1);
@@ -507,7 +507,11 @@ describe('Assembly lifecycle, deletion and attendance', () => {
       convocationsLockedAt: new Date(),
     });
     prisma.assemblyConvocation.findMany.mockResolvedValue([
-      { id: 11, affiliateId: 7 },
+      {
+        id: 11,
+        affiliateId: 7,
+        affiliate: { id: 7, status: 'ACTIVE', person: null },
+      },
     ]);
     await serviceFor(prisma).recordAttendance(
       1,
@@ -573,7 +577,11 @@ describe('Assembly lifecycle, deletion and attendance', () => {
       convocationsLockedAt: new Date(),
     });
     prisma.assemblyConvocation.findMany.mockResolvedValue([
-      { id: 11, affiliateId: 7 },
+      {
+        id: 11,
+        affiliateId: 7,
+        affiliate: { id: 7, status: 'ACTIVE', person: null },
+      },
     ]);
     await serviceFor(prisma).recordAttendance(
       1,

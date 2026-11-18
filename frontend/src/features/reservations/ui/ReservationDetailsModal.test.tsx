@@ -31,7 +31,7 @@ describe('ReservationDetailsModal', () => {
   })
 
   it('organizes returned detail into request, resource, and lifecycle sections', () => {
-    vi.mocked(useReservationDetail).mockReturnValue({ isPending: false, isError: false, data: { id: 11, status: 'PENDING', createdAt: '2030-01-01T10:00:00.000Z', requester: { fullName: 'Ana Pérez', email: 'ana@example.com' }, resource: { name: 'Salón comunal', location: 'Curime' }, event: null, startAt: '2030-01-01T16:00:00.000Z', endAt: '2030-01-01T18:00:00.000Z', purpose: 'Reunión vecinal', estimatedAttendees: 20, notes: 'Notas extensas', approvedBy: null, approvedAt: null, rejectionReason: null, cancelledAt: null, financialCharge: null } } as never)
+    vi.mocked(useReservationDetail).mockReturnValue({ isPending: false, isError: false, data: { id: 11, status: 'PENDING', createdAt: '2030-01-01T10:00:00.000Z', requester: { displayName: 'Ana Pérez', email: 'ana@example.com' }, resource: { name: 'Salón comunal', location: 'Curime' }, event: null, startAt: '2030-01-01T16:00:00.000Z', endAt: '2030-01-01T18:00:00.000Z', purpose: 'Reunión vecinal', estimatedAttendees: 20, notes: 'Notas extensas', approvedBy: null, approvedAt: null, rejectionReason: null, cancelledAt: null, financialCharge: null } } as never)
     render(<ReservationDetailsModal id={11} permissionCodes={[]} busy={false} onClose={vi.fn()} onApprove={vi.fn()} onReject={vi.fn()} onCancel={vi.fn()} />)
     expect(screen.getByRole('heading', { name: 'Solicitud' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Recurso' })).toBeInTheDocument()

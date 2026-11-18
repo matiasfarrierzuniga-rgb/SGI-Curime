@@ -33,7 +33,7 @@ const loan = {
   updatedAt: '2026-01-01T00:00:00.000Z',
   item: { id: 1, code: 'HER-001', name: 'Martillo', unit: 'unidad', category: { id: 1, name: 'Herramientas' } },
   affiliate: null,
-  createdBy: { id: 1, fullName: 'Ana Pérez', email: 'ana@test.com' },
+  createdBy: { id: 1, displayName: 'Ana Pérez', email: 'ana@test.com' },
   receivedBy: null,
   isOverdue: false,
 } as const
