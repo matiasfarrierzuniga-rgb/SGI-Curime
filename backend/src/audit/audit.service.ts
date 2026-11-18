@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditAction } from './audit-actions';
 import { QueryAuditLogsDto } from './dto/query-audit-logs.dto';
 import { formatInstitutionalPersonName } from '../common/identity/person-name';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 
 export interface AuditContext {
   ipAddress?: string;
@@ -115,7 +116,7 @@ export class AuditService {
       this.prisma.auditLog.findMany({
         where,
         include: {
-          user: { select: { id: true, displayName: true, email: true } },
+          user: { select: { id: true, displayName: true, fullName: true, email: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: (query.page - 1) * query.limit,
@@ -123,15 +124,15 @@ export class AuditService {
       }),
       this.prisma.auditLog.count({ where }),
     ]);
-    return { data, total, page: query.page, limit: query.limit };
+    return { data: data.map((log) => this.serializeAuditLog(log)), total, page: query.page, limit: query.limit };
   }
   async findOne(id: number) {
     const log = await this.prisma.auditLog.findUnique({
       where: { id },
-      include: { user: { select: { id: true, displayName: true, email: true } } },
+      include: { user: { select: { id: true, displayName: true, fullName: true, email: true } } },
     });
     if (!log) throw new NotFoundException('Audit log not found');
-    return log;
+    return this.serializeAuditLog(log);
   }
 
   async findBoardPrivilegeReviews(page = 1, limit = 20) {
@@ -161,7 +162,7 @@ export class AuditService {
             createdAt: true,
             details: true,
             entityId: true,
-            user: { select: { id: true, displayName: true, email: true } },
+            user: { select: { id: true, displayName: true, fullName: true, email: true } },
           },
         })
       : [];
@@ -202,7 +203,7 @@ export class AuditService {
         id: true,
         createdAt: true,
         details: true,
-        user: { select: { id: true, displayName: true, email: true } },
+        user: { select: { id: true, displayName: true, fullName: true, email: true } },
       },
     });
     return this.toBoardPrivilegeReview(review, resolution, client);
@@ -251,7 +252,7 @@ export class AuditService {
       id: number;
       createdAt: Date;
       details: Prisma.JsonValue | null;
-      user: { id: number; displayName: string | null; email: string } | null;
+      user: { id: number; displayName: string | null; fullName: string | null; email: string } | null;
     } | null,
     client: AuditLogClient,
   ): Promise<BoardPrivilegeReview> {
@@ -282,6 +283,7 @@ export class AuditService {
           select: {
             id: true,
             displayName: true,
+            fullName: true,
             email: true,
             status: true,
             role: {
@@ -324,7 +326,7 @@ export class AuditService {
       account: account
         ? {
             id: account.id,
-            displayName: account.displayName ?? account.email,
+            displayName: accountDisplayNameProjection(account).displayName,
             email: account.email,
             status: account.status,
             role: { id: account.role.id, name: account.role.name },
@@ -340,7 +342,7 @@ export class AuditService {
             actor: resolution.user
               ? {
                   id: resolution.user.id,
-                  displayName: resolution.user.displayName ?? resolution.user.email,
+                  displayName: accountDisplayNameProjection(resolution.user).displayName,
                   email: resolution.user.email,
                 }
               : null,
@@ -363,6 +365,13 @@ export class AuditService {
                 : null,
           }
         : null,
+    };
+  }
+
+  private serializeAuditLog<T extends { user?: { displayName?: string | null; fullName?: string | null } | null }>(log: T) {
+    return {
+      ...log,
+      ...(log.user !== undefined ? { user: log.user ? accountDisplayNameProjection(log.user) : null } : {}),
     };
   }
 

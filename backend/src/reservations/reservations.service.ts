@@ -21,6 +21,7 @@ import {
 } from './reservation-applicant-category.policy';
 import { InboxNotificationService } from '../modules/notifications/application/inbox-notification.service';
 import { getReservationTariff } from './reservation-tariffs';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 
 const BLOCKING_STATUSES = [
   ReservationStatus.PENDING,
@@ -90,7 +91,7 @@ const adminReservationSelect = {
     select: { id: true, amount: true, currency: true, status: true, dueAt: true },
   },
   requesterUserId: true,
-  requester: { select: { id: true, displayName: true, email: true } },
+  requester: { select: { id: true, displayName: true, fullName: true, email: true } },
   eventId: true,
   event: { select: { id: true, title: true, startAt: true, endAt: true } },
   startAt: true,
@@ -104,7 +105,7 @@ const adminReservationSelect = {
   status: true,
   approvedAt: true,
   approvedById: true,
-  approvedBy: { select: { id: true, displayName: true, email: true } },
+  approvedBy: { select: { id: true, displayName: true, fullName: true, email: true } },
   rejectionReason: true,
   cancelledAt: true,
   createdAt: true,
@@ -277,7 +278,7 @@ export class ReservationsService {
       }),
       this.prisma.reservation.count({ where }),
     ]);
-    return { data, total, page, limit };
+    return { data: data.map((reservation) => this.serializeReservation(reservation)), total, page, limit };
   }
 
   async findOne(id: number) {
@@ -286,7 +287,7 @@ export class ReservationsService {
       select: adminReservationSelect,
     });
     if (!reservation) throw new NotFoundException('Reservation not found');
-    return reservation;
+    return this.serializeReservation(reservation);
   }
 
   async approve(id: number, actorId: number) {
@@ -384,7 +385,7 @@ export class ReservationsService {
       }
 
       await this.inboxNotifications?.notifyReservationResolved(tx, approved.id, reservation.requesterUserId, true);
-      return approved;
+      return this.serializeReservation(approved);
     });
   }
 
@@ -415,7 +416,7 @@ export class ReservationsService {
         select: adminReservationSelect,
       });
       await this.inboxNotifications?.notifyReservationResolved(tx, rejected.id, reservation.requesterUserId, false);
-      return rejected;
+      return this.serializeReservation(rejected);
     });
   }
 
@@ -448,7 +449,7 @@ export class ReservationsService {
         });
       }
 
-      return tx.reservation.update({
+      const cancelled = await tx.reservation.update({
         where: { id },
         data: {
           status: ReservationStatus.CANCELLED,
@@ -456,6 +457,7 @@ export class ReservationsService {
         },
         select: adminReservationSelect,
       });
+      return this.serializeReservation(cancelled);
     });
   }
 
@@ -487,6 +489,14 @@ export class ReservationsService {
     if (resource.status !== ReservableResourceStatus.ACTIVE || !['Salón Comunal', 'Play de los niños'].includes(resource.name)) {
       throw new ConflictException('Reservable resource is inactive or not available for new requests');
     }
+  }
+
+  private serializeReservation<T extends { requester: { displayName?: string | null; fullName?: string | null }; approvedBy: { displayName?: string | null; fullName?: string | null } | null }>(reservation: T) {
+    return {
+      ...reservation,
+      requester: accountDisplayNameProjection(reservation.requester),
+      approvedBy: reservation.approvedBy ? accountDisplayNameProjection(reservation.approvedBy) : null,
+    };
   }
 
   private async requireEvent(tx: ReservationTransaction, id: number) {

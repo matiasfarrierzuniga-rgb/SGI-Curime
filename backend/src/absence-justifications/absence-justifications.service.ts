@@ -15,6 +15,7 @@ import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { formatInstitutionalPersonName } from '../common/identity/person-name';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 import {
   CreateJustificationDto,
   QueryJustificationsDto,
@@ -50,7 +51,7 @@ const select = {
   attachmentSize: true,
   legacyAssemblyId: true,
   legacyAffiliateId: true,
-  reviewedBy: { select: { id: true, displayName: true, email: true } },
+  reviewedBy: { select: { id: true, displayName: true, fullName: true, email: true } },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.AbsenceJustificationSelect;
@@ -403,9 +404,10 @@ export class AbsenceJustificationsService {
       );
     }
 
-    const { legacyAssemblyId, legacyAffiliateId, ...rest } = item;
+    const { legacyAssemblyId, legacyAffiliateId, reviewedBy, ...rest } = item as T & { reviewedBy?: { displayName?: string | null; fullName?: string | null } | null };
     return {
       ...rest,
+      ...(reviewedBy !== undefined ? { reviewedBy: reviewedBy ? accountDisplayNameProjection(reviewedBy) : null } : {}),
       assemblyId: legacyAssemblyId,
       affiliateId: legacyAffiliateId,
       assembly,

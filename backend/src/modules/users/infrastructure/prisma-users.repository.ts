@@ -37,10 +37,12 @@ import {
 } from '../domain/errors/person-registration-conflict.error';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error';
 import { formatInstitutionalPersonName } from '../../../common/identity/person-name';
+import { formatAccountDisplayName } from '../../../common/identity/account-display-name';
 
 const userSelect = {
   id: true,
   displayName: true,
+  fullName: true,
   identification: true,
   identificationType: true,
   email: true,
@@ -107,7 +109,7 @@ type SafeAdminPerson = Prisma.PersonGetPayload<{
 function toUser(user: SafeUser): User {
   return {
     id: user.id,
-    displayName: user.displayName ?? user.email,
+    displayName: formatAccountDisplayName(user),
     identification: user.person?.identification ?? user.identification,
     identificationType:
       user.person?.identificationType ?? user.identificationType,
@@ -732,6 +734,7 @@ export class PrismaUsersRepository implements UsersRepository {
       textConditions.push({
         OR: [
           { displayName: { contains: query.name, mode: 'insensitive' } },
+          { fullName: { contains: query.name, mode: 'insensitive' } },
           { person: { is: { firstName: { contains: query.name, mode: 'insensitive' } } } },
           { person: { is: { firstSurname: { contains: query.name, mode: 'insensitive' } } } },
         ],

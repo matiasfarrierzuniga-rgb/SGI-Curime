@@ -4,6 +4,7 @@ import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { formatInstitutionalPersonName } from '../common/identity/person-name';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 import {
   CreateSanctionDto,
   QuerySanctionsDto,
@@ -20,7 +21,7 @@ const select = {
     select: { id: true, identification: true, status: true, person: { select: { firstName: true, firstSurname: true, secondSurname: true } } },
   },
   createdById: true,
-  createdBy: { select: { id: true, displayName: true, email: true } },
+  createdBy: { select: { id: true, displayName: true, fullName: true, email: true } },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.AffiliateSanctionSelect;
@@ -41,11 +42,12 @@ type SanctionAffiliateSource = {
  * from the canonical Person fields; the internal Person object is not exposed.
  */
 function toSanctionResponse<
-  T extends { affiliate: SanctionAffiliateSource | null },
+  T extends { affiliate: SanctionAffiliateSource | null; createdBy?: { displayName?: string | null; fullName?: string | null } | null },
 >(sanction: T) {
-  const { affiliate, ...rest } = sanction;
+  const { affiliate, createdBy, ...rest } = sanction;
   return {
     ...rest,
+    ...(createdBy !== undefined ? { createdBy: createdBy ? accountDisplayNameProjection(createdBy) : null } : {}),
     affiliate: affiliate
       ? {
           id: affiliate.id,

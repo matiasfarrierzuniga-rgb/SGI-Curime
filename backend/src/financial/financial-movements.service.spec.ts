@@ -198,7 +198,7 @@ describe('FinancialService movements', () => {
     expect(prisma.financialMovement.findUnique).toHaveBeenCalledWith({
       where: { id: 10 },
       select: expect.objectContaining({
-        recordedBy: { select: { id: true, displayName: true } },
+        recordedBy: { select: { id: true, displayName: true, fullName: true } },
       }),
     });
     expect(result).toEqual(

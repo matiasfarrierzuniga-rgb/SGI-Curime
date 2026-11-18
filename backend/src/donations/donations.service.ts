@@ -17,6 +17,7 @@ import {
 import { AuditAction } from '../audit/audit-actions';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 import { CancelDonationDto } from './dto/cancel-donation.dto';
 import { CreateDonationDto } from './dto/create-donation.dto';
 import { QueryDonationsDto } from './dto/query-donations.dto';
@@ -57,8 +58,8 @@ const donationListSelect = {
   legacyReversalMovementId: true,
   createdAt: true,
   updatedAt: true,
-  recordedBy: { select: { id: true, displayName: true } },
-  cancelledBy: { select: { id: true, displayName: true } },
+  recordedBy: { select: { id: true, displayName: true, fullName: true } },
+  cancelledBy: { select: { id: true, displayName: true, fullName: true } },
 } satisfies Prisma.DonationSelect;
 
 const donationDetailSelect = {
@@ -607,12 +608,16 @@ export class DonationsService {
   private serializeDonation<T extends { amount: Prisma.Decimal }>(
     donation: T,
   ) {
-    const { legacyMethod, legacyReversalMovementId, ...rest } = donation as T & {
+    const { legacyMethod, legacyReversalMovementId, recordedBy, cancelledBy, ...rest } = donation as T & {
       legacyMethod?: unknown;
       legacyReversalMovementId?: number | null;
+      recordedBy?: { displayName?: string | null; fullName?: string | null } | null;
+      cancelledBy?: { displayName?: string | null; fullName?: string | null } | null;
     };
     return {
       ...rest,
+      ...(recordedBy !== undefined ? { recordedBy: recordedBy ? accountDisplayNameProjection(recordedBy) : null } : {}),
+      ...(cancelledBy !== undefined ? { cancelledBy: cancelledBy ? accountDisplayNameProjection(cancelledBy) : null } : {}),
       ...(legacyMethod !== undefined ? { method: legacyMethod } : {}),
       ...(legacyReversalMovementId !== undefined
         ? { reversalMovementId: legacyReversalMovementId }

@@ -5,4 +5,4 @@ export type PersonSummary = { id: number; firstName: string | null; firstSurname
 export type BoardAppointment = { id: number; boardTermId: number; personId: number; position: BoardPosition; seatNumber: number | null; startsOn: string | null; endsOn: string | null; person: PersonSummary }
 export type GovernanceTermStatus = 'PLANNED' | 'ACTIVE' | 'CLOSED' | 'CANCELLED'
 export type BoardTerm = { id: number; startsOn: string; endsOn: string; status: GovernanceTermStatus | null; appointments: BoardAppointment[] }
-export type PersonCandidate = { id: number; displayName: string; identificationType: string | null; identificationHint: string | null }
+export type PersonCandidate = { id: number; institutionalName: string | null; identificationType: string | null; identificationHint: string | null }

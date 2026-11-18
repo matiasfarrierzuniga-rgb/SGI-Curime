@@ -18,6 +18,7 @@ import { CreateLoanDto } from './dto/create-loan.dto';
 import { ReturnLoanDto } from './dto/return-loan.dto';
 import { QueryLoansDto } from './dto/query-loans.dto';
 import { formatInstitutionalPersonName } from '../common/identity/person-name';
+import { accountDisplayNameProjection } from '../common/identity/account-display-name';
 
 const loanSelect = {
   id: true,
@@ -45,10 +46,10 @@ const loanSelect = {
     select: { id: true, identification: true, person: { select: { firstName: true, firstSurname: true, secondSurname: true } } },
   },
   createdBy: {
-    select: { id: true, displayName: true, email: true },
+    select: { id: true, displayName: true, fullName: true, email: true },
   },
   receivedBy: {
-    select: { id: true, displayName: true, email: true },
+    select: { id: true, displayName: true, fullName: true, email: true },
   },
 } satisfies Prisma.InventoryLoanSelect;
 
@@ -59,17 +60,12 @@ type LoanAffiliateProjection = {
   institutionalName: string | null;
 };
 
-function withOverdue(
-  loan: SafeLoan,
-  now = new Date(),
-): Omit<SafeLoan, 'borrowerNameSnapshot' | 'borrowerAffiliate'> & {
-  borrowerName: string;
-  affiliate: LoanAffiliateProjection | null;
-  isOverdue: boolean;
-} {
-  const { borrowerNameSnapshot, borrowerAffiliate, ...rest } = loan;
+function withOverdue(loan: SafeLoan, now = new Date()) {
+  const { borrowerNameSnapshot, borrowerAffiliate, createdBy, receivedBy, ...rest } = loan;
   return {
     ...rest,
+    createdBy: createdBy ? accountDisplayNameProjection(createdBy) : null,
+    receivedBy: receivedBy ? accountDisplayNameProjection(receivedBy) : null,
     borrowerName: borrowerNameSnapshot,
     affiliate: borrowerAffiliate
       ? {
