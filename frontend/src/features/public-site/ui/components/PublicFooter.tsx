@@ -1,15 +1,12 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, LogOut, Mail } from 'lucide-react'
-import { useAuth } from '@/features/auth'
+import { Mail } from 'lucide-react'
 import { site } from '@/content/publicSiteContent'
-import { Button } from '@/shared/ui/button'
 
 export function PublicFooter() {
-  const { isAuthenticated, user, logout } = useAuth()
   const footerLinkClassName = 'inline-flex min-h-11 max-w-full items-center rounded-sm text-text-inverse/80 transition-colors hover:text-brand-accent hover:underline hover:decoration-brand-accent hover:underline-offset-4 focus-visible:text-brand-accent focus-visible:underline focus-visible:decoration-brand-accent focus-visible:underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-text-inverse'
   return (
     <footer className="bg-brand-ink font-sans text-text-inverse">
-        <div className="mx-auto grid w-full max-w-[75rem] gap-x-8 gap-y-7 px-4 py-7 min-[375px]:px-5 md:grid-cols-2 md:gap-x-10 md:gap-y-8 md:px-6 md:py-8 lg:grid-cols-[1.2fr_1fr_1.35fr_0.85fr] lg:gap-x-8 lg:px-8 lg:py-10 xl:gap-x-12">
+        <div className="mx-auto grid w-full max-w-[75rem] gap-x-8 gap-y-7 px-4 py-7 min-[375px]:px-5 md:grid-cols-2 md:gap-x-10 md:gap-y-8 md:px-6 md:py-8 lg:grid-cols-[1.1fr_1fr_1.5fr] lg:gap-x-8 lg:px-8 lg:py-10 xl:gap-x-12">
           <div className="lg:pr-2">
             <div className="flex items-center gap-4">
               <span className="grid size-12 shrink-0 place-items-center rounded-surface bg-brand-ivory p-1 sm:size-14">
@@ -57,9 +54,9 @@ export function PublicFooter() {
               </li>
             </ul>
           </nav>
-          <nav aria-label="Enlaces rápidos" className="lg:border-l lg:border-text-inverse/15 lg:pl-6">
+          <nav aria-label="Enlaces rápidos" className="md:col-span-2 lg:col-span-1 lg:border-l lg:border-text-inverse/15 lg:pl-6">
             <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-text-inverse">Enlaces rápidos</h3>
-            <ul className="mt-2 grid grid-cols-2 gap-x-5 gap-y-1 text-body-small lg:grid-cols-3">
+            <ul className="mt-2 grid grid-cols-2 gap-x-5 gap-y-1 text-body-small xl:grid-cols-3">
               {site.nav.filter((item) => item.to !== '/').map((item) => (
                 <li key={item.to} className="min-w-0">
                   <Link className={`${footerLinkClassName} w-full`} to={item.to}>
@@ -67,31 +64,6 @@ export function PublicFooter() {
                   </Link>
                 </li>
               ))}
-            </ul>
-          </nav>
-          <nav aria-label="Acceso al sistema" className="lg:border-l lg:border-text-inverse/15 lg:pl-6">
-            <h3 className="text-caption font-bold uppercase tracking-[0.14em] text-text-inverse">Sistema</h3>
-            <ul className="mt-3 space-y-2 text-body-small">
-              <li>
-                <Link className="inline-flex min-h-11 items-center gap-2 rounded-control bg-interaction-primary-default px-4 font-semibold text-white shadow-sm transition-colors hover:bg-interaction-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-text-inverse" to={!isAuthenticated ? '/login' : user?.canAccessErp ? '/app' : '/servicios'}>
-                  {!isAuthenticated ? 'Iniciar sesión' : user?.canAccessErp ? 'Ir al panel' : 'Ver servicios'}
-                  <ArrowRight aria-hidden="true" className="size-3.5" />
-                </Link>
-              </li>
-              {isAuthenticated ? (
-                <li>
-                  <Button variant="ghost" size="sm" type="button" className="min-h-11 !bg-transparent px-2 !text-text-inverse/80 hover:!bg-brand-ivory/10 hover:!text-brand-accent active:!bg-brand-ivory/15 disabled:!bg-transparent disabled:!text-text-inverse/50 focus-visible:border-text-inverse focus-visible:ring-text-inverse/40" onClick={() => void logout()}>
-                    <LogOut aria-hidden="true" className="size-3.5" />
-                    Cerrar sesión
-                  </Button>
-                </li>
-              ) : (
-                <li>
-                  <Link className={footerLinkClassName} to="/register">
-                    Solicitar una cuenta
-                  </Link>
-                </li>
-              )}
             </ul>
           </nav>
         </div>

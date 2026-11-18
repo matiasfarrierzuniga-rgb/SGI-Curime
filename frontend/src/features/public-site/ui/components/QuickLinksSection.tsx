@@ -35,7 +35,7 @@ const quickLinks = [
 
 export function QuickLinksSection() {
   return (
-    <section aria-labelledby="quick-links-title" className="border-y border-border/70 bg-surface-card py-10 md:py-12">
+    <section aria-labelledby="quick-links-title" className="public-section border-y border-border/70 bg-surface-card">
       <div className="public-container">
         <header className="mb-6 max-w-2xl"><p className="public-eyebrow text-brand-primary">Accesos prioritarios</p><h2 id="quick-links-title" className="public-heading mt-2 text-text-primary">Lo que puede hacer hoy</h2><p className="mt-3 text-body leading-relaxed text-foreground-muted">Accesos orientados a necesidades frecuentes de la comunidad.</p></header>
         <nav aria-label="Accesos comunitarios"><ul className="grid overflow-hidden rounded-surface border border-border/70 bg-surface-card sm:grid-cols-2 lg:grid-cols-4">

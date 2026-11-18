@@ -65,13 +65,50 @@ describe('ReservationRequestPage', () => {
     expect(screen.getByText(/Tarifa de la solicitud:.*90/)).toBeInTheDocument()
   }
 
+  function fillAvailabilitySchedule() {
+    fireEvent.change(screen.getByLabelText(/Espacio/), { target: { value: '1' } })
+    selectReservationDateRange()
+    fireEvent.change(reservationTimeInput('reservation-start-time'), { target: { value: '10:00' } })
+    fireEvent.change(reservationTimeInput('reservation-end-time'), { target: { value: '12:00' } })
+  }
+
   it('renders P06 steps and blocks review before availability is checked', () => {
     render(<ReservationRequestPage />)
-    expect(screen.getByRole('list', { name: 'Progreso de la solicitud' })).toBeInTheDocument()
-    expect(screen.getAllByRole('listitem').map(step => step.textContent)).toEqual(['1Elegir espacio', '2Fecha y horario', '3Revisar y enviar'])
-    expect(screen.getByRole('button', { name: 'Revisar solicitud' })).toBeDisabled()
+    const progress = screen.getByRole('list', { name: 'Progreso de la solicitud' })
+    expect(progress).toHaveClass('grid', 'min-w-0', 'sm:grid-cols-3')
+    const steps = Array.from(progress.querySelectorAll('li'))
+    expect(steps.map(step => step.textContent)).toEqual(['1Elegir espacio', '2Fecha y horario', '3Revisar y enviar'])
+    expect(progress.querySelector('li[aria-current="step"]')).toHaveTextContent('Elegir espacio')
+    expect(steps).toHaveLength(3)
+    expect(Array.from(document.querySelectorAll('[data-slot="form-section"]'))).toHaveLength(3)
+    for (const section of document.querySelectorAll('[data-slot="form-section"]')) expect(section).toHaveClass('min-w-0')
+    const datePickerWrapper = document.getElementById('reservation-start-date')?.parentElement
+    expect(datePickerWrapper).toHaveClass('min-w-0', '[&_[role=dialog]]:min-w-[min(22rem,calc(100vw-3.5rem))]', '[&_[role=dialog]]:max-w-[calc(100vw-3.5rem)]')
+    const reviewButton = screen.getByRole('button', { name: 'Revisar solicitud' })
+    expect(reviewButton).toHaveClass('w-full', 'sm:w-auto')
+    expect(reviewButton).toBeDisabled()
     fireEvent.change(screen.getByLabelText(/Espacio/), { target: { value: '1' } })
     expect(screen.getByText('Está reservando: Salón Comunal')).toBeInTheDocument()
+  })
+
+  it('announces availability loading and prevents repeat checks until the server responds', async () => {
+    let resolveAvailability!: (result: { data: { available: boolean } }) => void
+    refetch.mockReturnValue(new Promise(resolve => { resolveAvailability = resolve }))
+    render(<ReservationRequestPage />)
+    fillAvailabilitySchedule()
+
+    fireEvent.click(screen.getByRole('button', { name: /consultar disponibilidad/i }))
+
+    const loadingMessage = await screen.findByText('Consultando disponibilidad…')
+    const status = loadingMessage.closest('[role="status"]')
+    expect(status).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByRole('button', { name: /consultando disponibilidad/i })).toBeDisabled()
+    expect(refetch).toHaveBeenCalledTimes(1)
+
+    await act(async () => resolveAvailability({ data: { available: true } }))
+
+    expect(await screen.findByText(/Disponible en este horario/)).toBeInTheDocument()
+    expect(status).not.toHaveAttribute('aria-busy')
   })
 
   it('blocks activities without a defined tariff even when the space is available', async () => {

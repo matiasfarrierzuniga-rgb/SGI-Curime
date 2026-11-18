@@ -154,7 +154,7 @@ describe('AppRoutes capability deep links', () => {
   it('renders the public volunteering directory without a session', async () => {
     renderRoute('/voluntariado', null)
     expect(await screen.findByRole('heading', { name: 'Voluntariado' })).toBeInTheDocument()
-    expect(await screen.findByText('No hay oportunidades publicadas')).toBeInTheDocument()
+    expect(await screen.findByText('Actualmente no hay oportunidades de voluntariado publicadas. Consulte nuevamente más adelante.')).toBeInTheDocument()
     expect(httpGet).toHaveBeenCalledWith('/public/volunteering/opportunities', { params: { page: 1, limit: 12 } })
   })
 
@@ -176,16 +176,16 @@ describe('AppRoutes capability deep links', () => {
   it('sends anonymous portal access to login', () => {
     renderRoute('/', null)
 
-    expect(screen.getAllByRole('link', { name: 'Iniciar sesión' })).not.toHaveLength(0)
-    screen.getAllByRole('link', { name: 'Iniciar sesión' }).forEach((link) => expect(link).toHaveAttribute('href', '/login'))
+    expect(screen.getAllByRole('button', { name: 'Iniciar sesión' })).not.toHaveLength(0)
+    screen.getAllByRole('button', { name: 'Iniciar sesión' }).forEach((button) => expect(button).toHaveAttribute('href', '/login'))
   })
 
   it('sends authenticated portal access to the panel', async () => {
     renderRoute('/', 'ROLE_SYSTEM_ADMIN')
 
-    expect(await screen.findAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
-    screen.getAllByRole('link', { name: 'Ir al panel' }).forEach((link) => expect(link).toHaveAttribute('href', '/app'))
-    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(3)
+    expect(await screen.findAllByRole('button', { name: 'Ir al panel' })).not.toHaveLength(0)
+    screen.getAllByRole('button', { name: 'Ir al panel' }).forEach((button) => expect(button).toHaveAttribute('href', '/app'))
+    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(2)
     expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
   })
 
@@ -193,10 +193,10 @@ describe('AppRoutes capability deep links', () => {
     renderRoute('/servicios', 'Subscription_L1', false)
 
     expect(await screen.findByRole('heading', { name: 'Servicios para la comunidad' })).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'Ver servicios' })).not.toHaveLength(0)
-    expect(screen.queryByRole('link', { name: 'Ir al panel' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Ver servicios' })).not.toHaveLength(0)
+    expect(screen.queryByRole('button', { name: 'Ir al panel' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Solicitar una cuenta' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(3)
+    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(2)
   })
 
   it('logs out a general account from the mobile public menu', async () => {
@@ -208,7 +208,8 @@ describe('AppRoutes capability deep links', () => {
 
     await waitFor(() => expect(sessionStorage.getItem('sgi-curime-session')).toBeNull())
     expect(screen.getAllByRole('link', { name: 'Iniciar sesión' })).not.toHaveLength(0)
-    expect(screen.getAllByRole('link', { name: 'Solicitar una cuenta' })).not.toHaveLength(0)
+    fireEvent.click(screen.getAllByRole('link', { name: 'Iniciar sesión' })[0])
+    expect(await screen.findByRole('link', { name: 'Crear cuenta comunitaria' })).toHaveAttribute('href', '/register')
   })
 
   it('redirects anonymous users from /app to login', async () => {
@@ -371,7 +372,7 @@ describe('AppRoutes capability deep links', () => {
     await screen.findByRole('heading', { name: /Buenos días/ })
     fireEvent.click(screen.getAllByRole('link', { name: 'Ver sitio público' })[0])
 
-    expect(await screen.findAllByRole('link', { name: 'Ir al panel' })).not.toHaveLength(0)
+    expect(await screen.findAllByRole('button', { name: 'Ir al panel' })).not.toHaveLength(0)
   })
 
   it('clears the session and redirects logout to login', async () => {
