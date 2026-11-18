@@ -21,14 +21,14 @@ export type ReservationApplicantCategory = (typeof RESERVATION_APPLICANT_CATEGOR
 
 const tariffs: Record<ReservationActivity, Partial<Record<ReservationApplicantCategory, number>>> = {
   DANCES: { GROUPS_COMMITTEES: 90000, MEMBERS: 90000, PRIVATE: 90000 },
-  SPORTS: {},
+  SPORTS: { MEMBERS: 10000, PRIVATE: 15000 },
   BINGO: { GROUPS_COMMITTEES: 40000, MEMBERS: 35000, PRIVATE: 50000 },
   TEA_BASKET: { MEMBERS: 35000, PRIVATE: 50000 },
   BIRTHDAY: { MEMBERS: 35000, PRIVATE: 50000 },
   WEDDING: { MEMBERS: 35000, PRIVATE: 50000 },
-  MOVIE: { GROUPS_COMMITTEES: 40000 },
-  MOONLIGHT: { GROUPS_COMMITTEES: 40000 },
-  TALKS: {},
+  MOVIE: { GROUPS_COMMITTEES: 40000, MEMBERS: 10000, PRIVATE: 15000 },
+  MOONLIGHT: { GROUPS_COMMITTEES: 40000, MEMBERS: 15000, PRIVATE: 20000 },
+  TALKS: { MEMBERS: 0, PRIVATE: 0 },
 }
 
 export function getReservationTariff(activity: string, applicantCategory: string): number | null {

@@ -353,7 +353,7 @@ describe('ReservationsService', () => {
   });
 
   it('rejects an activity/category combination without a tariff', async () => {
-    await expect(service.create(createDto({ activity: 'SPORTS' }), 7)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.create(createDto({ activity: 'TEA_BASKET', applicantCategory: 'GROUPS_COMMITTEES' }), 7)).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.reservation.create).not.toHaveBeenCalled();
   });
 
