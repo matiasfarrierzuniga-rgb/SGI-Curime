@@ -285,7 +285,7 @@ describe('portal público', () => {
       return section
     }
     const hero = getSection('#community-title')
-    expect(hero.querySelector('.bg-brand-deep')).toBeInTheDocument()
+    expect(hero.querySelector('.bg-background-subtle')).toBeInTheDocument()
     expect(hero.querySelector('.public-container.grid')).toHaveClass('grid', 'lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]')
     expect(hero.querySelector('nav[aria-label="Ruta de navegación"]')).toBeInTheDocument()
     expect(hero.querySelector('a[href="/contacto"]')?.textContent?.trim()).toBe('Contáctenos')
