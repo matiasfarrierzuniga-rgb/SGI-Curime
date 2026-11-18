@@ -1,5 +1,5 @@
 import { Link, Navigate, useParams } from "react-router-dom";
-import { BarChart3, Building2, CalendarDays, Camera, ClipboardList, FileText, FolderOpen, HandHeart, HeartHandshake, Landmark, Mail, MapPin, Newspaper, Store, Target, UsersRound, type LucideIcon } from "lucide-react";
+import { BarChart3, Building2, CalendarDays, ClipboardList, FileText, FolderOpen, HandHeart, Landmark, Mail, MapPin, Newspaper, Target, UsersRound, type LucideIcon } from "lucide-react";
 import { moduleAvailability, services, site } from "../../content/publicSiteContent";
 import { publicContentService } from "../../services/publicContentService";
 import {
@@ -12,6 +12,9 @@ import {
 } from "../../components/public/PublicComponents";
 import { useAuth } from "@/features/auth";
 import { ContactForm } from "@/features/public-site";
+import { CategoryIcon, type CategoryIconGlyph } from "@/shared/ui/CategoryIcon";
+import { publicCategories } from "@/shared/ui/publicCategories";
+import { SocialIcon } from "@/shared/ui/SocialIcon";
 
 const transparencyGroups = [
   { title: 'Información pública', items: ['Documentos públicos', 'Informes', 'Proyectos'] },
@@ -29,6 +32,9 @@ const boardMembers = [
   { role: 'Fiscal 1', name: 'RAYMER LOAICIGA GOMEZ' },
   { role: 'Fiscal 2', name: 'MAUREEN YORLENY JUAREZ JUAREZ' },
 ] as const;
+
+const InstagramChannelIcon: CategoryIconGlyph = ({ className }) => <SocialIcon platform="instagram" className={className} />;
+const FacebookChannelIcon: CategoryIconGlyph = ({ className }) => <SocialIcon platform="facebook" className={className} />;
 
 export function AboutPage() {
   // TODO: sustituir estas propuestas por las declaraciones oficiales aprobadas por la ADI de Curime.
@@ -78,7 +84,7 @@ export function AboutPage() {
         </section>
         <section aria-labelledby="identity-title">
           <div className="mb-8 grid gap-4 lg:grid-cols-[minmax(14rem,4fr)_minmax(0,6fr)] lg:items-end lg:gap-12"><div><p className="public-eyebrow text-brand-primary">Nuestra orientación</p><h2 id="identity-title" className="public-heading mt-3 text-text-primary">Misión, visión y objetivos</h2></div><p className="max-w-2xl text-pretty text-body leading-relaxed text-foreground-muted">Textos propuestos, pendientes de validación institucional.</p></div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">{identityCards.map(({ title, icon: Icon, description }) => <article key={title} className="min-w-0 rounded-surface border border-border/70 bg-surface-card p-5 shadow-sm md:p-6"><span className="grid size-12 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Icon className="size-5" aria-hidden="true" /></span><h3 className="mt-5 font-heading text-heading-3 text-text-primary">{title}</h3><p className="mt-3 text-body-small leading-relaxed text-foreground-muted">{description}</p></article>)}</div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">{identityCards.map(({ title, icon: Icon, description }) => <article key={title} className="min-w-0 rounded-surface border border-border/70 bg-surface-card p-5 shadow-sm md:p-6"><CategoryIcon icon={Icon} tone="institutional" size="lg" /><h3 className="mt-5 font-heading text-heading-3 text-text-primary">{title}</h3><p className="mt-3 text-body-small leading-relaxed text-foreground-muted">{description}</p></article>)}</div>
         </section>
         <section aria-labelledby="notice-title" className="space-y-8">
           <header>
@@ -89,7 +95,7 @@ export function AboutPage() {
 
           <section aria-labelledby="history-title" className="rounded-surface border border-border/70 bg-surface-muted p-5 sm:p-6 md:p-8">
             <div className="flex items-start gap-4">
-              <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-control bg-brand-accent/25 text-brand-deep"><CalendarDays className="size-6" /></span>
+              <CategoryIcon icon={CalendarDays} tone="institutional" size="lg" />
               <div className="min-w-0">
                 <p className="public-eyebrow text-brand-primary">Cronología institucional</p>
                 <h3 id="history-title" className="font-heading text-heading-3 text-text-primary">Nuestra historia</h3>
@@ -110,7 +116,7 @@ export function AboutPage() {
 
           <section aria-labelledby="governance-title" className="rounded-surface border border-border/70 bg-surface-muted p-5 sm:p-6 md:p-8">
             <div className="flex items-start gap-4">
-              <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-control bg-brand-deep text-white"><UsersRound className="size-6" /></span>
+              <CategoryIcon icon={UsersRound} tone="institutional" size="lg" />
               <div className="min-w-0">
                 <p className="public-eyebrow text-brand-primary">Integración institucional</p>
                 <h3 id="governance-title" className="font-heading text-heading-3 text-text-primary">Junta Directiva y Fiscalía</h3>
@@ -135,10 +141,10 @@ export function AboutPage() {
 }
 export function CommunityPage() {
   const communityActions = [
-    { title: 'Eventos', description: 'Consulte las actividades comunicadas oficialmente por la Asociación.', icon: CalendarDays, to: '/eventos', label: 'Ver eventos' },
-    { title: 'Voluntariado', description: 'Explore oportunidades de participación publicadas.', icon: HandHeart, to: '/voluntariado', label: 'Ver oportunidades de voluntariado' },
-    { title: 'Emprendimientos', description: 'Conozca los emprendimientos locales publicados.', icon: Store, to: '/ventures', label: 'Ver emprendimientos' },
-    { title: 'Contacto', description: 'Use los canales oficiales para consultar a la Asociación.', icon: Mail, to: '/contacto', label: 'Contactar a la ADI' },
+    { ...publicCategories.events, title: 'Eventos', description: 'Consulte las actividades comunicadas oficialmente por la Asociación.', to: '/eventos', label: 'Ver eventos' },
+    { ...publicCategories.volunteering, title: 'Voluntariado', description: 'Explore oportunidades de participación publicadas.', to: '/voluntariado', label: 'Ver oportunidades de voluntariado' },
+    { ...publicCategories.entrepreneurship, title: 'Emprendimientos', description: 'Conozca los emprendimientos locales publicados.', to: '/ventures', label: 'Ver emprendimientos' },
+    { ...publicCategories.contact, title: 'Contacto', description: 'Use los canales oficiales para consultar a la Asociación.', to: '/contacto', label: 'Contactar a la ADI' },
   ] as const;
 
   return (
@@ -166,7 +172,7 @@ export function CommunityPage() {
       <SectionContainer spacing="spacious" className="space-y-10 md:space-y-16">
         <section aria-labelledby="community-actions">
           <div className="mb-8 grid gap-4 lg:grid-cols-[minmax(14rem,4fr)_minmax(0,6fr)] lg:items-end lg:gap-12"><div><p className="public-eyebrow text-brand-primary">Explore la comunidad</p><h2 id="community-actions" className="public-heading mt-3 text-text-primary">Formas de participar</h2></div><p className="max-w-2xl text-pretty text-body leading-relaxed text-foreground-muted">Acceda a actividades, oportunidades y canales comunitarios ya disponibles en el portal.</p></div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">{communityActions.map(({ title, description, icon: Icon, to, label }) => <article key={title} className="flex min-h-full flex-col rounded-surface border border-border/70 bg-surface-card p-5 shadow-sm"><span className="grid size-12 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Icon className="size-5" aria-hidden="true" /></span><h3 className="mt-5 font-heading text-heading-3 text-text-primary">{title}</h3><p className="mt-2 text-body-small leading-relaxed text-foreground-muted">{description}</p><Link to={to} className="mt-5 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">{label}</Link></article>)}</div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">{communityActions.map(({ title, description, icon: Icon, tone, to, label }) => <article key={title} className="flex min-h-full flex-col rounded-surface border border-border/70 bg-surface-card p-5 shadow-sm"><CategoryIcon icon={Icon} tone={tone} size="lg" /><h3 className="mt-5 font-heading text-heading-3 text-text-primary">{title}</h3><p className="mt-2 text-body-small leading-relaxed text-foreground-muted">{description}</p><Link to={to} className="mt-5 inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring">{label}</Link></article>)}</div>
         </section>
         <section aria-labelledby="community-areas" className="space-y-6 border-y border-border/70 py-8 md:py-10">
           <header className="grid gap-4 lg:grid-cols-[minmax(14rem,4fr)_minmax(0,6fr)] lg:items-end lg:gap-12">
@@ -211,7 +217,7 @@ export function NewsPage() {
           </header>
           {verifiedNews.length === 0
             ? <div className="grid min-w-0 items-center gap-5 rounded-surface border border-border/70 bg-surface-page p-5 md:grid-cols-[auto_minmax(0,1fr)] md:p-8">
-              <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full bg-brand-accent/30 text-brand-deep"><Newspaper className="size-7" /></span>
+              <CategoryIcon icon={publicCategories.news.icon} tone="news" size="lg" />
               <EmptyContentState title="No hay noticias verificadas publicadas" text="Los comunicados y noticias oficiales aparecerán aquí cuando la Asociación los autorice." />
             </div>
             : <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -265,37 +271,43 @@ export function ServicesPage() {
   } as const;
   const serviceDetails = {
     affiliation: {
-      icon: UsersRound,
+      icon: publicCategories.affiliation.icon,
+      tone: "affiliates" as const,
       image: "/images/public/home/community-curime-wide.webp",
       alt: "Encuentro comunitario en Curime.",
       steps: ["Complete sus datos", "Envíe la solicitud", "Espere revisión"],
     },
     reservations: {
-      icon: CalendarDays,
+      icon: publicCategories.reservations.icon,
+      tone: "reservations" as const,
       image: "/images/public/home/hero-curime-wide.webp",
       alt: "Paisaje rural de Curime.",
       steps: ["Elija espacio y horario", "Consulte disponibilidad", "Revise y envíe"],
     },
     volunteering: {
-      icon: HandHeart,
+      icon: publicCategories.volunteering.icon,
+      tone: "volunteering" as const,
       image: "/images/public/home/community-curime-fallback.jpg",
       alt: "Actividad de la comunidad en Curime.",
       steps: ["Vea oportunidades", "Elija una actividad", "Envíe su postulación"],
     },
     entrepreneurship: {
-      icon: Store,
+      icon: publicCategories.entrepreneurship.icon,
+      tone: "entrepreneurship" as const,
       image: "/images/public/home/community-curime-wide.webp",
       alt: "Espacio de encuentro comunitario en Curime.",
       steps: ["Abra el directorio", "Busque una iniciativa", "Consulte detalles"],
     },
     donations: {
-      icon: HeartHandshake,
+      icon: publicCategories.donations.icon,
+      tone: "donations" as const,
       image: "/images/public/home/hero-curime-wide.webp",
       alt: "Paisaje de Curime.",
       steps: ["Describa su aporte", "Envíe la solicitud", "Espere coordinación"],
     },
   } satisfies Record<(typeof services)[number]["key"], {
-    icon: LucideIcon;
+    icon: CategoryIconGlyph;
+    tone: "affiliates" | "reservations" | "volunteering" | "entrepreneurship" | "donations";
     image: string;
     alt: string;
     steps: string[];
@@ -344,7 +356,7 @@ export function ServicesPage() {
               const enabled = moduleAvailability[item.key].enabled;
               return <article key={item.key} className="flex h-full min-w-0 flex-col rounded-surface border border-border/70 bg-surface-card p-5 shadow-sm transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none hover:border-brand-primary hover:shadow-md focus-within:border-brand-primary focus-within:shadow-md md:p-6">
                 <div className="flex min-w-0 items-start justify-between gap-3">
-                  <span aria-hidden="true" className="grid size-10 place-items-center rounded-control bg-brand-soft/20 text-brand-deep"><Icon className="size-5" /></span>
+                  <CategoryIcon icon={Icon} tone={detail.tone} />
                   <span className={`inline-flex min-h-8 items-center rounded-control px-3 text-caption font-bold uppercase tracking-[0.1em] ${enabled ? "bg-success-bg text-success" : "bg-surface-muted text-foreground-muted"}`}>{enabled ? "Disponible" : "Próximamente"}</span>
                 </div>
                 <h3 className="mt-5 min-w-0 font-heading text-heading-3 text-text-primary">{item.title}</h3>
@@ -414,7 +426,7 @@ export function TransparencyPage() {
         <section aria-labelledby="transparency-areas" className="space-y-6">
           <div className="max-w-3xl"><p className="public-eyebrow text-brand-primary">Consulta pública</p><h2 id="transparency-areas" className="public-heading mt-3 text-text-primary">Áreas previstas de información</h2><p className="mt-4 text-pretty text-body leading-relaxed text-foreground-muted">Estas áreas orientan la publicación futura. No representan documentos, informes ni datos disponibles actualmente.</p></div>
           <div className="grid grid-cols-1 min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {transparencyGroups.map((group) => <article key={group.title} aria-labelledby={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="min-w-0 rounded-surface border border-border/70 bg-surface-card p-5 shadow-sm md:p-6"><h3 id={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="font-heading text-heading-3 text-text-primary">{group.title}</h3><ul className="mt-4 divide-y divide-border/70 border-t border-border/70">{group.items.map((title) => { const Icon = categoryIcons[title]; return <li key={title} className="flex min-w-0 items-start gap-3 py-4 last:pb-0"><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-control bg-brand-accent/20 text-brand-deep"><Icon className="size-4" /></span><div className="min-w-0"><h4 className="break-words font-semibold text-text-primary">{title}</h4><p className="mt-1 text-body-small leading-relaxed text-foreground-muted">{categoryDescriptions[title]}</p><p className="mt-2 text-caption font-bold uppercase tracking-[0.12em] text-brand-primary">En preparación</p></div></li> })}</ul></article>)}
+            {transparencyGroups.map((group) => <article key={group.title} aria-labelledby={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="min-w-0 rounded-surface border border-border/70 bg-surface-card p-5 shadow-sm md:p-6"><h3 id={`transparency-${group.title.replaceAll(' ', '-').toLowerCase()}`} className="font-heading text-heading-3 text-text-primary">{group.title}</h3><ul className="mt-4 divide-y divide-border/70 border-t border-border/70">{group.items.map((title) => { const Icon = categoryIcons[title]; return <li key={title} className="flex min-w-0 items-start gap-3 py-4 last:pb-0"><CategoryIcon icon={Icon} tone="transparency" size="sm" /><div className="min-w-0"><h4 className="break-words font-semibold text-text-primary">{title}</h4><p className="mt-1 text-body-small leading-relaxed text-foreground-muted">{categoryDescriptions[title]}</p><p className="mt-2 text-caption font-bold uppercase tracking-[0.12em] text-brand-primary">En preparación</p></div></li> })}</ul></article>)}
           </div>
         </section>
         <section aria-labelledby="transparency-status" className="space-y-3">
@@ -433,7 +445,7 @@ export function ContactPage() {
     action: string;
     ariaLabel: string;
     href: string;
-    icon: LucideIcon;
+    icon: CategoryIconGlyph;
     external?: boolean;
   }> = [
     {
@@ -442,7 +454,7 @@ export function ContactPage() {
       action: "Visitar Instagram",
       ariaLabel: "Abrir Instagram de ADI Curime",
       href: site.socialLinks.instagram.url,
-      icon: Camera,
+      icon: InstagramChannelIcon,
       external: true,
     },
     {
@@ -451,7 +463,7 @@ export function ContactPage() {
       action: "Visitar Facebook",
       ariaLabel: "Abrir Facebook de ADI Curime",
       href: site.socialLinks.facebook.url,
-      icon: UsersRound,
+      icon: FacebookChannelIcon,
       external: true,
     },
     {
@@ -478,7 +490,7 @@ export function ContactPage() {
           <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {channels.map(({ name, detail, action, ariaLabel, href, icon: Icon, external }) => (
               <article key={name} className="flex h-full min-w-0 flex-col rounded-surface border border-border/70 bg-surface-card p-5 shadow-sm transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none hover:border-brand-primary hover:shadow-sm md:p-6">
-                <span aria-hidden="true" className="grid size-11 place-items-center rounded-control bg-brand-soft/20 text-brand-deep"><Icon className="size-5" strokeWidth={1.8} /></span>
+                <CategoryIcon icon={Icon} tone="contact" />
                 <h3 className="mt-4 min-w-0 font-heading text-heading-3 text-text-primary">{name}</h3>
                 <p className="mt-2 min-w-0 [overflow-wrap:anywhere] text-body-small leading-relaxed text-foreground-muted">{detail}</p>
                 <a className="mt-auto inline-flex min-h-11 w-fit max-w-full items-center break-words pt-4 font-semibold text-brand-primary underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ring" href={href} aria-label={ariaLabel} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}>{action}</a>

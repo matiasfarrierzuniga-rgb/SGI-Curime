@@ -1,32 +1,29 @@
-import { ArrowUpRight, Calendar1, PartyPopper, Store, UsersRound } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { CategoryIcon } from '@/shared/ui/CategoryIcon'
+import { publicCategories } from '@/shared/ui/publicCategories'
 
 const quickLinks = [
   {
-    icon: UsersRound,
-    tone: 'affiliates',
+    ...publicCategories.affiliation,
     title: 'Afiliación',
     text: 'Inicie una solicitud para formar parte de la Asociación.',
     to: '/afiliacion',
   },
   {
-    icon: Calendar1,
-    tone: 'reservations',
+    ...publicCategories.reservations,
     title: 'Reservas',
     text: 'Consulte y solicite el uso de espacios comunitarios.',
     to: '/servicios',
   },
   {
-    icon: PartyPopper,
-    tone: 'events',
+    ...publicCategories.events,
     title: 'Eventos',
     text: 'Revise actividades y encuentros publicados por la Asociación.',
     to: '/eventos',
   },
   {
-    icon: Store,
-    tone: 'entrepreneurship',
+    ...publicCategories.entrepreneurship,
     title: 'Emprendimientos',
     text: 'Conozca emprendimientos locales publicados por la Asociación.',
     to: '/ventures',

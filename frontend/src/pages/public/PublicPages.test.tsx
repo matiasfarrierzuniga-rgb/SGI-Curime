@@ -136,6 +136,7 @@ describe('portal público', () => {
     expect(main.getByRole('heading', { name: 'No hay documentos publicados por el momento' })).toBeVisible()
     expect(main.getByText('La información se publica únicamente cuando cuenta con autorización institucional. Cuando existan documentos disponibles, se mostrarán aquí con su información de consulta.')).toBeVisible()
     expect(main.getAllByText('En preparación')).toHaveLength(7)
+    expect(areas.querySelectorAll('.text-public-icon-transparency')).toHaveLength(7)
     expect(main.getByText('Informes de gestión y resultados de la Asociación.')).toBeVisible()
     expect(main.getAllByRole('listitem')).toHaveLength(7)
     expect(main.getByRole('link', { name: 'Consultar información específica' })).toHaveAttribute('href', '/contacto')
@@ -150,6 +151,7 @@ describe('portal público', () => {
     expect(main.getByRole('heading', { name: 'Comunicados publicados', level: 2 })).toHaveClass('public-heading')
     expect(main.getByRole('heading', { name: 'No hay noticias verificadas publicadas' })).toBeVisible()
     expect(main.getByText('Los comunicados y noticias oficiales aparecerán aquí cuando la Asociación los autorice.')).toBeVisible()
+    expect(main.getByRole('heading', { name: 'Comunicados publicados' }).closest('section')?.querySelector('.text-public-icon-news')).not.toBeNull()
     expect(main.queryByRole('link', { name: /Canal informativo de ADI Curime/ })).not.toBeInTheDocument()
     expect(main.queryByRole('search')).not.toBeInTheDocument()
     expect(main.queryByRole('navigation', { name: /paginación/i })).not.toBeInTheDocument()
@@ -266,6 +268,7 @@ describe('portal público', () => {
       const card = within(section).getByRole('heading', { name: title, level: 3 }).closest('article')!
       expect(card).toHaveClass('min-w-0', 'rounded-surface', 'border', 'bg-surface-card', 'p-5')
       expect(card.querySelector('[aria-hidden="true"]')).not.toBeNull()
+      expect(card.querySelector('.text-public-icon-institutional')).not.toBeNull()
       expect(within(card).getByText(/^(Promover|Ser una Asociación|Impulsar)/)).toBeVisible()
     }
 
@@ -299,6 +302,10 @@ describe('portal público', () => {
       ['Ver emprendimientos', '/ventures'],
       ['Contactar a la ADI', '/contacto'],
     ])
+    expect(actions.querySelectorAll('.text-status-warning')).toHaveLength(1)
+    expect(actions.querySelectorAll('.text-public-icon-volunteering')).toHaveLength(1)
+    expect(actions.querySelectorAll('.text-public-icon-entrepreneurship')).toHaveLength(1)
+    expect(actions.querySelectorAll('.text-public-icon-contact')).toHaveLength(1)
 
     const projects = getSection('#community-areas')
     expect(projects.querySelector('[aria-label="Proyectos destacados"]')).toHaveClass('grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-3')
@@ -384,6 +391,12 @@ describe('portal público', () => {
     expectServiceCard(donations, 'Indique su intención de donar dinero o bienes. La Asociación revisará la solicitud; el portal no procesa pagos ni confirma recepción.', ['Describa su aporte', 'Envíe la solicitud', 'Espere coordinación'])
     expect(donations.querySelector('a[href="/donaciones"]')).toHaveTextContent('Donar')
     expect(donations.querySelector('a[href="/donaciones"]')).not.toHaveTextContent('Solicitar una donación')
+
+    expect(affiliation.querySelector('.text-status-success')).not.toBeNull()
+    expect(reservations.querySelector('.text-status-info')).not.toBeNull()
+    expect(volunteering.querySelector('.text-public-icon-volunteering')).not.toBeNull()
+    expect(entrepreneurship.querySelector('.text-public-icon-entrepreneurship')).not.toBeNull()
+    expect(donations.querySelector('.text-status-danger')).not.toBeNull()
 
     const orientation = getRequiredElement(mainElement, '#services-help-title').closest('section')!
     expect(orientation.textContent).toMatch(/cree una cuenta o inicie sesión para continuar/)
@@ -573,6 +586,11 @@ describe('portal público', () => {
     expect(facebook).toHaveAttribute('href', 'https://www.facebook.com/profile.php?id=100084633551482')
     expect(facebook).toHaveAttribute('target', '_blank')
     expect(facebook).toHaveAttribute('rel', 'noopener noreferrer')
+
+    expect(instagramCard.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+    expect(instagramCard.querySelector('svg')).toHaveAttribute('stroke', 'currentColor')
+    const facebookCard = contact.getByRole('heading', { name: 'Facebook' }).closest('article')!
+    expect(facebookCard.querySelector('svg')).toHaveClass('fill-current')
 
     const email = contact.getByRole('link', { name: 'Enviar correo a ADI Curime' })
     expect(email).toHaveAttribute('href', 'mailto:adicurimenicoya@gmail.com')

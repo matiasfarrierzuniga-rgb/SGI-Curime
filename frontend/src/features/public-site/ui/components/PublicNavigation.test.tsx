@@ -209,6 +209,8 @@ describe('PublicFooter authentication states', () => {
     expect(within(footer).getByRole('link', { name: 'Enviar correo a ADI Curime' })).toHaveAttribute('href', `mailto:${site.email}`)
     expect(within(footer).getByRole('link', { name: 'Abrir Instagram de ADI Curime' })).toHaveAttribute('href', site.socialLinks.instagram.url)
     expect(within(footer).getByRole('link', { name: 'Abrir Facebook de ADI Curime' })).toHaveAttribute('href', site.socialLinks.facebook.url)
+    expect(within(footer).getByRole('link', { name: 'Abrir Instagram de ADI Curime' }).querySelector('svg')).toHaveAttribute('stroke', 'currentColor')
+    expect(within(footer).getByRole('link', { name: 'Abrir Facebook de ADI Curime' }).querySelector('svg')).toHaveClass('fill-current')
     expect(within(footer).getAllByRole('link')).toHaveLength(site.nav.length + 4)
     fireEvent.click(within(footer).getByRole('link', { name: 'Voluntariado' }))
     expect(screen.getByTestId('location')).toHaveTextContent('/voluntariado')
